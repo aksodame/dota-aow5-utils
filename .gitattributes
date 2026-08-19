@@ -1,0 +1,4 @@
+* text=auto eol=lf
+*.png binary
+packages/aow5-shared/public/data/*.json -diff
+packages/aow5-shared/public/icons/** linguist-generated

@@ -1,0 +1,21 @@
+{
+  "name": "aow5-shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Everything about the Age of Weapons 5 custom map that an app consumes: the extracted data and icons, the frozen id tables, the types they are emitted against, and the share-link codec built on them",
+  "exports": {
+    "./types": "./src/types/index.ts",
+    "./codec": "./src/build/index.ts",
+    "./data": "./src/data/loadData.ts",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "test": "node --test \"src/build/*.test.ts\"",
+    "check-types": "tsc -b"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.0"
+  }
+}

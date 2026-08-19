@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.turbo/
+*.local
+.DS_Store
+*.tsbuildinfo
+
+# The data mining pipeline. Runs only on a machine with the game installed, and
+# everything it emits is committed under packages/aow5-shared/ instead.
+/parser/
