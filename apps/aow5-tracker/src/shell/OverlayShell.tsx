@@ -1,7 +1,8 @@
 import { useRef, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { ChromeButton } from './ChromeButton';
 import { ResizeGrip } from './ResizeGrip';
 import { useContentSize } from './useContentSize';
 
@@ -16,10 +17,17 @@ import { useContentSize } from './useContentSize';
  *
  * The header is chrome, and chrome is only *shown* once the hotkey has made the
  * window clickable — while playing, the panel is the numbers and nothing else.
- * Its space is held open regardless, with `invisible` rather than by not
- * rendering it: a header that appeared on a keypress would push the readout
+ * Its first row is held open regardless, with `invisible` rather than by not
+ * rendering it: a title bar that appeared on a keypress would push the readout
  * down the screen every time, and a HUD you have to re-find after every glance
  * at the settings is worse than one with a blank strip along its top.
+ *
+ * The buttons are the exception, and knowingly so. They sit on a second row
+ * that exists only while the window is interactive, so pressing the hotkey does
+ * move the body down by a row — which is the price of giving seven icons enough
+ * room to be hit accurately in a 340px window. The alternative was reserving
+ * that row while playing too, and a permanently blank strip is a worse deal for
+ * a panel whose whole job is to be small enough to leave up all evening.
  *
  * Collapsing is the body's business, not the shell's: what a collapsed farm HUD
  * shows is its cards, and what a collapsed recipe panel shows is its own
@@ -84,19 +92,20 @@ export function OverlayShell({
   useContentSize(panel, fitsContent ? 'height' : 'none');
 
   const toggle = onToggleCollapsed && (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="size-6 text-muted-foreground hover:text-foreground"
+    <ChromeButton
+      label={collapsed ? 'Expand to the full readout' : 'Collapse to the summary cards'}
       onClick={onToggleCollapsed}
-      aria-label={collapsed ? 'Expand overlay' : 'Collapse overlay'}
-      title={collapsed ? 'Expand' : 'Collapse'}
     >
       {collapsed ? <ChevronDown className="size-3.5" /> : <ChevronUp className="size-3.5" />}
-    </Button>
+    </ChromeButton>
   );
 
   return (
+    // Every overlay gets one, so a tooltip works wherever a ChromeButton is —
+    // including the ones each window passes in as `actions`, which render
+    // inside this tree rather than their own. Slow enough not to fire on a
+    // pointer merely crossing the row on its way to the resize grip.
+    <TooltipProvider delayDuration={400}>
     <div
       ref={panel}
       className={cn(
@@ -115,21 +124,33 @@ export function OverlayShell({
         !interactive && 'pointer-events-none',
       )}
     >
-      {/* One row, two occupants, and never both: the chrome while the hotkey
-          has made the window clickable, and the body's own one-liner while it
-          has not. Whichever is drawn, the row is the same height, so nothing
-          below it moves as they trade places — which is the whole reason the
-          chrome was drawn-but-invisible in the first place.
+      {/* The title row has two occupants and never both: the chrome while the
+          hotkey has made the window clickable, and the body's own one-liner
+          while it has not. Either way it is one row of the same height, so
+          nothing below it moves as they trade places — which is the whole
+          reason the chrome is drawn-but-invisible rather than absent.
+
+          The button row underneath is the part that does come and go. See the
+          note at the top of this file for why that trade was worth making.
 
           `hud-drag` only when the chrome is really there: a drag region nobody
           can see is a window that moves by accident. */}
       {interactive || idle === undefined ? (
-        <header className={cn('flex shrink-0 items-center gap-1', interactive ? 'hud-drag' : 'invisible')}>
-          <GripVertical className="size-3.5 shrink-0 text-muted-foreground" />
+        <header className={cn('flex shrink-0 flex-col gap-1', interactive ? 'hud-drag' : 'invisible')}>
+          <div className="flex items-center gap-1">
+            <GripVertical className="size-3.5 shrink-0 text-muted-foreground" />
+            <span className="min-w-0 flex-1 truncate text-[0.6875rem]">{title}</span>
+          </div>
 
-          <span className="min-w-0 flex-1 truncate text-[0.6875rem]">{title}</span>
+          {/* A row of their own, under the title rather than crowded against
+              it. Seven icons and a name do not fit a 340px window side by
+              side, and the ones that lost the argument were the buttons —
+              squeezed to where the skull sat against the quit cross and a
+              mis-aimed click cost you the session.
 
-          <div className="hud-no-drag flex shrink-0 items-center gap-0.5">
+              Right-aligned so the gesture is the same one as before: the
+              chrome lives in that corner, it has just moved down a line. */}
+          <div className="hud-no-drag flex shrink-0 items-center justify-end gap-0.5">
             {toggle}
             {actions}
           </div>
@@ -168,5 +189,6 @@ export function OverlayShell({
           offering one. */}
       {interactive && <ResizeGrip axis={fitsContent ? 'x' : 'both'} />}
     </div>
+    </TooltipProvider>
   );
 }

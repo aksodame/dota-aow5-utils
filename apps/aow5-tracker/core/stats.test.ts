@@ -12,12 +12,14 @@ import {
   applyAll,
   byRoom,
   createState,
+  isLastRunDead,
   itemTotals,
   rates,
   resetState,
   runItems,
   runLootValue,
   timeInRuns,
+  toggleLastRunDead,
   type ValueOf,
 } from './stats.ts';
 import { buildMockTimeline } from './sources/mock.ts';
@@ -515,4 +517,82 @@ test('the mock round-trips through the real parser', () => {
   const { events, skipped } = parseLines(lines);
   assert.equal(skipped.length, 0);
   assert.deepEqual(events, timeline.map((x) => x.event));
+});
+
+/*
+ * The skull button.
+ *
+ * The addon reports nothing when the player dies, so a room that killed them
+ * arrives looking exactly like one they cleared. Marking it is the player's
+ * correction to the feed, which makes it the one outcome set after the fact —
+ * and the one that has to survive whatever the feed says next.
+ */
+
+test('a dead run keeps its minutes and loses its loot', () => {
+  const s = build([
+    enter(0, 'M001'),
+    drop(50, [['item_A', 2]]),
+    exit(100, 'M001', 'clear'),
+    enter(100, 'M002'),
+    drop(150, [['item_A', 3]]),
+    exit(200, 'M002', 'clear'),
+  ]);
+
+  const before = rates(s, price);
+  assert.equal(before.completedRuns, 2);
+  assert.equal(itemTotals(s).find((i) => i.id === 'item_A')?.qty, 5);
+
+  assert.equal(toggleLastRunDead(s), true);
+
+  const after = rates(s, price);
+  assert.equal(after.diedRuns, 1);
+  assert.equal(after.completedRuns, 1, 'a room you died in is not a room you finished');
+  assert.equal(itemTotals(s).find((i) => i.id === 'item_A')?.qty, 2, 'the three it dropped are written off');
+  assert.equal(
+    after.activeTime,
+    before.activeTime,
+    'the time still counts — dying cost those minutes as surely as clearing would have',
+  );
+  assert.ok(after.goldPerHour < before.goldPerHour, 'so the rate falls rather than flattering the session');
+});
+
+test('pressing the skull again puts the loot back exactly as it was', () => {
+  const s = build([enter(0, 'M001'), drop(50, [['item_A', 2]]), exit(100, 'M001', 'clear')]);
+  const before = rates(s, price);
+
+  toggleLastRunDead(s);
+  assert.equal(isLastRunDead(s), true);
+  assert.deepEqual(itemTotals(s), [], 'every drop came from the room that was written off');
+
+  assert.equal(toggleLastRunDead(s), false);
+  assert.equal(isLastRunDead(s), false);
+  assert.equal(s.runs[0]!.outcome, 'clear', 'the outcome the feed reported, not a guess at it');
+  assert.deepEqual(rates(s, price), before);
+});
+
+test('a room marked dead while still open stays dead when the next one starts', () => {
+  // Dying and walking straight on would otherwise close the run as `chained`
+  // and quietly hand its loot back to the session.
+  const s = build([enter(0, 'M001'), drop(50, [['item_A', 4]])]);
+  toggleLastRunDead(s);
+
+  applyAll(s, [enter(90, 'M002'), drop(120, [['item_B', 1]])]);
+
+  assert.equal(s.runs[0]!.outcome, 'died');
+  assert.equal(itemTotals(s).find((i) => i.id === 'item_A'), undefined);
+  assert.equal(itemTotals(s).find((i) => i.id === 'item_B')?.qty, 1, 'the room you are in now is unaffected');
+});
+
+test('a dead room is not the one the per-room table recommends', () => {
+  const s = build([enter(0, 'M001'), drop(50, [['item_A', 9]]), exit(100, 'M001', 'clear')]);
+  toggleLastRunDead(s);
+  const room = byRoom(s, price).find((r) => r.room === 'M001');
+  assert.equal(room?.totalItems, 0);
+  assert.equal(room?.totalGold, 0);
+});
+
+test('the skull does nothing at all before the first room', () => {
+  const s = createState();
+  assert.equal(toggleLastRunDead(s), false);
+  assert.equal(isLastRunDead(s), false);
 });

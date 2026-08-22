@@ -40,8 +40,15 @@ import type { TrackerEvent } from './events.ts';
  * `chained` however long it had been going. It stays in the union because the
  * archive outlives the build that wrote it, and sessions recorded before that
  * rule carry it.
+ *
+ * `died` is the one outcome the game does not report and the player does. The
+ * addon emits nothing on a death, so a room you died in reads exactly like a
+ * room you cleared — same loot lines, same exit — and the session totals count
+ * a wipe as a good run. The skull button in the HUD is how that gets corrected,
+ * which is why this is the only outcome that can be set after the fact, and the
+ * only one that can be taken back.
  */
-export type RunOutcome = 'open' | 'clear' | 'chained' | 'abandoned' | 'other';
+export type RunOutcome = 'open' | 'clear' | 'chained' | 'abandoned' | 'other' | 'died';
 
 export interface Run {
   room: string;
@@ -51,6 +58,16 @@ export interface Run {
   start: number;
   end?: number;
   outcome: RunOutcome;
+  /**
+   * What the outcome was before the player marked the run dead.
+   *
+   * Kept so the skull can be pressed twice. Marking a run dead is a judgement
+   * about a room that has already happened, made in the second after dying —
+   * which is exactly when a misclick is most likely — so it has to be a toggle
+   * rather than a one-way door, and undoing it has to put back the outcome the
+   * feed actually reported rather than a guess at it.
+   */
+  outcomeBeforeDeath?: RunOutcome;
   /** Reason string the addon gave on exit, when it gave one. */
   reason?: string;
   /** Items picked up during this run: id -> quantity. */
@@ -133,7 +150,11 @@ function closeRun(state: TrackerState, end: number, outcome: RunOutcome, reason?
   const run = state.current;
   if (!run) return;
   run.end = end;
-  run.outcome = outcome;
+  // A death the player has already declared outranks whatever the feed says
+  // happened next. Dying and walking into the next room would otherwise close
+  // this one as `chained` and quietly put its loot back in the session.
+  if (run.outcome === 'died') run.outcomeBeforeDeath = outcome;
+  else run.outcome = outcome;
   if (reason !== undefined) run.reason = reason;
   state.runs.push(run);
   state.current = null;
@@ -252,6 +273,58 @@ export function runItemCount(run: Run): number {
 }
 
 /**
+ * The run the skull button acts on: the room you are in, or the last one you left.
+ *
+ * The same rule `runItems` uses, and deliberately so — the loot list is what
+ * the player is looking at when they press it, so the run being written off
+ * has to be the run whose loot is on screen.
+ */
+export function lastRun(state: TrackerState): Run | null {
+  return state.current ?? state.runs[state.runs.length - 1] ?? null;
+}
+
+/** Whether the run the skull would act on is already marked dead. */
+export function isLastRunDead(state: TrackerState): boolean {
+  return lastRun(state)?.outcome === 'died';
+}
+
+/**
+ * Writes the last run off as a death, or takes the mark back.
+ *
+ * Its loot and its gold stop counting toward the session; the minutes it took
+ * do not. Dying cost you those minutes as surely as clearing would have, and a
+ * gold-per-hour that quietly forgot them would read better after a wipe than
+ * before one — which is the opposite of what the number is for.
+ *
+ * Nothing is deleted. The run keeps its loot and its place in the list, and the
+ * derived numbers step around it, so pressing the skull again puts everything
+ * back exactly as the feed reported it.
+ */
+export function toggleLastRunDead(state: TrackerState): boolean {
+  const run = lastRun(state);
+  if (!run) return false;
+  if (run.outcome === 'died') {
+    run.outcome = run.outcomeBeforeDeath ?? 'other';
+    delete run.outcomeBeforeDeath;
+    return false;
+  }
+  run.outcomeBeforeDeath = run.outcome;
+  run.outcome = 'died';
+  return true;
+}
+
+/** Everything the dead runs picked up, which the session totals owe back. */
+function deadItems(state: TrackerState): Map<string, number> {
+  const out = new Map<string, number>();
+  const all = state.current ? [...state.runs, state.current] : state.runs;
+  for (const run of all) {
+    if (run.outcome !== 'died') continue;
+    for (const [id, qty] of run.items) out.set(id, (out.get(id) ?? 0) + qty);
+  }
+  return out;
+}
+
+/**
  * Total time spent inside runs — the denominator for every rate.
  *
  * Includes the open run so the live figure moves while you play, and excludes
@@ -284,6 +357,8 @@ export interface Rates {
   /** Runs that finished, whether by an exit or by the next room starting. */
   completedRuns: number;
   abandonedRuns: number;
+  /** Runs the player wrote off with the skull. Their loot counts for nothing. */
+  diedRuns: number;
   /** Seconds counted toward the rates. */
   activeTime: number;
 }
@@ -298,9 +373,16 @@ export function rates(state: TrackerState, valueOf: ValueOf, now = state.clock):
   let clearTotal = 0;
   let completed = 0;
   let abandoned = 0;
+  let died = 0;
 
   const all = state.current ? [...state.runs, state.current] : state.runs;
   for (const run of all) {
+    // A run the player marked dead earned nothing, and did not complete. Its
+    // duration is deliberately left in `active` below — see `toggleLastRunDead`.
+    if (run.outcome === 'died') {
+      died++;
+      continue;
+    }
     gold += runGold(run, valueOf);
     items += runItemCount(run);
     if (run.valueAtStart !== undefined && run.valueLatest !== undefined) {
@@ -324,6 +406,7 @@ export function rates(state: TrackerState, valueOf: ValueOf, now = state.clock):
     averageClear: completed > 0 ? clearTotal / completed : 0,
     completedRuns: completed,
     abandonedRuns: abandoned,
+    diedRuns: died,
     activeTime: active,
   };
 }
@@ -346,6 +429,9 @@ export function byRoom(state: TrackerState, valueOf: ValueOf, now = state.clock)
     let totalGold = 0;
     let totalItems = 0;
     for (const run of runs) {
+      // Written off, exactly as in `rates` — a room whose only visit ended in a
+      // death should not be the one this table recommends farming.
+      if (run.outcome === 'died') continue;
       totalGold += runGold(run, valueOf);
       totalItems += runItemCount(run);
       if (run.outcome !== 'abandoned' && run.end !== undefined) {
@@ -382,7 +468,18 @@ export function runItems(state: TrackerState): { id: string; qty: number }[] {
 /** Session item totals as a sorted list, richest first. `perHour` uses run time. */
 export function itemTotals(state: TrackerState, now = state.clock): { id: string; qty: number; perHour: number }[] {
   const active = timeInRuns(state, now);
-  return [...state.items.entries()]
-    .map(([id, qty]) => ({ id, qty, perHour: perHour(qty, active) }))
-    .sort((a, b) => b.qty - a.qty);
+  // `state.items` is the raw tally of everything that dropped, which is the
+  // truth and stays the truth — the dead runs are taken off here rather than
+  // subtracted from it, so the skull can be pressed again and give it all back.
+  const dead = deadItems(state);
+  const out: { id: string; qty: number; perHour: number }[] = [];
+  for (const [id, total] of state.items) {
+    const qty = total - (dead.get(id) ?? 0);
+    // Everything of this item came from rooms that were written off. A row
+    // reading zero is worse than no row: it says the item dropped and is worth
+    // nothing, when what happened is that it does not count.
+    if (qty <= 0) continue;
+    out.push({ id, qty, perHour: perHour(qty, active) });
+  }
+  return out.sort((a, b) => b.qty - a.qty);
 }

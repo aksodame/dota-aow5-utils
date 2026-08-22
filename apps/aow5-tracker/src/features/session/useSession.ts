@@ -3,10 +3,12 @@ import type { TrackerEvent } from '@core/events.ts';
 import {
   apply,
   createState,
+  isLastRunDead,
   itemTotals,
   rates,
   resetState,
   runItems,
+  toggleLastRunDead,
   type TrackerState,
   type ValueOf,
 } from '@core/stats.ts';
@@ -81,8 +83,15 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
    * still records — pausing says "this stretch was not farming", which is a
    * statement about the hour, not about the loot. Resuming slides the start
    * forward by however long the break was, so the number never jumps.
+   *
+   * A session begins paused, seeded at the same instant it started so the clock
+   * reads zero rather than a negative. The tracker is launched *before* the
+   * farming does — while Dota loads, while you pick a room, while you decide
+   * whether tonight is a farming night at all — and a clock that starts the
+   * moment the overlay appears counts every minute of that as time at work.
+   * Press play when you actually begin, and the g/hr means something.
    */
-  const pausedAt = useRef<number | null>(null);
+  const pausedAt = useRef<number | null>(startedAt.current);
   const [version, setVersion] = useState(0);
   const [status, setStatus] = useState<TrackerStatus>({ source: 'mock', detail: 'starting…' });
 
@@ -99,6 +108,11 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
       stateRef.current = createState();
       anchor.current = { clock: 0, at: Date.now() };
       startedAt.current = Date.now();
+      // Whether the clock is running is the player's answer, not the feed's, so
+      // a status leaves it where it was. But the start just moved, and a pause
+      // stamped before it would read as a negative elapsed — so a stopped clock
+      // is re-stamped to the new start and stays reading zero.
+      if (pausedAt.current !== null) pausedAt.current = startedAt.current;
       setVersion((v) => v + 1);
     });
     // 4 Hz: fast enough that the elapsed clock never looks stuck, slow enough
@@ -121,7 +135,22 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
   const clearSession = useCallback(() => {
     stateRef.current = resetState(stateRef.current);
     startedAt.current = Date.now();
-    pausedAt.current = null;
+    // Paused, like a session that has just launched — one rule for what a new
+    // session is, rather than two that disagree about whether the clock is
+    // already running. Starting a fresh stretch is a thing you do when you are
+    // ready to farm it, and that is the play button.
+    pausedAt.current = startedAt.current;
+    setVersion((v) => v + 1);
+  }, []);
+
+  /**
+   * Writes the last room off as a death, or takes the mark back.
+   *
+   * The reducer holds the flag, so this only has to ask for a repaint — every
+   * number that cares reads it on the way past. See `toggleLastRunDead`.
+   */
+  const toggleLastRunDied = useCallback(() => {
+    toggleLastRunDead(stateRef.current);
     setVersion((v) => v + 1);
   }, []);
 
@@ -150,6 +179,7 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
       runItems: runItems(state),
       elapsed: ((pausedAt.current ?? Date.now()) - startedAt.current) / 1000,
       paused: pausedAt.current !== null,
+      lastRunDead: isLastRunDead(state),
     };
     // `version` is the intentional trigger — the state object itself is mutated
     // in place, so it can never be a useful dependency. `priceOf` is here
@@ -158,7 +188,7 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, priceOf]);
 
-  return { ...derived, status, clearSession, togglePaused };
+  return { ...derived, status, clearSession, togglePaused, toggleLastRunDied };
 }
 
 export type Session = ReturnType<typeof useSession>;

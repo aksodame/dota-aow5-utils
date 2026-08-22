@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import type { SessionHistory } from '@core/history.ts';
-import { Button } from '@/components/ui/button';
 import { pricing } from '@/features/items/prices';
+import { ChromeButton } from '@/shell/ChromeButton';
 import { OverlayShell } from '@/shell/OverlayShell';
 import { useOverlay, useScaleShortcuts } from '@/shell/useOverlay';
 import { UI_SCALE } from '@core/ipc.ts';
@@ -55,16 +55,9 @@ export function HistoryOverlay() {
       interactive={interactive}
       hotkey={config?.hotkey ?? 'Ctrl+Alt+T'}
       actions={
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-6 text-muted-foreground hover:text-destructive"
-          onClick={close}
-          aria-label="Close history"
-          title="Close"
-        >
+        <ChromeButton label="Close this window" onClick={close} className="hover:text-destructive">
           <X className="size-3.5" />
-        </Button>
+        </ChromeButton>
       }
     >
       <HistoryView sessions={sessions} pricing={prices} onRefresh={load} />

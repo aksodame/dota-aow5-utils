@@ -23,11 +23,12 @@ import {
  */
 
 const defaultView = (id: OverlayId): OverlayView => ({
-  // Collapsed is the shape the farm HUD is meant to live in: three cards and a
-  // status line, small enough to leave over the game all evening. The other
-  // overlays are panels you open, read and close, and collapsing those by
-  // default would just hide what they were opened for.
-  collapsed: id === 'farm',
+  // Nothing starts collapsed. The farm HUD used to, on the reasoning that its
+  // one-line bar is the shape it lives in all evening — but that is the shape
+  // you settle on, not the one to be handed on a first launch, where a bar
+  // showing three numbers gives no sign of the panel behind it. The chevron is
+  // right there, and a collapse the player chose is remembered.
+  collapsed: false,
   size: { ...OVERLAY_LIMITS[id].default },
   position: null,
 });

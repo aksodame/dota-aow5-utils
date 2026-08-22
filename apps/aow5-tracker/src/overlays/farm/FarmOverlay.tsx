@@ -1,14 +1,12 @@
 import { useCallback, useMemo } from 'react';
-import { History as HistoryIcon, Pause, Play, RotateCcw, Settings2, X } from 'lucide-react';
+import { History as HistoryIcon, Pause, Play, RotateCcw, Settings2, Skull, X } from 'lucide-react';
 import { UI_SCALE } from '@core/ipc.ts';
-import { Button } from '@/components/ui/button';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { pricing } from '@/features/items/prices';
 import { useSession } from '@/features/session/useSession';
 import { useDropSounds } from '@/features/sounds/useDropSounds';
+import { ChromeButton } from '@/shell/ChromeButton';
 import { OverlayShell } from '@/shell/OverlayShell';
 import { useOverlay, useScaleShortcuts } from '@/shell/useOverlay';
-import { cn } from '@/lib/utils';
 import { Hud } from './Hud';
 import { StateLine } from './StateLine';
 
@@ -28,7 +26,8 @@ import { StateLine } from './StateLine';
 export function FarmOverlay() {
   const { config, interactive, collapsed, toggleCollapsed, setScale } = useOverlay();
   const prices = useMemo(() => pricing(config?.prices, config?.halvePrices), [config?.prices, config?.halvePrices]);
-  const { state, rates, items, runItems, elapsed, paused, clearSession, togglePaused } = useSession(prices.value);
+  const { state, rates, items, runItems, elapsed, paused, lastRunDead, clearSession, togglePaused, toggleLastRunDied } =
+    useSession(prices.value);
 
   const scale = config?.uiScale ?? UI_SCALE.default;
   useScaleShortcuts(scale, setScale);
@@ -47,92 +46,78 @@ export function FarmOverlay() {
     <>
       {/* Only the clock stops. Loot still counts while it is paused — the
           button says "this stretch was not farming", not "stop tracking". */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className={cn('size-6', paused ? 'text-primary hover:text-primary' : 'text-muted-foreground hover:text-foreground')}
+      <ChromeButton
+        label={paused ? 'Start the session clock' : 'Pause the session clock — loot still counts'}
         onClick={togglePaused}
-        aria-label={paused ? 'Resume the session clock' : 'Pause the session clock'}
-        title={paused ? 'Resume the session clock' : 'Pause the session clock'}
+        className={paused ? 'text-primary hover:text-primary' : undefined}
       >
         {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-6 text-muted-foreground hover:text-foreground"
-        onClick={restart}
-        aria-label="Restart session"
-        title="Restart session"
-      >
+      </ChromeButton>
+      <ChromeButton label="Start a new session — the numbers go back to zero" onClick={restart}>
         <RotateCcw className="size-3.5" />
-      </Button>
+      </ChromeButton>
+      {/* The one thing the game does not tell the tracker. A room you died in
+          reports the same loot lines as one you cleared, so without this the
+          session counts a wipe as a good run. Lit while the mark is on, and
+          pressing it again takes the loot back. */}
+      <ChromeButton
+        label={
+          lastRunDead
+            ? 'Undo — count the last room again'
+            : 'Died here — drop this room’s loot from the session, keep the time'
+        }
+        onClick={toggleLastRunDied}
+        className={lastRunDead ? 'text-destructive hover:text-destructive' : 'hover:text-destructive'}
+      >
+        <Skull className="size-3.5" />
+      </ChromeButton>
       {/* A window of its own, and a singleton: pressing this while it is
           already up brings that one forward rather than opening a second. */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-6 text-muted-foreground hover:text-foreground"
-        onClick={() => void window.tracker.open('history')}
-        aria-label="History"
-        title="History"
-      >
+      <ChromeButton label="History" onClick={() => void window.tracker.open('history')}>
         <HistoryIcon className="size-3.5" />
-      </Button>
+      </ChromeButton>
       {/* A window like history, and a singleton for the same reason: two copies
           of the settings would be two answers to the same question. */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-6 text-muted-foreground hover:text-foreground"
-        onClick={() => void window.tracker.open('settings')}
-        aria-label="Settings"
-        title="Settings"
-      >
+      <ChromeButton label="Settings" onClick={() => void window.tracker.open('settings')}>
         <Settings2 className="size-3.5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-6 text-muted-foreground hover:text-destructive"
+      </ChromeButton>
+      <ChromeButton
+        label="Quit the tracker"
         onClick={() => void window.tracker.quit()}
-        aria-label="Quit"
-        title="Quit"
+        className="hover:text-destructive"
       >
         <X className="size-3.5" />
-      </Button>
+      </ChromeButton>
     </>
   );
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <OverlayShell
-        title={
-          <span className="font-semibold tracking-wide uppercase">
-            AOW5 <span className="text-muted-foreground">tracker</span>
-          </span>
-        }
-        actions={actions}
-        // The room, on the row the chrome leaves empty while you are playing.
-        idle={<StateLine room={state.current?.room ?? null} runs={rates.completedRuns} />}
-        collapsed={collapsed}
-        onToggleCollapsed={toggleCollapsed}
-        // Only the collapsed cards are a fixed height. The loot list scrolls,
-        // and wants the height the window was dragged to.
-        fitsContent={collapsed}
-        interactive={interactive}
-        hotkey={config?.hotkey ?? 'Ctrl+Alt+T'}
-      >
-        <Hud
-          rates={rates}
-          items={runItems}
-          sessionItems={items}
-          elapsed={elapsed}
-          pricing={prices}
-          tracked={config?.tracked ?? []}
-          cardsOnly={collapsed}
-        />
-      </OverlayShell>
-    </TooltipProvider>
+    <OverlayShell
+      title={
+        <span className="font-semibold tracking-wide uppercase">
+          AOW5 <span className="text-muted-foreground">tracker</span>
+        </span>
+      }
+      actions={actions}
+      // The room, on the row the chrome leaves empty while you are playing.
+      idle={<StateLine room={state.current?.room ?? null} runs={rates.completedRuns} />}
+      collapsed={collapsed}
+      onToggleCollapsed={toggleCollapsed}
+      // Only the collapsed cards are a fixed height. The loot list scrolls,
+      // and wants the height the window was dragged to.
+      fitsContent={collapsed}
+      interactive={interactive}
+      hotkey={config?.hotkey ?? 'Ctrl+Alt+T'}
+    >
+      <Hud
+        rates={rates}
+        items={runItems}
+        sessionItems={items}
+        elapsed={elapsed}
+        pricing={prices}
+        tracked={config?.tracked ?? []}
+        cardsOnly={collapsed}
+      />
+    </OverlayShell>
   );
 }

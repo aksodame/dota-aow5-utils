@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { UI_SCALE, type SessionSnapshot, type TrackerStatus, type UpdateState } from '@core/ipc.ts';
-import { Button } from '@/components/ui/button';
 import { pricing } from '@/features/items/prices';
+import { ChromeButton } from '@/shell/ChromeButton';
 import { OverlayShell } from '@/shell/OverlayShell';
 import { useOverlay, useScaleShortcuts } from '@/shell/useOverlay';
 import { Settings } from './Settings';
@@ -92,16 +92,9 @@ export function SettingsOverlay() {
       interactive={interactive}
       hotkey={config?.hotkey ?? 'Ctrl+Alt+T'}
       actions={
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-6 text-muted-foreground hover:text-destructive"
-          onClick={close}
-          aria-label="Close settings"
-          title="Close"
-        >
+        <ChromeButton label="Close this window" onClick={close} className="hover:text-destructive">
           <X className="size-3.5" />
-        </Button>
+        </ChromeButton>
       }
     >
       <Settings
