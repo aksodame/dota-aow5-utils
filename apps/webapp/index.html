@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>AOW5 utils — build planner and farm tracker for Age of Weapons 5</title>
+    <meta
+      name="description"
+      content="Fan-made tools for the Dota 2 custom game Age of Weapons 5: a serverless build planner that fits a whole board in a link, and an always-on-top farm tracker overlay."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="AOW5 utils" />
+    <meta
+      property="og:description"
+      content="A build planner that fits in a link, and an overlay that counts your farm. Both built on the map's own extracted data."
+    />
+    <meta name="twitter:card" content="summary" />
+    <script>
+      // Applies the saved theme before first paint, so the page never flashes
+      // the wrong one — including when this file is served as 404.html for a
+      // route. Mirrors getInitialTheme() in src/lib/theme.ts; keep them in step.
+      (function () {
+        try {
+          var stored = localStorage.getItem('aow5.theme');
+          var dark =
+            stored === 'dark' ||
+            (stored !== 'light' && !window.matchMedia('(prefers-color-scheme: light)').matches);
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

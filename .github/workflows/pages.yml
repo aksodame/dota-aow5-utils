@@ -1,0 +1,65 @@
+name: Pages
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'apps/webapp/**'
+      - 'packages/aow5-shared/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and never cancel one halfway: a cancelled Pages
+# deployment can leave the site on the previous artifact with no way to tell.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # A project Pages site is served from a subpath. `src/router.tsx` reads
+      # the same value, so the routes move with it.
+      - run: pnpm --filter aow5-webapp build
+        env:
+          VITE_BASE: /dota-aow5-utils/
+
+      # `enablement` creates the Pages site if the repository has never had one,
+      # instead of failing with a 404 that reads like a broken workflow. It is
+      # the same thing as flipping Settings → Pages → Source to "GitHub
+      # Actions", done by the job that needs it — so a fork does not have to
+      # know that step exists.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          # 404.html and .nojekyll are already in here — the build writes them.
+          # 404.html is what makes a cold request for /builder boot the app
+          # instead of hitting GitHub's own not-found page.
+          path: apps/webapp/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

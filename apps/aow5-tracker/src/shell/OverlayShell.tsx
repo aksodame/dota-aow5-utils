@@ -1,0 +1,177 @@
+import { useRef, type ReactNode } from 'react';
+import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { ResizeGrip } from './ResizeGrip';
+import { useContentSize } from './useContentSize';
+
+/**
+ * The frame every overlay window draws inside.
+ *
+ * It owns the four things that are true of any panel floating over the game and
+ * have nothing to do with what the panel is about: the drag region, the
+ * collapse toggle, the resize grip, and the hint that says which key makes the
+ * whole thing clickable. The farm HUD passes its own title, chips and body; the
+ * recipe panel passes its own and gets identical behaviour for free.
+ *
+ * The header is chrome, and chrome is only *shown* once the hotkey has made the
+ * window clickable — while playing, the panel is the numbers and nothing else.
+ * Its space is held open regardless, with `invisible` rather than by not
+ * rendering it: a header that appeared on a keypress would push the readout
+ * down the screen every time, and a HUD you have to re-find after every glance
+ * at the settings is worse than one with a blank strip along its top.
+ *
+ * Collapsing is the body's business, not the shell's: what a collapsed farm HUD
+ * shows is its cards, and what a collapsed recipe panel shows is its own
+ * business too. All the shell does is pass the flag down and stop reserving
+ * room for chrome that a collapsed panel does not want. When the body says it
+ * fits its content the shell measures itself and the window follows, so a
+ * shrunken panel really is a shorter window rather than a transparent
+ * rectangle that still swallows hover.
+ */
+
+interface Props {
+  /** Shown in the header, beside the chrome. */
+  title: ReactNode;
+  /** Status chips: source, health, and so on. */
+  badges?: ReactNode;
+  /** Buttons, drawn to the right of the collapse toggle. */
+  actions?: ReactNode;
+  /**
+   * What the header row shows while the window is click-through.
+   *
+   * The chrome is invisible then and its row is empty, which is a strip of
+   * panel paid for and not spent. A body with something worth one line — the
+   * farm HUD's room — puts it here rather than taking a row of its own, and
+   * loses it again the moment the chrome comes back, which is the moment the
+   * player stopped looking at the readout.
+   *
+   * Omitted, the row stays blank and keeps its height, as before.
+   */
+  idle?: ReactNode;
+  collapsed: boolean;
+  /** Omitted by the windows that have nothing to collapse to, which hides the chevron. */
+  onToggleCollapsed?: () => void;
+  /**
+   * The body is a fixed few rows, so the window should be exactly as tall.
+   *
+   * False for anything that scrolls — the loot list, settings, history — which
+   * wants the height the user dragged the window to and a grip that can change
+   * it.
+   */
+  fitsContent: boolean;
+  interactive: boolean;
+  /** Key combination that turns click-through off, for the footer hint. */
+  hotkey: string;
+  children: ReactNode;
+}
+
+export function OverlayShell({
+  title,
+  badges,
+  actions,
+  idle,
+  collapsed,
+  onToggleCollapsed,
+  fitsContent,
+  interactive,
+  hotkey,
+  children,
+}: Props) {
+  const panel = useRef<HTMLDivElement | null>(null);
+
+  // Only meaningful because the panel stops being `h-screen` below when it is
+  // the one deciding — see the hook. The width stays the user's either way:
+  // these panels are pages, and a page that resized itself sideways as its
+  // contents changed would never sit still.
+  useContentSize(panel, fitsContent ? 'height' : 'none');
+
+  const toggle = onToggleCollapsed && (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="size-6 text-muted-foreground hover:text-foreground"
+      onClick={onToggleCollapsed}
+      aria-label={collapsed ? 'Expand overlay' : 'Collapse overlay'}
+      title={collapsed ? 'Expand' : 'Collapse'}
+    >
+      {collapsed ? <ChevronDown className="size-3.5" /> : <ChevronUp className="size-3.5" />}
+    </Button>
+  );
+
+  return (
+    <div
+      ref={panel}
+      className={cn(
+        'hud-panel relative flex flex-col gap-2 p-2 text-sm transition-shadow',
+        // Sized by its content, or stretched to a window the user sized. See
+        // the measuring effect above: which one it is decides whether the
+        // measurement means anything.
+        fitsContent ? 'h-fit' : 'h-screen',
+        collapsed && 'gap-0 py-1',
+        interactive && 'ring-2 ring-primary/60',
+        // The window already stops forwarding the cursor while click-through,
+        // so this is the belt to that pair of braces: it also drops whatever
+        // hover the pointer was resting on at the moment the hotkey turned
+        // interaction off, which would otherwise stay lit with no way to
+        // clear it.
+        !interactive && 'pointer-events-none',
+      )}
+    >
+      {/* One row, two occupants, and never both: the chrome while the hotkey
+          has made the window clickable, and the body's own one-liner while it
+          has not. Whichever is drawn, the row is the same height, so nothing
+          below it moves as they trade places — which is the whole reason the
+          chrome was drawn-but-invisible in the first place.
+
+          `hud-drag` only when the chrome is really there: a drag region nobody
+          can see is a window that moves by accident. */}
+      {interactive || idle === undefined ? (
+        <header className={cn('flex shrink-0 items-center gap-1', interactive ? 'hud-drag' : 'invisible')}>
+          <GripVertical className="size-3.5 shrink-0 text-muted-foreground" />
+
+          <span className="min-w-0 flex-1 truncate text-[0.6875rem]">{title}</span>
+
+          {badges}
+
+          <div className="hud-no-drag flex shrink-0 items-center gap-0.5">
+            {toggle}
+            {actions}
+          </div>
+        </header>
+      ) : (
+        <div className="flex shrink-0 items-center gap-1">{idle}</div>
+      )}
+
+      {children}
+
+      {/* Outlined, because this is the one line that may end up drawn straight
+          onto the game: the panel behind it goes as transparent as the user
+          wants, and the hint has to stay readable when it does. Collapsed is
+          meant to be the smallest thing that answers the question, so it does
+          without — the key is on the expanded panel and in the tray.
+
+          Like the header, it keeps its space once it has one: it says nothing
+          worth reading while the panel is already interactive, but hiding it
+          outright would drag the whole body downwards at the same moment the
+          header pushed it up. */}
+      {!collapsed && (
+        <footer
+          className={cn(
+            'hud-text-outline shrink-0 text-center text-[0.625rem] text-muted-foreground',
+            interactive && 'invisible',
+          )}
+        >
+          {hotkey} to configure
+        </footer>
+      )}
+
+      {/* Resizing is a configuration gesture, so it appears with the rest of
+          them — a grip while click-through is on could not be grabbed anyway.
+          It drags width only while the window owns its own height: offering a
+          vertical drag that the next measurement would undo is worse than not
+          offering one. */}
+      {interactive && <ResizeGrip axis={fitsContent ? 'x' : 'both'} />}
+    </div>
+  );
+}

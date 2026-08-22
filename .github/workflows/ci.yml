@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # the version comes from `packageManager`
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Every root script is a Turborepo task across the workspace, so these
+      # three cover all of it. The tracker's tests are `node --test` over pure
+      # modules and run fine here; only *packaging* it needs Windows.
+      - run: pnpm check-types
+      - run: pnpm test
+      - run: pnpm build
