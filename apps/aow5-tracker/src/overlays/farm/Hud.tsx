@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, DollarSign, Hourglass, Timer } from 'lucide-react';
+import { ChevronDown, ChevronUp, Coins, DollarSign, Gem, Hourglass, Timer, TimerReset } from 'lucide-react';
 import { iconUrl, qualityColor } from '@core/items.ts';
 import type { Rates } from '@core/stats.ts';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,9 +12,9 @@ import { cn } from '@/lib/utils';
 /**
  * The HUD proper: two rows of stat cards, and — expanded — what you picked up.
  *
- * The two states answer different questions. Collapsed is "is this room worth
- * it", which is three numbers and nothing else, small enough to leave over the
- * game all session — and it is the state the overlay spends the evening in, so
+ * The two states answer different questions. Collapsed is "how is this going",
+ * which is six numbers and nothing else, small enough to leave over the game
+ * all session — and it is the state the overlay spends the evening in, so
  * anything answerable in a number that moves belongs there. Expanded is "what
  * did I actually get", which is the only thing that needs a list, and the only
  * thing worth the height.
@@ -54,12 +54,22 @@ const MAX_ROWS = 40;
  * prose needed an exception to each of those three, which is what made it the
  * wrong shape for the row rather than merely a tight fit — see `StateLine`.
  */
-function Card({ icon, value, label, title }: { icon: React.ReactNode; value: string; label: string; title?: string }) {
+function Card({
+  icon,
+  value,
+  label,
+  title,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+  title?: string;
+}) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-md bg-black/25 px-2 py-1" title={title}>
       <span className="truncate text-[0.625rem] tracking-wide text-muted-foreground uppercase">{label}</span>
       <span className="flex min-w-0 items-center gap-1.5">
-        <span className="shrink-0 text-muted-foreground">{icon}</span>
+        <span className="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">{icon}</span>
         <span className="min-w-0 truncate font-semibold tabular-nums text-gold">{value}</span>
       </span>
     </div>
@@ -70,7 +80,13 @@ interface Props {
   rates: Rates;
   /** What the room you are in has dropped. The list is this. */
   items: { id: string; qty: number }[];
-  /** Everything the session has dropped. The gold card is this. */
+  /**
+   * Everything the session has dropped.
+   *
+   * Feeds the two cards that are about the evening rather than the room: the
+   * session's gold, and the best item in it. The room below has its own list —
+   * see `items`, and `currentMapGold`, which is summed from it.
+   */
   sessionItems: { id: string; qty: number }[];
   /** Seconds since the session started, hideout included. */
   elapsed: number;
@@ -119,33 +135,107 @@ export function Hud({ rates, items, sessionItems, elapsed, pricing, tracked, car
     return counted.reduce((n, i) => n + pricing.value(i.id, i.qty), 0);
   }, [sessionItems, tracked, pricing]);
 
+  /*
+   * What the room below is worth, summed off the rows themselves.
+   *
+   * Not `rates.currentRunGold`, which is zero the moment you step out of a
+   * room — while the list underneath goes on showing that room's loot until
+   * the next one starts. A card and a list that disagree about which room they
+   * are describing is worse than either number alone, and summing the rows is
+   * the only way they cannot.
+   */
+  const currentMapGold = useMemo(() => rows.reduce((n, row) => n + row.total, 0), [rows]);
+
+  /*
+   * The single item that carried the session, by what the pile is worth rather
+   * than how big it is: forty branches are not the answer to "what am I here
+   * for", and one glyph usually is.
+   */
+  const best = useMemo(() => {
+    const pinned = new Set(tracked);
+    const counted = tracked.length > 0 ? sessionItems.filter((i) => pinned.has(i.id)) : sessionItems;
+    let top: { id: string; total: number } | null = null;
+    for (const item of counted) {
+      const total = pricing.value(item.id, item.qty);
+      if (top === null || total > top.total) top = { id: item.id, total };
+    }
+    return top;
+  }, [sessionItems, tracked, pricing]);
+
+
 
   return (
     // `flex-1` only when there is a list to give the leftover height to;
     // collapsed, the cards are the whole panel and it is as tall as they are.
     <div className={cn('flex flex-col gap-2', !cardsOnly && 'min-h-0 flex-1')}>
       {/*
-        Three cards, one row, collapsed as well as expanded: how long this room
-        has taken, what the evening has been worth, and how long the evening
-        has been.
+        Six cards on a three-column grid, collapsed as well as expanded, and
+        the two rows are two questions.
 
-        Totals rather than rates. A rate answers "is this room worth farming",
-        which is a question you ask once and then act on; a total answers "how
-        is tonight going", which is the one you keep glancing down at. `rates`
-        still computes gold per hour — the settings window's per-room table is
-        built on the same numbers — it simply is not what the card shows.
+        The top row is the room you are standing in and the sitting it belongs
+        to: how long this one has taken, what it has paid, and how long you
+        have been at it. The bottom row is the evening judged rather than
+        counted — how long a room takes you on average, what an hour of the
+        whole sitting is actually worth, and the one item that carried it.
 
-        Two clocks, so their icons carry the difference: the run's stopwatch is
-        this room, the session's hourglass is the whole sitting.
+        A grid rather than the flex row it grew out of, so the second row's
+        cards line up under the first's instead of sizing themselves to their
+        own contents.
+
+        Three clocks now, so their icons have to carry the difference: the
+        run's stopwatch is this room, the session's hourglass is the sitting,
+        and the average's reset arrow is neither — it is the shape of a room
+        starting over.
       */}
-      <div className="flex gap-1.5">
+      <div className="grid grid-cols-3 gap-1.5">
         <Card icon={<Timer className="size-3.5" />} value={clock(rates.currentRunElapsed)} label="run" />
-        <Card icon={<DollarSign className="size-3.5" />} value={compact(sessionGold)} label="gold" />
+        <Card
+          icon={<DollarSign className="size-3.5" />}
+          value={compact(currentMapGold)}
+          label="gold/run"
+          title="What the room below has dropped, priced the way the list is"
+        />
         <Card
           icon={<Hourglass className="size-3.5" />}
           value={clock(elapsed)}
           label="session"
           title="Since this session started — the hideout and the loading screens count"
+        />
+
+        <Card
+          icon={<TimerReset className="size-3.5" />}
+          value={rates.averageClear > 0 ? clock(rates.averageClear) : '—'}
+          label="avg map"
+          title="Mean time of the rooms you have finished this session"
+        />
+        <Card
+          icon={<Coins className="size-3.5" />}
+          value={compact(sessionGold)}
+          label="gold/ses"
+          title="Everything this session has dropped, priced the way the list is"
+        />
+        {/* A fixed label, and the item said in the icon instead.
+            Putting the name here made the card the only one whose heading moved
+            as you played — and an item name uppercased and truncated to nine
+            characters identifies nothing anyway, where the picture identifies
+            it at a glance. The name is on hover, for when the icon is not
+            enough. The count rides on the label line: the headline is the
+            value. */}
+        <Card
+          icon={
+            best === null ? (
+              <Gem className="size-3.5" />
+            ) : (
+              <img src={iconUrl(itemTable.get(best.id).icon)} alt="" className="size-3.5 rounded-[2px] object-cover" />
+            )
+          }
+          value={best === null ? '—' : compact(best.total)}
+          label="best/ses"
+          title={
+            best === null
+              ? 'The item worth most this session'
+              : `${itemTable.get(best.id).name} — the session's most valuable pile`
+          }
         />
       </div>
 
@@ -155,11 +245,11 @@ export function Hud({ rates, items, sessionItems, elapsed, pricing, tracked, car
               `pe-2` here matches the list's gutter, `px-1` matches the row's. */}
           <div className="pe-2 text-[0.625rem] tracking-wide text-muted-foreground uppercase">
             <div className="flex items-center gap-2 border-b border-border/70 px-1 pb-1">
-              {/* No icon spacer: "item" is meant to start where the icons start.
+              {/* No icon spacer: the heading is meant to start where the icons do.
                   Quantity has no header and no sort — it is what `val` and
                   `total` are computed from, and either of them orders by it
                   more usefully than it could itself. */}
-              <SortHeader label="item" sortKey="name" sort={sort} onSort={onSort} className="min-w-0 flex-1" />
+              <SortHeader label="picked up" sortKey="name" sort={sort} onSort={onSort} className="min-w-0 flex-1" />
               <span className={COL_NUMBERS}>
                 <span className={COL_QTY} />
                 <SortHeader label="val" sortKey="unit" sort={sort} onSort={onSort} className={COL_EACH} align="end" />

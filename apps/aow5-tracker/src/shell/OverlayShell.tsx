@@ -167,18 +167,16 @@ export function OverlayShell({
           meant to be the smallest thing that answers the question, so it does
           without — the key is on the expanded panel and in the tray.
 
-          Like the header, it keeps its space once it has one: it says nothing
-          worth reading while the panel is already interactive, but hiding it
-          outright would drag the whole body downwards at the same moment the
-          header pushed it up. */}
+          The same key, both ways round. It used to go blank once the panel was
+          interactive, on the grounds that a hint about the hotkey has nothing
+          to say to somebody who has just pressed it — which had it backwards.
+          The way *out* is the part that is not obvious: the panel is clickable,
+          the buttons work, and nothing on screen says how to hand the mouse
+          back to the game. So the line stays, and answers whichever question is
+          the live one. */}
       {!collapsed && (
-        <footer
-          className={cn(
-            'hud-text-outline shrink-0 text-center text-[0.625rem] text-muted-foreground',
-            interactive && 'invisible',
-          )}
-        >
-          {hotkey} to configure
+        <footer className="hud-text-outline shrink-0 text-center text-[0.625rem] text-muted-foreground">
+          {interactive ? `${hotkey} to unfocus and pin it over the game` : `${hotkey} to configure`}
         </footer>
       )}
 

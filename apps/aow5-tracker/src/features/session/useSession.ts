@@ -94,6 +94,13 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
   const pausedAt = useRef<number | null>(startedAt.current);
   const [version, setVersion] = useState(0);
   const [status, setStatus] = useState<TrackerStatus>({ source: 'mock', detail: 'starting…' });
+  /**
+   * Which feed the numbers below belong to, or null before the first status.
+   *
+   * A ref rather than reading `status`, because the handler that needs it is
+   * registered once and would otherwise close over the first value forever.
+   */
+  const source = useRef<TrackerStatus['source'] | null>(null);
 
   useEffect(() => {
     const api = window.tracker;
@@ -104,7 +111,23 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
     });
     const offStatus = api.onStatus((next) => {
       setStatus(next);
-      // A source change means a new session; the old numbers are meaningless.
+
+      /*
+       * Only a *change* of source starts a new session.
+       *
+       * This used to zero everything on every status, which is not what the
+       * line below it claims and is not what a status is: the feed reports one
+       * whenever it has news, including every read error. So anything that made
+       * the tail complain repeatedly — two copies of the tracker tailing and
+       * trimming the same log, say — pushed `startedAt` forward several times a
+       * second, and the session clock sat at zero all evening while the run
+       * timer, which is anchored to the game's own clock, kept perfect time.
+       * That is exactly the shape of the bug this comment now prevents.
+       */
+      const previous = source.current;
+      source.current = next.source;
+      if (previous === null || previous === next.source) return;
+
       stateRef.current = createState();
       anchor.current = { clock: 0, at: Date.now() };
       startedAt.current = Date.now();

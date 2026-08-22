@@ -11,6 +11,22 @@ const alertVariants = cva(
         default: "bg-card text-card-foreground",
         destructive:
           "bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current",
+        /*
+         * Louder than the other two on purpose — a tinted fill and a coloured
+         * border rather than a card with coloured text, because the one place
+         * this is used is a step the reader must not scroll past. `destructive`
+         * can afford to be quiet: it appears when something has already gone
+         * wrong and the reader is looking for it.
+         */
+        success:
+          "border-success/40 bg-success/10 text-success *:data-[slot=alert-description]:text-foreground/80 [&>svg]:text-current",
+        /*
+         * Quieter than `success` on purpose — a thinner tint. It marks advice
+         * worth taking rather than a step that must be taken, and a note the
+         * reader may skip should not shout as loudly as the one they may not.
+         */
+        warning:
+          "border-warning/40 bg-warning/5 text-warning *:data-[slot=alert-description]:text-foreground/80 [&>svg]:text-current",
       },
     },
     defaultVariants: {

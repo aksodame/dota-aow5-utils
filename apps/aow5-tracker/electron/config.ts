@@ -35,7 +35,21 @@ const defaultView = (id: OverlayId): OverlayView => ({
 
 export const DEFAULTS: TrackerConfig = {
   source: 'mock',
-  logFile: 'C:/Users/user/aow5-console.log',
+  /*
+   * The path the site tells people to create, so following it needs no fourth
+   * step: the tracker is already looking where the log was told to appear.
+   *
+   * `Public` rather than a folder under the player's own name, and this is not
+   * cosmetic. A Windows account named in Cyrillic gives a user folder named in
+   * Cyrillic, and Dota handed such a path by `-con_logfile` writes nothing at
+   * all — no error, no empty file, just a game that runs normally while the
+   * overlay sits at zero. `C:\Users\Public` is spelled the same on every
+   * Windows install, needs no permissions, and cannot inherit that problem.
+   *
+   * It was this file's author's own path before, which worked on exactly one
+   * machine.
+   */
+  logFile: 'C:/Users/Public/aow5-console.log',
   // Nothing pinned and nothing repriced: a fresh profile has no opinions yet,
   // and both lists are the player telling the tracker one.
   tracked: [],
