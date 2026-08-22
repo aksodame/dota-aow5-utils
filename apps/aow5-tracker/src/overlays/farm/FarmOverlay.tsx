@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { History as HistoryIcon, RotateCcw, Settings2, X } from 'lucide-react';
+import { History as HistoryIcon, Pause, Play, RotateCcw, Settings2, X } from 'lucide-react';
 import { UI_SCALE } from '@core/ipc.ts';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -27,7 +27,7 @@ import { StateLine } from './StateLine';
 export function FarmOverlay() {
   const { config, interactive, collapsed, toggleCollapsed, setScale } = useOverlay();
   const prices = useMemo(() => pricing(config?.prices, config?.halvePrices), [config?.prices, config?.halvePrices]);
-  const { state, rates, items, status, clearSession } = useSession(prices.value);
+  const { state, rates, items, runItems, elapsed, paused, clearSession, togglePaused } = useSession(prices.value);
 
   const scale = config?.uiScale ?? UI_SCALE.default;
   useScaleShortcuts(scale, setScale);
@@ -38,42 +38,20 @@ export function FarmOverlay() {
     void window.tracker.newSession();
   }, [clearSession]);
 
-  const badges = (
-    <>
-      {/*
-        Which feed is running, but only when that is news.
-        `mock` is scaffolding until the game emits events, so it belongs in a
-        development build; a failing console tail is worth saying in any build,
-        because an overlay showing zeros looks identical to a broken one.
-      */}
-      {import.meta.env.DEV ? (
-        <button
-          type="button"
-          onClick={() => void window.tracker.setConfig({ source: status.source === 'mock' ? 'console' : 'mock' })}
-          title={`${status.detail} — click to switch source`}
-          className={cn(
-            'shrink-0 rounded px-1.5 py-0.5 text-[0.625rem]',
-            status.error
-              ? 'bg-destructive/25 text-destructive'
-              : status.source === 'mock'
-                ? 'bg-primary/25 text-primary'
-                : 'bg-white/10 text-muted-foreground',
-          )}
-        >
-          {status.source}
-        </button>
-      ) : (
-        status.error && (
-          <span className="shrink-0 rounded bg-destructive/25 px-1.5 py-0.5 text-[0.625rem] text-destructive" title={status.detail}>
-            {status.source}
-          </span>
-        )
-      )}
-    </>
-  );
-
   const actions = (
     <>
+      {/* Only the clock stops. Loot still counts while it is paused — the
+          button says "this stretch was not farming", not "stop tracking". */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn('size-6', paused ? 'text-primary hover:text-primary' : 'text-muted-foreground hover:text-foreground')}
+        onClick={togglePaused}
+        aria-label={paused ? 'Resume the session clock' : 'Pause the session clock'}
+        title={paused ? 'Resume the session clock' : 'Pause the session clock'}
+      >
+        {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
+      </Button>
       <Button
         variant="ghost"
         size="icon"
@@ -129,7 +107,6 @@ export function FarmOverlay() {
             AOW5 <span className="text-muted-foreground">tracker</span>
           </span>
         }
-        badges={badges}
         actions={actions}
         // The room, on the row the chrome leaves empty while you are playing.
         idle={<StateLine room={state.current?.room ?? null} runs={rates.completedRuns} />}
@@ -143,7 +120,9 @@ export function FarmOverlay() {
       >
         <Hud
           rates={rates}
-          items={items}
+          items={runItems}
+          sessionItems={items}
+          elapsed={elapsed}
           pricing={prices}
           tracked={config?.tracked ?? []}
           cardsOnly={collapsed}

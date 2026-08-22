@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, RefreshCw, Trash2 } from 'lucide-react';
 import { sessionTotals, type HistoryRun, type SessionHistory } from '@core/history.ts';
 import { iconUrl, qualityColor } from '@core/items.ts';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Pricing } from '@/features/items/prices';
 import { itemTable } from '@/features/items/table';
@@ -18,6 +19,11 @@ import { cn } from '@/lib/utils';
  * actually dropped. So sessions are always visible, runs open with the newest
  * session, and a run's items — and the session's own item total, which is the
  * longest list in here — open when asked for.
+ *
+ * Deleting is offered here and nowhere else, for the same reason the archive
+ * exists at all: it is the thing that outlives the app, so the place to throw
+ * it away is the place you can see what you are throwing. Tick the sessions to
+ * go, or tick none and the button clears the lot.
  *
  * Mock sessions are left out, in every build. They are scaffolding for building
  * this view without Dota running, not evenings that happened, and an archive
@@ -46,6 +52,31 @@ export function HistoryView({ sessions, pricing, onRefresh, onClose }: Props) {
   const [openSessions, setOpenSessions] = useState<Set<number> | null>(null);
   const [openRuns, setOpenRuns] = useState<Set<string>>(new Set());
   const [openTotals, setOpenTotals] = useState<Set<number>>(new Set());
+  /**
+   * Whether the clear button is armed.
+   *
+   * Two clicks rather than a dialog: the archive is the only record of every
+   * evening farmed and there is no undo, but a modal over a window the player
+   * opened on purpose is heavier than the risk deserves. The second click has
+   * to be a decision, so the button says what it is about to do.
+   */
+  const [arming, setArming] = useState(false);
+  /**
+   * Sessions ticked for deletion.
+   *
+   * Empty means "all of them", which is what the button then says: clearing
+   * everything is the common case and should not cost twenty ticks, while
+   * throwing away one bad evening should not cost the other nineteen.
+   */
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  // A refresh, a scroll, anything at all — the armed state should not survive
+  // being forgotten about.
+  useEffect(() => {
+    if (!arming) return;
+    const timer = setTimeout(() => setArming(false), 4000);
+    return () => clearTimeout(timer);
+  }, [arming]);
 
   const visible = useMemo(() => sessions?.filter((s) => s.source !== 'mock') ?? null, [sessions]);
 
@@ -65,6 +96,13 @@ export function HistoryView({ sessions, pricing, onRefresh, onClose }: Props) {
     setOpenRuns((prev) => {
       const next = new Set(prev);
       if (!next.delete(key)) next.add(key);
+      return next;
+    });
+
+  const toggleSelected = (id: number) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(id)) next.add(id);
       return next;
     });
 
@@ -91,21 +129,32 @@ export function HistoryView({ sessions, pricing, onRefresh, onClose }: Props) {
           const open = openSessions?.has(session.id) ?? false;
           return (
             <section key={session.id} className="rounded-md bg-black/25">
-              <button
-                type="button"
-                onClick={() => toggleSession(session.id)}
-                className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left hover:bg-white/5"
-              >
-                <Caret open={open} />
-                <span className="min-w-0 flex-1 truncate font-semibold">{stamp(session.id)}</span>
-                {/* The source is only worth saying when it is the fake one. */}
-                {session.source === 'mock' && (
-                  <span className="shrink-0 rounded bg-white/10 px-1 text-[0.5rem] text-muted-foreground uppercase">
-                    mock
-                  </span>
-                )}
-                <span className="shrink-0 tabular-nums text-muted-foreground">{totals.runs} runs</span>
-              </button>
+              {/* The tick is a sibling of the button, not inside it: a checkbox
+                  within a button is neither valid nor clickable on its own, and
+                  this row has to do both jobs. */}
+              <div className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 hover:bg-white/5">
+                <Checkbox
+                  checked={selected.has(session.id)}
+                  onCheckedChange={() => toggleSelected(session.id)}
+                  aria-label={`Select the session of ${stamp(session.id)}`}
+                  className="size-3.5 shrink-0"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleSession(session.id)}
+                  className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                >
+                  <Caret open={open} />
+                  <span className="min-w-0 flex-1 truncate font-semibold">{stamp(session.id)}</span>
+                  {/* The source is only worth saying when it is the fake one. */}
+                  {session.source === 'mock' && (
+                    <span className="shrink-0 rounded bg-white/10 px-1 text-[0.5rem] text-muted-foreground uppercase">
+                      mock
+                    </span>
+                  )}
+                  <span className="shrink-0 tabular-nums text-muted-foreground">{totals.runs} runs</span>
+                </button>
+              </div>
 
               {/*
                 The numbers you compare sessions by.
@@ -173,6 +222,45 @@ export function HistoryView({ sessions, pricing, onRefresh, onClose }: Props) {
           <Button variant="outline" className="h-7 flex-1 text-xs" onClick={onRefresh}>
             <RefreshCw className="size-3.5" /> Refresh
           </Button>
+          {/* Only when there is something to clear: a destructive button beside
+              an empty list is an offer to break something that is not there.
+
+              One button, two jobs, and the label is which one: tick nothing and
+              it clears the archive, tick some and it takes only those. Both go
+              through the same arming click, because neither can be undone. */}
+          {visible !== null && visible.length > 0 && (
+            <Button
+              variant={arming ? 'destructive' : 'outline'}
+              className="h-7 flex-1 text-xs"
+              onClick={() => {
+                if (!arming) {
+                  setArming(true);
+                  return;
+                }
+                setArming(false);
+                const doomed = [...selected];
+                const done = doomed.length > 0 ? window.tracker.deleteSessions(doomed) : window.tracker.clearHistory();
+                void done.then(() => {
+                  setSelected(new Set());
+                  onRefresh();
+                });
+              }}
+              title={
+                selected.size > 0
+                  ? 'Delete the ticked sessions and the runs recorded under them.'
+                  : 'Delete every archived session. The session on screen keeps counting.'
+              }
+            >
+              <Trash2 className="size-3.5" />{' '}
+              {arming
+                ? selected.size > 0
+                  ? `Delete ${selected.size}?`
+                  : 'Delete all?'
+                : selected.size > 0
+                  ? `Delete ${selected.size}`
+                  : 'Clear all'}
+            </Button>
+          )}
           <Button variant="outline" className="h-7 flex-1 text-xs" onClick={onClose}>
             Close
           </Button>
@@ -214,9 +302,7 @@ function Run({
           <span
             className={cn(
               'shrink-0 rounded px-1 text-[0.5rem] uppercase',
-              run.outcome === 'chained'
-                ? 'bg-white/10 text-muted-foreground'
-                : 'bg-destructive/20 text-destructive',
+              run.outcome === 'chained' ? 'bg-white/10 text-muted-foreground' : 'bg-destructive/20 text-destructive',
             )}
           >
             {run.outcome}

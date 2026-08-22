@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
-import { UI_SCALE, type SessionSnapshot } from '@core/ipc.ts';
+import { UI_SCALE, type SessionSnapshot, type TrackerStatus } from '@core/ipc.ts';
 import { Button } from '@/components/ui/button';
 import { pricing } from '@/features/items/prices';
 import { OverlayShell } from '@/shell/OverlayShell';
@@ -31,11 +31,21 @@ const REFRESH = 2000;
 export function SettingsOverlay() {
   const { config, interactive, setScale, setOpacity, setTransparentBackground } = useOverlay();
   const [session, setSession] = useState<SessionSnapshot>({ rooms: [], skipped: [] });
+  /**
+   * Whether the feed is actually reading anything.
+   *
+   * It used to be a chip in the HUD's title bar, which put a diagnostic in the
+   * one place that is meant to be nothing but numbers. It belongs here, beside
+   * the log path it is a fact about.
+   */
+  const [status, setStatus] = useState<TrackerStatus | null>(null);
 
   const scale = config?.uiScale ?? UI_SCALE.default;
   useScaleShortcuts(scale, setScale);
 
   const prices = useMemo(() => pricing(config?.prices, config?.halvePrices), [config?.prices, config?.halvePrices]);
+
+  useEffect(() => window.tracker.onStatus(setStatus), []);
 
   useEffect(() => {
     let live = true;
@@ -78,6 +88,7 @@ export function SettingsOverlay() {
     >
       <Settings
         config={config}
+        status={status}
         rooms={session.rooms}
         skipped={session.skipped}
         pricing={prices}

@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TrackerEvent } from '@core/events.ts';
-import { apply, createState, itemTotals, rates, resetState, type TrackerState, type ValueOf } from '@core/stats.ts';
+import {
+  apply,
+  createState,
+  itemTotals,
+  rates,
+  resetState,
+  runItems,
+  type TrackerState,
+  type ValueOf,
+} from '@core/stats.ts';
 import type { TrackerStatus } from '@core/ipc.ts';
 import { TABLE_PRICING } from '@/features/items/prices';
 
@@ -55,6 +64,25 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
    * instead of standing still and then jumping five at the next pickup.
    */
   const anchor = useRef<{ clock: number; at: number }>({ clock: 0, at: Date.now() });
+  /**
+   * When this session started, in wall time.
+   *
+   * The rates measure time *inside* rooms, because that is the honest
+   * denominator for a gold rate. This is the other clock — how long you have
+   * been at it — and it keeps running in the hideout, between rooms, and while
+   * the game is loading, because all of that is time you spent farming even
+   * though none of it was spent in a room.
+   */
+  const startedAt = useRef(Date.now());
+  /**
+   * When the session clock was stopped, or null while it runs.
+   *
+   * Only the clock stops. Drops still count, runs still close, the archive
+   * still records — pausing says "this stretch was not farming", which is a
+   * statement about the hour, not about the loot. Resuming slides the start
+   * forward by however long the break was, so the number never jumps.
+   */
+  const pausedAt = useRef<number | null>(null);
   const [version, setVersion] = useState(0);
   const [status, setStatus] = useState<TrackerStatus>({ source: 'mock', detail: 'starting…' });
 
@@ -70,6 +98,7 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
       // A source change means a new session; the old numbers are meaningless.
       stateRef.current = createState();
       anchor.current = { clock: 0, at: Date.now() };
+      startedAt.current = Date.now();
       setVersion((v) => v + 1);
     });
     // 4 Hz: fast enough that the elapsed clock never looks stuck, slow enough
@@ -91,6 +120,18 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
    */
   const clearSession = useCallback(() => {
     stateRef.current = resetState(stateRef.current);
+    startedAt.current = Date.now();
+    pausedAt.current = null;
+    setVersion((v) => v + 1);
+  }, []);
+
+  /** Stops or restarts the session clock. See `pausedAt`. */
+  const togglePaused = useCallback(() => {
+    if (pausedAt.current === null) pausedAt.current = Date.now();
+    else {
+      startedAt.current += Date.now() - pausedAt.current;
+      pausedAt.current = null;
+    }
     setVersion((v) => v + 1);
   }, []);
 
@@ -103,7 +144,12 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
     return {
       state,
       rates: rates(state, priceOf, now),
+      // The whole session, for the gold card; and the room you are in, for the
+      // list under it.
       items: itemTotals(state, now),
+      runItems: runItems(state),
+      elapsed: ((pausedAt.current ?? Date.now()) - startedAt.current) / 1000,
+      paused: pausedAt.current !== null,
     };
     // `version` is the intentional trigger — the state object itself is mutated
     // in place, so it can never be a useful dependency. `priceOf` is here
@@ -112,7 +158,7 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, priceOf]);
 
-  return { ...derived, status, clearSession };
+  return { ...derived, status, clearSession, togglePaused };
 }
 
 export type Session = ReturnType<typeof useSession>;

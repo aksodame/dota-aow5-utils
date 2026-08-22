@@ -126,6 +126,65 @@ export class History {
     return this.state;
   }
 
+  /**
+   * Deletes the named sessions and everything recorded under them.
+   *
+   * The file is rewritten rather than appended to — the one operation that
+   * breaks the append-only rule, which is why it is also the one that reads
+   * every line first. A line this build cannot parse is kept: it belongs to a
+   * version that could, and a delete of *these two sessions* has no business
+   * discarding it.
+   */
+  remove(ids: readonly number[]): void {
+    const doomed = new Set(ids);
+    if (doomed.size === 0) return;
+
+    let text: string;
+    try {
+      text = fs.readFileSync(this.file, 'utf8');
+    } catch {
+      return;
+    }
+
+    const kept = text.split('\n').filter((line) => {
+      if (line.trim() === '') return false;
+      const record = parseRecord(line);
+      if (!record) return true;
+      return record.kind === 'session' ? !doomed.has(record.id) : !doomed.has(record.session);
+    });
+
+    try {
+      fs.writeFileSync(this.file, kept.length > 0 ? `${kept.join('\n')}\n` : '', 'utf8');
+    } catch {
+      // Same as `clear`: a locked profile costs the player a stale archive.
+      return;
+    }
+
+    // The session being played was in the list, so its line went with it. The
+    // next finished run has to declare it again or its runs land orphaned.
+    if (doomed.has(this.session)) this.announced = false;
+  }
+
+  /**
+   * Throws the archive away.
+   *
+   * The session in progress keeps counting on screen — the overlay's numbers
+   * are its own — but the file starts empty, and the runs already written to it
+   * are gone. `announced` goes back to false so the next finished run writes a
+   * session line again; without that the archive would fill with runs belonging
+   * to a session nobody ever declared.
+   */
+  clear(): void {
+    try {
+      fs.rmSync(this.file, { force: true });
+    } catch {
+      // A locked or read-only profile costs the player a stale archive, not a
+      // crash. The button will simply appear not to have worked.
+    }
+    this.written = this.state.runs.length;
+    this.announced = false;
+  }
+
   /** Everything on disk, grouped into sessions, newest first. */
   read(): SessionHistory[] {
     let text: string;

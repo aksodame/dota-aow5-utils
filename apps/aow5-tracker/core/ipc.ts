@@ -381,6 +381,22 @@ export interface TrackerApi {
   /** The session so far as main saw it — see `SessionSnapshot`. */
   getSession: () => Promise<SessionSnapshot>;
   /**
+   * Delete every archived session.
+   *
+   * The live overlay is untouched: what it is counting happened, whatever the
+   * file says. Resolves once the file is gone, so the caller can re-read and
+   * show an empty archive rather than guessing when to.
+   */
+  clearHistory: () => Promise<void>;
+  /**
+   * Delete these sessions and the runs recorded under them.
+   *
+   * Ids are the session ids the archive hands out — `SessionHistory.id`, the
+   * epoch millisecond the session opened. Unknown ids are ignored rather than
+   * refused: the window may be a refresh behind the file.
+   */
+  deleteSessions: (ids: number[]) => Promise<void>;
+  /**
    * Ask for the console log with the system's own file dialog.
    *
    * Resolves to the chosen path, or null if the dialog was dismissed. Choosing

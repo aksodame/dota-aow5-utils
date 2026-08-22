@@ -364,6 +364,21 @@ export function byRoom(state: TrackerState, valueOf: ValueOf, now = state.clock)
   return out.sort((a, b) => b.runs - a.runs);
 }
 
+/**
+ * What the room you are in has dropped — or the last one, between rooms.
+ *
+ * The session totals are the headline number; this is the readout you watch
+ * while playing, and it answers a different question: not "how has tonight
+ * gone" but "was *this* room worth it". Entering a room empties it, because a
+ * fresh run is a fresh answer; leaving one does not, because the list is the
+ * only record of what the room gave you until the next one starts.
+ */
+export function runItems(state: TrackerState): { id: string; qty: number }[] {
+  const run = state.current ?? state.runs[state.runs.length - 1];
+  if (!run) return [];
+  return [...run.items.entries()].map(([id, qty]) => ({ id, qty })).sort((a, b) => b.qty - a.qty);
+}
+
 /** Session item totals as a sorted list, richest first. `perHour` uses run time. */
 export function itemTotals(state: TrackerState, now = state.clock): { id: string; qty: number; perHour: number }[] {
   const active = timeInRuns(state, now);

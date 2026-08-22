@@ -65,6 +65,8 @@ const api: TrackerApi = {
 
   getHistory: (): Promise<SessionHistory[]> => ipcRenderer.invoke('tracker:getHistory'),
   getSession: (): Promise<SessionSnapshot> => ipcRenderer.invoke('tracker:getSession'),
+  clearHistory: (): Promise<void> => ipcRenderer.invoke('tracker:clearHistory'),
+  deleteSessions: (ids: number[]): Promise<void> => ipcRenderer.invoke('tracker:deleteSessions', ids),
   pickLogFile: (): Promise<string | null> => ipcRenderer.invoke('tracker:pickLogFile'),
   compactLog: (): Promise<LogTrim> => ipcRenderer.invoke('tracker:compactLog'),
   newSession: (): Promise<void> => ipcRenderer.invoke('tracker:newSession'),

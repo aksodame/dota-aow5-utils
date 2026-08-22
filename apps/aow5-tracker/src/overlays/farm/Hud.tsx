@@ -68,7 +68,12 @@ function Card({ icon, value, label, title }: { icon: React.ReactNode; value: str
 
 interface Props {
   rates: Rates;
-  items: { id: string; qty: number; perHour: number }[];
+  /** What the room you are in has dropped. The list is this. */
+  items: { id: string; qty: number }[];
+  /** Everything the session has dropped. The gold card is this. */
+  sessionItems: { id: string; qty: number }[];
+  /** Seconds since the session started, hideout included. */
+  elapsed: number;
   /** Prices, the player's own where they set any. */
   pricing: Pricing;
   /** When non-empty, only these ids are listed and counted. */
@@ -77,7 +82,7 @@ interface Props {
   cardsOnly: boolean;
 }
 
-export function Hud({ rates, items, pricing, tracked, cardsOnly }: Props) {
+export function Hud({ rates, items, sessionItems, elapsed, pricing, tracked, cardsOnly }: Props) {
   /*
    * Total first, because the list is there to answer "what carried this
    * session" before it is there to find anything. Held in the component rather
@@ -106,33 +111,41 @@ export function Hud({ rates, items, pricing, tracked, cardsOnly }: Props) {
     );
   }, [items, tracked, pricing, sort]);
 
+  // The whole evening, not the room below it — and pinned items only, when any
+  // are pinned, so the card and the list agree about what is being counted.
+  const sessionGold = useMemo(() => {
+    const pinned = new Set(tracked);
+    const counted = tracked.length > 0 ? sessionItems.filter((i) => pinned.has(i.id)) : sessionItems;
+    return counted.reduce((n, i) => n + pricing.value(i.id, i.qty), 0);
+  }, [sessionItems, tracked, pricing]);
+
 
   return (
     // `flex-1` only when there is a list to give the leftover height to;
     // collapsed, the cards are the whole panel and it is as tall as they are.
     <div className={cn('flex flex-col gap-2', !cardsOnly && 'min-h-0 flex-1')}>
       {/*
-        Three cards, one row, collapsed as well as expanded.
+        Three cards, one row, collapsed as well as expanded: how long this room
+        has taken, what the evening has been worth, and how long the evening
+        has been.
 
-        What is left is what changes while you play and answers a question you
-        ask mid-run: how long this room is taking, what the evening is paying
-        an hour, and how much of the evening has actually been farming. The run
-        count moved to the state line — it is a number, but one that moves a
-        few times an hour — and the session total went with it, being the g/hr
-        card multiplied by the session card and worth neither's width.
+        Totals rather than rates. A rate answers "is this room worth farming",
+        which is a question you ask once and then act on; a total answers "how
+        is tonight going", which is the one you keep glancing down at. `rates`
+        still computes gold per hour — the settings window's per-room table is
+        built on the same numbers — it simply is not what the card shows.
 
-        Two clocks side by side, so their icons carry the difference: the run's
-        stopwatch is this room, the session's hourglass is time inside rooms —
-        which is also the denominator of the gold rate between them.
+        Two clocks, so their icons carry the difference: the run's stopwatch is
+        this room, the session's hourglass is the whole sitting.
       */}
       <div className="flex gap-1.5">
         <Card icon={<Timer className="size-3.5" />} value={clock(rates.currentRunElapsed)} label="run" />
-        <Card icon={<DollarSign className="size-3.5" />} value={compact(rates.goldPerHour)} label="g/hr" />
+        <Card icon={<DollarSign className="size-3.5" />} value={compact(sessionGold)} label="g/session" />
         <Card
           icon={<Hourglass className="size-3.5" />}
-          value={clock(rates.activeTime)}
+          value={clock(elapsed)}
           label="session"
-          title="Time spent inside rooms — what the rates are measured against"
+          title="Since this session started — the hideout and the loading screens count"
         />
       </div>
 
@@ -167,9 +180,11 @@ export function Hud({ rates, items, pricing, tracked, cardsOnly }: Props) {
               lands on it rather than on the row. */}
           <ScrollArea className="min-h-0 flex-1" viewportClassName="hud-fade-bottom">
             <ul className="pe-2 pb-4">
+              {/* Emptied by the next `room_enter`: the list is what *this* room
+                  gave you, and a fresh room is a fresh answer. */}
               {rows.length === 0 && (
                 <li className="px-1 py-3 text-center text-xs text-muted-foreground">
-                  {tracked.length > 0 ? 'None of your tracked items yet.' : 'Nothing picked up yet.'}
+                  {tracked.length > 0 ? 'None of your tracked items in this room yet.' : 'Nothing dropped in here yet.'}
                 </li>
               )}
               {rows.slice(0, MAX_ROWS).map((row) => {

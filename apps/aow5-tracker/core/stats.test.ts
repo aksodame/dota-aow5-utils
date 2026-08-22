@@ -15,6 +15,7 @@ import {
   itemTotals,
   rates,
   resetState,
+  runItems,
   runLootValue,
   timeInRuns,
   type ValueOf,
@@ -331,6 +332,46 @@ test('an unpriced item costs nothing rather than breaking the rate', () => {
   // not take the whole gold figure down with it.
   const s = build([enter(0, 'M001'), drop(10, [['item_UNKNOWN', 4], ['item_A', 1]]), exit(100, 'M001', 'clear')]);
   assert.equal(rates(s, price).goldPerHour, 3600, 'the priced item still counts');
+});
+
+test('the loot list is the room you are in, and empties when the next starts', () => {
+  // The card above it counts the whole evening; this answers "was *this* room
+  // worth it", which a running total cannot.
+  const s = build([enter(0, 'M001'), drop(10, [['item_A', 2]]), drop(20, [['item_B', 1]])]);
+  assert.deepEqual(runItems(s), [
+    { id: 'item_A', qty: 2 },
+    { id: 'item_B', qty: 1 },
+  ]);
+
+  applyAll(s, [enter(30, 'M003')]);
+  assert.deepEqual(runItems(s), [], 'a fresh room is a fresh answer');
+
+  applyAll(s, [drop(40, [['item_C', 5]])]);
+  assert.deepEqual(runItems(s), [{ id: 'item_C', qty: 5 }]);
+  assert.equal(itemTotals(s).length, 3, 'the session totals kept all of it');
+});
+
+test('a room change does not touch the map the recipe panel counts from', () => {
+  // `state.items` is the `have` map behind the ingredient strip, and a grind
+  // outlasts a room: three ore across two rooms is three ore. The per-room list
+  // reads `run.items`, which is a different map on purpose — this is the test
+  // that keeps the two from being confused for each other.
+  const s = build([
+    enter(0, 'M001'),
+    drop(10, [['item_ORE', 2]]),
+    enter(30, 'M003'),
+    drop(40, [['item_ORE', 1]]),
+  ]);
+
+  assert.equal(s.items.get('item_ORE'), 3, 'the session map kept counting');
+  assert.deepEqual(runItems(s), [{ id: 'item_ORE', qty: 1 }], 'the room list started over');
+});
+
+test('between rooms the list still shows what the last one gave', () => {
+  // Leaving a room does not clear it: until the next room starts, this list is
+  // the only record of what that one dropped.
+  const s = build([enter(0, 'M001'), drop(10, [['item_A', 2]]), exit(60, 'M001', 'clear')]);
+  assert.deepEqual(runItems(s), [{ id: 'item_A', qty: 2 }]);
 });
 
 // --- the live clock ---------------------------------------------------------

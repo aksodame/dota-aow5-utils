@@ -326,6 +326,15 @@ app.whenReady().then(() => {
     }),
   );
 
+  ipcMain.handle('tracker:clearHistory', () => history.clear());
+
+  ipcMain.handle('tracker:deleteSessions', (_e, ids: unknown) => {
+    // From a renderer, so it is checked here rather than trusted: the argument
+    // decides which lines of the archive stop existing.
+    if (!Array.isArray(ids)) return;
+    history.remove(ids.filter((id): id is number => typeof id === 'number' && Number.isFinite(id)));
+  });
+
   ipcMain.handle('tracker:newSession', () => {
     history.startSession(config.source);
   });

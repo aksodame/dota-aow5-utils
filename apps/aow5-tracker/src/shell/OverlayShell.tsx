@@ -33,8 +33,6 @@ import { useContentSize } from './useContentSize';
 interface Props {
   /** Shown in the header, beside the chrome. */
   title: ReactNode;
-  /** Status chips: source, health, and so on. */
-  badges?: ReactNode;
   /** Buttons, drawn to the right of the collapse toggle. */
   actions?: ReactNode;
   /**
@@ -68,7 +66,6 @@ interface Props {
 
 export function OverlayShell({
   title,
-  badges,
   actions,
   idle,
   collapsed,
@@ -131,8 +128,6 @@ export function OverlayShell({
           <GripVertical className="size-3.5 shrink-0 text-muted-foreground" />
 
           <span className="min-w-0 flex-1 truncate text-[0.6875rem]">{title}</span>
-
-          {badges}
 
           <div className="hud-no-drag flex shrink-0 items-center gap-0.5">
             {toggle}

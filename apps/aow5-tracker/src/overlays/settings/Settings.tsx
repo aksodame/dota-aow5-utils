@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Check, FolderOpen, Plus, RotateCcw, Scissors, X } from 'lucide-react';
 import { iconUrl, qualityColor } from '@core/items.ts';
-import { OPACITY, UI_SCALE, type LogTrim, type RoomSummary, type SkippedLine, type TrackerConfig } from '@core/ipc.ts';
+import {
+  OPACITY,
+  UI_SCALE,
+  type LogTrim,
+  type RoomSummary,
+  type SkippedLine,
+  type TrackerConfig,
+  type TrackerStatus,
+} from '@core/ipc.ts';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -12,6 +20,7 @@ import type { Pricing } from '@/features/items/prices';
 import { itemTable } from '@/features/items/table';
 import { roomTable } from '@/features/rooms/table';
 import { clock, compact, percent } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 /**
  * Everything worth changing, in the window it now has to itself.
@@ -28,6 +37,8 @@ import { clock, compact, percent } from '@/lib/format';
 
 interface Props {
   config: TrackerConfig | null;
+  /** What the feed is doing. Null until the first status arrives. */
+  status: TrackerStatus | null;
   /** The session so far, as main saw it. Null until the first read comes back. */
   rooms: RoomSummary[];
   skipped: SkippedLine[];
@@ -39,6 +50,7 @@ interface Props {
 
 export function Settings({
   config,
+  status,
   rooms,
   skipped,
   pricing,
@@ -273,7 +285,15 @@ export function Settings({
             tracker at that file and it reads the game's own tracker lines as they land.
           </p>
           <div className="flex items-center gap-1">
-            {/* Truncated with the whole path on hover: it is long, it is
+            {/* What the tail is doing with that path. An overlay showing zeros
+              looks identical to a broken one, and this is the sentence that
+              tells them apart — red when the file is not there to read. */}
+          {status !== null && (
+            <p className={cn('text-[0.625rem]', status.error ? 'text-destructive' : 'text-muted-foreground')}>
+              {status.detail}
+            </p>
+          )}
+          {/* Truncated with the whole path on hover: it is long, it is
                 not something you read, and it is something you check. */}
             <span
               className="min-w-0 flex-1 truncate rounded-md bg-black/25 px-2 py-1 text-[0.625rem] text-muted-foreground"
