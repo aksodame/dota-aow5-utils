@@ -1,0 +1,190 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens lifted from the sibling planner so the two look like one
+ * product — same oklch hue-260 palette, same radius scale.
+ *
+ * The critical difference is the base layer. The planner does
+ * `body { @apply bg-background }`, which is opaque; in a transparent Electron
+ * window that paints a solid rectangle over the game. Here html and body stay
+ * fully transparent and only panels draw a background.
+ */
+
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(0.16 0.012 260);
+  --foreground: oklch(0.97 0.003 260);
+  --card: oklch(0.19 0.014 260);
+  --card-foreground: oklch(0.97 0.003 260);
+  --popover: oklch(0.19 0.014 260);
+  --popover-foreground: oklch(0.97 0.003 260);
+  --primary: oklch(0.72 0.16 265);
+  --primary-foreground: oklch(0.16 0.012 260);
+  --secondary: oklch(0.26 0.018 260);
+  --secondary-foreground: oklch(0.97 0.003 260);
+  --muted: oklch(0.26 0.018 260);
+  --muted-foreground: oklch(0.72 0.02 260);
+  --accent: oklch(0.3 0.02 260);
+  --accent-foreground: oklch(0.97 0.003 260);
+  --destructive: oklch(0.62 0.2 20);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.62 0.14 265);
+
+  /* The gold accent the reference HUD uses for its headline numbers. */
+  --gold: oklch(0.82 0.14 85);
+
+  /*
+   * Item rarity tints, the planner's dark-theme values verbatim — the overlay
+   * is always dark, so the lighter light-theme set never applies.
+   */
+  --quality-0: #6b7280;
+  --quality-1: #9ca3af;
+  --quality-2: #4ade80;
+  --quality-3: #60a5fa;
+  --quality-4: #a78bfa;
+  --quality-5: #f472b6;
+  --quality-6: #fb923c;
+  --quality-7: #fbbf24;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-gold: var(--gold);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  /*
+    Transparent all the way down. Anything opaque here would blank out the game
+    behind the overlay — this is the single most important rule in the file.
+  */
+  /*
+    Everything in the overlay is sized in rem (Tailwind's spacing, text and
+    radius scales all are), so the whole HUD scales from this one number.
+    24px = 1.5x the browser default, which is the size the overlay is meant to
+    be read at over a game.
+
+    `--ui-scale` is the user's multiplier on it, set on the root element by the
+    shell from the saved config. It is applied here rather than to a wrapper
+    because rem resolves against the root and nothing else — scaling a container
+    would move its padding and leave every child's type behind.
+  */
+  html {
+    font-size: calc(24px * var(--ui-scale, 1));
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    background: transparent;
+    color: var(--foreground);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    overflow: hidden;
+    /* The overlay is click-through; text selection would only ever be a bug. */
+    user-select: none;
+    cursor: default;
+  }
+
+  ::-webkit-scrollbar {
+    width: 9px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+}
+
+@layer components {
+  /*
+    The frosted slab every panel sits on, as in the reference HUD.
+
+    `--hud-panel-alpha` is how much of it is painted, set on the root by the
+    shell. It is a separate knob from Electron's window opacity because that
+    one fades the numbers along with the slab; this one leaves the text at full
+    contrast and lets only the background thin out over the game.
+  */
+  .hud-panel {
+    background: color-mix(in oklab, var(--card) var(--hud-panel-alpha, 82%), transparent);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 28px oklch(0 0 0 / 45%);
+  }
+
+  /*
+    Softens the edge a scrolling list is cut at.
+
+    Without it the last row visible in the panel is sliced through the middle
+    and sits flush against the panel's padding, which reads as a layout that
+    has overflowed rather than as a list with more below it. The list carries
+    matching bottom padding, so the fade only ever eats empty space once it has
+    been scrolled to the end.
+  */
+  .hud-fade-bottom {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 1rem), transparent);
+  }
+
+  /*
+    A black outline traced around each glyph, for text that has to survive
+    whatever is behind it.
+
+    The hotkey hint is the one line drawn over a background the user can turn
+    all the way to clear, and grey-on-nothing is grey on whatever the game is
+    showing — bright snow one moment, dark cave the next. A ring on the glyphs
+    themselves keeps it legible on both, where a box border around the line
+    would only have framed the illegibility.
+  */
+  .hud-text-outline {
+    text-shadow:
+      0 0 2px #000,
+      1px 0 1px #000,
+      -1px 0 1px #000,
+      0 1px 1px #000,
+      0 -1px 1px #000;
+  }
+
+  /* The one element that must accept drags even while click-through is off. */
+  .hud-drag {
+    -webkit-app-region: drag;
+  }
+
+  /*
+    Buttons inside a drag region are not clickable unless they opt out, and the
+    header is a drag region whenever the overlay is interactive.
+  */
+  .hud-drag button {
+    -webkit-app-region: no-drag;
+  }
+  .hud-no-drag {
+    -webkit-app-region: no-drag;
+  }
+}

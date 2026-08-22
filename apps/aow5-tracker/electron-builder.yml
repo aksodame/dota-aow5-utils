@@ -1,0 +1,72 @@
+# How the overlay becomes something a player can download.
+#
+# Windows only, because the game is: Dota's console log path, the tray, and the
+# always-on-top click-through window are all built against it.
+
+appId: com.aksodame.aow5tracker
+productName: AOW5 Tracker
+copyright: Fan-made, unaffiliated with Valve or the Age of Weapons 5 authors.
+
+directories:
+  output: release
+  buildResources: build
+
+# `out/` is the whole application: electron-vite bundles main, preload and the
+# renderer, and the built main imports nothing but `electron` and `node:*` — so
+# no dependency has to be shipped beside it. The explicit exclusion is what
+# keeps a pnpm store's worth of symlinked devDependencies out of the installer.
+files:
+  - out/**
+  - package.json
+  - '!node_modules/**'
+
+asar: true
+
+win:
+  # A zip, and only a zip.
+  #
+  # NSIS is written and works, but cannot build here: makensis is not long-path
+  # aware, and `!include` of electron-builder's own NSIS headers lands at 264
+  # characters once pnpm's hashed store directory is in the path — four over
+  # Windows' MAX_PATH. GitHub's runner path is barely shorter, so it would fail
+  # there too. Turning the installer on means one of:
+  #
+  #   * `node-linker=hoisted` in a root .npmrc (flat node_modules, short paths,
+  #     but the whole workspace loses pnpm's strict isolation), or
+  #   * pnpm >= 9.1 plus `virtual-store-dir-max-length=50` (keeps isolation;
+  #     needs the `packageManager` field bumped from 9.0.0).
+  #
+  # Neither is worth doing mid-release, and for an unsigned beta a portable zip
+  # is the friendlier artifact anyway: no installer, so no SmartScreen prompt
+  # about an unrecognised publisher.
+  target:
+    - zip
+  icon: build/icon.png
+  # SmartScreen will warn on first download either way: signing a fan tool costs
+  # a certificate and a company identity, and neither is worth it at this size.
+  # Said plainly in the README rather than papered over here.
+  signAndEditExecutable: true
+
+# Kept ready for the day the path problem above is dealt with.
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: AOW5 Tracker
+  # The overlay keeps a tray icon and no taskbar entry, so an install that ends
+  # by launching it would look like nothing happened.
+  runAfterFinish: false
+
+publish:
+  provider: github
+  owner: aksodame
+  repo: dota-aow5-utils
+  # The site reads /releases/latest and shows whatever is attached; a draft
+  # would leave that button pointing at the last release instead of this one.
+  releaseType: release
+
+# `tracker-v0.1.0-beta` is the tag; the file people download should say the same
+# thing without the prefix.
+artifactName: AOW5-Tracker-${version}-${os}.${ext}

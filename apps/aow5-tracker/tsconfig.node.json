@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node", "electron-vite/node"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo"
+  },
+  "include": [
+    "electron",
+    "core",
+    "electron.vite.config.ts",
+    "scripts",
+    // The pure modules `node --test` runs: renderer code, but these tests
+    // are Node's and no other project type-checks them.
+    "src/lib/format.ts",
+    "src/lib/format.test.ts",
+    "src/features/items/sort.ts",
+    "src/features/items/sort.test.ts"
+  ],
+  // The preload runs in a renderer, not in main; it compiles under
+  // tsconfig.preload.json, which is the only project here with DOM types.
+  "exclude": ["electron/preload.ts"]
+}

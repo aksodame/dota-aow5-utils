@@ -1,0 +1,54 @@
+name: Release tracker
+
+# Cutting a release:
+#
+#   1. bump `version` in apps/aow5-tracker/package.json, commit
+#   2. git tag tracker-v0.3.0 && git push origin tracker-v0.3.0
+#
+# The tag is prefixed because the site asks GitHub for `/releases/latest`,
+# which is the newest published release in the *whole repository* and cannot be
+# filtered by tag. As long as the tracker is the only thing that cuts releases
+# that is exactly right; the prefix is there so the day something else wants
+# releases too is the day this stops being a silent mix-up.
+#
+# Packaging is in place: `electron-builder.yml` in the tracker, the dependency,
+# and a `release` script that draws `build/icon.png` on its way past. It ships a
+# portable zip rather than an installer — see the comment in that file for the
+# MAX_PATH reason and what turning NSIS on would take.
+
+on:
+  push:
+    tags: ['tracker-v*']
+  workflow_dispatch:
+
+permissions:
+  # electron-builder creates the release and uploads the installer to it.
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # A release whose tag and whose About box disagree is worse than a failed
+      # build, and it is one step to make impossible.
+      - name: Tag matches the tracker's version
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#tracker-v}"
+          pkg=$(node -p "require('./apps/aow5-tracker/package.json').version")
+          [ "$tag" = "$pkg" ] || { echo "tag $tag != package.json $pkg"; exit 1; }
+
+      - run: pnpm --filter aow5-tracker test
+      - run: pnpm --filter aow5-tracker build
+      - run: pnpm --filter aow5-tracker release
+        env:
+          # electron-builder reads GH_TOKEN, not GITHUB_TOKEN.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

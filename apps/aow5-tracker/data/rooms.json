@@ -1,0 +1,169 @@
+{
+  "_comment": "Room id -> localized names and metadata. Generated from the addon VPK (professional.csv name_* tokens + ak_rooms.json). The console log prints the room NAME in the player language, so this is what maps it back to an id.",
+  "rooms": {
+    "G001": {
+      "en": "Skyfall Realm",
+      "ru": "Царство Небопада",
+      "type": "greed_cave",
+      "level": 9,
+      "gold": 0
+    },
+    "M001": {
+      "en": "Abandoned Quarry",
+      "ru": "Заброшенный рудник",
+      "type": "forest",
+      "level": 1,
+      "gold": 0,
+      "bosses": "monster_12004"
+    },
+    "M002": {
+      "en": "Damp Cemetery",
+      "ru": "Сырое кладбище",
+      "type": "forest",
+      "level": 2,
+      "gold": 100,
+      "bosses": [
+        "monster_12005",
+        "monster_12008"
+      ]
+    },
+    "M003": {
+      "en": "Frozen Tundra",
+      "ru": "Ледяная равнина",
+      "type": "forest",
+      "level": 3,
+      "gold": 300,
+      "bosses": "monster_12009"
+    },
+    "M004": {
+      "en": "Poison Ivy Courtyard",
+      "ru": "Ядовитый дворик",
+      "type": "forest",
+      "level": 4,
+      "gold": 600,
+      "bosses": "monster_12016"
+    },
+    "M005": {
+      "en": "Temple Square",
+      "ru": "Храмовая площадь",
+      "type": "forest",
+      "level": 5,
+      "gold": 1000,
+      "bosses": "monster_12001"
+    },
+    "M006": {
+      "en": "Shadowy Thicket",
+      "ru": "Темный лес",
+      "type": "forest",
+      "level": 4,
+      "gold": 600,
+      "bosses": "monster_12003"
+    },
+    "M007": {
+      "en": "Underground Temple",
+      "ru": "Подземелье храма",
+      "type": "forest",
+      "level": 6,
+      "gold": 1500,
+      "bosses": "monster_12015"
+    },
+    "M008": {
+      "en": "Void Outskirts",
+      "ru": "Внешняя пустота",
+      "type": "forest",
+      "level": 6,
+      "gold": 1500,
+      "bosses": "monster_12013"
+    },
+    "M009": {
+      "en": "Sanctum of Fading Shadows",
+      "ru": "Храм абсолютной тени",
+      "type": "forest",
+      "level": 7,
+      "gold": 1500,
+      "bosses": [
+        "monster_12002",
+        "monster_12017"
+      ]
+    },
+    "M010": {
+      "en": "Ender Shrine",
+      "ru": "Храм конца",
+      "type": "forest",
+      "level": 7,
+      "gold": 1500,
+      "bosses": "monster_12019"
+    },
+    "M011": {
+      "en": "Frost Rift",
+      "ru": "Ледяное ущелье",
+      "type": "forest",
+      "level": 5,
+      "gold": 1000,
+      "bosses": "monster_12006"
+    },
+    "M012": {
+      "en": "Mine Ruins",
+      "ru": "Руины шахты",
+      "type": "forest",
+      "level": 3,
+      "gold": 300,
+      "bosses": "monster_11052"
+    },
+    "M013": {
+      "en": "Shrine of Desire",
+      "ru": "Храм желаний",
+      "type": "forest",
+      "level": 8,
+      "gold": 1500,
+      "bosses": "monster_12020"
+    },
+    "M014": {
+      "en": "Ender Thunder Mountain",
+      "ru": "Гора громового конца",
+      "type": "forest",
+      "level": 5,
+      "gold": 1500,
+      "bosses": [
+        "monster_12014",
+        "monster_12021"
+      ]
+    },
+    "M015": {
+      "en": "Enchanted Forest",
+      "ru": "Магический лес",
+      "type": "forest",
+      "level": 8,
+      "gold": 1500
+    },
+    "M016": {
+      "en": "Novice Trial",
+      "ru": "Испытание новичка",
+      "type": "tutorial",
+      "level": 1,
+      "gold": 0
+    },
+    "M019": {
+      "en": "Unknown Space",
+      "ru": "Мин-игра комната M019",
+      "type": "forest",
+      "level": 8,
+      "gold": 0
+    },
+    "M020": {
+      "en": "Test Room M020",
+      "ru": "Тестовая комната M020",
+      "type": "forest",
+      "level": 8,
+      "gold": 0
+    },
+    "M021": {
+      "en": "Cat Challenge",
+      "ru": "Кошачий вызов",
+      "type": "forest",
+      "level": 8,
+      "gold": 0,
+      "bosses": "monster_12027"
+    }
+  }
+}

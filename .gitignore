@@ -1,10 +1,34 @@
 node_modules/
 dist/
+out/
 .turbo/
 *.local
 .DS_Store
 *.tsbuildinfo
 
+# Screenshots from the tracker's `--screenshot`, a development aid.
+shot*.png
+
+# Raw GSI/console captures: large, machine-specific, and they carry the
+# capturing account's SteamID.
+apps/aow5-tracker/capture/
+
 # The data mining pipeline. Runs only on a machine with the game installed, and
 # everything it emits is committed under packages/aow5-shared/ instead.
 /parser/
+
+# Correspondence with the addon developer, and the moderator's relay of it:
+# private messages, a Drive link and a third party's internal decision. The
+# technical outcome — what the game emits and why — is public instead, in
+# apps/aow5-tracker/docs/EVENT-CONTRACT.md.
+apps/aow5-tracker/private/
+
+# Deployment runbook: repository settings, release steps, signing options and
+# what they cost. Operational rather than secret, but it is nobody's business
+# but the maintainer's — the workflows in .github/ are the public half.
+/private/
+
+# Packaging output, and the icon the release script draws on its way there.
+# Both are built from `scripts/icon.ts`; neither is worth a binary in the tree.
+apps/aow5-tracker/release/
+apps/aow5-tracker/build/

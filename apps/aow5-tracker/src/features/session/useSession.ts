@@ -1,0 +1,118 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { TrackerEvent } from '@core/events.ts';
+import { apply, createState, itemTotals, rates, resetState, type TrackerState, type ValueOf } from '@core/stats.ts';
+import type { TrackerStatus } from '@core/ipc.ts';
+import { TABLE_PRICING } from '@/features/items/prices';
+
+/**
+ * How long a silent feed is still believed to be farming, in seconds.
+ *
+ * The live clock runs on real time between events, which is right while the
+ * game is running and wrong the moment it stops: Dota crashing mid-room leaves
+ * a run open, and an overlay left up overnight would count eight hours into it
+ * and report a gold rate near zero. After this much silence the clock stops and
+ * waits for the feed, which is the honest reading of "nothing is arriving".
+ *
+ * Generous on purpose. Runs are two to four minutes and drops land constantly,
+ * so a gap this long is a stopped game rather than a quiet room — and if it is
+ * a quiet room, the recorded duration is still taken from the log's own
+ * timestamps when the run ends. Only the live readout pauses.
+ */
+const STALE_AFTER = 300;
+
+/**
+ * The live session: the event feed, folded, and the numbers that fall out of it.
+ *
+ * The per-room table and the unreadable-line list used to come from here too.
+ * They belong to the settings window now, which reads them from main instead —
+ * a window opened at nine o'clock has not seen the evening, and folding four
+ * times a second for a panel that is usually closed was work done for nobody.
+ *
+ * Deliberately knows nothing about windows, scale or opacity — that is the
+ * shell's business. What it owns is the one thing every overlay wants a copy of
+ * and none of them should own twice, which is why the recipe panel calls
+ * this same hook to count drops rather than subscribing to events itself.
+ *
+ * The reducer mutates a single state object rather than producing a new one per
+ * event — a long session is tens of thousands of events, and re-rendering on
+ * each would be wasteful. Instead a version counter ticks and the derived
+ * values are recomputed on a fixed cadence, which also keeps the open run's
+ * elapsed time moving between events.
+ */
+/**
+ * @param priceOf what a drop is worth — `pricing(config.prices).value`, so the
+ * player's own prices reach the rates. Defaults to the table price for a caller
+ * that shows no gold at all, which is the recipe panel counting ingredients.
+ */
+export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
+  const stateRef = useRef<TrackerState>(createState());
+  /**
+   * The newest event clock, and the wall time it reached us.
+   *
+   * The game's clock only moves when the game says something, and since the
+   * addon stopped sending periodic snapshots that is a handful of lines per
+   * room. Anchoring it to real time is what makes the timers tick every second
+   * instead of standing still and then jumping five at the next pickup.
+   */
+  const anchor = useRef<{ clock: number; at: number }>({ clock: 0, at: Date.now() });
+  const [version, setVersion] = useState(0);
+  const [status, setStatus] = useState<TrackerStatus>({ source: 'mock', detail: 'starting…' });
+
+  useEffect(() => {
+    const api = window.tracker;
+    const offEvent = api.onEvent((event: TrackerEvent) => {
+      apply(stateRef.current, event);
+      const { clock } = stateRef.current;
+      if (clock > anchor.current.clock) anchor.current = { clock, at: Date.now() };
+    });
+    const offStatus = api.onStatus((next) => {
+      setStatus(next);
+      // A source change means a new session; the old numbers are meaningless.
+      stateRef.current = createState();
+      anchor.current = { clock: 0, at: Date.now() };
+      setVersion((v) => v + 1);
+    });
+    // 4 Hz: fast enough that the elapsed clock never looks stuck, slow enough
+    // to cost nothing.
+    const timer = setInterval(() => setVersion((v) => v + 1), 250);
+    return () => {
+      offEvent();
+      offStatus();
+      clearInterval(timer);
+    };
+  }, []);
+
+  /**
+   * Zeroes the session, keeping the room you are standing in.
+   *
+   * The archive is told separately, by whoever called this: a restart means the
+   * runs after it are not comparable with the ones before, and the file has to
+   * agree with the screen about where that line falls.
+   */
+  const clearSession = useCallback(() => {
+    stateRef.current = resetState(stateRef.current);
+    setVersion((v) => v + 1);
+  }, []);
+
+  const derived = useMemo(() => {
+    const state = stateRef.current;
+    // The game's clock, carried forward by however long ago the last event
+    // arrived — capped, so a feed that has stopped stops the clock with it.
+    const idle = (Date.now() - anchor.current.at) / 1000;
+    const now = anchor.current.clock + Math.min(idle, STALE_AFTER);
+    return {
+      state,
+      rates: rates(state, priceOf, now),
+      items: itemTotals(state, now),
+    };
+    // `version` is the intentional trigger — the state object itself is mutated
+    // in place, so it can never be a useful dependency. `priceOf` is here
+    // because a price the player edits has to reach the numbers without
+    // waiting for the next event.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [version, priceOf]);
+
+  return { ...derived, status, clearSession };
+}
+
+export type Session = ReturnType<typeof useSession>;
