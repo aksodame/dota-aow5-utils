@@ -24,5 +24,12 @@
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.preload.tsbuildinfo"
   },
-  "include": ["electron/preload.ts", "core/events.ts", "core/ipc.ts", "core/history.ts", "core/stats.ts"]
+  "include": [
+    "electron/preload.ts",
+    "core/events.ts",
+    "core/ipc.ts",
+    "core/history.ts",
+    "core/sounds.ts",
+    "core/stats.ts"
+  ]
 }

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { pricing } from '@/features/items/prices';
 import { useSession } from '@/features/session/useSession';
+import { useDropSounds } from '@/features/sounds/useDropSounds';
 import { OverlayShell } from '@/shell/OverlayShell';
 import { useOverlay, useScaleShortcuts } from '@/shell/useOverlay';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,10 @@ export function FarmOverlay() {
 
   const scale = config?.uiScale ?? UI_SCALE.default;
   useScaleShortcuts(scale, setScale);
+
+  // Here rather than in the shell: this is the window that watches the feed,
+  // and a second window ringing the same drop would be an echo.
+  useDropSounds(config?.sounds ?? null);
 
   /** Restart: a fresh session on screen and a fresh one in the archive. */
   const restart = useCallback(() => {

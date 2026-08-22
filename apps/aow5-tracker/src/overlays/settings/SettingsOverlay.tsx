@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
-import { UI_SCALE, type SessionSnapshot, type TrackerStatus } from '@core/ipc.ts';
+import { UI_SCALE, type SessionSnapshot, type TrackerStatus, type UpdateState } from '@core/ipc.ts';
 import { Button } from '@/components/ui/button';
 import { pricing } from '@/features/items/prices';
 import { OverlayShell } from '@/shell/OverlayShell';
@@ -39,6 +39,15 @@ export function SettingsOverlay() {
    * the log path it is a fact about.
    */
   const [status, setStatus] = useState<TrackerStatus | null>(null);
+  /**
+   * Where the updater is.
+   *
+   * Pushed rather than polled: the steps are a check, a download and a
+   * restart, and the middle one reports a percentage several times a second.
+   * Main sends the current state to every window as it loads, so this is null
+   * only for the instant before the first message arrives.
+   */
+  const [update, setUpdate] = useState<UpdateState | null>(null);
 
   const scale = config?.uiScale ?? UI_SCALE.default;
   useScaleShortcuts(scale, setScale);
@@ -46,6 +55,15 @@ export function SettingsOverlay() {
   const prices = useMemo(() => pricing(config?.prices, config?.halvePrices), [config?.prices, config?.halvePrices]);
 
   useEffect(() => window.tracker.onStatus(setStatus), []);
+
+  // Subscribe first, then ask: a window reloaded mid-download would otherwise
+  // sit empty until the next progress event — and once the update is staged
+  // there are no more of those.
+  useEffect(() => {
+    const off = window.tracker.onUpdate(setUpdate);
+    void window.tracker.getUpdate().then(setUpdate);
+    return off;
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -91,6 +109,7 @@ export function SettingsOverlay() {
         status={status}
         rooms={session.rooms}
         skipped={session.skipped}
+        update={update}
         pricing={prices}
         onScale={setScale}
         onOpacity={setOpacity}

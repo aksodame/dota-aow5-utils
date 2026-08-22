@@ -114,6 +114,10 @@ export class Overlay {
         sandbox: false,
         contextIsolation: true,
         nodeIntegration: false,
+        // A drop sound has no gesture behind it: the player is in the game,
+        // and this window is click-through. Electron already defaults to this,
+        // and the default is not something to find out about by silence.
+        autoplayPolicy: 'no-user-gesture-required',
       },
     });
     this.window = win;

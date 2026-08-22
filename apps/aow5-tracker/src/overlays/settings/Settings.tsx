@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Check, FolderOpen, Plus, RotateCcw, Scissors, X } from 'lucide-react';
+import { Check, Download, FolderOpen, Play, Plus, RefreshCw, RotateCcw, RotateCw, Scissors, Volume2, X } from 'lucide-react';
 import { iconUrl, qualityColor } from '@core/items.ts';
+import { BUILTIN_JACKPOT, DEFAULT_SOUNDS, LIMIT, soundLabel, VOLUME, type SoundSettings } from '@core/sounds.ts';
 import {
   OPACITY,
   UI_SCALE,
@@ -9,6 +10,7 @@ import {
   type SkippedLine,
   type TrackerConfig,
   type TrackerStatus,
+  type UpdateState,
 } from '@core/ipc.ts';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import type { Pricing } from '@/features/items/prices';
+import { useSoundPreview } from '@/features/sounds/useSoundPreview';
 import { itemTable } from '@/features/items/table';
 import { roomTable } from '@/features/rooms/table';
 import { clock, compact, percent } from '@/lib/format';
@@ -42,6 +45,8 @@ interface Props {
   /** The session so far, as main saw it. Null until the first read comes back. */
   rooms: RoomSummary[];
   skipped: SkippedLine[];
+  /** Where the updater is. Null until main says, which is as the window loads. */
+  update: UpdateState | null;
   pricing: Pricing;
   onScale: (next: number) => void;
   onOpacity: (next: number) => void;
@@ -53,6 +58,7 @@ export function Settings({
   status,
   rooms,
   skipped,
+  update,
   pricing,
   onScale,
   onOpacity,
@@ -61,6 +67,7 @@ export function Settings({
   const [query, setQuery] = useState('');
   const [priceQuery, setPriceQuery] = useState('');
   const [trim, setTrim] = useState<LogTrim | null>(null);
+  const [soundQuery, setSoundQuery] = useState('');
   const tracked = config?.tracked ?? [];
   const prices = config?.prices ?? {};
   const transparentBackground = config?.transparentBackground ?? true;
@@ -69,6 +76,24 @@ export function Settings({
 
   const setTracked = (next: string[]) => void window.tracker.setConfig({ tracked: next });
   const toggle = (id: string) => setTracked(tracked.includes(id) ? tracked.filter((t) => t !== id) : [...tracked, id]);
+
+  const sounds = config?.sounds ?? DEFAULT_SOUNDS;
+  const soundResults = soundQuery.trim() !== '' ? itemTable.search(soundQuery, 8) : [];
+  const preview = useSoundPreview(config?.sounds ?? null);
+
+  const setSounds = (patch: Partial<SoundSettings>) =>
+    void window.tracker.setConfig({ sounds: { ...sounds, ...patch } });
+  const bind = (id: string, ref: string) => setSounds({ bindings: { ...sounds.bindings, [id]: ref } });
+  const unbind = (id: string) => {
+    const next = { ...sounds.bindings };
+    delete next[id];
+    setSounds({ bindings: next });
+  };
+  /** The dialog, then the binding — cancelling it leaves the old sound in place. */
+  const rebind = (id: string) =>
+    void window.tracker.pickSound().then((file) => {
+      if (file !== null) bind(id, file);
+    });
 
   const setPrices = (next: Record<string, number>) => void window.tracker.setConfig({ prices: next });
   const setPrice = (id: string, gold: number) => setPrices({ ...prices, [id]: gold });
@@ -211,6 +236,128 @@ export function Settings({
                 </Badge>
               ))}
             </div>
+          )}
+        </section>
+
+        {/*
+          The third thing you say about an item, after what it is worth and
+          whether you are watching for it: what it should sound like when it
+          lands. A drop sound is for the item you are farming *for* — the one
+          worth looking up from the fight for — so it is a binding rather than
+          a blanket setting.
+        */}
+        <section className="space-y-1.5">
+          <Label>Sounds</Label>
+          <CheckboxRow
+            label="Play a sound on drops"
+            hint="Rings once per pickup of a bound item. Crimson Heart comes bound to the jackpot sound; unbind it and it stays unbound."
+            checked={sounds.enabled}
+            onChange={(next) => setSounds({ enabled: next })}
+          />
+
+          {sounds.enabled && (
+            <>
+              <SliderRow
+                label="Volume"
+                value={sounds.volume}
+                min={VOLUME.min}
+                max={VOLUME.max}
+                step={VOLUME.step}
+                onChange={(next) => setSounds({ volume: next })}
+                format={percent}
+              />
+
+              {/* A notification that outlasts the moment it is about becomes
+                  something to sit through, so it is capped by default. */}
+              <CheckboxRow
+                label="Cut long sounds"
+                hint="Fade the sound out after a few seconds instead of playing the whole file."
+                checked={sounds.limitSeconds !== null}
+                onChange={(next) => setSounds({ limitSeconds: next ? LIMIT.default : null })}
+              />
+              {sounds.limitSeconds !== null && (
+                <SliderRow
+                  label="Cut after"
+                  value={sounds.limitSeconds}
+                  min={LIMIT.min}
+                  max={LIMIT.max}
+                  step={LIMIT.step}
+                  onChange={(next) => setSounds({ limitSeconds: next })}
+                  format={(v) => `${v}s`}
+                />
+              )}
+
+              <Input
+                value={soundQuery}
+                onChange={(e) => setSoundQuery(e.target.value)}
+                placeholder="Search an item to bind a sound…"
+                className="h-7 text-xs"
+              />
+
+              {soundResults.length > 0 && (
+                <ul className="space-y-0.5 rounded-md bg-black/25 p-1">
+                  {soundResults.map((item) => (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        // Bound to the sound in the box, not to a file dialog:
+                        // one click gets you something audible, and the row
+                        // that appears is where you change it to your own.
+                        onClick={() => {
+                          bind(item.id, BUILTIN_JACKPOT);
+                          setSoundQuery('');
+                        }}
+                        className="flex w-full items-center gap-2 rounded px-1 py-0.5 text-left hover:bg-white/10"
+                      >
+                        <img src={iconUrl(item.icon)} alt="" className="size-5 rounded-sm object-cover" />
+                        <span className="min-w-0 flex-1 truncate" style={{ color: qualityColor(item.quality) }}>
+                          {item.name}
+                        </span>
+                        {sounds.bindings[item.id] !== undefined ? (
+                          <Check className="size-3.5 shrink-0 text-primary" />
+                        ) : (
+                          <Volume2 className="size-3.5 shrink-0 text-muted-foreground" />
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {Object.keys(sounds.bindings).length > 0 && (
+                <ul className="space-y-0.5">
+                  {Object.entries(sounds.bindings).map(([id, ref]) => {
+                    const info = itemTable.get(id);
+                    return (
+                      <li key={id} className="flex items-center gap-2 rounded px-1 py-0.5 odd:bg-white/[0.03]">
+                        <img src={iconUrl(info.icon)} alt="" className="size-5 shrink-0 rounded-sm object-cover" />
+                        <span
+                          className="min-w-0 flex-1 truncate"
+                          style={{ color: qualityColor(info.quality) }}
+                          title={id}
+                        >
+                          {info.name}
+                        </span>
+                        {/* The file's name, with the whole path on hover: the
+                            rest of it is where you keep your sounds. */}
+                        <span className="w-20 shrink-0 truncate text-right text-[0.5rem] text-muted-foreground" title={ref}>
+                          {soundLabel(ref)}
+                        </span>
+                        <button type="button" onClick={() => preview(ref)} aria-label={`Play ${soundLabel(ref)}`} title="Play it">
+                          <Play className="size-3 text-muted-foreground hover:text-foreground" />
+                        </button>
+                        <button type="button" onClick={() => rebind(id)} aria-label={`Choose a sound for ${info.name}`} title="Choose a file">
+                          <FolderOpen className="size-3 text-muted-foreground hover:text-foreground" />
+                        </button>
+                        <button type="button" onClick={() => unbind(id)} aria-label={`Unbind ${info.name}`} title="Unbind">
+                          <X className="size-3 text-muted-foreground hover:text-destructive" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </>
           )}
         </section>
 
@@ -377,9 +524,130 @@ export function Settings({
             </ul>
           </section>
         )}
+
+        {/*
+          Last, because it is the only section that is not about farming — and
+          because "what version am I on" is something you come looking for
+          rather than something you notice on the way past.
+        */}
+        <section className="space-y-1.5">
+          <Label>About</Label>
+          <p className="text-[0.625rem] text-muted-foreground">
+            AOW5 Tracker <span className="tabular-nums text-foreground">{update?.current ?? '—'}</span>
+          </p>
+          <UpdateRow state={update} />
+        </section>
       </div>
     </ScrollArea>
   );
+}
+
+/**
+ * The update button, and the sentence beside it.
+ *
+ * One button whose job changes with the state rather than a row of three, two
+ * of which would be dead at any moment: there is exactly one thing worth doing
+ * next, and which one it is *is* the state. The sentence beside it carries
+ * everything the button cannot — the version on offer, why a check failed, how
+ * far a download has got.
+ *
+ * The restart is the only press that costs anything, and it is not confirmed
+ * here: main answers it with a real dialog, because a modal drawn inside a
+ * frameless transparent overlay would have nothing to sit on.
+ */
+function UpdateRow({ state }: { state: UpdateState | null }) {
+  // Before the first message from main. A button that might be about to
+  // disable itself is worse than a beat of nothing.
+  if (state === null) return null;
+
+  if (state.status === 'unsupported') {
+    return (
+      <p className="text-[0.625rem] text-muted-foreground">
+        Updates are for an installed build. This one runs from the source tree, so it updates the way the source
+        tree does.
+      </p>
+    );
+  }
+
+  const busy = state.status === 'checking' || state.status === 'downloading';
+
+  const press = () => {
+    if (state.status === 'available') return void window.tracker.downloadUpdate();
+    if (state.status === 'ready') return void window.tracker.installUpdate();
+    return void window.tracker.checkUpdate();
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button variant="outline" className="h-7 shrink-0 text-xs" disabled={busy} onClick={press}>
+        {state.status === 'available' ? (
+          <>
+            <Download className="size-3.5" /> Download
+          </>
+        ) : state.status === 'ready' ? (
+          <>
+            <RotateCw className="size-3.5" /> Restart and update
+          </>
+        ) : (
+          <>
+            <RefreshCw className={cn('size-3.5', state.status === 'checking' && 'animate-spin')} /> Check for updates
+          </>
+        )}
+      </Button>
+      <span
+        className={cn(
+          'min-w-0 flex-1 truncate text-[0.625rem]',
+          state.status === 'error' ? 'text-destructive' : 'text-muted-foreground',
+        )}
+        title={describeUpdate(state)}
+      >
+        {describeUpdate(state)}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Where the updater is, in a sentence.
+ *
+ * `ready` says what pressing the button will cost, because the dialog that
+ * says it properly only appears after the press — and somebody who has just
+ * sat down to farm should be able to decide not to from here.
+ */
+function describeUpdate(state: UpdateState): string {
+  switch (state.status) {
+    case 'unsupported':
+      return 'Only an installed build can update itself.';
+    case 'idle':
+      return '';
+    case 'checking':
+      return 'Asking GitHub…';
+    case 'current':
+      return 'This is the newest build.';
+    case 'available':
+      return state.notes === null ? `${state.version} is out.` : `${state.version} is out — ${firstLine(state.notes)}`;
+    case 'downloading':
+      return `Downloading ${state.version}… ${state.percent}%`;
+    case 'ready':
+      return `${state.version} is ready. Restarting ends the run you are in.`;
+    case 'error':
+      return `Could not check: ${state.message}`;
+  }
+}
+
+/**
+ * The first line of the release notes, as plain text.
+ *
+ * GitHub's are markdown and can be a page long; this is a caption on one row of
+ * a settings panel, and the release page is where the rest of them live.
+ */
+function firstLine(notes: string): string {
+  const line = notes
+    .replace(/<[^>]*>/g, ' ')
+    .split('\n')
+    .map((l) => l.replace(/^[#>*\-\s]+/, '').trim())
+    .find((l) => l !== '');
+  return line === undefined ? '' : line.length > 80 ? `${line.slice(0, 79)}…` : line;
 }
 
 /**

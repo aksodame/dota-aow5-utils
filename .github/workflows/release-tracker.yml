@@ -12,9 +12,16 @@ name: Release tracker
 # releases too is the day this stops being a silent mix-up.
 #
 # Packaging is in place: `electron-builder.yml` in the tracker, the dependency,
-# and a `release` script that draws `build/icon.png` on its way past. It ships a
-# portable zip rather than an installer — see the comment in that file for the
-# MAX_PATH reason and what turning NSIS on would take.
+# and a `release` script that draws `build/icon.png` on its way past. It ships an
+# NSIS installer, a portable zip, and the `latest.yml` that `electron-updater`
+# reads — which is what makes the About section's update button work. Nothing
+# here has to know about that: `--publish always` uploads whatever the config
+# builds.
+#
+# The installer needs the root `.npmrc`: `makensis` is not long-path aware, and
+# electron-builder's own NSIS headers sit past MAX_PATH under pnpm's hashed
+# store until `virtual-store-dir-max-length` shortens it. That file is why this
+# job builds an installer at all, on this runner as much as anywhere.
 
 on:
   push:

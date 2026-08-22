@@ -12,6 +12,9 @@ pnpm --filter aow5-tracker test    # 88 tests over the reducer, parser, clock, p
 pnpm --filter aow5-tracker build
 ```
 
+Changing any of it: [`CONTRIBUTING.md`](CONTRIBUTING.md) — the invariants a PR must not break, and what
+its description has to answer.
+
 `Ctrl+Alt+T` toggles the overlay between click-through (while playing) and interactive (to configure it).
 The header carries collapse, restart session, history, settings and quit; a tray icon offers show/hide and
 quit, since the window is frameless and skips the taskbar. History and settings are windows of their own —
@@ -180,16 +183,43 @@ git push origin tracker-v0.1.0-beta
 ```
 
 The job runs on Windows — packaging is the one thing the tests do not need a
-Windows runner for — draws `build/icon.png`, and publishes a portable zip to the
-GitHub release. The site's download button reads `/releases/latest` and picks
-the first usable asset, so the zip is what a visitor gets.
+Windows runner for — draws `build/icon.png`, and publishes an installer, a
+portable zip and the `latest.yml` the updater reads. The site's download button
+reads `/releases/latest` and prefers `setup*.exe`, so the installer is what a
+visitor gets.
 
-**A zip rather than an installer**, for now: electron-builder's NSIS step cannot
-run under pnpm's store layout on Windows without breaking `MAX_PATH`, and the
-config records what turning it on would take. A portable build also skips the
-SmartScreen prompt an unsigned installer earns — the executable is unsigned
-either way, since signing a fan tool means buying a certificate against a
-company identity.
+**Both, because they are for different people.** The installer is the one that
+can update itself: `electron-updater`'s Windows path downloads and runs an
+`.exe`, and a zip gives it nothing to install. The zip stays for anyone who
+would rather not run an installer at all; pressing the update button in one
+downloads the installer and converts the copy, which keeps `%APPDATA%` and
+leaves the extracted folder behind.
+
+NSIS was off for a while because `makensis` is not long-path aware and
+`!include` of electron-builder's own headers ran past `MAX_PATH` under pnpm's
+hashed store. The root `.npmrc` caps those directory names at 50 characters,
+which fixes it without giving up pnpm's strict isolation.
+
+Either artifact earns a SmartScreen prompt on first download: the executable is
+unsigned, since signing a fan tool means buying a certificate against a company
+identity.
+
+### Updating
+
+Settings → **About**. Three presses, in order — check, download, restart — and
+nothing happens without one: no check on launch, no background download, and no
+restart nobody asked for. This is an overlay drawn over a live game, and each of
+those would interrupt at the worst moment.
+
+The restart asks first, because it ends the run you are standing in: finished
+runs are already in the archive, the current one is not, and the session totals
+start over. Settings, prices and history live in `%APPDATA%/aow5-tracker` and are
+untouched — an installer replaces the program directory and nothing else. A
+downloaded update also applies on the next ordinary quit from the tray.
+
+A development build says so instead of offering the buttons; there is no
+`app-update.yml` outside a packaged app, and the source tree updates the way the
+source tree does.
 
 ## Testing
 

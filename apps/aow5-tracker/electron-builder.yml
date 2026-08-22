@@ -4,6 +4,11 @@
 # always-on-top click-through window are all built against it.
 
 appId: com.aksodame.aow5tracker
+# Names the executable and the installer. Deliberately *not* in package.json:
+# `app.getName()` reads `productName` there if it exists, and putting it there
+# would move `app.getPath('userData')` from %APPDATA%\aow5-tracker to
+# %APPDATA%\AOW5 Tracker — silently orphaning every existing user's settings
+# and run archive. See the comment over `configPath` in electron/config.ts.
 productName: AOW5 Tracker
 copyright: Fan-made, unaffiliated with Valve or the Age of Weapons 5 authors.
 
@@ -13,8 +18,11 @@ directories:
 
 # `out/` is the whole application: electron-vite bundles main, preload and the
 # renderer, and the built main imports nothing but `electron` and `node:*` — so
-# no dependency has to be shipped beside it. The explicit exclusion is what
-# keeps a pnpm store's worth of symlinked devDependencies out of the installer.
+# no dependency has to be shipped beside it. That stays true with
+# `electron-updater` in `dependencies`, because electron.vite.config.ts excludes
+# it from `externalizeDepsPlugin` and bundles it in. The explicit exclusion is
+# what keeps a pnpm store's worth of symlinked devDependencies out of the
+# installer.
 files:
   - out/**
   - package.json
@@ -23,23 +31,22 @@ files:
 asar: true
 
 win:
-  # A zip, and only a zip.
+  # The installer is what `electron-updater` updates: its Windows path is
+  # `NsisUpdater`, which downloads and runs an `.exe`. A zip has nothing for it
+  # to install, which is why auto-update waited on this target being buildable.
   #
-  # NSIS is written and works, but cannot build here: makensis is not long-path
-  # aware, and `!include` of electron-builder's own NSIS headers lands at 264
-  # characters once pnpm's hashed store directory is in the path — four over
-  # Windows' MAX_PATH. GitHub's runner path is barely shorter, so it would fail
-  # there too. Turning the installer on means one of:
+  # It was off because `makensis` is not long-path aware and `!include` of
+  # electron-builder's own NSIS headers landed at 264 characters under pnpm's
+  # hashed store — four over MAX_PATH, on the GitHub runner too. The root
+  # `.npmrc` caps those directory names at 50 characters, which fixes it without
+  # giving up pnpm's strict isolation.
   #
-  #   * `node-linker=hoisted` in a root .npmrc (flat node_modules, short paths,
-  #     but the whole workspace loses pnpm's strict isolation), or
-  #   * pnpm >= 9.1 plus `virtual-store-dir-max-length=50` (keeps isolation;
-  #     needs the `packageManager` field bumped from 9.0.0).
-  #
-  # Neither is worth doing mid-release, and for an unsigned beta a portable zip
-  # is the friendlier artifact anyway: no installer, so no SmartScreen prompt
-  # about an unrecognised publisher.
+  # The zip stays alongside it for anyone who will not run an installer. It
+  # cannot auto-update; pressing the update button in a zip build downloads the
+  # installer and converts the copy, which keeps %APPDATA% and orphans the
+  # extracted folder.
   target:
+    - nsis
     - zip
   icon: build/icon.png
   # SmartScreen will warn on first download either way: signing a fan tool costs
@@ -47,7 +54,6 @@ win:
   # Said plainly in the README rather than papered over here.
   signAndEditExecutable: true
 
-# Kept ready for the day the path problem above is dealt with.
 nsis:
   oneClick: false
   perMachine: false
@@ -58,6 +64,15 @@ nsis:
   # The overlay keeps a tray icon and no taskbar entry, so an install that ends
   # by launching it would look like nothing happened.
   runAfterFinish: false
+  # Already the default. Explicit because it is the line standing between an
+  # uninstall and somebody's entire run archive, and a default is a thing that
+  # can change under you.
+  deleteAppDataOnUninstall: false
+  # The landing's release picker prefers `setup*.exe` over everything else, so
+  # this name is what makes the download button point at the installer rather
+  # than the zip. Keep it in step with `pickAsset` in
+  # apps/webapp/src/lib/release.ts.
+  artifactName: AOW5-Tracker-Setup-${version}.${ext}
 
 publish:
   provider: github
@@ -65,8 +80,13 @@ publish:
   repo: dota-aow5-utils
   # The site reads /releases/latest and shows whatever is attached; a draft
   # would leave that button pointing at the last release instead of this one.
+  #
+  # `electron-updater` reads the same endpoint, so this line is also what makes
+  # a `-beta` build updatable at all: with `allowPrerelease` left at its default
+  # the updater only ever looks at /releases/latest, and a release marked
+  # "pre-release" on GitHub is invisible to both it and the site.
   releaseType: release
 
 # `tracker-v0.1.0-beta` is the tag; the file people download should say the same
-# thing without the prefix.
+# thing without the prefix. The installer overrides this under `nsis:` above.
 artifactName: AOW5-Tracker-${version}-${os}.${ext}

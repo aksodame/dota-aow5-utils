@@ -43,3 +43,23 @@ pull request. The web app's own README covers the data, the share format and how
 `.github/workflows/` is the rest of it: `ci.yml` runs those three checks, `pages.yml` publishes the site to
 GitHub Pages on a push to `master`, and `release-tracker.yml` builds and publishes the tracker when a
 `tracker-v*` tag is pushed.
+
+## Contributing
+
+Pull requests are welcome. There is no repo-wide contributing guide, because there is no repo-wide set of
+rules worth reading — a change to the planner and a change to the overlay can each break something the
+other has never heard of. So the guide lives with the app:
+
+| | |
+|---|---|
+| **[`apps/webapp/CONTRIBUTING.md`](apps/webapp/CONTRIBUTING.md)** | The site and the planner. The append-only id tables, the codec versions that keep an already-shared link decoding, `pathname`-only routing because the fragment is the board, and both languages and both themes on every change. |
+| **[`apps/aow5-tracker/CONTRIBUTING.md`](apps/aow5-tracker/CONTRIBUTING.md)** | The overlay. `core/` free of any Electron import, a renderer that never touches the filesystem, the preload bridge as the only IPC surface, the event contract, and a config file that can never stop the app from starting. |
+
+Each one covers how to run that app on its own, what review will send a PR back for, and the pull-request
+template it expects — including a **feature description** that says what changed, what it does to the
+contract other people's data already depends on (a shared link; an existing `config.json`), and what was
+knowingly left out. The overlay's guide also explains how to develop against a scripted session with no
+game installed, which is what makes contributing to it possible without owning the map.
+
+What holds for both: branch off `master`, keep a PR to one coherent change, and run what CI runs —
+`pnpm check-types && pnpm test && pnpm build` — before pushing.

@@ -40,7 +40,22 @@ const minify = 'esbuild' as const;
  */
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    /*
+     * `electron-updater` is bundled rather than externalised, which is the one
+     * exception here and a deliberate one.
+     *
+     * It is the app's only runtime dependency, and `electron-builder.yml` ships
+     * `out/` and `package.json` and nothing else — no `node_modules` reaches the
+     * asar, which is what keeps a pnpm store's worth of symlinks out of the
+     * installer. Left external, the built main would `import 'electron-updater'`
+     * against a directory that is not there, and the packaged app would die on
+     * launch with ERR_MODULE_NOT_FOUND.
+     *
+     * So it goes in the bundle, and the invariant the packaging config rests on
+     * — that main imports nothing but `electron` and `node:*` — stays true.
+     * `grep -o 'from"[^"]*"' out/main/main.js | sort -u` is how to check.
+     */
+    plugins: [externalizeDepsPlugin({ exclude: ['electron-updater'] })],
     build: { minify, rollupOptions: { input: path.join(root, 'electron/main.ts') } },
     resolve: { alias: { '@core': path.join(root, 'core') } },
   },

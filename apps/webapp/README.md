@@ -18,6 +18,9 @@ VITE_BASE=/dota-aow5-utils/ pnpm --filter aow5-webapp build   # for a project Pa
 The tracker itself is **not** here — it is an Electron app in `apps/aow5-tracker`, and this app may not
 import from it. `/tracker` is a page *about* it.
 
+Changing any of it: [`CONTRIBUTING.md`](CONTRIBUTING.md) — the invariants a PR must not break, and what
+its description has to answer.
+
 ## Routing, and why it is fifteen lines
 
 `src/router.tsx` is the History API with a subscription around it. A router library buys nested layouts,

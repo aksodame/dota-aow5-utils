@@ -43,11 +43,9 @@ interface Props {
   sessions: SessionHistory[] | null;
   pricing: Pricing;
   onRefresh: () => void;
-  /** Closes the window. */
-  onClose: () => void;
 }
 
-export function HistoryView({ sessions, pricing, onRefresh, onClose }: Props) {
+export function HistoryView({ sessions, pricing, onRefresh }: Props) {
   // The newest session is the one you just played, so it starts open.
   const [openSessions, setOpenSessions] = useState<Set<number> | null>(null);
   const [openRuns, setOpenRuns] = useState<Set<string>>(new Set());
@@ -261,9 +259,6 @@ export function HistoryView({ sessions, pricing, onRefresh, onClose }: Props) {
                   : 'Clear all'}
             </Button>
           )}
-          <Button variant="outline" className="h-7 flex-1 text-xs" onClick={onClose}>
-            Close
-          </Button>
         </div>
       </div>
     </ScrollArea>

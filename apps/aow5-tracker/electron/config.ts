@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
+import { DEFAULT_SOUNDS, readSoundSettings } from '../core/sounds.ts';
 import {
   OPACITY,
   OVERLAY_IDS,
@@ -40,6 +41,7 @@ export const DEFAULTS: TrackerConfig = {
   prices: {},
   halvePrices: true,
   trimLog: true,
+  sounds: { ...DEFAULT_SOUNDS, bindings: { ...DEFAULT_SOUNDS.bindings } },
   opacity: OPACITY.default,
   // Solid by default: a readout you can see is worth more than a game you can
   // see through it, and the slider is right there for anyone who disagrees.
@@ -65,6 +67,21 @@ export function clampSize(id: OverlayId, size: { width: number; height: number }
   };
 }
 
+/**
+ * `%APPDATA%\aow5-tracker\config.json`, and the reason that is worth writing down.
+ *
+ * The folder is named after `app.getName()`, which reads `productName` from
+ * package.json if it is there and falls back to `name`. It is not there, on
+ * purpose: `productName: AOW5 Tracker` lives in `electron-builder.yml`, where it
+ * names the executable and the installer without touching this. Adding it to
+ * package.json would move this path to `%APPDATA%\AOW5 Tracker` and silently
+ * orphan every existing user's settings and run archive — a one-line change
+ * that looks like tidying and reads, to a player, as the app having forgotten
+ * everything.
+ *
+ * Nothing is stored next to the executable, which is what makes an update safe:
+ * an installer replaces the program directory and never touches this one.
+ */
 const configPath = () => path.join(app.getPath('userData'), 'config.json');
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -162,6 +179,7 @@ export function loadConfig(): TrackerConfig {
     // Absent means the default here, and the default is on.
     halvePrices: raw['halvePrices'] !== false,
     trimLog: raw['trimLog'] !== false,
+    sounds: readSoundSettings(raw['sounds']),
     opacity: clamp(number(raw['opacity'], DEFAULTS.opacity), OPACITY.min, OPACITY.max),
     // Absent in a pre-0.3 file, where opacity always meant the whole window —
     // and absent means the default, which is off.
@@ -180,13 +198,40 @@ export function loadConfig(): TrackerConfig {
   };
 }
 
+/**
+ * Writes the settings, in a way that cannot leave half of them.
+ *
+ * Through a temporary file and a rename rather than straight over the top,
+ * because of when this runs and how it can be interrupted. It runs on every
+ * window drag, resize and collapse — hundreds of times an evening — and the
+ * process can be killed under it: by the update button, which hands the process
+ * to an installer, or by Task Manager, or by a machine going down. A
+ * `writeFileSync` caught halfway leaves truncated JSON, `loadConfig` cannot
+ * parse it, and its `catch` quietly hands back `DEFAULTS` — every custom price,
+ * the tracked list, the recipe plan and all four windows' geometry gone, with
+ * nothing said about it anywhere.
+ *
+ * A rename on the same volume is atomic, so an interruption at any instant
+ * leaves either the previous file or the new one, and never something in
+ * between. `renameSync` also replaces the destination on Windows, so there is
+ * no unlink-then-rename gap to be killed inside either.
+ */
 export function saveConfig(config: TrackerConfig): void {
+  const file = configPath();
+  const staging = `${file}.tmp`;
   try {
-    fs.mkdirSync(path.dirname(configPath()), { recursive: true });
-    fs.writeFileSync(configPath(), `${JSON.stringify(config, null, 2)}\n`, 'utf8');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(staging, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
+    fs.renameSync(staging, file);
   } catch {
     // Read-only profile or a locked file; the session still works, it just
-    // will not be remembered.
+    // will not be remembered. Clear the staging file if it got as far as
+    // existing, so a failure does not leave litter beside the real one.
+    try {
+      fs.rmSync(staging, { force: true });
+    } catch {
+      // Nothing further to try, and the settings are the thing that matters.
+    }
   }
 }
 

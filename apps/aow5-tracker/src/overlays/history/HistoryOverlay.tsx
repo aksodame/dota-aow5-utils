@@ -67,7 +67,7 @@ export function HistoryOverlay() {
         </Button>
       }
     >
-      <HistoryView sessions={sessions} pricing={prices} onRefresh={load} onClose={close} />
+      <HistoryView sessions={sessions} pricing={prices} onRefresh={load} />
     </OverlayShell>
   );
 }

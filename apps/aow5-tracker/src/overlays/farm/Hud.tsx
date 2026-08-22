@@ -140,7 +140,7 @@ export function Hud({ rates, items, sessionItems, elapsed, pricing, tracked, car
       */}
       <div className="flex gap-1.5">
         <Card icon={<Timer className="size-3.5" />} value={clock(rates.currentRunElapsed)} label="run" />
-        <Card icon={<DollarSign className="size-3.5" />} value={compact(sessionGold)} label="g/session" />
+        <Card icon={<DollarSign className="size-3.5" />} value={compact(sessionGold)} label="gold" />
         <Card
           icon={<Hourglass className="size-3.5" />}
           value={clock(elapsed)}

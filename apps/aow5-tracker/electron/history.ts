@@ -153,10 +153,22 @@ export class History {
       return record.kind === 'session' ? !doomed.has(record.id) : !doomed.has(record.session);
     });
 
+    // Through a temporary file and a rename, for the same reason `saveConfig`
+    // is: this is the only point at which the whole archive passes through a
+    // single write, so it is the only point at which an interrupted one could
+    // truncate months of farming. A rename on the same volume is atomic, so an
+    // interruption leaves either the old archive or the new one.
+    const staging = `${this.file}.tmp`;
     try {
-      fs.writeFileSync(this.file, kept.length > 0 ? `${kept.join('\n')}\n` : '', 'utf8');
+      fs.writeFileSync(staging, kept.length > 0 ? `${kept.join('\n')}\n` : '', 'utf8');
+      fs.renameSync(staging, this.file);
     } catch {
       // Same as `clear`: a locked profile costs the player a stale archive.
+      try {
+        fs.rmSync(staging, { force: true });
+      } catch {
+        // Nothing further to try; the archive itself is untouched.
+      }
       return;
     }
 

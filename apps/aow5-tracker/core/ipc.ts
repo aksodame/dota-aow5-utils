@@ -1,5 +1,6 @@
 import type { TrackerEvent } from './events.ts';
 import type { SessionHistory } from './history.ts';
+import type { SoundSettings } from './sounds.ts';
 
 /**
  * The contract across the preload bridge.
@@ -201,6 +202,8 @@ export interface TrackerConfig {
    * you did not say.
    */
   halvePrices: boolean;
+  /** What to play when something drops, and how loudly. See `core/sounds.ts`. */
+  sounds: SoundSettings;
   /**
    * Keep Dota's console log down to the lines this tracker reads.
    *
@@ -296,6 +299,34 @@ export interface LogTrim {
   error?: string;
 }
 
+/**
+ * Where the app is in the business of updating itself.
+ *
+ * A union rather than a bag of booleans because the states are genuinely
+ * exclusive — there is no such thing as checking *and* downloading — and
+ * because the settings window renders one sentence and at most one button from
+ * it, which a union makes exhaustive rather than a matter of remembering which
+ * flags go together.
+ *
+ * `current` rides along in every variant. It is the running version, and the
+ * About section needs it whatever else is true; nothing else in the bridge
+ * exposes `app.getVersion()`, and a second channel to carry one string would be
+ * a channel to keep in sync for no reason.
+ */
+export type UpdateState =
+  /** A development build, or a portable copy with no `app-update.yml`. */
+  | { status: 'unsupported'; current: string }
+  /** Nothing asked yet. */
+  | { status: 'idle'; current: string }
+  | { status: 'checking'; current: string }
+  /** Asked, and this is the newest there is. */
+  | { status: 'current'; current: string }
+  | { status: 'available'; current: string; version: string; notes: string | null }
+  | { status: 'downloading'; current: string; version: string; percent: number }
+  /** Downloaded and staged. Applies on the next quit, or on `installUpdate`. */
+  | { status: 'ready'; current: string; version: string }
+  | { status: 'error'; current: string; message: string };
+
 /** One room's session record, as the settings window tabulates it. */
 export interface RoomSummary {
   room: string;
@@ -389,6 +420,23 @@ export interface TrackerApi {
    */
   clearHistory: () => Promise<void>;
   /**
+   * Ask for a sound file with the system's own dialog.
+   *
+   * Resolves to the chosen path, or null if dismissed. Choosing binds nothing
+   * on its own — the caller decides which item it belongs to.
+   */
+  pickSound: () => Promise<string | null>;
+  /**
+   * The bytes of a sound the player chose.
+   *
+   * The renderer cannot open a file itself, and a `file://` source would be
+   * refused by the page's own CSP — so the bytes come across and are decoded
+   * in memory. Null when the file is gone, unreadable, or larger than a
+   * notification has any business being.
+   */
+  readSound: (ref: string) => Promise<Uint8Array | null>;
+
+  /**
    * Delete these sessions and the runs recorded under them.
    *
    * Ids are the session ids the archive hands out — `SessionHistory.id`, the
@@ -423,6 +471,35 @@ export interface TrackerApi {
    * where the line falls.
    */
   newSession: () => Promise<void>;
+
+  /**
+   * Where the updater is now, for a window that opened after it got there.
+   *
+   * Every window is also sent `tracker:update` as it loads, so this is only
+   * needed by a renderer that reloads mid-check — but so is `getConfig`, for
+   * the same reason, and the two are the same kind of thing.
+   */
+  getUpdate: () => Promise<UpdateState>;
+  onUpdate: (handler: (state: UpdateState) => void) => Unsubscribe;
+  /**
+   * Ask GitHub whether there is a newer release.
+   *
+   * Returns nothing: the answer arrives on `onUpdate` like every other step,
+   * so the button has one thing to watch rather than two. Nothing is downloaded
+   * — that is the next press.
+   */
+  checkUpdate: () => Promise<void>;
+  /** Fetch the update found by `checkUpdate`. Progress arrives on `onUpdate`. */
+  downloadUpdate: () => Promise<void>;
+  /**
+   * Restart onto a downloaded update, after asking.
+   *
+   * Asks with a real dialog rather than doing it, because this closes an
+   * overlay someone may be playing behind: the run they are standing in is not
+   * in the archive yet and the session totals start over. A downloaded update
+   * also applies on the next ordinary quit, so declining costs nothing.
+   */
+  installUpdate: () => Promise<void>;
 
   quit: () => Promise<void>;
 }

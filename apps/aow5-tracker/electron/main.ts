@@ -11,6 +11,7 @@ import {
   type SessionSnapshot,
   type SkippedLine,
   type TrackerConfig,
+  type UpdateState,
 } from '../core/ipc.ts';
 import { compactLog, type CompactResult } from '../core/sources/logfile.ts';
 import { byRoom } from '../core/stats.ts';
@@ -19,6 +20,7 @@ import { History } from './history.ts';
 import { Overlay } from './overlay.ts';
 import { SourceFeed } from './sources.ts';
 import { createTray } from './tray.ts';
+import { Updater } from './update.ts';
 
 /**
  * Wiring, and nothing else.
@@ -55,6 +57,9 @@ let history: History = null as unknown as History;
  * them, and the file itself is where an actual investigation goes.
  */
 const SKIPPED_LIMIT = 20;
+
+/** Anything bigger is not a notification. Mirrors the renderer's own limit. */
+const MAX_SOUND_BYTES = 10 * 1024 * 1024;
 const skippedLines: SkippedLine[] = [];
 
 /**
@@ -76,6 +81,14 @@ const deliver = (channel: string, payload: unknown) => {
 
 const feed = new SourceFeed(deliver);
 const save = () => saveConfig(config);
+
+/**
+ * The updater, and where its state goes.
+ *
+ * Constructed lazily inside `whenReady` — it asks `app.getVersion()` and
+ * `app.isPackaged`, and it must not touch `autoUpdater` before the app exists.
+ */
+let updater: Updater = null as unknown as Updater;
 
 /**
  * How often to see whether the console log can be tidied, in ms.
@@ -180,7 +193,37 @@ function bind(accelerator: string, handler: () => void): void {
   unavailableHotkeys.push(accelerator);
 }
 
+/**
+ * One tracker at a time.
+ *
+ * Two copies would both tail the same log, both append finished runs to the
+ * same `history.jsonl`, and both rewrite the same `config.json` — so the
+ * archive would double-count the evening and whichever process saved last would
+ * win the settings. It is easy to end up with two: the app has no taskbar
+ * entry, so a second launch looks like the first one failed, and an update
+ * relaunches the tracker while a portable copy of it may still be running.
+ *
+ * The loser exits before `whenReady`, so it never builds a window or opens the
+ * feed. The winner shows the overlays it would have opened, which is the
+ * answer to what the second launch was actually asking for.
+ */
+const single = app.requestSingleInstanceLock();
+if (!single) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    each((overlay) => {
+      if (OVERLAY_SPEC[overlay.id].auto) overlay.show();
+    });
+  });
+}
+
 app.whenReady().then(() => {
+  // `app.quit()` above does not stop this from firing, and a losing copy that
+  // built windows and opened the feed would be exactly the second tracker the
+  // lock exists to prevent — for however long it took to go away.
+  if (!single) return;
+
   config = loadConfig();
   history = new History();
   const cli = applyArgs(config, process.argv.slice(1));
@@ -210,9 +253,16 @@ app.whenReady().then(() => {
 
   for (const id of OVERLAY_IDS) overlays.set(id, new Overlay(id, { config: () => config, save }));
 
+  // Broadcast rather than returned, so a check started from one window is
+  // visible in another — and so the settings window, which is opened on demand
+  // and often part-way through a download, is told where things stand as it
+  // loads rather than having to ask.
+  updater = new Updater((state: UpdateState) => broadcast('tracker:update', state));
+
   /** Everything a freshly loaded renderer needs to know about the world it woke up in. */
   const onReady = (overlay: Overlay) => {
     overlay.send('tracker:config', config);
+    overlay.send('tracker:update', updater.current);
     // Through `setInteractive`, not a bare send: a window that ignores the
     // hotkey has its own answer to this question, and only it knows it.
     overlay.setInteractive(interactive);
@@ -326,6 +376,43 @@ app.whenReady().then(() => {
     }),
   );
 
+  /**
+   * A sound file, for a binding.
+   *
+   * The formats are the ones Chromium decodes; anything else would be chosen
+   * happily and then never play, which is the worst way to find out.
+   */
+  ipcMain.handle('tracker:pickSound', async (e): Promise<string | null> => {
+    const parent = BrowserWindow.fromWebContents(e.sender);
+    const options: Electron.OpenDialogOptions = {
+      title: 'Choose a sound',
+      properties: ['openFile'],
+      filters: [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac', 'opus', 'webm'] }],
+    };
+    const result = await (parent ? dialog.showOpenDialog(parent, options) : dialog.showOpenDialog(options));
+    return result.canceled ? null : (result.filePaths[0] ?? null);
+  });
+
+  /**
+   * The bytes of one, for the renderer to decode.
+   *
+   * Read on demand rather than watched: a bound file is read once per run of
+   * the app and kept decoded, so this is a handful of calls a session. The size
+   * cap is what stops somebody's 300 MB wav from being loaded into the overlay
+   * because they picked the wrong file in a dialog.
+   */
+  ipcMain.handle('tracker:readSound', (_e, ref: unknown): Uint8Array | null => {
+    if (typeof ref !== 'string' || ref === '') return null;
+    try {
+      if (fs.statSync(ref).size > MAX_SOUND_BYTES) return null;
+      return fs.readFileSync(ref);
+    } catch {
+      // Moved, renamed, on a drive that is not plugged in. The binding stays;
+      // the sound simply does not play, and the settings window still shows it.
+      return null;
+    }
+  });
+
   ipcMain.handle('tracker:clearHistory', () => history.clear());
 
   ipcMain.handle('tracker:deleteSessions', (_e, ids: unknown) => {
@@ -384,6 +471,26 @@ app.whenReady().then(() => {
     // a renderer can only ever close itself.
     target(rest[0])?.close();
   });
+
+  /*
+   * The update buttons.
+   *
+   * Three separate presses rather than one, because each is a decision with a
+   * different cost: asking GitHub is free, fetching ninety megabytes is not,
+   * and restarting closes an overlay somebody may be playing behind. None of
+   * them resolves with an answer — every step reports on `tracker:update`, so
+   * the window has one thing to watch instead of a return value and a stream
+   * that could disagree.
+   */
+  ipcMain.handle('tracker:getUpdate', () => updater.current);
+  ipcMain.handle('tracker:checkUpdate', () => updater.check());
+  ipcMain.handle('tracker:downloadUpdate', () => updater.download());
+
+  ipcMain.handle('tracker:installUpdate', (e) =>
+    // Parented to whichever window asked, so the confirmation is attached to
+    // the settings panel the button lives in rather than floating loose.
+    updater.install(BrowserWindow.fromWebContents(e.sender), save),
+  );
 
   ipcMain.handle('tracker:quit', () => app.quit());
 

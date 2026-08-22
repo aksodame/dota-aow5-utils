@@ -10,6 +10,7 @@ import {
   type TrackerApi,
   type TrackerConfig,
   type TrackerStatus,
+  type UpdateState,
 } from '../core/ipc.ts';
 
 /**
@@ -49,6 +50,7 @@ const api: TrackerApi = {
   onConfig: (handler: (config: TrackerConfig) => void) => on<TrackerConfig>('tracker:config', handler),
   onInteractive: (handler: (interactive: boolean) => void) => on<boolean>('tracker:interactive', handler),
   onSkipped: (handler: (skipped: SkippedLine[]) => void) => on<SkippedLine[]>('tracker:skipped', handler),
+  onUpdate: (handler: (state: UpdateState) => void) => on<UpdateState>('tracker:update', handler),
 
   getConfig: (): Promise<TrackerConfig> => ipcRenderer.invoke('tracker:getConfig'),
   setConfig: (patch: Partial<TrackerConfig>): Promise<TrackerConfig> => ipcRenderer.invoke('tracker:setConfig', patch),
@@ -65,11 +67,19 @@ const api: TrackerApi = {
 
   getHistory: (): Promise<SessionHistory[]> => ipcRenderer.invoke('tracker:getHistory'),
   getSession: (): Promise<SessionSnapshot> => ipcRenderer.invoke('tracker:getSession'),
+  pickSound: (): Promise<string | null> => ipcRenderer.invoke('tracker:pickSound'),
+  readSound: (ref: string): Promise<Uint8Array | null> => ipcRenderer.invoke('tracker:readSound', ref),
+
   clearHistory: (): Promise<void> => ipcRenderer.invoke('tracker:clearHistory'),
   deleteSessions: (ids: number[]): Promise<void> => ipcRenderer.invoke('tracker:deleteSessions', ids),
   pickLogFile: (): Promise<string | null> => ipcRenderer.invoke('tracker:pickLogFile'),
   compactLog: (): Promise<LogTrim> => ipcRenderer.invoke('tracker:compactLog'),
   newSession: (): Promise<void> => ipcRenderer.invoke('tracker:newSession'),
+
+  getUpdate: (): Promise<UpdateState> => ipcRenderer.invoke('tracker:getUpdate'),
+  checkUpdate: (): Promise<void> => ipcRenderer.invoke('tracker:checkUpdate'),
+  downloadUpdate: (): Promise<void> => ipcRenderer.invoke('tracker:downloadUpdate'),
+  installUpdate: (): Promise<void> => ipcRenderer.invoke('tracker:installUpdate'),
 
   quit: (): Promise<void> => ipcRenderer.invoke('tracker:quit'),
 };
