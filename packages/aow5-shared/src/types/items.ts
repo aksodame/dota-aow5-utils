@@ -40,6 +40,45 @@ export interface ItemNeed {
 }
 
 /**
+ * The four essence materials dismantling returns. Ids rather than a label,
+ * because they are ordinary items with names, icons and recipes of their own.
+ */
+export const ESSENCE_IDS = {
+  /** Equipment Essence — quality 1-4 equipment. */
+  EQUIPMENT: 'item_M009',
+  /** Sigil Essence — glyphs (itemType 'gem'). */
+  SIGIL: 'item_M010',
+  /** Legendary Equipment Essence — quality 5, and quality 6 treasures. */
+  LEGENDARY: 'item_M315',
+  /** Mythic Gear Essence — quality 6 equipment and fate stones. */
+  MYTHIC: 'item_M507',
+} as const;
+
+export type EssenceId = (typeof ESSENCE_IDS)[keyof typeof ESSENCE_IDS];
+
+/** One essence an item returns when dismantled. */
+export interface DismantleOutput {
+  id: EssenceId;
+  /** Drop chance in percent. Absent means guaranteed. */
+  chance?: number;
+}
+
+/**
+ * What dismantling an item returns.
+ *
+ * There is deliberately no per-output count. The addon decides how many
+ * essences a dismantle yields on the server, inside an encrypted Lua bundle,
+ * and answers the client's `request_dismantle_preview` with the numbers — so
+ * only *which* essences come back is knowable from the VPK. See `dismantleOf`
+ * in the pipeline's 04-build-items step for the rules and where they come from.
+ */
+export interface Dismantle {
+  /** The addon's own name for the rule that matched, kept verbatim. */
+  rule: string;
+  outputs: DismantleOutput[];
+}
+
+/**
  * Which kind of slot an item may go into.
  *
  * A bitmask rather than a single category, because one item can be valid in
@@ -104,6 +143,8 @@ export interface ItemFull {
   upgradesFrom?: ItemId;
   isRecipe?: boolean;
   synthesis?: number;
+  /** Essences returned when this item is dismantled; absent when it cannot be. */
+  dismantle?: Dismantle;
 
   /** Flat stat map. Almost always numeric; one entry in the data is a string. */
   values: Record<string, number | string>;
