@@ -51,7 +51,7 @@ Test-Path "$dota\game\bin\win64\engine2.dll"
 cd <repo>
 pnpm install
 pnpm --filter aow5-tracker check-types
-pnpm --filter aow5-tracker test          # 88 tests, all green
+pnpm --filter aow5-tracker test          # 120 tests, all green
 pnpm --filter aow5-tracker build
 ```
 
@@ -232,7 +232,7 @@ and size, and a panel whose transparency is the slab only — the numbers stay a
 ### Verifying changes
 
 ```bash
-pnpm --filter aow5-tracker test          # 88 tests: parsing, clock, rates, pricing, sorting, archive, log trim
+pnpm --filter aow5-tracker test          # 120 tests: parsing, clock, rates, pricing, sorting, archive, log trim
 pnpm --filter aow5-tracker check-types
 pnpm --filter aow5-tracker build
 ```

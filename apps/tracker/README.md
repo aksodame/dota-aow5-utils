@@ -8,7 +8,7 @@ Items/hour, gold/hour, average map clear time, and per-item counts — per room 
 ```bash
 pnpm install                       # from the repo root
 pnpm --filter aow5-tracker dev     # opens the overlay against the scripted mock
-pnpm --filter aow5-tracker test    # 88 tests over the reducer, parser, clock, prices, recipes and tail
+pnpm --filter aow5-tracker test    # 120 tests over the reducer, parser, clock, prices, recipes and tail
 pnpm --filter aow5-tracker build
 ```
 
@@ -27,7 +27,9 @@ adjustable and all three are remembered:
 
 | | |
 |---|---|
-| **Collapse** | The chevron drops the loot list, leaving where you are and the three cards — run clock, gold/hour, session clock. That is the shape it is meant to live in, so it is also the default. It shrinks the *window*, not just the panel: hiding the body in CSS would leave a transparent rectangle over the game that still swallows hover. |
+| **Collapse** | The chevron drops the loot list, leaving where you are and the stat cards. That is the shape it is meant to live in. It shrinks the *window*, not just the panel: hiding the body in CSS would leave a transparent rectangle over the game that still swallows hover. |
+| **Cards** | Six by default, three to a row: session time, session gold and session best over current time, current gold and gold per map. Two more — time per map and hourly gold — are off until you turn them on, and any card can be hidden in settings down to a floor of one. |
+| **Session clock** | Starts paused, because the overlay is usually open while Dota still loads and counting that as farming makes g/hr a lie. By default the first room you walk into presses play for you; turn that off in settings if you would rather it always be a deliberate press. |
 | **Resize** | Drag the corner grip, or the window edges. Clamped between 320×200 and 1200×1600, because a frameless transparent window dragged down to a few pixels is effectively unrecoverable. |
 | **UI scale** | A slider in settings, 60%–160%. Also `Ctrl` `+`/`−`/`0` once you have clicked into the panel, and `Ctrl+Alt` `+`/`−`/`0` from anywhere — which is what you want mid-game, since the overlay normally has no focus. |
 | **Transparency** | A checkbox — off by default, so the panel is solid — and, when on, a slider for how much of the game shows through the slab behind the readout. The numbers stay at full contrast at every setting. |

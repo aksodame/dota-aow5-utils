@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { History as HistoryIcon, Pause, Play, RotateCcw, Settings2, Skull, X } from 'lucide-react';
+import { DEFAULT_CARDS } from '@core/cards.ts';
 import { UI_SCALE } from '@core/ipc.ts';
 import { pricing } from '@/features/items/prices';
 import { useSession } from '@/features/session/useSession';
@@ -27,7 +28,7 @@ export function FarmOverlay() {
   const { config, interactive, collapsed, toggleCollapsed, setScale } = useOverlay();
   const prices = useMemo(() => pricing(config?.prices, config?.halvePrices), [config?.prices, config?.halvePrices]);
   const { state, rates, items, runItems, elapsed, paused, lastRunDead, clearSession, togglePaused, toggleLastRunDied } =
-    useSession(prices.value);
+    useSession(prices.value, config?.autoResume ?? false);
 
   const scale = config?.uiScale ?? UI_SCALE.default;
   useScaleShortcuts(scale, setScale);
@@ -117,6 +118,7 @@ export function FarmOverlay() {
         pricing={prices}
         tracked={config?.tracked ?? []}
         cardsOnly={collapsed}
+        cards={config?.cards ?? DEFAULT_CARDS}
       />
     </OverlayShell>
   );

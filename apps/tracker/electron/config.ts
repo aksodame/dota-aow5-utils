@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
+import { DEFAULT_CARDS, readCards } from '../core/cards.ts';
 import { DEFAULT_SOUNDS, readSoundSettings } from '../core/sounds.ts';
 import {
   OPACITY,
@@ -69,6 +70,10 @@ export const DEFAULTS: TrackerConfig = {
   recipe: [],
   recipeDone: [],
   recipeExpand: [],
+  cards: [...DEFAULT_CARDS],
+  // On: the failure it prevents — an evening measured as zero — costs more
+  // than the one it can cause, which is a clock you have to stop again.
+  autoResume: true,
 };
 
 export const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
@@ -204,6 +209,11 @@ export function loadConfig(): TrackerConfig {
     recipe: readTargets(raw['recipe']),
     recipeDone: readIds(raw['recipeDone']),
     recipeExpand: readIds(raw['recipeExpand']),
+    // Absent in a file written before the HUD's cards could be turned off,
+    // which is the same thing as asking for the defaults.
+    cards: readCards(raw['cards']),
+    // Absent means the default here, and the default is on.
+    autoResume: raw['autoResume'] !== false,
     // Playback speed is a development knob owned by the default and `--speed`,
     // never by the saved file — a stale value there would silently undo it.
     mockSpeed: DEFAULTS.mockSpeed,

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Check, Download, FolderOpen, Play, Plus, RefreshCw, RotateCw, Scissors, Volume2, X } from 'lucide-react';
+import { CARD_IDS, CARD_INFO, DEFAULT_CARDS, readCards, type CardId } from '@core/cards.ts';
 import { iconUrl, qualityColor } from '@core/items.ts';
 import { BUILTIN_JACKPOT, DEFAULT_SOUNDS, LIMIT, soundLabel, VOLUME, type SoundSettings } from '@core/sounds.ts';
 import {
@@ -94,6 +95,21 @@ export function Settings({
     void window.tracker.pickSound().then((file) => {
       if (file !== null) bind(id, file);
     });
+
+  /*
+   * The floor of one is enforced here and again in `readCards`, deliberately.
+   * This is the half that explains itself — a disabled box with a reason — and
+   * that one is the half that holds whatever a hand-edited file or an older
+   * build produces. Neither is enough alone: a UI rule cannot police the file,
+   * and a silent fallback cannot tell the player why the click did nothing.
+   */
+  const cards = config?.cards ?? DEFAULT_CARDS;
+  const last = cards.length === 1;
+  const toggleCard = (id: CardId, next: boolean) => {
+    if (!next && last) return;
+    const wanted = next ? [...cards, id] : cards.filter((c) => c !== id);
+    void window.tracker.setConfig({ cards: readCards(wanted) });
+  };
 
   const setPrices = (next: Record<string, number>) => void window.tracker.setConfig({ prices: next });
   const setPrice = (id: string, gold: number) => setPrices({ ...prices, [id]: gold });
@@ -359,6 +375,52 @@ export function Settings({
               )}
             </>
           )}
+        </section>
+
+        {/*
+          The clock the session is measured by, before the cards that report
+          it. One setting, and it earns a section of its own rather than a
+          corner of the next one: it is the difference between an evening
+          measured and an evening of zeros.
+        */}
+        <section className="space-y-1.5">
+          <Label>Session</Label>
+          <CheckboxRow
+            label="Start the clock on the first room"
+            hint="A session begins paused, so the tracker can sit open while Dota loads without counting that as farming. With this on, walking into a room presses play for you. A pause you press mid-session still holds until the next room."
+            checked={config?.autoResume ?? true}
+            onChange={(next) => void window.tracker.setConfig({ autoResume: next })}
+          />
+        </section>
+
+        {/*
+          Which cards, before how they look: this is the section that decides
+          what the HUD is *for*, and it is the one a player goes looking for
+          after a session or two of reading past a number they do not use.
+        */}
+        <section className="space-y-1.5">
+          <Label>HUD cards</Label>
+          <p className="text-[0.625rem] text-muted-foreground">
+            The stat cards on the farm overlay, drawn three to a row in the order below. Turning one off closes the
+            space and the rest keep their order, so the row is always full from the left. The order itself is fixed:
+            the rows are meant to be read as the session and the map.
+          </p>
+          {CARD_IDS.map((id) => {
+            const info = CARD_INFO[id];
+            const on = cards.includes(id);
+            return (
+              <CheckboxRow
+                key={id}
+                label={info.name}
+                // The last one on says why it cannot be turned off, rather than
+                // being a checkbox that silently ignores the click.
+                hint={on && last ? `${info.hint} The HUD needs one card; turn another on to free this one.` : info.hint}
+                checked={on}
+                disabled={on && last}
+                onChange={(next) => toggleCard(id, next)}
+              />
+            );
+          })}
         </section>
 
         {/*
@@ -802,17 +864,26 @@ function CheckboxRow({
   hint,
   checked,
   onChange,
+  disabled = false,
 }: {
   label: string;
   hint?: string;
   checked: boolean;
   onChange: (next: boolean) => void;
+  /** For a box that is on and may not be turned off. The hint says why. */
+  disabled?: boolean;
 }) {
   return (
     <div className="space-y-1">
-      <label className="flex items-center gap-2 text-[0.625rem] text-foreground">
+      <label
+        className={cn(
+          'flex items-center gap-2 text-[0.625rem] text-foreground',
+          disabled && 'cursor-not-allowed opacity-60',
+        )}
+      >
         <Checkbox
           checked={checked}
+          disabled={disabled}
           // Radix reports 'indeterminate' as a third state this never uses.
           onCheckedChange={(next) => onChange(next === true)}
         />

@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, Coins, DollarSign, Gem, Hourglass, Timer, TimerReset } from 'lucide-react';
+import { Fragment, useMemo, useState } from 'react';
+import { ChevronDown, ChevronUp, Coins, DollarSign, Gauge, Gem, Hourglass, Scale, Timer, TimerReset } from 'lucide-react';
+import { CARD_IDS, type CardId } from '@core/cards.ts';
 import { iconUrl, qualityColor } from '@core/items.ts';
 import type { Rates } from '@core/stats.ts';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -78,7 +79,12 @@ function Card({
 }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-md bg-black/25 px-2 py-1" title={title}>
-      <span className="truncate text-[0.625rem] tracking-wide text-muted-foreground uppercase">{label}</span>
+      {/* A pixel under the 0.625rem the other small labels use, and the one
+          place in the app that is: these are the longest of them — "session
+          gold", not "val" — on the narrowest thing that holds any, a card a
+          third of the panel wide. The extra pixel is what keeps them off
+          `truncate` at the default window size. */}
+      <span className="truncate text-[0.5625rem] tracking-wide text-muted-foreground uppercase">{label}</span>
       <span className="flex min-w-0 items-center gap-1.5">
         <span className="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">{icon}</span>
         <span className="min-w-0 truncate font-semibold tabular-nums text-gold">{value}</span>
@@ -110,9 +116,11 @@ interface Props {
   tracked: string[];
   /** Collapsed: the cards alone, sized to themselves. */
   cardsOnly: boolean;
+  /** Which cards to draw. Never empty — see `core/cards.ts`. */
+  cards: CardId[];
 }
 
-export function Hud({ rates, items, sessionItems, elapsed, pricing, tracked, cardsOnly }: Props) {
+export function Hud({ rates, items, sessionItems, elapsed, pricing, tracked, cardsOnly, cards }: Props) {
   /*
    * Total first, because the list is there to answer "what carried this
    * session" before it is there to find anything. Held in the component rather
@@ -178,80 +186,135 @@ export function Hud({ rates, items, sessionItems, elapsed, pricing, tracked, car
 
 
 
+  /*
+   * Every card, drawn whether or not it is on.
+   *
+   * A record rather than a list of conditionals: each card is one entry, the
+   * order comes from CARD_IDS, and adding one is adding a key here and an id
+   * there. Building the ones that are off costs a few unmounted elements and
+   * buys not having eight `&&`s inside the grid.
+   *
+   * Three clocks, so their icons have to carry the difference: the session's
+   * hourglass is the sitting, the map's stopwatch is this room, and the
+   * average's reset arrow is neither — it is the shape of a room starting
+   * over.
+   */
+  const shown = new Set(cards);
+  const rendered: Record<CardId, React.ReactNode> = {
+    session: (
+      <Card
+        icon={<Hourglass className="size-3.5" />}
+        value={clock(elapsed)}
+        label="session time"
+        title="Since this session started — the hideout and the loading screens count"
+      />
+    ),
+    sessionGold: (
+      <Card
+        icon={<Coins className="size-3.5" />}
+        value={compact(sessionGold)}
+        label="session gold"
+        title="Everything this session has dropped, priced the way the list is"
+      />
+    ),
+    /* A fixed label, and the item said in the icon instead.
+       Putting the name here made the card the only one whose heading moved as
+       you played — and an item name uppercased and truncated to nine
+       characters identifies nothing anyway, where the picture identifies it at
+       a glance. The name is on hover, for when the icon is not enough. The
+       count rides on the value line: the headline is the value. */
+    sessionBest: (
+      <Card
+        icon={
+          best === null ? (
+            <Gem className="size-3.5" />
+          ) : (
+            <img src={iconUrl(itemTable.get(best.id).icon)} alt="" className="size-3.5 rounded-[2px] object-cover" />
+          )
+        }
+        value={best === null ? '—' : compact(best.total)}
+        trailing={best === null ? undefined : `(×${best.qty})`}
+        label="session best"
+        title={
+          best === null
+            ? 'The item worth most this session'
+            : `${itemTable.get(best.id).name} — the session's most valuable pile`
+        }
+      />
+    ),
+    mapTime: (
+      <Card
+        icon={<Timer className="size-3.5" />}
+        value={clock(rates.currentRunElapsed)}
+        label="current time"
+        title="How long you have been in the room you are standing in"
+      />
+    ),
+    mapGold: (
+      <Card
+        icon={<DollarSign className="size-3.5" />}
+        value={compact(currentMapGold)}
+        label="current gold"
+        title="What the room below has dropped, priced the way the list is"
+      />
+    ),
+    /* A dash rather than a zero until a room has finished: nothing has been
+       averaged yet, and 0g is a claim about the farm rather than about the
+       data. Same reasoning as the average clear time beside it. */
+    mapGoldAverage: (
+      <Card
+        icon={<Scale className="size-3.5" />}
+        value={rates.completedRuns > 0 ? compact(rates.averageRunGold) : '—'}
+        label="gold per map"
+        title="Mean gold of the rooms you have finished this session — the open one does not count yet"
+      />
+    ),
+    mapTimeAverage: (
+      <Card
+        icon={<TimerReset className="size-3.5" />}
+        value={rates.averageClear > 0 ? clock(rates.averageClear) : '—'}
+        label="time per map"
+        title="Mean time of the rooms you have finished this session"
+      />
+    ),
+    goldPerHour: (
+      <Card
+        icon={<Gauge className="size-3.5" />}
+        value={compact(rates.goldPerHour)}
+        label="hourly gold"
+        title="Gold per hour, counting only the time you spent inside rooms"
+      />
+    ),
+  };
+
   return (
     // `flex-1` only when there is a list to give the leftover height to;
     // collapsed, the cards are the whole panel and it is as tall as they are.
     <div className={cn('flex flex-col gap-2', !cardsOnly && 'min-h-0 flex-1')}>
       {/*
-        Six cards on a three-column grid, collapsed as well as expanded, and
-        the two rows are two questions.
+        The chosen cards on a three-column grid, collapsed as well as expanded.
 
-        The top row is the room you are standing in and the sitting it belongs
-        to: how long this one has taken, what it has paid, and how long you
-        have been at it. The bottom row is the evening judged rather than
-        counted — how long a room takes you on average, what an hour of the
-        whole sitting is actually worth, and the one item that carried it.
+        Two rows of three by default, and the two rows are two questions. The
+        top row is the sitting: how long you have been at it, what it has paid,
+        and the one item that carried it. The bottom row is a room: how long
+        this one has taken, what a room is worth on average, and what this one
+        has dropped.
 
         A grid rather than the flex row it grew out of, so the second row's
         cards line up under the first's instead of sizing themselves to their
-        own contents.
+        own contents. Turning a card off closes the space rather than leaving a
+        hole — the ones after it move up — but every card keeps a third of the
+        width, so a short last row is three cards' worth of column with one or
+        two in it, not two cards stretched across the panel.
 
-        Three clocks now, so their icons have to carry the difference: the
-        run's stopwatch is this room, the session's hourglass is the sitting,
-        and the average's reset arrow is neither — it is the shape of a room
-        starting over.
+        Drawn from `cards` in `CARD_IDS` order rather than written out here.
+        Every card is defined once in `rendered` below, whether it is on or
+        not; picking which appear is the player's, in Settings.
       */}
       <div className="grid grid-cols-3 gap-1.5">
-        <Card icon={<Timer className="size-3.5" />} value={clock(rates.currentRunElapsed)} label="run" />
-        <Card
-          icon={<DollarSign className="size-3.5" />}
-          value={compact(currentMapGold)}
-          label="gold/run"
-          title="What the room below has dropped, priced the way the list is"
-        />
-        <Card
-          icon={<Hourglass className="size-3.5" />}
-          value={clock(elapsed)}
-          label="session"
-          title="Since this session started — the hideout and the loading screens count"
-        />
-
-        <Card
-          icon={<TimerReset className="size-3.5" />}
-          value={rates.averageClear > 0 ? clock(rates.averageClear) : '—'}
-          label="avg map"
-          title="Mean time of the rooms you have finished this session"
-        />
-        <Card
-          icon={<Coins className="size-3.5" />}
-          value={compact(sessionGold)}
-          label="gold/ses"
-          title="Everything this session has dropped, priced the way the list is"
-        />
-        {/* A fixed label, and the item said in the icon instead.
-            Putting the name here made the card the only one whose heading moved
-            as you played — and an item name uppercased and truncated to nine
-            characters identifies nothing anyway, where the picture identifies
-            it at a glance. The name is on hover, for when the icon is not
-            enough. The count rides on the label line: the headline is the
-            value. */}
-        <Card
-          icon={
-            best === null ? (
-              <Gem className="size-3.5" />
-            ) : (
-              <img src={iconUrl(itemTable.get(best.id).icon)} alt="" className="size-3.5 rounded-[2px] object-cover" />
-            )
-          }
-          value={best === null ? '—' : compact(best.total)}
-          trailing={best === null ? undefined : `(×${best.qty})`}
-          label="best/ses"
-          title={
-            best === null
-              ? 'The item worth most this session'
-              : `${itemTable.get(best.id).name} — the session's most valuable pile`
-          }
-        />
+        {CARD_IDS.filter((id) => shown.has(id)).map((id) => (
+          <Fragment key={id}>{rendered[id]}</Fragment>
+        ))}
       </div>
 
       {!cardsOnly && (

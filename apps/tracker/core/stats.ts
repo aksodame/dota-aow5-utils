@@ -354,6 +354,16 @@ export interface Rates {
   valuePerHour: number;
   /** Mean clear time over finished, non-abandoned runs. 0 when there are none. */
   averageClear: number;
+  /**
+   * Mean gold over those same runs. 0 when there are none.
+   *
+   * Deliberately the same population as `averageClear` — finished, not
+   * abandoned, not died — so the pair can be read as one sentence about a
+   * typical room. The open run is excluded because it has not finished, which
+   * is also why a first room shows a dash rather than a number that halves
+   * itself as you keep picking things up.
+   */
+  averageRunGold: number;
   /** Runs that finished, whether by an exit or by the next room starting. */
   completedRuns: number;
   abandonedRuns: number;
@@ -371,6 +381,7 @@ export function rates(state: TrackerState, valueOf: ValueOf, now = state.clock):
   let items = 0;
   let value = 0;
   let clearTotal = 0;
+  let goldTotal = 0;
   let completed = 0;
   let abandoned = 0;
   let died = 0;
@@ -392,6 +403,7 @@ export function rates(state: TrackerState, valueOf: ValueOf, now = state.clock):
     else if (run.end !== undefined) {
       completed++;
       clearTotal += runDuration(run, clock);
+      goldTotal += runGold(run, valueOf);
     }
   }
 
@@ -404,6 +416,9 @@ export function rates(state: TrackerState, valueOf: ValueOf, now = state.clock):
     itemsPerHour: perHour(items, active),
     valuePerHour: perHour(value, active),
     averageClear: completed > 0 ? clearTotal / completed : 0,
+    // Floored like every other gold figure: a mean quoted to the decimal
+    // implies a precision a price table does not have.
+    averageRunGold: completed > 0 ? Math.floor(goldTotal / completed) : 0,
     completedRuns: completed,
     abandonedRuns: abandoned,
     diedRuns: died,

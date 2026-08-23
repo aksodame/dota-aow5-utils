@@ -1,3 +1,4 @@
+import type { CardId } from './cards.ts';
 import type { TrackerEvent } from './events.ts';
 import type { SessionHistory } from './history.ts';
 import type { SoundSettings } from './sounds.ts';
@@ -267,6 +268,29 @@ export interface TrackerConfig {
    * making that one too", and it gets a line with its own materials under it.
    */
   recipeExpand: string[];
+  /**
+   * Which stat cards the farm HUD draws.
+   *
+   * A set, not an arrangement: the draw order is `CARD_IDS` and is not the
+   * player's to change. Never empty — `readCards` falls back to the defaults
+   * rather than hand back a list that would leave the HUD blank, and the
+   * settings UI will not let the last one be unticked.
+   */
+  cards: CardId[];
+  /**
+   * Start the session clock by itself when you walk into a room.
+   *
+   * A session begins paused on purpose — the tracker is launched while Dota is
+   * still loading, and a clock running through all of that makes g/hr a lie.
+   * The cost of that is the evening you farm for an hour before noticing the
+   * clock never started, which no amount of correctness afterwards gets back.
+   *
+   * Entering a room is the least ambiguous "I am farming now" the feed has, so
+   * this treats it as the play button. It only ever *starts* the clock: a
+   * pause you press in the middle of a session is a statement about that
+   * stretch, and the next room is a new one.
+   */
+  autoResume: boolean;
 }
 
 /**

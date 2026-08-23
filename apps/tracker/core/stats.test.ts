@@ -301,6 +301,57 @@ test('rates are zero rather than NaN before anything has happened', () => {
   assert.equal(r.activeTime, 0);
 });
 
+test('average gold per room is the mean over the rooms that finished', () => {
+  const s = build([
+    enter(0, 'M001'),
+    drop(10, [['item_A', 3]]), // 300
+    exit(100, 'M001', 'clear'),
+    enter(110, 'M002'),
+    drop(120, [['item_A', 1]]), // 100
+    exit(200, 'M002', 'clear'),
+  ]);
+  const r = rates(s, price);
+  assert.equal(r.completedRuns, 2);
+  assert.equal(r.averageRunGold, 200, '300 and 100');
+});
+
+test('the open room is left out of the average, like it is out of the clear time', () => {
+  // Otherwise the number would fall every time you picked something up in a
+  // room you had not finished, which reads as the farm getting worse.
+  const s = build([
+    enter(0, 'M001'),
+    drop(10, [['item_A', 2]]), // 200, finished
+    exit(100, 'M001', 'clear'),
+    enter(110, 'M002'),
+    drop(120, [['item_A', 9]]), // 900, still open
+  ]);
+  const r = rates(s, price);
+  assert.equal(r.completedRuns, 1);
+  assert.equal(r.averageRunGold, 200, 'the open 900 does not count yet');
+  assert.equal(r.currentRunGold, 900, 'though it is still reported on its own');
+});
+
+test('a room written off as died earns nothing toward the average', () => {
+  const s = build([
+    enter(0, 'M001'),
+    drop(10, [['item_A', 4]]), // 400
+    exit(100, 'M001', 'clear'),
+    enter(110, 'M002'),
+    drop(120, [['item_A', 10]]),
+    exit(200, 'M002', 'clear'),
+  ]);
+  toggleLastRunDead(s);
+  const r = rates(s, price);
+  assert.equal(r.diedRuns, 1);
+  assert.equal(r.completedRuns, 1);
+  assert.equal(r.averageRunGold, 400, 'only the room that counted');
+});
+
+test('average gold is zero rather than NaN before a room finishes', () => {
+  assert.equal(rates(createState(), price).averageRunGold, 0);
+  assert.equal(rates(build([enter(0, 'M001')]), price).averageRunGold, 0);
+});
+
 test('gold never counts backwards when the player spends', () => {
   // Buying something mid-run drops the total; that is not negative income.
   const s = build([bag(0, 0, 0, 5000), enter(0, 'M001'), bag(50, 0, 0, 1000), exit(100, 'M001', 'clear', 1000)]);

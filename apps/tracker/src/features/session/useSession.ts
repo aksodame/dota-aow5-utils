@@ -54,8 +54,12 @@ const STALE_AFTER = 300;
  * @param priceOf what a drop is worth — `pricing(config.prices).value`, so the
  * player's own prices reach the rates. Defaults to the table price for a caller
  * that shows no gold at all, which is the recipe panel counting ingredients.
+ * @param autoResume start the clock on the first room entered. Off by default,
+ * because the caller that does not show a clock has no business starting one —
+ * the recipe panel folds the same feed and would otherwise be voting on the
+ * farm overlay's question. See `TrackerConfig.autoResume`.
  */
-export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
+export function useSession(priceOf: ValueOf = TABLE_PRICING.value, autoResume = false) {
   const stateRef = useRef<TrackerState>(createState());
   /**
    * The newest event clock, and the wall time it reached us.
@@ -101,6 +105,14 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
    * registered once and would otherwise close over the first value forever.
    */
   const source = useRef<TrackerStatus['source'] | null>(null);
+  /*
+   * A ref for the same reason `source` is one: the event handler below is
+   * registered once and would otherwise close over whatever the setting was
+   * when the overlay mounted, which is `undefined` — the config arrives over
+   * IPC a moment later.
+   */
+  const autoResumeRef = useRef(autoResume);
+  autoResumeRef.current = autoResume;
 
   useEffect(() => {
     const api = window.tracker;
@@ -108,6 +120,22 @@ export function useSession(priceOf: ValueOf = TABLE_PRICING.value) {
       apply(stateRef.current, event);
       const { clock } = stateRef.current;
       if (clock > anchor.current.clock) anchor.current = { clock, at: Date.now() };
+
+      /*
+       * Walking into a room starts the clock, if it is not already going and
+       * the player asked for this.
+       *
+       * The same arithmetic as `togglePaused`, deliberately: the start slides
+       * forward by the length of the break, so the elapsed figure carries on
+       * from where it stopped instead of jumping by however long the tracker
+       * sat waiting. For a session that has never been started that break is
+       * the whole time since launch, and the clock begins at zero — which is
+       * the case this exists for.
+       */
+      if (event.e === 'room_enter' && autoResumeRef.current && pausedAt.current !== null) {
+        startedAt.current += Date.now() - pausedAt.current;
+        pausedAt.current = null;
+      }
     });
     const offStatus = api.onStatus((next) => {
       setStatus(next);

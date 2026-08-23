@@ -42,7 +42,13 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      # The tracker and what it depends on, nothing else. A whole-workspace
+      # install also reaches the API's `better-sqlite3`, which ships a
+      # `binding.gyp` and no install script — so pnpm compiles it with node-gyp,
+      # and node-gyp cannot read the Visual Studio the runner now ships. The
+      # release does not contain a line of that code. The trailing `...` is what
+      # keeps `aow5-shared`, which it does contain, in.
+      - run: pnpm install --frozen-lockfile --filter "aow5-tracker..."
 
       # A release whose tag and whose About box disagree is worse than a failed
       # build, and it is one step to make impossible.
