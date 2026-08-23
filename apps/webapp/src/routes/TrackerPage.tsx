@@ -1,4 +1,4 @@
-import { ChevronRight, FileCog, TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CopyBlock } from '@/components/CopyBlock';
 import { Reveal } from '@/components/fx/Reveal';
@@ -103,6 +103,26 @@ export function TrackerPage({ site, lang }: { site: SiteStrings; lang: Lang }) {
             <p className="mt-3 font-medium text-warning">{t.setup.pathWarning}</p>
 
             <p className="mt-3">{t.setup.alert.text}</p>
+
+            {/* Step one, in the same box as the launch option rather than in a
+                folded panel of its own below the list. It used to be optional,
+                and everything about that placement said so — its own heading,
+                its own colour, and a click before you could read it. */}
+            <p className="mt-3">{t.setup.tuning.text}</p>
+
+            <p className="mt-3 text-xs font-medium">{t.setup.tuning.cfgLabel}</p>
+            <CopyBlock site={site} className="mt-1 w-full">
+              {t.setup.tuning.cfgPath}
+            </CopyBlock>
+
+            {/* The file itself. Scrolls rather than running to 178 lines down
+                the page — nobody reads it, they press the button. */}
+            <CopyBlock site={site} file className="mt-3 w-full">
+              {autoexecCfg}
+            </CopyBlock>
+
+            <p className="mt-3 text-xs">{t.setup.tuning.caveat}</p>
+            <p className="mt-2 text-xs">{t.setup.tuning.instead}</p>
           </AlertDescription>
         </Alert>
 
@@ -117,48 +137,6 @@ export function TrackerPage({ site, lang }: { site: SiteStrings; lang: Lang }) {
           ))}
         </ol>
         <p className="mt-4 text-xs text-muted-foreground">{t.setup.note}</p>
-
-        {/*
-          Last, amber rather than green, and folded shut — three ways of saying
-          the same thing about who this is for. The four steps above are the
-          ones without which nothing works; this one only saves disk, and
-          anybody who stopped reading at the numbered list has already
-          succeeded. Left open, its 178 lines of channel flags would be the
-          largest thing in the section, which reads as though the hard part is
-          still ahead when in fact setup is done. Closed, it is one line that
-          says what is inside and can be ignored.
-
-          `<details>` rather than state and a click handler: it is exactly this
-          element, it opens without JavaScript, and the browser gives it the
-          right keyboard and screen-reader behaviour for free.
-        */}
-        <Alert variant="warning" className="mt-6">
-          <FileCog />
-          <details className="group col-start-2 w-full">
-            <summary className="flex cursor-pointer list-none items-center gap-2 font-medium tracking-tight [&::-webkit-details-marker]:hidden">
-              <ChevronRight className="size-3.5 shrink-0 transition-transform group-open:rotate-90" />
-              <span className="text-pretty">{t.setup.tuning.title}</span>
-            </summary>
-
-            <div className="mt-3 text-sm text-foreground/80">
-              <p>{t.setup.tuning.text}</p>
-
-              <p className="mt-3 text-xs font-medium">{t.setup.tuning.cfgLabel}</p>
-              <CopyBlock site={site} className="mt-1 w-full">
-                {t.setup.tuning.cfgPath}
-              </CopyBlock>
-
-              {/* The file itself. Scrolls rather than running to 178 lines down
-                  the page — nobody reads it, they press the button. */}
-              <CopyBlock site={site} file className="mt-3 w-full">
-                {autoexecCfg}
-              </CopyBlock>
-
-              <p className="mt-3 text-xs">{t.setup.tuning.caveat}</p>
-              <p className="mt-2 text-xs">{t.setup.tuning.instead}</p>
-            </div>
-          </details>
-        </Alert>
       </Panel>
 
       <Panel title={t.windows.title} lead={t.windows.lead}>

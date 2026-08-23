@@ -78,10 +78,13 @@
 
 	header {
 		-Server
-		# Avatars come straight from Steam's own CDN rather than being proxied,
-		# so that host is the one exception to same-origin images. `unsafe-inline`
-		# for styles is Tailwind 4, which injects them at runtime.
-		Content-Security-Policy "default-src 'self'; img-src 'self' https://*.steamstatic.com data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+		# Two hosts are reached directly rather than proxied. Avatars come from
+		# Steam's own CDN, the one exception to same-origin images; and the tracker
+		# landing asks api.github.com for the latest release at runtime, which is a
+		# `connect-src` exception because a static page cannot bake in a version it
+		# is deployed independently of. `unsafe-inline` for styles is Tailwind 4,
+		# which injects them at runtime.
+		Content-Security-Policy "default-src 'self'; img-src 'self' https://*.steamstatic.com data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.github.com; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"

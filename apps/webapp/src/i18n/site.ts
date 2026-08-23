@@ -233,26 +233,27 @@ export interface SiteStrings {
       note: string;
 
       /**
-       * The optional one: quieten Dota's logging at the source.
+       * Step one: quieten Dota's logging at the source.
        *
-       * Last, and marked optional in its own first sentence, because the
-       * tracker works without it — it trims the log itself. What this buys is
-       * a log that never gets big in the first place, which matters to anyone
-       * who would rather the game not write 12 MB an evening.
+       * This used to be the optional one, on the grounds that the tracker trims
+       * the log itself and so works either way. It reads as step one now: a
+       * measured evening writes 12 MB of which the tracker's share is 0.08, and
+       * trimming after the fact is a worse deal than never writing it. So it
+       * sits inside the same alert as the launch option, under that alert's
+       * heading — there is no `title` here because a second heading for one
+       * required step reads as a second step.
        *
        * `cfgPath` is relative to the Steam folder rather than absolute: unlike
        * the log, this file's location is not the reader's choice, and the only
        * part that varies is where Steam itself lives.
        */
       tuning: {
-        /** The summary line, and all a collapsed reader ever sees. */
-        title: string;
         text: string;
         cfgPath: string;
         cfgLabel: string;
         /** The caveat that stops a stale channel list being read as a failure. */
         caveat: string;
-        /** What to do instead, for anyone who skips this. */
+        /** The tracker's own trimming, as the backstop rather than the alternative. */
         instead: string;
       };
     };
@@ -492,15 +493,16 @@ const en: SiteStrings = {
       launchOption: '-con_logfile C:\\Users\\Public\\aow5-console.log',
       pathWarning: 'Keep the path in plain English letters, and keep the .log ending. A folder named in Russian — which is what your user folder is, if your Windows account name is — makes Dota write nothing at all, and it does not complain: the game runs normally and the file stays empty, which reads exactly like a broken download. C:\\Users\\Public is suggested above because it is spelled the same on every Windows machine, needs no permissions, and sidesteps the problem entirely.',
       labels: {
-        file: 'The file — make this one first',
+        file: 'The file — the one step two makes',
         option: 'The launch option — same path, after -con_logfile',
       },
       alert: {
         title: 'Dota needs one launch option, or the tracker sees nothing',
-        text: 'Without it the game writes nothing, the overlay reads an empty file, and every number stays at zero — which looks exactly like a broken download. Both boxes must end in the same path, and it must be the file you made in step one.',
+        text: 'Without it the game writes nothing, the overlay reads an empty file, and every number stays at zero — which looks exactly like a broken download. Both boxes must end in the same path, and it must be the file you made in step two.',
       },
       steps: [
-        'Make the file yourself. Open C:\\Users\\Public, right-click → New → Text Document, and rename it to aow5-console.log — including the ending, which means turning on View → File name extensions in Explorer if you have not. Making it first is what lets you pick it in step three: the tracker opens a file dialog, and a dialog cannot select a file that does not exist yet.',
+        'Save the autoexec.cfg from the box above into your Dota folder, at the path given with it. Dota writes its entire console to the log, and most of what arrives is one engine warning repeating five times a second — without this the file grows by megabytes an hour around the handful of lines the tracker actually reads. Nothing on screen changes, and deleting the file undoes it.',
+        'Make the file yourself. Open C:\\Users\\Public, right-click → New → Text Document, and rename it to aow5-console.log — including the ending, which means turning on View → File name extensions in Explorer if you have not. Making it early is what lets you pick it in step four: the tracker opens a file dialog, and a dialog cannot select a file that does not exist yet.',
         'In Steam, right-click Dota 2 → Properties → Launch Options, and paste the launch option above — with your path, if you chose a different one.',
         'Start the tracker, press Ctrl+Alt+T so you can click it, then open Settings → Console log → Choose, and pick the file you made.',
         'Play windowed or borderless — fullscreen covers every overlay, this one included.',
@@ -508,12 +510,11 @@ const en: SiteStrings = {
       note: 'Dota writes its whole console to that file, so it grows quickly. The tracker can keep it small for you: there is a switch for it, and a “Trim now” button, in the same settings.',
 
       tuning: {
-        title: 'Optional: use autoexec.cfg to keep the log file as small as possible',
         text: 'The tracker reads one kind of line and Dota writes everything. A measured two-and-a-half-hour session came to 12 MB, of which 0.08 MB was the tracker’s — most of the rest was a single engine warning repeating five times a second. This file tells Dota to keep those channels on screen and out of the log. Nothing you see in-game changes, and deleting the file undoes all of it.',
         cfgLabel: 'Save it here, inside your Steam folder',
         cfgPath: 'steamapps\\common\\dota 2 beta\\game\\dota\\cfg\\autoexec.cfg',
         caveat: 'Channel names change between Dota patches, and a line naming one that no longer exists simply fails at startup — that channel keeps logging and nothing else breaks. To build a list for your own client instead, run log_dumpchannels in the console; the tracker’s SETUP.md walks through it.',
-        instead: 'Skipping this costs you nothing but disk. Start the tracker before Dota and it trims the log on the way up — the one moment the file is not locked, because once the game has it open nothing else may rewrite it.',
+        instead: 'The tracker trims the log as well, on its own: start it before Dota and it cuts the file down on the way up — the one moment the file is not locked, because once the game has it open nothing else may rewrite it. That is a backstop for what still gets through, not a way around this file.',
       },
     },
 
@@ -751,15 +752,16 @@ const ru: SiteStrings = {
       launchOption: '-con_logfile C:\\Users\\Public\\aow5-console.log',
       pathWarning: 'Путь — только латинскими буквами, расширение — .log. Если папка названа по-русски — а именно такова ваша папка пользователя, если русское имя учётной записи — Dota не напишет ничего и ничего не скажет: игра запустится как обычно, а файл останется пустым — выглядит это ровно как сломанная сборка. C:\\Users\\Public предложен выше потому, что пишется одинаково на любой Windows, не требует прав и снимает вопрос целиком.',
       labels: {
-        file: 'Файл — создайте его первым',
+        file: 'Файл — тот, что создаётся на втором шаге',
         option: 'Параметр запуска — тот же путь после -con_logfile',
       },
       alert: {
         title: 'Без этого параметра запуска трекер ничего не увидит',
-        text: 'Без него игра ничего не пишет, оверлей читает пустой файл, а все числа остаются нулёвыми — выглядит это ровно как сломанная сборка. В обеих строках должен быть один и тот же путь — тот самый файл из первого шага.',
+        text: 'Без него игра ничего не пишет, оверлей читает пустой файл, а все числа остаются нулёвыми — выглядит это ровно как сломанная сборка. В обеих строках должен быть один и тот же путь — тот самый файл из второго шага.',
       },
       steps: [
-        'Создайте файл сами. Откройте C:\\Users\\Public, правая кнопка → Создать → Текстовый документ и переименуйте в aow5-console.log — вместе с расширением, для чего в Проводнике может понадобиться включить Вид → Расширения имён файлов. Сначала файл нужен ради третьего шага: трекер открывает диалог выбора, а выбрать в нём несуществующий файл нельзя.',
+        'Сохраните autoexec.cfg из блока выше в папку Dota — путь указан рядом с ним. Dota пишет в лог всю консоль, и большая часть попадающего туда — одно предупреждение движка, повторяющееся пять раз в секунду: без этого файла лог растёт на мегабайты в час вокруг тех немногих строк, которые трекеру и нужны. На экране ничего не меняется, а удаление файла всё отменяет.',
+        'Создайте файл сами. Откройте C:\\Users\\Public, правая кнопка → Создать → Текстовый документ и переименуйте в aow5-console.log — вместе с расширением, для чего в Проводнике может понадобиться включить Вид → Расширения имён файлов. Файл нужен заранее ради четвёртого шага: трекер открывает диалог выбора, а выбрать в нём несуществующий файл нельзя.',
         'В Steam правой кнопкой по Dota 2 → Свойства → Параметры запуска и вставьте строку выше — со своим путём, если выбрали другое место.',
         'Запустите трекер, нажмите Ctrl+Alt+T, чтобы по нему можно было кликать, откройте Настройки → Консольный лог → Выбрать и укажите созданный файл.',
         'Играйте в оконном или безрамочном режиме — полноэкранный закрывает любой оверлей, включая этот.',
@@ -767,12 +769,11 @@ const ru: SiteStrings = {
       note: 'Dota пишет в этот файл всю консоль, так что он быстро растёт. Трекер умеет держать его маленьким: в тех же настройках есть переключатель и кнопка «Обрезать сейчас».',
 
       tuning: {
-        title: 'Необязательно: autoexec.cfg, чтобы лог оставался как можно меньше',
         text: 'Трекер читает один вид строк, а Dota пишет всё. За сессию в два с половиной часа набралось 12 МБ, из них 0,08 МБ — строки трекера; остальное по большей части — одно предупреждение движка, повторяющееся пять раз в секунду. Этот файл оставляет такие каналы в консоли, но не пускает в лог. В игре ничего не меняется, а удаление файла всё отменяет.',
         cfgLabel: 'Сохраните сюда, внутри папки Steam',
         cfgPath: 'steamapps\\common\\dota 2 beta\\game\\dota\\cfg\\autoexec.cfg',
         caveat: 'Имена каналов меняются от патча к патчу, и строка с несуществующим именем просто не сработает при запуске — этот канал продолжит писать, больше ничего не сломается. Чтобы собрать список под свой клиент, выполните log_dumpchannels в консоли — в SETUP.md трекера разобрано по шагам.',
-        instead: 'Пропустить это можно — цена только место на диске. Запускайте трекер до Dota: он обрежет лог на старте — в единственный момент, когда файл не занят: пока игра держит его открытым, перезаписать его нельзя.',
+        instead: 'Трекер и сам обрезает лог: запускайте его до Dota — он подрежет файл на старте, в единственный момент, когда файл не занят, ведь пока игра держит его открытым, перезаписать его нельзя. Это подстраховка для того, что всё же просочилось, а не замена этому файлу.',
       },
     },
 
