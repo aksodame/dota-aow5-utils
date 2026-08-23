@@ -4,9 +4,9 @@ The whole site: the front page, the build planner, and the farm tracker's downlo
 three routes, no backend.
 
 ```bash
-pnpm --filter aow5-webapp dev
-pnpm --filter aow5-webapp build
-VITE_BASE=/dota-aow5-utils/ pnpm --filter aow5-webapp build   # for a project Pages site
+pnpm --filter aow5-utils-webapp dev
+pnpm --filter aow5-utils-webapp build
+VITE_BASE=/dota-aow5-utils/ pnpm --filter aow5-utils-webapp build   # for a project Pages site
 ```
 
 | route | what it is |
@@ -15,7 +15,7 @@ VITE_BASE=/dota-aow5-utils/ pnpm --filter aow5-webapp build   # for a project Pa
 | `/builder` | The planner. Everything below the fold of this README. |
 | `/tracker` | The farm tracker: what it looks like, why its numbers are not real yet, and the download. |
 
-The tracker itself is **not** here — it is an Electron app in `apps/aow5-tracker`, and this app may not
+The tracker itself is **not** here — it is an Electron app in `apps/tracker`, and this app may not
 import from it. `/tracker` is a page *about* it.
 
 Changing any of it: [`CONTRIBUTING.md`](CONTRIBUTING.md) — the invariants a PR must not break, and what
@@ -50,7 +50,7 @@ all three share-link shapes and the near-misses that must *not* be treated as a 
 framework, like the rest of the repo:
 
 ```bash
-pnpm --filter aow5-webapp test
+pnpm --filter aow5-utils-webapp test
 ```
 
 ## The shell
@@ -118,7 +118,7 @@ will change that — it is tag-triggered and does not run until the tracker is p
 
 # The planner
 
-A serverless build planner for **Age of Weapons 5**, a Dota 2 custom game. Pick the hero the guide is for,
+A serverless build planner for **Age of Weapons 5**, a Dota 2 custom game. Pick the hero the build is for,
 then lay out renamable sections like a loadout — one to start, up to nine, each new one blank or copied from
 a section you already filled in. The whole board lives in the URL,
 so sharing a build is sharing a link. No account, no backend, no database.
@@ -422,9 +422,9 @@ Static output — `pnpm build` writes everything to `apps/webapp/dist/` (~25 MB,
 which Vite copies out of the shared package), plus the `404.html` and `.nojekyll` the build emits for a
 static host. Upload that directory and serve it; `pnpm preview` serves it locally first.
 
-GitHub Pages is the host, and `.github/workflows/pages.yml` is the whole deploy: it builds with
-`VITE_BASE=/dota-aow5-utils/` and uploads `dist/` as the Pages artifact. Nothing in the app is tied to that
-choice — no deploy script, no wrangler config, no provider dependency to remove later.
+Nothing deploys this automatically. `infra/webapp.Dockerfile` bakes `dist/` into a Caddy image and
+`infra/deploy.sh` swaps it in, both run by hand. Nothing in the app is tied to a host — no deploy script, no
+wrangler config, no provider dependency to remove later.
 
 Three things any host needs to get right:
 

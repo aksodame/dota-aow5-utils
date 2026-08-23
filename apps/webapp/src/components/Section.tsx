@@ -25,7 +25,7 @@ interface Props {
   index: number;
   section: BuildSection;
   byId: Map<string, ItemSummary>;
-  /** The guide's hero, or null until one is chosen. */
+  /** The build's hero, or null until one is chosen. */
   hero: HeroInfo | null;
   spells: Map<string, SpellSummary>;
   strings: Strings;

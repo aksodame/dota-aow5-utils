@@ -1,0 +1,36 @@
+# What the image builds do NOT need.
+#
+# The build context is the repository root (see infra/*.Dockerfile), and it is
+# otherwise ~25 MB of committed icons plus whatever is lying around locally.
+# Everything here either rebuilds inside the image or has no business in one.
+
+.git
+.github
+.vscode
+.idea
+
+node_modules
+**/node_modules
+dist
+**/dist
+out
+**/out
+.turbo
+**/.turbo
+*.tsbuildinfo
+*.local
+
+# Machine-specific and gitignored, but a stale local copy would still be sent.
+parser/
+private/
+shot*.png
+
+# Never ship secrets into a layer.
+infra/.env
+**/.env
+
+# The tracker is not part of any image. Its manifest stays, because pnpm needs
+# every workspace package.json present to honour --frozen-lockfile: without it
+# the lockfile reads as out of date and the install fails.
+apps/tracker/**
+!apps/tracker/package.json

@@ -23,3 +23,9 @@ jobs:
       - run: pnpm check-types
       - run: pnpm test
       - run: pnpm build
+
+      # Boots the built API and checks its routes. `test` covers core/ and
+      # `verify-bundle` covers what the bundle imports, but neither of them ever
+      # starts the server — so a provider Nest cannot construct passes both and
+      # fails on the first boot. This is the step that notices.
+      - run: pnpm --filter aow5-utils-api smoke

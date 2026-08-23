@@ -44,7 +44,7 @@ export function SpellSlot({ slot, value, spell, sectionName, strings, selectable
     );
   }
 
-  // An ability index this build cannot resolve — a guide made against newer
+  // An ability index this build cannot resolve — a build made against newer
   // data. Kept rather than dropped, because the codec re-emits it unchanged.
   if (value.k === 'unknown' || !spell) {
     const idx = value.k === 'unknown' ? value.idx : -1;

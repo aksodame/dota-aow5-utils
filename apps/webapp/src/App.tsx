@@ -7,8 +7,11 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { STRINGS, detectLang, storeLang, type Lang } from '@/i18n/strings';
 import { SITE } from '@/i18n/site';
 import { applyTheme, getInitialTheme, storeTheme, type Theme } from '@/lib/theme';
-import { useRoute, useScrollReset } from '@/router';
+import { useMatch, useScrollReset } from '@/router';
+import { BuildPage } from '@/routes/BuildPage';
+import { BuildsPage } from '@/routes/BuildsPage';
 import { LandingPage } from '@/routes/LandingPage';
+import { MyBuildsPage } from '@/routes/MyBuildsPage';
 import { PlannerPage } from '@/routes/PlannerPage';
 import { TrackerPage } from '@/routes/TrackerPage';
 
@@ -26,14 +29,28 @@ import { TrackerPage } from '@/routes/TrackerPage';
  * already one small bundle.
  */
 export default function App() {
-  const route = useRoute();
+  const match = useMatch();
+  const route = match.id;
+
+  /*
+   * Whose build is on screen, so the header can light the list it came from.
+   *
+   * Owned here rather than read from a store, because App already renders both
+   * halves and the answer arrives with the fetch. Cleared on every navigation
+   * so the previous build's answer never colours the next page.
+   */
+  const [viewingOwnBuild, setViewingOwnBuild] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (route !== 'build') setViewingOwnBuild(null);
+  }, [route, match.slug]);
   const [lang, setLang] = useState<Lang>(() => detectLang());
   const [theme, setTheme] = useState<Theme>(() => getInitialTheme());
 
   const strings = STRINGS[lang];
   const site = SITE[lang];
 
-  useScrollReset(route);
+  // Keyed on the slug too, so moving between two builds scrolls to the top.
+  useScrollReset(`${route}:${match.slug ?? ''}` as never);
 
   // `lang` on the document as well as in React, so the browser hyphenates and
   // a screen reader pronounces the Russian copy as Russian.
@@ -77,22 +94,51 @@ export default function App() {
         {site.skipToContent}
       </a>
 
-      <SiteHeader
-        site={site}
-        route={route}
-        lang={lang}
-        theme={theme}
-        onLang={chooseLang}
-        onTheme={toggleTheme}
-      />
+      {/*
+        A column at least as tall as the viewport, with the main region taking
+        up the slack.
 
-      <main id="main">
-        {route === 'planner' && <PlannerPage lang={lang} strings={strings} />}
-        {route === 'tracker' && <TrackerPage site={site} lang={lang} />}
-        {route === 'landing' && <LandingPage site={site} lang={lang} />}
-      </main>
+        Without it the footer simply follows the content, so anything that
+        changes how much content there is — switching a sort, a search that
+        matches three builds instead of twenty — drags the footer up into the
+        middle of the screen and back down again. Pinning it to the bottom of a
+        full-height column means it either sits at the bottom edge or below the
+        fold, and never anywhere in between.
 
-      <SiteFooter site={site} />
+        `svh` rather than `dvh` or `vh`: the small viewport height is the one
+        that does not change as a mobile browser hides and shows its own chrome,
+        so the layout does not reflow while somebody is scrolling.
+      */}
+      <div className="flex min-h-svh flex-col">
+        <SiteHeader
+          site={site}
+          route={route}
+          lang={lang}
+          theme={theme}
+          onLang={chooseLang}
+          onTheme={toggleTheme}
+          viewingOwnBuild={viewingOwnBuild}
+        />
+
+        <main id="main" className="flex-1">
+          {route === 'planner' && <PlannerPage lang={lang} strings={strings} site={site} />}
+          {route === 'tracker' && <TrackerPage site={site} lang={lang} />}
+          {route === 'landing' && <LandingPage site={site} lang={lang} />}
+          {route === 'builds' && <BuildsPage site={site} lang={lang} />}
+          {route === 'mine' && <MyBuildsPage site={site} />}
+          {route === 'build' && match.slug !== undefined && (
+            <BuildPage
+              slug={match.slug}
+              site={site}
+              strings={strings}
+              lang={lang}
+              onOwnershipKnown={setViewingOwnBuild}
+            />
+          )}
+        </main>
+
+        <SiteFooter site={site} />
+      </div>
 
       <Toaster position="bottom-right" />
     </TooltipProvider>

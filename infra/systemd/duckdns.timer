@@ -1,0 +1,12 @@
+[Unit]
+Description=Refresh the DuckDNS A record every 5 minutes
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+# Runs a missed cycle after a reboot instead of waiting for the next one, which
+# is exactly the window where the address is most likely to have changed.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

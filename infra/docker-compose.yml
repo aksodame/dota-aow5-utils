@@ -1,0 +1,72 @@
+# Run from the repository root:  infra/deploy.sh
+#
+# The build context is `..` so both images can see the whole workspace — pnpm
+# needs the lockfile and every package manifest to install with a frozen
+# lockfile, even when building one app.
+
+name: aow5
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: infra/api.Dockerfile
+    image: aow5-utils-api:latest
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_PATH: /data/aow5.db
+      # Enumerated rather than passed through with `env_file:`, so what the
+      # container can read is exactly this list and adding a secret to the env
+      # file does not silently hand it to every service.
+      SITE_ORIGIN: https://${SITE_DOMAIN:?set SITE_DOMAIN in the env file}
+      STEAM_API_KEY: ${STEAM_API_KEY:?set STEAM_API_KEY in the env file}
+    volumes:
+      # A bind mount, not a named volume: this is the one thing you will want to
+      # open with sqlite3, copy off the box and restore by hand.
+      - ${AOW5_DATA_DIR:-/srv/aow5/data}:/data
+    # No `ports:`. A published port is written straight into iptables and
+    # bypasses ufw entirely — this stays reachable only from the compose network,
+    # which is Caddy.
+    expose:
+      - "3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/webapp.Dockerfile
+    image: aow5-utils-webapp:latest
+    restart: unless-stopped
+    environment:
+      # `:?` so a missing value fails here, with a sentence naming the variable,
+      # rather than inside Caddy's config loader.
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in the env file}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in the env file}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    volumes:
+      # The ACME account key and every issued certificate live here. This volume
+      # must survive `docker compose down` — losing it means re-issuing, and
+      # re-issuing in a loop is how you meet Let's Encrypt's rate limiter.
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

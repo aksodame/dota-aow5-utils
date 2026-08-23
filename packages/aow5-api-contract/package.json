@@ -1,0 +1,17 @@
+{
+  "name": "aow5-api-contract",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The wire contract between the site and its API: the shapes of a guide, a comment and a user, and the limits both sides enforce",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "check-types": "tsc -b"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  }
+}

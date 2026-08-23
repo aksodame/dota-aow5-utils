@@ -178,7 +178,7 @@ const en: Strings = {
   hero: 'Hero',
   chooseHero: 'Choose a hero',
   noHero: 'No hero',
-  heroHint: 'Pick the hero this guide is for. Each section can then take one ability per key.',
+  heroHint: 'Pick the hero this build is for. Each section can then take one ability per key.',
   unknownHero: 'Unknown hero',
   heroChangeConfirm: (n) =>
     `Switching hero clears the ${n} spell${n === 1 ? '' : 's'} already chosen, because abilities belong to one hero. Continue?`,
@@ -193,7 +193,7 @@ const en: Strings = {
   noSpellsInSlot: 'No finished ability binds to this key.',
   unfinishedAbilities: (n) =>
     `${n} ability${n === 1 ? ' is' : 'ies are'} still unfinished in the game itself and cannot be chosen.`,
-  warnUnknownHero: 'This guide is for a hero this page does not recognise. It is kept as it is if you share the link on.',
+  warnUnknownHero: 'This build is for a hero this page does not recognise. It is kept as it is if you share the link on.',
   warnUnknownSpells: (n) =>
     `${n} spell slot${n === 1 ? '' : 's'} hold an ability this page does not recognise. They are kept as they are if you share the link on.`,
 

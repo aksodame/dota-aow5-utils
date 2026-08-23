@@ -58,7 +58,7 @@ export function SpellPicker({
         <ScrollArea className="max-h-[60svh] pe-3">
           {/*
             Reachable when a slot holds a spell the current hero cannot offer —
-            an unknown index from a newer guide. Clearing must still be possible,
+            an unknown index from a newer build. Clearing must still be possible,
             so the dialog opens with an explanation rather than not at all.
           */}
           {candidates.length === 0 && <p className="py-2 text-sm text-muted-foreground">{strings.noSpellsInSlot}</p>}

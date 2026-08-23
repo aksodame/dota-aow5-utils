@@ -20,7 +20,7 @@ interface Props {
 /**
  * The roster, above the board.
  *
- * One hero per guide: a build is advice for playing a hero, and every ability
+ * One hero per build: a build is advice for playing a hero, and every ability
  * belongs to exactly one of them. Selecting is a toggle — clicking the current
  * hero clears it — so there is no separate "none" tile competing for attention.
  */
@@ -44,7 +44,7 @@ export function HeroPicker({ heroes, nameOf, selected, unknown, strings, onSelec
           const active = hero.id === selected;
           const name = nameOf(hero.id);
           // A hero whose abilities are all unfinished upstream can still be the
-          // subject of an item guide, so they stay selectable — the spell row
+          // subject of an item build, so they stay selectable — the spell row
           // explains itself once chosen.
           const note = hero.abilities.length === 0 ? strings.noSpellsForHero : null;
 

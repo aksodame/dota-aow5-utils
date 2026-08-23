@@ -1,6 +1,7 @@
 {
   "name": "dota-aow5-utils",
   "private": true,
+  "type": "module",
   "description": "Tools for the Dota 2 custom game Age of Weapons 5: the extracted map data and the build planner that consumes it",
   "engines": {
     "node": ">=22.18"
@@ -8,10 +9,12 @@
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:site": "turbo run dev --filter=aow5-utils-webapp --filter=aow5-utils-api",
     "build": "turbo run build",
     "test": "turbo run test",
     "check-types": "turbo run check-types",
-    "preview": "turbo run preview"
+    "preview": "turbo run preview",
+    "bootstrap-deploy": "node scripts/bootstrap-deploy.ts"
   },
   "devDependencies": {
     "turbo": "^2.10.8"

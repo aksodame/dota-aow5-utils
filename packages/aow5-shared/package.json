@@ -9,6 +9,8 @@
     "./codec": "./src/build/index.ts",
     "./data": "./src/data/loadData.ts",
     "./public/*": "./public/*",
+    "./id-table.json": "./data/id-table.json",
+    "./ability-table.json": "./data/ability-table.json",
     "./package.json": "./package.json"
   },
   "scripts": {

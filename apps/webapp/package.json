@@ -1,5 +1,5 @@
 {
-  "name": "aow5-webapp",
+  "name": "aow5-utils-webapp",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "aow5-api-contract": "workspace:*",
     "aow5-shared": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

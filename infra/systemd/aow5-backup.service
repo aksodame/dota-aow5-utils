@@ -1,0 +1,14 @@
+# Nightly database snapshot.
+#
+# Install:
+#   sudo cp infra/systemd/aow5-backup.* /etc/systemd/system/
+#   sudo systemctl enable --now aow5-backup.timer
+#   sudo systemctl start aow5-backup.service    # run one now and check the output
+
+[Unit]
+Description=Snapshot the AOW5 SQLite database
+
+[Service]
+Type=oneshot
+User=deploy
+ExecStart=/srv/aow5/repo/infra/backup.sh

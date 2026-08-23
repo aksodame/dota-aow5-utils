@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AOW5 tools have moved</title>
+    <meta name="robots" content="noindex" />
+    <!--
+      The forwarding page for the old GitHub Pages origin.
+
+      Nothing builds this. The workflow that published it was removed when
+      deploys became a hand-run thing, and the Pages site now serves whatever it
+      last deployed. This is kept because it is the only answer to a problem
+      that has no other one, and writing it again from memory would be worse
+      than leaving it here.
+
+      Every build shared before the move is a URL somebody pasted into a chat,
+      and the four rules in apps/webapp/CONTRIBUTING.md exist so those keep
+      decoding. `location.hash` is the part that matters: the whole board lives
+      in it, and the browser never sends it to a server, so only a client-side
+      redirect can carry it across. A meta refresh or an HTTP 301 would drop it.
+
+      To use it: replace __SITE_ORIGIN__ with the new origin, copy the result to
+      both index.html and 404.html — Pages serves 404.html for every path it
+      does not have a file for, which is every planner route — and publish those
+      two files plus an empty .nojekyll as the Pages site.
+    -->
+    <link rel="canonical" href="__SITE_ORIGIN__/" />
+    <script>
+      (function () {
+        var origin = '__SITE_ORIGIN__';
+        // The project Pages site is served from a subpath; the new one is not.
+        var path = location.pathname.replace(/^\/dota-aow5-utils/, '');
+        location.replace(origin + (path === '' ? '/' : path) + location.search + location.hash);
+      })();
+    </script>
+  </head>
+  <body>
+    <p>
+      These tools have moved to <a id="link" href="__SITE_ORIGIN__/">__SITE_ORIGIN__</a>.
+    </p>
+    <p>
+      If you are not redirected automatically, follow the link above — your build link will still work.
+    </p>
+    <script>
+      // Keeps the manual link useful when the script above was blocked but this
+      // one was not, and when JavaScript is off entirely the static href stands.
+      document.getElementById('link').href =
+        '__SITE_ORIGIN__' + location.pathname.replace(/^\/dota-aow5-utils/, '') + location.search + location.hash;
+    </script>
+  </body>
+</html>

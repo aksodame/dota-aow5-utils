@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    // Node, not the browser. `DOM` would quietly let a browser-only global
+    // typecheck its way into a file that runs on a server.
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+
+    // The one deliberate divergence from every other tsconfig in this repo.
+    //
+    // Nest's dependency injection reads constructor parameter types out of
+    // `design:paramtypes`, which only exists if the compiler emits decorator
+    // metadata — so `experimentalDecorators` and `emitDecoratorMetadata` are
+    // not style, they are what makes `constructor(private db: Db)` resolve.
+    //
+    // That in turn means `erasableSyntaxOnly` has to be off: decorators and
+    // parameter properties are exactly the syntax it forbids, because Node
+    // cannot strip them. Which is the whole reason `core/` exists and holds
+    // every test — see CONTRIBUTING.md.
+    "erasableSyntaxOnly": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": ["src", "core", "scripts", "tsup.config.ts", "drizzle.config.ts"]
+}

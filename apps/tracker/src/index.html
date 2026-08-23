@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      No remote code, and since the item tables became a bundled import from
+      aow5-shared, no remote data either. Item icons are the only outbound
+      request the overlay makes.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' https://aow5-builder.pages.dev https://aow5.duckdns.org data:; connect-src 'self'; style-src 'self' 'unsafe-inline'"
+    />
+    <title>AOW5 Tracker</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

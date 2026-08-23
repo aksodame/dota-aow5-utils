@@ -51,6 +51,20 @@ function staticHostFiles(): Plugin {
 // Build with: VITE_BASE=/dota-aow5-utils/ pnpm build
 export default defineConfig({
   base: process.env.VITE_BASE ?? '/',
+  /**
+   * The API, on this origin.
+   *
+   * In production Caddy serves this bundle and proxies /api to the server, so
+   * the site and the API share an origin — which is what lets the session be a
+   * plain first-party cookie with no CORS and no CSRF token. Development has to
+   * reproduce that, or a cookie set in dev would behave nothing like the one in
+   * production. Run the API alongside with `pnpm --filter aow5-utils-api dev`.
+   */
+  server: {
+    proxy: {
+      '/api': { target: process.env.VITE_API_TARGET ?? 'http://127.0.0.1:3000', changeOrigin: false },
+    },
+  },
   plugins: [react(), tailwindcss(), staticHostFiles()],
   publicDir: sharedPublicDir,
   resolve: {

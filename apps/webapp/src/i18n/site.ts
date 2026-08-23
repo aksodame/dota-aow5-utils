@@ -41,6 +41,115 @@ export interface SiteStrings {
     source: string;
   };
 
+  /**
+   * Signing in, and what it is for.
+   *
+   * The planner does not need an account and never will — a board still
+   * encodes into a link with nobody signed in. An account is only for the
+   * things that involve other people: publishing a build, commenting on one,
+   * voting on one. The copy has to make that difference obvious, because a
+   * sign-in button on a tool that has never needed one reads as a demand.
+   *
+   * Valve requires their own wording and button art for the sign-in control
+   * itself, so `signIn` labels the surrounding control rather than replacing it.
+   */
+  auth: {
+    signIn: string;
+    signInWhy: string;
+    signOut: string;
+    account: string;
+    myBuilds: string;
+    /** "{n} of {max}" — the author's five slots. */
+    buildCount: string;
+    signInFailed: string;
+    signInExpired: string;
+  };
+
+  /**
+   * The Builds section.
+   *
+   * One section, two halves: making a board and reading somebody else's. They
+   * share a second-level bar, and signing in lives there because an account
+   * only ever buys something here — publishing, commenting, voting.
+   *
+   * Kept apart from `strings.ts`, which is the planner's own UI. That file
+   * changes when the board changes; this one changes when the section around it
+   * does.
+   *
+   * There is deliberately **no language facet**. It was inferred from whichever
+   * language the reader had the site set to, which is not the language anyone
+   * wrote in — and on a site this size, splitting an already-small pool of
+   * builds by a guessed field made both halves worse.
+   */
+  builds: {
+    title: string;
+    lead: string;
+
+    /**
+     * The two nav entries this section owns.
+     *
+     * `navMine` appears only when somebody is signed in — a tab whose only
+     * purpose is to ask you to sign in is a demand, not a destination — and
+     * `navNew` is the action on the right of the bar rather than a tab, because
+     * it makes something instead of going somewhere.
+     */
+    navNew: string;
+    navMine: string;
+
+    empty: string;
+    emptySearch: string;
+    searchLabel: string;
+    searchPlaceholder: string;
+    sort: { new: string; top: string; discussed: string };
+    anyHero: string;
+    more: string;
+    loading: string;
+    failed: string;
+    retry: string;
+
+    by: string;
+    deleted: string;
+    notFound: string;
+    backToBuilds: string;
+    draft: string;
+    commentsTitle: string;
+    commentPlaceholder: string;
+    postComment: string;
+    selfVote: string;
+
+    /** Saving, from the planner. */
+    publish: string;
+    publishTitle: string;
+    publishLead: string;
+    fieldTitle: string;
+    fieldTitlePlaceholder: string;
+    fieldBody: string;
+    fieldBodyPlaceholder: string;
+    saveDraft: string;
+    publishAction: string;
+    cancel: string;
+    published: string;
+    publishedLead: string;
+    limitReached: string;
+    signInToPublish: string;
+
+    /** Editing a build that is already saved. */
+    saveChanges: string;
+    saved: string;
+    saveAsMine: string;
+    saveAsMineWhy: string;
+    signInToSave: string;
+
+    /** The author's own five. */
+    mineTitle: string;
+    mineLead: string;
+    mineEmpty: string;
+    slotsUsed: string;
+    unpublish: string;
+    delete: string;
+    deleteConfirm: string;
+  };
+
   landing: {
     /** Not rendered on the page — it is the browser tab's title. */
     title: string;
@@ -220,9 +329,78 @@ const en: SiteStrings = {
 
   nav: {
     home: 'Home',
-    planner: 'Planner',
+    planner: 'Builds',
     tracker: 'Tracker',
     source: 'GitHub',
+  },
+
+  auth: {
+    signIn: 'Sign in through Steam',
+    signInWhy: 'Only needed to publish a build, comment or vote. The planner works without an account.',
+    signOut: 'Sign out',
+    account: 'Account',
+    myBuilds: 'My builds',
+    buildCount: '{n} of {max}',
+    signInFailed: 'Steam could not confirm that sign-in. Please try again.',
+    signInExpired: 'That sign-in took too long. Please try again.',
+  },
+
+  builds: {
+    title: 'Builds',
+    lead: 'Builds people have published, with the board they actually played.',
+
+    navNew: 'New build',
+    navMine: 'My builds',
+
+    empty: 'No builds published yet. The first one could be yours.',
+    emptySearch: 'Nothing matched that.',
+    searchLabel: 'Search builds',
+    searchPlaceholder: 'Title or summary',
+    sort: { new: 'Newest', top: 'Top rated', discussed: 'Most discussed' },
+    anyHero: 'Any hero',
+    more: 'Load more',
+    loading: 'Loading',
+    failed: 'Something went wrong.',
+    retry: 'Try again',
+
+    by: 'by',
+    deleted: 'This build was deleted.',
+    notFound: 'No build at that link.',
+    backToBuilds: 'Back to builds',
+    draft: 'Draft',
+    commentsTitle: 'Comments',
+    commentPlaceholder: 'What worked, what you would change.',
+    postComment: 'Post',
+    selfVote: 'You cannot vote on your own build.',
+
+    publish: 'Save as a build',
+    publishTitle: 'Save this build',
+    publishLead: 'It gets its own link and appears in search. You can edit or delete it afterwards.',
+    fieldTitle: 'Title',
+    fieldTitlePlaceholder: 'Axe jungle route',
+    fieldBody: 'Notes',
+    fieldBodyPlaceholder: 'When to buy what, what to skip, anything the board cannot say.',
+    saveDraft: 'Save as draft',
+    publishAction: 'Publish',
+    cancel: 'Cancel',
+    published: 'Saved',
+    publishedLead: 'Anyone with this link can read it.',
+    limitReached: 'You already have five builds. Delete one to make room.',
+    signInToPublish: 'Sign in through Steam to save this build. The share link above works without an account.',
+
+    saveChanges: 'Save changes',
+    saved: 'Saved',
+    saveAsMine: 'Save as my own',
+    saveAsMineWhy: 'Copies this board into your builds as a draft. The original is untouched.',
+    signInToSave: 'Sign in through Steam to keep your changes. Editing here works either way.',
+
+    mineTitle: 'My builds',
+    mineLead: 'Five slots. Deleting one frees it immediately.',
+    mineEmpty: 'Nothing saved yet. Make a board and save it from there.',
+    slotsUsed: '{n} of {max} slots used',
+    unpublish: 'Make draft',
+    delete: 'Delete',
+    deleteConfirm: 'Delete this build? The link stops working for everyone.',
   },
 
   landing: {
@@ -231,7 +409,7 @@ const en: SiteStrings = {
     planner: {
       kicker: 'Right here, in this tab',
       title: 'Build planner',
-      lead: 'Pick the hero the guide is for, then lay your build out in sections — one to start with, up to nine. The whole thing lives in the link, so sharing a build is sending someone a URL. No sign-up, nothing to install.',
+      lead: 'Pick the hero the build is for, then lay your build out in sections — one to start with, up to nine. The whole thing lives in the link, so sharing a build is sending someone a URL. No sign-up, nothing to install.',
       features: [
         'Every slot only takes what belongs in it — a potion slot will never offer you armour.',
         'Spells count too: choose between the abilities competing for the same key, and any key with a single option fills itself in.',
@@ -410,9 +588,78 @@ const ru: SiteStrings = {
 
   nav: {
     home: 'Главная',
-    planner: 'Планировщик',
+    planner: 'Сборки',
     tracker: 'Трекер',
     source: 'GitHub',
+  },
+
+  auth: {
+    signIn: 'Войти через Steam',
+    signInWhy: 'Нужен только чтобы опубликовать гайд, оставить комментарий или голос. Планировщик работает без аккаунта.',
+    signOut: 'Выйти',
+    account: 'Аккаунт',
+    myBuilds: 'Мои гайды',
+    buildCount: '{n} из {max}',
+    signInFailed: 'Steam не подтвердил вход. Попробуйте ещё раз.',
+    signInExpired: 'Вход занял слишком много времени. Попробуйте ещё раз.',
+  },
+
+  builds: {
+    title: 'Сборки',
+    lead: 'Сборки, которые опубликовали игроки, вместе с доской, по которой они играли.',
+
+    navNew: 'Новая сборка',
+    navMine: 'Мои сборки',
+
+    empty: 'Сборок пока нет. Первая может быть вашей.',
+    emptySearch: 'Ничего не нашлось.',
+    searchLabel: 'Поиск сборок',
+    searchPlaceholder: 'Название или описание',
+    sort: { new: 'Новые', top: 'С лучшей оценкой', discussed: 'Больше обсуждают' },
+    anyHero: 'Любой герой',
+    more: 'Показать ещё',
+    loading: 'Загрузка',
+    failed: 'Что-то пошло не так.',
+    retry: 'Попробовать снова',
+
+    by: 'автор',
+    deleted: 'Эта сборка удалена.',
+    notFound: 'По этой ссылке сборки нет.',
+    backToBuilds: 'Ко всем сборкам',
+    draft: 'Черновик',
+    commentsTitle: 'Комментарии',
+    commentPlaceholder: 'Что сработало, что бы вы поменяли.',
+    postComment: 'Отправить',
+    selfVote: 'Нельзя голосовать за свою сборку.',
+
+    publish: 'Сохранить как сборку',
+    publishTitle: 'Сохранить сборку',
+    publishLead: 'У неё появится своя ссылка и она попадёт в поиск. Потом её можно изменить или удалить.',
+    fieldTitle: 'Название',
+    fieldTitlePlaceholder: 'Лес за Акса',
+    fieldBody: 'Заметки',
+    fieldBodyPlaceholder: 'Когда что покупать, что пропустить — всё, чего доска сказать не может.',
+    saveDraft: 'Сохранить черновик',
+    publishAction: 'Опубликовать',
+    cancel: 'Отмена',
+    published: 'Сохранено',
+    publishedLead: 'Любой, у кого есть ссылка, сможет прочитать.',
+    limitReached: 'У вас уже пять сборок. Удалите одну, чтобы освободить место.',
+    signInToPublish: 'Войдите через Steam, чтобы сохранить сборку. Ссылка выше работает и без аккаунта.',
+
+    saveChanges: 'Сохранить изменения',
+    saved: 'Сохранено',
+    saveAsMine: 'Сохранить себе',
+    saveAsMineWhy: 'Копирует эту доску в ваши сборки как черновик. Оригинал не меняется.',
+    signInToSave: 'Войдите через Steam, чтобы сохранить изменения. Редактировать можно и так.',
+
+    mineTitle: 'Мои сборки',
+    mineLead: 'Пять слотов. Удаление сразу освобождает слот.',
+    mineEmpty: 'Пока ничего не сохранено. Соберите доску и сохраните её оттуда.',
+    slotsUsed: 'Занято {n} из {max}',
+    unpublish: 'В черновики',
+    delete: 'Удалить',
+    deleteConfirm: 'Удалить сборку? Ссылка перестанет работать у всех.',
   },
 
   landing: {

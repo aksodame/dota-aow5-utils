@@ -25,6 +25,13 @@ import { HeroPicker } from '@/components/HeroPicker';
 import { ReferralCode } from '@/components/ReferralCode';
 import { ItemPicker } from '@/components/ItemPicker';
 import { Section } from '@/components/Section';
+import type { BuildDetail } from 'aow5-api-contract';
+import { decodeBuild, encodeBuild } from 'aow5-shared/codec';
+import { BuildHeader, type BuildDraft } from '@/builds/BuildHeader';
+import { CommentThread } from '@/builds/CommentThread';
+import { SaveBuildButton } from '@/builds/SaveBuildButton';
+import type { SiteStrings } from '@/i18n/site';
+import { PublishDialog } from '@/components/PublishDialog';
 import { ShareBar } from '@/components/ShareBar';
 import { SpellPicker } from '@/components/SpellPicker';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -55,7 +62,39 @@ interface SpellTarget {
  * being owned here. Everything below this line is unchanged from when this
  * file was the whole application.
  */
-export function PlannerPage({ lang, strings }: { lang: Lang; strings: Strings }) {
+export function PlannerPage({
+  lang,
+  strings,
+  site,
+  build,
+  onBuildChanged,
+}: {
+  lang: Lang;
+  strings: Strings;
+  site: SiteStrings;
+  /**
+   * A saved build being looked at, rather than a fresh board.
+   *
+   * The planner is the same either way — editable, with every picker working —
+   * because a build you cannot poke at is a screenshot. What changes is where
+   * the board came from, whether the URL tracks it, and what "save" means.
+   */
+  build?: BuildDetail | undefined;
+  onBuildChanged?: ((next: BuildDetail) => void) | undefined;
+}) {
+  const [publishing, setPublishing] = useState(false);
+
+  /*
+   * The saved build's words, while they are being changed.
+   *
+   * Initialised from the prop rather than synced to it, which is safe because
+   * BuildPage keys this component by slug — moving to another build remounts
+   * rather than leaving somebody's half-typed title attached to it.
+   */
+  const [draft, setDraft] = useState<BuildDraft>(() => ({
+    title: build?.title ?? '',
+    body: build?.body ?? '',
+  }));
   const [referral, setReferral] = useState<string>(() => getInitialReferral());
   const [core, setCore] = useState<CoreData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -108,6 +147,27 @@ export function PlannerPage({ lang, strings }: { lang: Lang; strings: Strings })
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     if (!table || hydrated) return;
+
+    /*
+     * A saved build's board comes from the API, never from the URL.
+     *
+     * That is what keeps `/builds/<slug>` free of a fragment: the slug is the
+     * whole address, and the fragment stays the planner's alone.
+     */
+    if (build !== undefined) {
+      const decoded = decodeBuild(build.payload, table, heroTable ?? undefined);
+      if (decoded.ok) {
+        dispatch({ type: 'hydrate', state: decoded.state });
+        setWarnings(decoded.warnings);
+      } else if (decoded.reason === 'unsupported-version') {
+        setFatal({ kind: 'version', version: decoded.version ?? 0 });
+      } else {
+        setFatal({ kind: 'malformed' });
+      }
+      setHydrated(true);
+      return;
+    }
+
     const result = readInitialFromUrl(table, heroTable ?? undefined);
     if (result.initial) dispatch({ type: 'hydrate', state: result.initial });
     setWarnings(result.warnings);
@@ -119,7 +179,10 @@ export function PlannerPage({ lang, strings }: { lang: Lang; strings: Strings })
   const onExternalChange = useCallback((next: BuildState) => {
     dispatch({ type: 'hydrate', state: next });
   }, []);
-  useUrlSync(state, hydrated ? table : null, heroTable, onExternalChange);
+  // Passing a null table switches the sync off entirely, which is what a saved
+  // build wants: its address is its slug, and writing the board into the
+  // fragment here would give the same build two URLs that drift apart.
+  useUrlSync(state, hydrated && build === undefined ? table : null, heroTable, onExternalChange);
   const shareUrl = useShareUrl(state, table, heroTable, referral);
 
   const empty = isEmptyState(state);
@@ -211,16 +274,25 @@ export function PlannerPage({ lang, strings }: { lang: Lang; strings: Strings })
   }
 
   return (
-    <div className="mx-auto max-w-[1500px] px-4 py-6 pb-16">
+    <div className="mx-auto max-w-6xl px-4 py-6 pb-16">
       <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-extrabold tracking-tight">{strings.title}</h1>
-          <p className="max-w-prose text-sm text-muted-foreground">{strings.tagline}</p>
-        </div>
+        {build === undefined ? (
+          <div className="space-y-1">
+            <h1 className="text-2xl font-extrabold tracking-tight">{strings.title}</h1>
+            <p className="max-w-prose text-sm text-muted-foreground">{strings.tagline}</p>
+          </div>
+        ) : (
+          <BuildHeader
+            build={build}
+            site={site}
+            {...(build.canEdit ? { draft, onDraft: setDraft } : {})}
+          />
+        )}
 
-        {/* Language and theme moved to the site header — they are the
-            site's preferences, not this page's. Reset is this page's. */}
-        <div className="flex items-center gap-2">
+        {/* Language and theme moved to the site header — they are the site's
+            preferences, not this page's. What is left are the two things you
+            can do to the board in front of you. */}
+        <div className="flex shrink-0 items-center gap-2">
           <Button
             variant="outline"
             disabled={empty}
@@ -230,6 +302,16 @@ export function PlannerPage({ lang, strings }: { lang: Lang; strings: Strings })
           >
             <RotateCcw /> {strings.reset}
           </Button>
+
+          {build !== undefined && table !== null && (
+            <SaveBuildButton
+              build={build}
+              payload={encodeBuild(state, table, heroTable ?? undefined)}
+              draft={draft}
+              site={site}
+              {...(onBuildChanged ? { onSaved: onBuildChanged } : {})}
+            />
+          )}
         </div>
       </header>
 
@@ -241,6 +323,31 @@ export function PlannerPage({ lang, strings }: { lang: Lang; strings: Strings })
           strings={strings}
           onImport={(next) => dispatch({ type: 'hydrate', state: next })}
         />
+
+        {/*
+          Saving sits beside the share bar rather than inside it. Copying a link
+          is instant, needs no account and changes nothing; saving puts your
+          name on something searchable and spends one of five slots. One control
+          for both would make the cheap act feel like the expensive one.
+        */}
+        {build === undefined
+          ? !empty &&
+            !publishing && (
+              <div className="mt-2 flex justify-end">
+                <Button variant="outline" size="sm" onClick={() => setPublishing(true)}>
+                  {site.builds.publish}
+                </Button>
+              </div>
+            )
+          : null}
+
+        {publishing && build === undefined && (
+          <PublishDialog
+            payload={shareUrl.slice(shareUrl.indexOf('#b=') + 3)}
+            site={site}
+            onClose={() => setPublishing(false)}
+          />
+        )}
       </div>
 
       {banner && (fatal || tableMismatch || unknownCount > 0 || unknownSpellCount > 0 || state.heroUnknown !== null) && (
@@ -375,6 +482,8 @@ export function PlannerPage({ lang, strings }: { lang: Lang; strings: Strings })
         }}
         onClose={() => setSpellTarget(null)}
       />
+
+      {build !== undefined && <CommentThread slug={build.slug} site={site} />}
     </div>
   );
 }

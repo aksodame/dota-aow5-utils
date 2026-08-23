@@ -1,0 +1,20 @@
+# Keeps the DuckDNS A record pointed at this machine.
+#
+# Install:
+#   sudo cp infra/systemd/duckdns.* /etc/systemd/system/
+#   sudo systemctl enable --now duckdns.timer
+#   systemctl list-timers duckdns.timer
+
+[Unit]
+Description=Refresh the DuckDNS A record
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=deploy
+EnvironmentFile=/srv/aow5/.env
+# An empty `ip=` tells DuckDNS to use the source address of this request, which
+# is what you want on a box with one public address and no reliable way to ask
+# itself what it is.
+ExecStart=/usr/bin/curl -fsS --max-time 30 "https://www.duckdns.org/update?domains=${DUCKDNS_SUBDOMAIN}&token=${DUCKDNS_TOKEN}&ip="

@@ -2,7 +2,7 @@ name: Release tracker
 
 # Cutting a release:
 #
-#   1. bump `version` in apps/aow5-tracker/package.json, commit
+#   1. bump `version` in apps/tracker/package.json, commit
 #   2. git tag tracker-v0.3.0 && git push origin tracker-v0.3.0
 #
 # The tag is prefixed because the site asks GitHub for `/releases/latest`,
@@ -50,7 +50,7 @@ jobs:
         shell: bash
         run: |
           tag="${GITHUB_REF_NAME#tracker-v}"
-          pkg=$(node -p "require('./apps/aow5-tracker/package.json').version")
+          pkg=$(node -p "require('./apps/tracker/package.json').version")
           [ "$tag" = "$pkg" ] || { echo "tag $tag != package.json $pkg"; exit 1; }
 
       - run: pnpm --filter aow5-tracker test

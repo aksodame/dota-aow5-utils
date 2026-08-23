@@ -11,7 +11,7 @@ shot*.png
 
 # Raw GSI/console captures: large, machine-specific, and they carry the
 # capturing account's SteamID.
-apps/aow5-tracker/capture/
+apps/tracker/capture/
 
 # The data mining pipeline. Runs only on a machine with the game installed, and
 # everything it emits is committed under packages/aow5-shared/ instead.
@@ -20,8 +20,8 @@ apps/aow5-tracker/capture/
 # Correspondence with the addon developer, and the moderator's relay of it:
 # private messages, a Drive link and a third party's internal decision. The
 # technical outcome — what the game emits and why — is public instead, in
-# apps/aow5-tracker/docs/EVENT-CONTRACT.md.
-apps/aow5-tracker/private/
+# apps/tracker/docs/EVENT-CONTRACT.md.
+apps/tracker/private/
 
 # Deployment runbook: repository settings, release steps, signing options and
 # what they cost. Operational rather than secret, but it is nobody's business
@@ -30,5 +30,22 @@ apps/aow5-tracker/private/
 
 # Packaging output, and the icon the release script draws on its way there.
 # Both are built from `scripts/icon.ts`; neither is worth a binary in the tree.
-apps/aow5-tracker/release/
-apps/aow5-tracker/build/
+apps/tracker/release/
+apps/tracker/build/
+
+# Deployment secrets. The template beside it, infra/.env.example, is the public
+# half; the filled-in copy lives at /srv/aow5/.env on the server and nowhere else.
+infra/.env
+
+# The API's local development database, and anything set aside from one.
+# It is created on first boot, holds whichever Steam account you signed in
+# with, and is never the same thing twice — the server's real database lives
+# on the VPS at /srv/aow5/data (see infra/README.md).
+*.db
+*.db-wal
+*.db-shm
+*.bak
+
+# Written by scripts/bootstrap-deploy.ts: the deploy keypair and a filled-in
+# copy of the env file, staged on their way to the server and to GitHub.
+.secrets/

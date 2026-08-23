@@ -1,0 +1,37 @@
+{
+  "name": "aow5-utils-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The builds API behind the Age of Weapons 5 site: Steam sign-in, published builds, comments and votes, over SQLite",
+  "scripts": {
+    "dev": "tsup --watch --onSuccess \"node dist/main.cjs\"",
+    "build": "tsc --noEmit && tsup && node scripts/verify-bundle.ts",
+    "check-types": "tsc --noEmit",
+    "test": "node --test \"core/**/*.test.ts\"",
+    "db:generate": "drizzle-kit generate",
+    "verify-bundle": "node scripts/verify-bundle.ts",
+    "smoke": "node scripts/smoke.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.2.1",
+    "@nestjs/core": "^11.2.1",
+    "@nestjs/platform-express": "^11.2.1",
+    "@nestjs/throttler": "^6.5.0",
+    "aow5-api-contract": "workspace:*",
+    "aow5-shared": "workspace:*",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.2",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@swc/core": "^1.16.1",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.15.0",
+    "drizzle-kit": "^0.31.10",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.0"
+  }
+}

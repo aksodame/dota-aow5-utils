@@ -5,7 +5,7 @@ import {
   type ComponentProps,
   type MouseEvent,
 } from 'react';
-import { carriesBuildPayload, pathOf, routeAt, type RouteId } from '@/lib/routes';
+import { carriesBuildPayload, buildPath, matchRoute, pathOf, routeAt, type Match, type RouteId } from '@/lib/routes';
 
 /**
  * Three pages, no dependency.
@@ -22,7 +22,7 @@ import { carriesBuildPayload, pathOf, routeAt, type RouteId } from '@/lib/routes
  * is an in-page `#anchor`.
  */
 
-export { ROUTES, pathOf, routeAt, type RouteId } from '@/lib/routes';
+export { ROUTES, buildPath, matchRoute, pathOf, routeAt, type Match, type RouteId } from '@/lib/routes';
 
 /*
  * `popstate` covers Back and Forward but not our own pushState, so navigations
@@ -44,6 +44,29 @@ export function useRoute(): RouteId {
     () => routeAt(window.location.pathname),
     () => 'landing' as RouteId,
   );
+}
+
+/**
+ * The current route including the one dynamic segment.
+ *
+ * `getSnapshot` must return a stable reference or useSyncExternalStore loops,
+ * and `matchRoute` builds a fresh object every call — so the result is cached
+ * and only replaced when the path actually changes.
+ */
+let lastPath: string | null = null;
+let lastMatch: Match = { id: 'landing' };
+
+function matchSnapshot(): Match {
+  const path = window.location.pathname;
+  if (path !== lastPath) {
+    lastPath = path;
+    lastMatch = matchRoute(path);
+  }
+  return lastMatch;
+}
+
+export function useMatch(): Match {
+  return useSyncExternalStore(subscribe, matchSnapshot, () => lastMatch);
 }
 
 interface NavigateOptions {
@@ -97,6 +120,38 @@ export function Link({
   );
 
   return <a href={pathOf(to)} onClick={handleClick} {...rest} />;
+}
+
+/**
+ * Navigates to a path this app owns.
+ *
+ * The general form behind `navigate`, for the two places that need a URL rather
+ * than a route name: a build's own page, and opening a build's board in the
+ * planner.
+ */
+export function navigateTo(url: string, { replace = false }: { replace?: boolean } = {}): void {
+  if (replace) window.history.replaceState(null, '', url);
+  else window.history.pushState(null, '', url);
+  window.dispatchEvent(new Event(NAVIGATED));
+}
+
+export function toBuild(slug: string, options: { replace?: boolean } = {}): void {
+  navigateTo(buildPath(slug), options);
+}
+
+/**
+ * Opens a stored board in the planner.
+ *
+ * **The second and last caller allowed to write the fragment**, alongside
+ * `redirectLegacyBuildLinks` below. That is not a loophole in the rule that the
+ * fragment belongs to the planner — it is the rule being used: a board in the
+ * fragment is exactly what a planner URL is, and what this produces is
+ * indistinguishable from a link somebody shared by hand.
+ *
+ * A build's own page never carries one. Its board comes from the API.
+ */
+export function openInPlanner(payload: string): void {
+  navigateTo(payload === '' ? pathOf('planner') : `${pathOf('planner')}#b=${payload}`);
 }
 
 /**
