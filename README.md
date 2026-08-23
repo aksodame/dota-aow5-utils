@@ -12,7 +12,7 @@ information about the custom game.
 | | |
 |---|---|
 | **[`apps/webapp`](apps/webapp/README.md)** | The site, in one bundle and three routes. `/` says what the tools are; `/builder` is the planner — pick a hero, lay out up to nine sections of typed item slots and ability keys, share the whole board as a link, because the board *is* the link; `/tracker` is the farm tracker's page and its download. |
-| **[`apps/api`](apps/api/README.md)** | The builds API. Steam sign-in, published builds, comments and votes, over one SQLite file. The planner does not depend on it: a `#b=` link still decodes with no account and no network, which is the point. |
+| **[`apps/api`](apps/api/README.md)** | The builds API. Accounts, published builds, comments and votes, over one SQLite file. The planner does not depend on it: a `#b=` link still decodes with no account and no network, which is the point. |
 | **[`apps/tracker`](apps/tracker/README.md)** | Farm tracker. An always-on-top Electron overlay for a live run: items and gold per hour, average map clear time, per-item counts broken down per map. Collapses to one line, resizes, and scales to whatever screen the game is on. |
 
 The rule is one-way: apps depend on `packages/aow5-shared`, never on each other. The web app's `/tracker`

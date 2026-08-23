@@ -1,132 +1,143 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { randomBytes } from 'node:crypto';
-import type { MeUser, PublicUser } from 'aow5-api-contract';
-import { MAX_BUILDS_PER_USER } from 'aow5-api-contract';
+import type { MeUser, PowChallenge, PowSolution } from 'aow5-api-contract';
+import { MAX_BUILDS_PER_USER, MAX_PASSWORD, MIN_PASSWORD } from 'aow5-api-contract';
 import { countBuildsFor } from '../../core/db/builds.ts';
+import { checkNickname } from '../../core/auth/nickname.ts';
+import { remainingLockout } from '../../core/auth/lockout.ts';
+import { hashPassword, verifyAgainstNobody, verifyPassword } from '../../core/auth/password.ts';
+import { PowKeeper } from '../../core/auth/pow.ts';
 import type { Db } from '../../core/db/open.ts';
 import { createSession, deleteSession } from '../../core/db/sessions.ts';
 import {
-  hasPlaceholderProfile,
-  profileIsStale,
+  clearFailedSignIns,
+  createUser,
+  findUserByNickname,
+  recordFailedSignIn,
   toPublicUser,
-  upsertUserFromSteam,
   type UserRow,
 } from '../../core/db/users.ts';
-import { buildLoginUrl, isSafeReturnPath, parseReturn, STEAM_LOGIN_ENDPOINT } from '../../core/steam/openid.ts';
-import { checkAuthentication, fetchProfile, lookupProfile } from '../../core/steam/profile.ts';
 import { DB } from '../db/tokens.ts';
 import { loadConfig, type AppConfig } from '../config.ts';
 
-/** What the login cookie carries across the round trip to Steam. */
-export interface OidcState {
-  n: string;
-  r: string;
+/** What a sign-up or sign-in comes back with when it worked. */
+export interface Signed {
+  user: UserRow;
+  token: string;
+  expiresAt: number;
 }
+
+/**
+ * Everything that can go wrong, as data rather than as an exception.
+ *
+ * The controller maps these onto codes. Keeping them a union here is what lets
+ * `core`-shaped logic stay in `core` and this file stay the thin thing the
+ * guide asks for.
+ */
+export type AuthFailure =
+  | { kind: 'captcha' }
+  | { kind: 'invalid-nickname'; reason: string }
+  | { kind: 'invalid-password'; reason: string }
+  | { kind: 'taken' }
+  | { kind: 'credentials' }
+  | { kind: 'locked'; retryAfter: number }
+  | { kind: 'banned' };
+
+export type AuthResult = { ok: true; signed: Signed } | { ok: false; failure: AuthFailure };
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger('auth');
+  private readonly pow = new PowKeeper();
   private readonly config: AppConfig = loadConfig();
 
   constructor(@Inject(DB) private readonly db: Db) {}
 
+  /**
+   * Whether to mark cookies `Secure`.
+   *
+   * Derived from the origin rather than configured, so a development server on
+   * plain HTTP still sets a cookie the browser will keep.
+   */
   get secureCookies(): boolean {
     return this.config.siteOrigin.startsWith('https://');
   }
 
-  /**
-   * Starts a sign-in.
-   *
-   * The return path is validated here and stored in a cookie rather than sent
-   * through Steam, so the only thing that crosses the network is a nonce. An
-   * open redirect is the one real vulnerability in this flow.
-   */
-  beginLogin(returnPath: string | undefined): { url: string; state: string } {
-    const safe = returnPath !== undefined && isSafeReturnPath(returnPath) ? returnPath : '/';
-    const nonce = randomBytes(16).toString('base64url');
-    const state: OidcState = { n: nonce, r: safe };
-    return {
-      url: buildLoginUrl(this.config.siteOrigin, nonce),
-      state: Buffer.from(JSON.stringify(state), 'utf8').toString('base64url'),
-    };
-  }
-
-  static readState(raw: string | undefined): OidcState | null {
-    if (raw === undefined || raw === '') return null;
-    try {
-      const parsed = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8')) as unknown;
-      if (typeof parsed !== 'object' || parsed === null) return null;
-      const { n, r } = parsed as Partial<OidcState>;
-      if (typeof n !== 'string' || typeof r !== 'string') return null;
-      // Re-validated on the way back in as well as on the way out: the cookie
-      // is attacker-writable in a way the signed return_to is not.
-      return isSafeReturnPath(r) ? { n, r } : { n, r: '/' };
-    } catch {
-      return null;
-    }
+  challenge(): PowChallenge {
+    return this.pow.issue(nowSeconds());
   }
 
   /**
-   * Finishes a sign-in.
+   * Creates an account.
    *
-   * Returns null for every failure, because the redirect target is the same in
-   * all of them and telling a browser which check it failed helps nobody but
-   * whoever is probing.
+   * The order is deliberate and is the main structural defence here: the proof
+   * of work is checked first because it costs one HMAC and one SHA-256 and the
+   * client has already paid for it, then the cheap pure validation, and only
+   * then the ~100 ms of scrypt. Nothing reaches the expensive step without
+   * having spent something first.
    */
-  async completeLogin(
-    query: URLSearchParams,
-    state: OidcState,
-  ): Promise<{ token: string; expiresAt: number; returnPath: string } | null> {
-    const parsed = parseReturn(query, { siteOrigin: this.config.siteOrigin, expectedNonce: state.n });
-    if (!parsed.ok) {
-      this.logger.warn(`sign-in rejected: ${parsed.reason}`);
-      return null;
+  async register(nickname: unknown, password: unknown, pow: PowSolution): Promise<AuthResult> {
+    const now = nowSeconds();
+
+    const solved = this.pow.verify(pow, now);
+    if (!solved.ok) {
+      this.logger.warn(`sign-up captcha rejected: ${solved.reason}`);
+      return fail({ kind: 'captcha' });
     }
 
-    // The step that makes everything above it mean anything.
-    if (!(await checkAuthentication(STEAM_LOGIN_ENDPOINT, parsed.verification))) {
-      this.logger.warn('sign-in rejected: Steam did not verify its own signature');
-      return null;
-    }
+    const name = checkNickname(nickname);
+    if (!name.ok) return fail({ kind: 'invalid-nickname', reason: name.error });
 
-    const now = Math.floor(Date.now() / 1000);
-    const { profile, source } = await lookupProfile(parsed.steamId, this.config.steamApiKey);
-    if (profile === null) {
-      // Signing in anyway is deliberate; Steam having a bad day is not a reason
-      // to turn somebody away. The warning is here so the placeholder name they
-      // are about to see is explainable rather than a mystery.
-      this.logger.warn(`no profile for ${parsed.steamId} from either source; signing in with a placeholder name`);
-    } else if (source === 'community') {
-      this.logger.log(
-        this.config.steamApiKey === ''
-          ? 'STEAM_API_KEY is not set; read the name and avatar from the public community profile instead'
-          : 'the Steam Web API did not answer; fell back to the public community profile',
-      );
-    }
+    const secret = checkPassword(password);
+    if (!secret.ok) return fail({ kind: 'invalid-password', reason: secret.error });
 
-    const user = upsertUserFromSteam(this.db, parsed.steamId, profile, now);
-    const session = createSession(this.db, user.id, now);
-    return { ...session, returnPath: state.r };
+    const created = createUser(
+      this.db,
+      { nickname: name.nickname, key: name.key, passwordHash: await hashPassword(secret.password) },
+      now,
+    );
+    if (created === 'taken') return fail({ kind: 'taken' });
+
+    return { ok: true, signed: { user: created, ...createSession(this.db, created.id, now) } };
   }
 
-/**
-   * Brings a stale profile up to date, returning the user as it now stands.
+  /**
+   * Signs somebody in.
    *
-   * Callers await this only when the stored name is one we invented — a wrong
-   * name in the header is worth a round trip to fix now, whereas a week-old
-   * avatar is not.
+   * "No such nickname" and "wrong password" are one answer, and they also take
+   * the same time — `verifyAgainstNobody` burns the same scrypt work a real
+   * check would, because otherwise the clock would answer the question the
+   * error code refuses to.
    */
-  async refreshIfStale(user: UserRow): Promise<UserRow> {
-    const now = Math.floor(Date.now() / 1000);
-    if (!profileIsStale(user, now)) return user;
-    const profile = await fetchProfile(user.steamId, this.config.steamApiKey);
-    if (profile === null) return user;
-    return upsertUserFromSteam(this.db, user.steamId, profile, now);
-  }
+  async login(nickname: unknown, password: unknown): Promise<AuthResult> {
+    const now = nowSeconds();
 
-  /** Whether the viewer is still showing a name this server made up. */
-  needsProfileNow(user: UserRow): boolean {
-    return hasPlaceholderProfile(user);
+    if (typeof nickname !== 'string' || typeof password !== 'string') {
+      await verifyAgainstNobody('');
+      return fail({ kind: 'credentials' });
+    }
+
+    const user = findUserByNickname(this.db, nickname);
+    if (user === undefined) {
+      await verifyAgainstNobody(password);
+      return fail({ kind: 'credentials' });
+    }
+
+    // Before the hash, so a locked account costs one indexed read and no CPU.
+    const wait = remainingLockout(user.lockedUntil, now);
+    if (wait > 0) return fail({ kind: 'locked', retryAfter: wait });
+
+    if (!(await verifyPassword(password, user.passwordHash))) {
+      const seconds = recordFailedSignIn(this.db, user.id, now);
+      if (seconds > 0) return fail({ kind: 'locked', retryAfter: seconds });
+      return fail({ kind: 'credentials' });
+    }
+
+    // Told rather than hidden. A ban that reads as a wrong password produces a
+    // support email and a second account, which is the opposite of the point.
+    if (user.bannedAt !== null) return fail({ kind: 'banned' });
+
+    clearFailedSignIns(this.db, user);
+    return { ok: true, signed: { user, ...createSession(this.db, user.id, now) } };
   }
 
   logout(token: string): void {
@@ -134,16 +145,34 @@ export class AuthService {
   }
 
   me(user: UserRow): MeUser {
-    const base: PublicUser = toPublicUser(user);
     return {
-      ...base,
+      ...toPublicUser(user),
       buildCount: countBuildsFor(this.db, user.id),
       buildLimit: MAX_BUILDS_PER_USER,
       isAdmin: user.role === 'admin',
     };
   }
+}
 
-  redirectTo(path: string): string {
-    return `${this.config.siteOrigin}${path}`;
-  }
+function nowSeconds(): number {
+  return Math.floor(Date.now() / 1000);
+}
+
+function fail(failure: AuthFailure): AuthResult {
+  return { ok: false, failure };
+}
+
+/**
+ * Length, and nothing else.
+ *
+ * No composition rules: every one ever written has produced `Password1!`, and
+ * with no recovery on this site a rule that pushes people towards something
+ * they will not remember costs more than it buys.
+ */
+function checkPassword(password: unknown): { ok: true; password: string } | { ok: false; error: string } {
+  if (typeof password !== 'string') return { ok: false, error: 'required' };
+  const length = [...password].length;
+  if (length < MIN_PASSWORD) return { ok: false, error: 'too-short' };
+  if (length > MAX_PASSWORD) return { ok: false, error: 'too-long' };
+  return { ok: true, password };
 }

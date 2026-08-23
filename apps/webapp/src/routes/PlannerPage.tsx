@@ -29,6 +29,7 @@ import type { BuildDetail } from 'aow5-api-contract';
 import { decodeBuild, encodeBuild } from 'aow5-shared/codec';
 import { BuildHeader, type BuildDraft } from '@/builds/BuildHeader';
 import { CommentThread } from '@/builds/CommentThread';
+import { useMe } from '@/auth/useMe';
 import { SaveBuildButton } from '@/builds/SaveBuildButton';
 import type { SiteStrings } from '@/i18n/site';
 import { PublishDialog } from '@/components/PublishDialog';
@@ -83,6 +84,8 @@ export function PlannerPage({
   onBuildChanged?: ((next: BuildDetail) => void) | undefined;
 }) {
   const [publishing, setPublishing] = useState(false);
+  const me = useMe();
+  const signedIn = me.status === 'ready' && me.user !== null;
 
   /*
    * The saved build's words, while they are being changed.
@@ -293,15 +296,20 @@ export function PlannerPage({
             preferences, not this page's. What is left are the two things you
             can do to the board in front of you. */}
         <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant="outline"
-            disabled={empty}
-            onClick={() => {
-              if (window.confirm(strings.resetConfirm)) dispatch({ type: 'clearAll' });
-            }}
-          >
-            <RotateCcw /> {strings.reset}
-          </Button>
+          {/* Yours, or nobody's yet. Reset wipes the board, which is not a
+              thing to offer on somebody else's page even though the copy on
+              screen is only ever local. */}
+          {(build === undefined || build.canEdit) && (
+            <Button
+              variant="outline"
+              disabled={empty}
+              onClick={() => {
+                if (window.confirm(strings.resetConfirm)) dispatch({ type: 'clearAll' });
+              }}
+            >
+              <RotateCcw /> {strings.reset}
+            </Button>
+          )}
 
           {build !== undefined && table !== null && (
             <SaveBuildButton
@@ -331,7 +339,8 @@ export function PlannerPage({
           for both would make the cheap act feel like the expensive one.
         */}
         {build === undefined
-          ? !empty &&
+          ? signedIn &&
+            !empty &&
             !publishing && (
               <div className="mt-2 flex justify-end">
                 <Button variant="outline" size="sm" onClick={() => setPublishing(true)}>

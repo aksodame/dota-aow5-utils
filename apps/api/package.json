@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "The builds API behind the Age of Weapons 5 site: Steam sign-in, published builds, comments and votes, over SQLite",
+  "description": "The builds API behind the Age of Weapons 5 site: local accounts, published builds, comments and votes, over SQLite",
   "scripts": {
     "dev": "tsup --watch --onSuccess \"node dist/main.cjs\"",
     "build": "tsc --noEmit && tsup && node scripts/verify-bundle.ts",

@@ -60,22 +60,8 @@ export function BuildHeader({
       )}
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-1 text-sm text-muted-foreground">
-        <span className="flex items-center gap-2">
-          {build.author.avatarUrl !== '' && (
-            <img
-              src={build.author.avatarUrl}
-              alt=""
-              width={20}
-              height={20}
-              className="size-5 rounded-full border"
-            />
-          )}
-          <span>
-            {t.by}{' '}
-            <a href={build.author.profileUrl} target="_blank" rel="noreferrer noopener" className="underline">
-              {build.author.persona}
-            </a>
-          </span>
+        <span>
+          {t.by} {build.author.nickname}
         </span>
 
         {build.status === 'draft' && (

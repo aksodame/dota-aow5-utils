@@ -8,20 +8,22 @@ import { openDb, runMigrations, type Db } from './open.ts';
 import { PURGE_AFTER_SECONDS, purge } from './purge.ts';
 import { builds } from './schema.ts';
 import { createSession } from './sessions.ts';
-import { upsertUserFromSteam } from './users.ts';
+import { createUser, type UserRow } from './users.ts';
+import { nicknameKey } from '../auth/nickname.ts';
 
 const MIGRATIONS = fileURLToPath(new URL('../../drizzle', import.meta.url));
 const NOW = 1_800_000_000;
 
+function seedUser(db: Db, nickname: string): UserRow {
+  const created = createUser(db, { nickname, key: nicknameKey(nickname), passwordHash: 'hash' }, NOW);
+  if (created === 'taken') throw new Error(`fixture reused the nickname ${nickname}`);
+  return created;
+}
+
 function fixture() {
   const { db, sqlite } = openDb({ path: ':memory:' });
   runMigrations(db, MIGRATIONS);
-  const user = upsertUserFromSteam(
-    db,
-    '76561197960287930',
-    { steamId: '76561197960287930', persona: 'a', avatarUrl: '', profileUrl: 'p', createdAt: null },
-    NOW,
-  );
+  const user = seedUser(db, 'author');
   return { db, sqlite, userId: user.id };
 }
 

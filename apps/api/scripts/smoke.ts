@@ -27,6 +27,8 @@ const EXPECTED: Array<{ path: string; status: number }> = [
   // 200 with a null user, deliberately — not 401. See the auth controller.
   { path: '/api/me', status: 200 },
   { path: '/api/builds', status: 200 },
+  // The only part of the new sign-in flow a smoke test can reach anonymously.
+  { path: '/api/auth/challenge', status: 200 },
   // A well-formed slug that names nothing.
   { path: '/api/builds/abcd1234', status: 404 },
   { path: '/api/builds/abcd1234/comments', status: 404 },

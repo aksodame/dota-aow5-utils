@@ -4,7 +4,7 @@ import { MAX_BUILDS_PER_USER, type BuildSummary } from 'aow5-api-contract';
 import { Button } from '@/components/ui/button';
 import { deleteBuild, myBuilds, updateBuild } from '@/builds/api';
 import type { SiteStrings } from '@/i18n/site';
-import { ApiFailure, signInUrl } from '@/lib/api';
+import { ApiFailure } from '@/lib/api';
 import { setMe, useMe } from '@/auth/useMe';
 import { BuildLink } from '@/builds/BuildLink';
 
@@ -32,19 +32,14 @@ export function MyBuildsPage({ site }: { site: SiteStrings }) {
 
   useEffect(() => {
     if (me.status === 'ready' && me.user !== null) reload();
-  }, [me.status, me.status === 'ready' ? me.user?.steamId : null, reload]);
+  }, [me.status, me.status === 'ready' ? me.user?.id : null, reload]);
 
   if (me.status === 'loading') return <Centered>{t.loading}</Centered>;
 
+  // Reachable only by typing the address — the nav entry is not shown signed
+  // out. It says where the door is rather than being a second one.
   if (me.user === null) {
-    return (
-      <Centered>
-        <p className="mb-4 text-muted-foreground">{site.auth.signInWhy}</p>
-        <Button asChild>
-          <a href={signInUrl()}>{site.auth.signIn}</a>
-        </Button>
-      </Centered>
-    );
+    return <Centered>{t.mineSignedOut}</Centered>;
   }
 
   async function act(run: () => Promise<unknown>, delta = 0) {

@@ -12,7 +12,7 @@ import { PAGE_SIZE, type BuildSort } from 'aow5-api-contract';
 import { buildFtsQuery } from '../search/ftsQuery.ts';
 import type { BuildRow } from './builds.ts';
 import type { Sqlite } from './open.ts';
-import type { UserRow } from './users.ts';
+import type { UserSummary } from './users.ts';
 
 export interface BrowseFilters {
   q?: string;
@@ -23,7 +23,7 @@ export interface BrowseFilters {
 }
 
 export interface BrowseResult {
-  rows: Array<{ build: BuildRow; author: UserRow }>;
+  rows: Array<{ build: BuildRow; author: UserSummary }>;
   cursor: string | null;
 }
 
@@ -77,10 +77,7 @@ const GUIDE_COLUMNS = `
   g.codec_version, g.hero_id, g.section_count, g.item_count, g.status,
   g.like_count, g.dislike_count, g.comment_count, g.view_count,
   g.published_at, g.created_at, g.updated_at, g.deleted_at,
-  a.id as a_id, a.steam_id as a_steam_id, a.persona as a_persona,
-  a.avatar_url as a_avatar_url, a.profile_url as a_profile_url,
-  a.profile_synced_at as a_profile_synced_at, a.steam_created_at as a_steam_created_at,
-  a.role as a_role, a.banned_at as a_banned_at, a.created_at as a_created_at`;
+  a.id as a_id, a.nickname as a_nickname`;
 
 function toGuide(row: Record<string, unknown>): BuildRow {
   return {
@@ -107,19 +104,15 @@ function toGuide(row: Record<string, unknown>): BuildRow {
   };
 }
 
-function toAuthor(row: Record<string, unknown>): UserRow {
-  return {
-    id: Number(row['a_id']),
-    steamId: String(row['a_steam_id']),
-    persona: String(row['a_persona']),
-    avatarUrl: String(row['a_avatar_url']),
-    profileUrl: String(row['a_profile_url']),
-    profileSyncedAt: Number(row['a_profile_synced_at']),
-    steamCreatedAt: row['a_steam_created_at'] === null ? null : Number(row['a_steam_created_at']),
-    role: row['a_role'] as UserRow['role'],
-    bannedAt: row['a_banned_at'] === null ? null : Number(row['a_banned_at']),
-    createdAt: Number(row['a_created_at']),
-  };
+/**
+ * The author, as two columns.
+ *
+ * A card shows a name, so that is all this selects. Widening it back to the
+ * whole row would drag `password_hash` through the busiest read path on the
+ * site for nothing.
+ */
+function toAuthor(row: Record<string, unknown>): UserSummary {
+  return { id: Number(row['a_id']), nickname: String(row['a_nickname']) };
 }
 
 export function browseBuilds(sqlite: Sqlite, filters: BrowseFilters): BrowseResult {

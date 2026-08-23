@@ -7,16 +7,21 @@ import { openDb, runMigrations, type Sqlite } from './open.ts';
 const MIGRATIONS_FOLDER = fileURLToPath(new URL('../../drizzle', import.meta.url));
 
 /** A migrated, empty database with one user in it. */
+/**
+ * Raw SQL on purpose. These tests are about what the *database* refuses, so
+ * they must not go through the code whose job is to keep it happy.
+ */
+function insertUser(sqlite: Sqlite, nickname: string, now: number) {
+  return sqlite
+    .prepare(`insert into users (nickname, nickname_key, password_hash, created_at) values (?, ?, ?, ?)`)
+    .run(nickname, nickname.toLowerCase(), 'hash', now);
+}
+
 function fixture(): { sqlite: Sqlite; userId: number } {
   const { db, sqlite } = openDb({ path: ':memory:' });
   runMigrations(db, MIGRATIONS_FOLDER);
   const now = Math.floor(Date.now() / 1000);
-  const info = sqlite
-    .prepare(
-      `insert into users (steam_id, persona, avatar_url, profile_url, profile_synced_at, created_at)
-       values (?, ?, ?, ?, ?, ?)`,
-    )
-    .run('76561197960287930', 'tester', 'https://a/av.jpg', 'https://p/', now, now);
+  const info = insertUser(sqlite, 'tester', now);
   return { sqlite, userId: Number(info.lastInsertRowid) };
 }
 
@@ -71,14 +76,7 @@ test('soft-deleting a build frees its slot immediately', () => {
 test('the cap is per author, not global', () => {
   const { sqlite, userId } = fixture();
   const now = Math.floor(Date.now() / 1000);
-  const other = Number(
-    sqlite
-      .prepare(
-        `insert into users (steam_id, persona, avatar_url, profile_url, profile_synced_at, created_at)
-         values (?, ?, ?, ?, ?, ?)`,
-      )
-      .run('76561197960287931', 'other', 'https://a/b.jpg', 'https://p/2', now, now).lastInsertRowid,
-  );
+  const other = Number(insertUser(sqlite, 'other', now).lastInsertRowid);
 
   for (let slot = 0; slot < 5; slot += 1) insertGuide(sqlite, userId, slot, `a${slot}`);
   for (let slot = 0; slot < 5; slot += 1) assert.doesNotThrow(() => insertGuide(sqlite, other, slot, `b${slot}`));
@@ -129,5 +127,37 @@ test('two builds cannot share a slug', () => {
   const { sqlite, userId } = fixture();
   insertGuide(sqlite, userId, 0, 'same');
   assert.throws(() => insertGuide(sqlite, userId, 1, 'same'), /UNIQUE constraint failed/i);
+  sqlite.close();
+});
+
+test('a nickname is unique regardless of case, in Cyrillic as well as Latin', () => {
+  // The test that would fail under `COLLATE NOCASE`, which folds ASCII only.
+  // `Вася` and `вася` rendering as two different accounts is an impersonation
+  // hole aimed at the largest part of this audience, so it gets its own test.
+  const { db, sqlite } = openDb({ path: ':memory:' });
+  runMigrations(db, MIGRATIONS_FOLDER);
+  const now = Math.floor(Date.now() / 1000);
+
+  insertUser(sqlite, 'Вася', now);
+  assert.throws(
+    () => insertUser(sqlite, 'ВАСЯ', now),
+    /UNIQUE/,
+    'a Cyrillic case variant must not be a second account',
+  );
+  assert.doesNotThrow(() => insertUser(sqlite, 'Петя', now));
+  sqlite.close();
+});
+
+test('role is constrained by the database, not just by TypeScript', () => {
+  const { db, sqlite } = openDb({ path: ':memory:' });
+  runMigrations(db, MIGRATIONS_FOLDER);
+  const now = Math.floor(Date.now() / 1000);
+  assert.throws(
+    () =>
+      sqlite
+        .prepare(`insert into users (nickname, nickname_key, password_hash, role, created_at) values (?,?,?,?,?)`)
+        .run('x', 'x', 'h', 'moderator', now),
+    /CHECK/,
+  );
   sqlite.close();
 });

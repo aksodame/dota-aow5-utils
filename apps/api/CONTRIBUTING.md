@@ -11,7 +11,7 @@ easier and quieter.
 
 | you want to change | it lives in |
 |---|---|
-| Anything worth a test — validation, queries, the codec check, the OpenID exchange | `core/` |
+| Anything worth a test — validation, queries, the codec check, the password hash, the proof of work | `core/` |
 | Routing, status codes, guards, DI wiring | `src/` |
 | The schema | `core/db/schema.ts`, then `pnpm --filter aow5-utils-api db:generate` |
 | A virtual table, a trigger, a backfill | a hand-written migration — drizzle-kit cannot see them |
@@ -65,8 +65,9 @@ Restated from the site's guide, because this is the other place they can be brok
 Tests run against `:memory:` databases built by applying the real committed migrations, so a migration that
 does not apply is a test failure rather than a deploy failure.
 
-Anything touching the schema, the payload check, the slug alphabet, the FTS query builder or the Steam
-exchange needs a test. Wiring in `src/` does not — but if it feels like it does, see above.
+Anything touching the schema, the payload check, the slug alphabet, the FTS query builder, the password
+hash, the proof of work or the nickname rules needs a test. Wiring in `src/` does not — but if it feels
+like it does, see above.
 
 ## Schema changes
 
@@ -76,12 +77,28 @@ exchange needs a test. Wiring in `src/` does not — but if it feels like it doe
 3. Rename the generated file to something a human would name, and update the tag in `drizzle/meta/_journal.json`.
 4. Add or extend a test in `core/db/schema.test.ts` that proves the new constraint actually constrains.
 
+**`drizzle/meta/` is stale, and knowing that will save you an afternoon.** It holds only
+`0000_snapshot.json`; `0001`, `0002` and `0003` were all hand-written, because drizzle-kit cannot see a
+virtual table, a trigger, or a table being dropped and rebuilt. So the generator's idea of the schema is
+three migrations behind, and what it emits will include changes that have already happened — re-dropping
+`builds.summary`, for one, which fails against any real database. Read what it writes; on anything
+structural, hand-write the file instead and add the journal entry yourself.
+
+Two more things the runtime does that a generated migration would get wrong:
+
+- **All pending migrations run inside one `BEGIN…COMMIT`.** `PRAGMA foreign_keys` is a documented no-op
+  inside a transaction, so the `PRAGMA foreign_keys=OFF` drizzle-kit writes above a table recreate does
+  *nothing* — and the `DROP TABLE` under it runs with cascades live.
+- **`builds_fts` is external-content FTS5 kept in step by triggers on `builds`.** An explicit `DELETE FROM
+  builds` fires them; the implicit delete inside `DROP TABLE` is not guaranteed to. If a migration removes
+  builds by any route, finish with `INSERT INTO builds_fts(builds_fts) VALUES('rebuild')`.
+
 Migrations are forward-only and run at boot. A destructive one is a decision, not a step: `infra/deploy.sh`
 snapshots the database before every deploy precisely so one can be undone.
 
 ## Branches and commits
 
-Branch off `master`, named `<area>/<slug>` — `api/steam-auth`, `api/fts-search`. Commit subjects match the
+Branch off `master`, named `<area>/<slug>` — `api/local-accounts`, `api/fts-search`. Commit subjects match the
 log: one line, capitalized, no trailing period, saying what changed.
 
 ## Opening the pull request

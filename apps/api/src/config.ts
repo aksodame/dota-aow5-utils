@@ -11,13 +11,10 @@ export interface AppConfig {
   /**
    * The site's own origin, scheme included.
    *
-   * Load-bearing three times over: it is the OpenID realm Steam shows the user,
-   * the only `Origin` the mutation guard will accept, and what a post-login
-   * redirect is resolved against.
+   * Load-bearing twice over: it is the only `Origin` the mutation guard will
+   * accept, and it is what decides whether cookies are marked `Secure`.
    */
   siteOrigin: string;
-  /** From steamcommunity.com/dev/apikey. Only the auth module requires it. */
-  steamApiKey: string;
   isProduction: boolean;
 }
 
@@ -37,7 +34,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     // Required in production only, so `pnpm --filter aow5-utils-api dev` needs no
     // setup at all to answer /api/health.
     siteOrigin: isProduction ? required('SITE_ORIGIN') : (env['SITE_ORIGIN'] ?? 'http://localhost:5173'),
-    steamApiKey: env['STEAM_API_KEY'] ?? '',
     isProduction,
   };
 }

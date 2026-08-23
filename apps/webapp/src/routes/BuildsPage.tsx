@@ -183,10 +183,7 @@ export function BuildsPage({ site, lang }: { site: SiteStrings; lang: Lang }) {
 
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5">
-                {build.author.avatarUrl !== '' && (
-                  <img src={build.author.avatarUrl} alt="" width={16} height={16} className="size-4 rounded-full" />
-                )}
-                {t.by} {build.author.persona}
+                {t.by} {build.author.nickname}
               </span>
               {build.heroId !== null && <span>{heroNames.get(build.heroId) ?? build.heroId}</span>}
               <span className="flex items-center gap-1 tabular-nums">

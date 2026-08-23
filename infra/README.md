@@ -31,7 +31,7 @@ log. `docker build -f infra/api.Dockerfile .` locally is the cheap way to find o
 Secrets never enter the repository or an image layer. `docker compose` reads `/srv/aow5/.env` at deploy
 time and hands each service only the variables it needs.
 
-`pnpm bootstrap-deploy` collects all of it in one pass — it opens Steam and DuckDNS for the two credentials
+`pnpm bootstrap-deploy` collects all of it in one pass — it opens DuckDNS for the one credential
 you can only get by signing in, checks both, and writes a filled-in copy of `.env.example` ready to `scp`.
 It writes into a gitignored `.secrets/`, to be deleted once it has landed. Pass `--ci` and it also generates
 an SSH keypair, pins the host key and sets them as GitHub secrets; that is off by default, because nothing

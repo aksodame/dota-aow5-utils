@@ -5,7 +5,7 @@ import type { BuildDetail } from 'aow5-api-contract';
 import { Button } from '@/components/ui/button';
 import { useMe } from '@/auth/useMe';
 import type { SiteStrings } from '@/i18n/site';
-import { ApiFailure, api, signInUrl } from '@/lib/api';
+import { ApiFailure, api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 interface VoteResponse {
@@ -31,7 +31,7 @@ export function VoteButtons({ build, site }: { build: BuildDetail; site: SiteStr
   const [busy, setBusy] = useState(false);
 
   const signedIn = me.status === 'ready' && me.user !== null;
-  const isAuthor = me.status === 'ready' && me.user?.steamId === build.author.steamId;
+  const isAuthor = me.status === 'ready' && me.user?.id === build.author.id;
 
   async function send(next: 1 | -1) {
     const value: 1 | -1 | 0 = vote === next ? 0 : next;
@@ -61,6 +61,8 @@ export function VoteButtons({ build, site }: { build: BuildDetail; site: SiteStr
     }
   }
 
+  // Signed out, this is a readout rather than a control. No prompt: the header
+  // is the one place on the site that asks for an account.
   if (!signedIn) {
     return (
       <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -70,9 +72,6 @@ export function VoteButtons({ build, site }: { build: BuildDetail; site: SiteStr
         <span className="flex items-center gap-1 tabular-nums">
           <ThumbsDown className="size-4" aria-hidden /> {counts.down}
         </span>
-        <a href={signInUrl()} className="underline">
-          {site.auth.signIn}
-        </a>
       </div>
     );
   }

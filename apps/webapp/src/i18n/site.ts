@@ -50,19 +50,46 @@ export interface SiteStrings {
    * voting on one. The copy has to make that difference obvious, because a
    * sign-in button on a tool that has never needed one reads as a demand.
    *
-   * Valve requires their own wording and button art for the sign-in control
-   * itself, so `signIn` labels the surrounding control rather than replacing it.
+   * Sign-in prompts live in the header and nowhere else. A control that only
+   * exists to ask for an account reads as a demand on a tool that has never
+   * needed one, so the pages themselves simply show less when signed out.
    */
   auth: {
     signIn: string;
+    signUp: string;
     signInWhy: string;
     signOut: string;
     account: string;
     myBuilds: string;
     /** "{n} of {max}" — the author's five slots. */
     buildCount: string;
-    signInFailed: string;
-    signInExpired: string;
+
+    /** The dialog. */
+    dialogTitleSignIn: string;
+    dialogTitleSignUp: string;
+    dialogLeadSignIn: string;
+    dialogLeadSignUp: string;
+    nickname: string;
+    nicknameHint: string;
+    password: string;
+    passwordHint: string;
+    /** The whole recovery story, and it has to be said before somebody commits. */
+    noRecovery: string;
+    switchToSignUp: string;
+    switchToSignIn: string;
+    /** Shown while the browser is solving the sign-up challenge. */
+    solving: string;
+    working: string;
+
+    /** One line per `ApiErrorCode` the form can provoke. */
+    errorCredentials: string;
+    errorTaken: string;
+    errorCaptcha: string;
+    errorRateLimited: string;
+    errorBanned: string;
+    errorNickname: string;
+    errorPassword: string;
+    errorGeneric: string;
   };
 
   /**
@@ -108,7 +135,10 @@ export interface SiteStrings {
     retry: string;
 
     by: string;
+    /** A build that its author removed. */
     deleted: string;
+    /** A *comment* that was removed. The row stays so the thread keeps its shape. */
+    commentDeleted: string;
     notFound: string;
     backToBuilds: string;
     draft: string;
@@ -131,18 +161,16 @@ export interface SiteStrings {
     published: string;
     publishedLead: string;
     limitReached: string;
-    signInToPublish: string;
 
-    /** Editing a build that is already saved. */
+    /** Editing a build that is already saved. Author only. */
     saveChanges: string;
     saved: string;
-    saveAsMine: string;
-    saveAsMineWhy: string;
-    signInToSave: string;
 
     /** The author's own five. */
     mineTitle: string;
     mineLead: string;
+    /** Shown at /me when nobody is signed in. Points at the header rather than nagging. */
+    mineSignedOut: string;
     mineEmpty: string;
     slotsUsed: string;
     unpublish: string;
@@ -336,14 +364,36 @@ const en: SiteStrings = {
   },
 
   auth: {
-    signIn: 'Sign in through Steam',
+    signIn: 'Sign in',
+    signUp: 'Create an account',
     signInWhy: 'Only needed to publish a build, comment or vote. The planner works without an account.',
     signOut: 'Sign out',
     account: 'Account',
     myBuilds: 'My builds',
     buildCount: '{n} of {max}',
-    signInFailed: 'Steam could not confirm that sign-in. Please try again.',
-    signInExpired: 'That sign-in took too long. Please try again.',
+
+    dialogTitleSignIn: 'Sign in',
+    dialogTitleSignUp: 'Create an account',
+    dialogLeadSignIn: 'Your builds, comments and votes are kept under your nickname.',
+    dialogLeadSignUp: 'A nickname and a password. Nothing else, and no email address.',
+    nickname: 'Nickname',
+    nicknameHint: '3–24 characters. Letters, digits, - and _. Latin or Cyrillic, not both.',
+    password: 'Password',
+    passwordHint: 'At least 8 characters. Length is the only rule.',
+    noRecovery: 'There is no way to reset a forgotten password — there is no email address to send one to. Write it down somewhere safe.',
+    switchToSignUp: 'No account yet? Create one',
+    switchToSignIn: 'Already have an account? Sign in',
+    solving: 'Checking your browser…',
+    working: 'One moment…',
+
+    errorCredentials: 'Wrong nickname or password.',
+    errorTaken: 'That nickname is taken.',
+    errorCaptcha: 'That check expired. Please try again.',
+    errorRateLimited: 'Too many attempts. Please wait a little and try again.',
+    errorBanned: 'That account has been suspended.',
+    errorNickname: 'That nickname will not work — see the note under the field.',
+    errorPassword: 'That password is too short or too long.',
+    errorGeneric: 'That did not work. Please try again.',
   },
 
   builds: {
@@ -366,6 +416,7 @@ const en: SiteStrings = {
 
     by: 'by',
     deleted: 'This build was deleted.',
+    commentDeleted: 'This comment was deleted.',
     notFound: 'No build at that link.',
     backToBuilds: 'Back to builds',
     draft: 'Draft',
@@ -387,16 +438,13 @@ const en: SiteStrings = {
     published: 'Saved',
     publishedLead: 'Anyone with this link can read it.',
     limitReached: 'You already have five builds. Delete one to make room.',
-    signInToPublish: 'Sign in through Steam to save this build. The share link above works without an account.',
 
     saveChanges: 'Save changes',
     saved: 'Saved',
-    saveAsMine: 'Save as my own',
-    saveAsMineWhy: 'Copies this board into your builds as a draft. The original is untouched.',
-    signInToSave: 'Sign in through Steam to keep your changes. Editing here works either way.',
 
     mineTitle: 'My builds',
     mineLead: 'Five slots. Deleting one frees it immediately.',
+    mineSignedOut: 'Sign in from the header to see the builds you have saved.',
     mineEmpty: 'Nothing saved yet. Make a board and save it from there.',
     slotsUsed: '{n} of {max} slots used',
     unpublish: 'Make draft',
@@ -595,14 +643,36 @@ const ru: SiteStrings = {
   },
 
   auth: {
-    signIn: 'Войти через Steam',
+    signIn: 'Войти',
+    signUp: 'Создать аккаунт',
     signInWhy: 'Нужен только чтобы опубликовать гайд, оставить комментарий или голос. Планировщик работает без аккаунта.',
     signOut: 'Выйти',
     account: 'Аккаунт',
     myBuilds: 'Мои гайды',
     buildCount: '{n} из {max}',
-    signInFailed: 'Steam не подтвердил вход. Попробуйте ещё раз.',
-    signInExpired: 'Вход занял слишком много времени. Попробуйте ещё раз.',
+
+    dialogTitleSignIn: 'Вход',
+    dialogTitleSignUp: 'Создание аккаунта',
+    dialogLeadSignIn: 'Ваши гайды, комментарии и голоса хранятся под вашим ником.',
+    dialogLeadSignUp: 'Ник и пароль. Больше ничего, и никакой почты.',
+    nickname: 'Ник',
+    nicknameHint: 'От 3 до 24 символов. Буквы, цифры, - и _. Латиница или кириллица, но не вместе.',
+    password: 'Пароль',
+    passwordHint: 'Не меньше 8 символов. Других требований нет.',
+    noRecovery: 'Забытый пароль восстановить нельзя — почты, на которую можно было бы прислать ссылку, здесь нет. Запишите его в надёжном месте.',
+    switchToSignUp: 'Нет аккаунта? Создайте',
+    switchToSignIn: 'Уже есть аккаунт? Войдите',
+    solving: 'Проверяем браузер…',
+    working: 'Секунду…',
+
+    errorCredentials: 'Неверный ник или пароль.',
+    errorTaken: 'Этот ник уже занят.',
+    errorCaptcha: 'Проверка устарела. Попробуйте ещё раз.',
+    errorRateLimited: 'Слишком много попыток. Подождите немного и попробуйте снова.',
+    errorBanned: 'Этот аккаунт заблокирован.',
+    errorNickname: 'Такой ник не подойдёт — смотрите подсказку под полем.',
+    errorPassword: 'Пароль слишком короткий или слишком длинный.',
+    errorGeneric: 'Не получилось. Попробуйте ещё раз.',
   },
 
   builds: {
@@ -625,6 +695,7 @@ const ru: SiteStrings = {
 
     by: 'автор',
     deleted: 'Эта сборка удалена.',
+    commentDeleted: 'Этот комментарий удалён.',
     notFound: 'По этой ссылке сборки нет.',
     backToBuilds: 'Ко всем сборкам',
     draft: 'Черновик',
@@ -646,16 +717,13 @@ const ru: SiteStrings = {
     published: 'Сохранено',
     publishedLead: 'Любой, у кого есть ссылка, сможет прочитать.',
     limitReached: 'У вас уже пять сборок. Удалите одну, чтобы освободить место.',
-    signInToPublish: 'Войдите через Steam, чтобы сохранить сборку. Ссылка выше работает и без аккаунта.',
 
     saveChanges: 'Сохранить изменения',
     saved: 'Сохранено',
-    saveAsMine: 'Сохранить себе',
-    saveAsMineWhy: 'Копирует эту доску в ваши сборки как черновик. Оригинал не меняется.',
-    signInToSave: 'Войдите через Steam, чтобы сохранить изменения. Редактировать можно и так.',
 
     mineTitle: 'Мои сборки',
     mineLead: 'Пять слотов. Удаление сразу освобождает слот.',
+    mineSignedOut: 'Войдите через шапку сайта, чтобы увидеть сохранённые сборки.',
     mineEmpty: 'Пока ничего не сохранено. Соберите доску и сохраните её оттуда.',
     slotsUsed: 'Занято {n} из {max}',
     unpublish: 'В черновики',

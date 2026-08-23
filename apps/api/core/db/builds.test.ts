@@ -4,20 +4,22 @@ import { fileURLToPath } from 'node:url';
 import { MAX_BUILDS_PER_USER } from 'aow5-api-contract';
 import { createBuild, countBuildsFor, findBuildBySlug, listBuildsForUser, softDeleteBuild, updateBuild } from './builds.ts';
 import { openDb, runMigrations, type Db } from './open.ts';
-import { upsertUserFromSteam } from './users.ts';
+import { createUser, type UserRow } from './users.ts';
+import { nicknameKey } from '../auth/nickname.ts';
 
 const MIGRATIONS = fileURLToPath(new URL('../../drizzle', import.meta.url));
 const NOW = 1_800_000_000;
 
+function seedUser(db: Db, nickname: string): UserRow {
+  const created = createUser(db, { nickname, key: nicknameKey(nickname), passwordHash: 'hash' }, NOW);
+  if (created === 'taken') throw new Error(`fixture reused the nickname ${nickname}`);
+  return created;
+}
+
 function fixture(): { db: Db; userId: number } {
   const { db } = openDb({ path: ':memory:' });
   runMigrations(db, MIGRATIONS);
-  const user = upsertUserFromSteam(
-    db,
-    '76561197960287930',
-    { steamId: '76561197960287930', persona: 'a', avatarUrl: '', profileUrl: 'p', createdAt: null },
-    NOW,
-  );
+  const user = seedUser(db, 'author');
   return { db, userId: user.id };
 }
 
@@ -132,12 +134,7 @@ test('publishedAt is set once and does not move on a later edit', () => {
 
 test("one author's cap does not affect another's", () => {
   const { db, userId } = fixture();
-  const other = upsertUserFromSteam(
-    db,
-    '76561197960287931',
-    { steamId: '76561197960287931', persona: 'b', avatarUrl: '', profileUrl: 'p', createdAt: null },
-    NOW,
-  );
+  const other = seedUser(db, 'other');
   for (let i = 0; i < MAX_BUILDS_PER_USER; i += 1) make(db, userId, `a${i}`);
   assert.equal(make(db, userId, 'a-extra'), 'limit-reached');
   assert.notEqual(make(db, other.id, 'b0'), 'limit-reached');

@@ -6,12 +6,17 @@
  * wondering which one a given number is.
  */
 
-/** A build's author, as much of them as any reader may see. */
+/**
+ * A build's author, as much of them as any reader may see.
+ *
+ * `id` is the row id, and it is here because two things on the site need to ask
+ * "is this me?" — the vote buttons, which must not let an author vote on their
+ * own build, and the my-builds page. A nickname would answer that too, but the
+ * id keeps answering it if renaming ever becomes a thing.
+ */
 export interface PublicUser {
-  steamId: string;
-  persona: string;
-  avatarUrl: string;
-  profileUrl: string;
+  id: number;
+  nickname: string;
 }
 
 /** The viewer, when there is one. */
@@ -19,6 +24,51 @@ export interface MeUser extends PublicUser {
   buildCount: number;
   buildLimit: number;
   isAdmin: boolean;
+}
+
+/**
+ * A proof-of-work challenge, handed out by `GET /api/auth/challenge`.
+ *
+ * The server keeps none of this: `signature` is an HMAC over the other three
+ * fields, so the whole challenge travels to the client and back and is verified
+ * by re-deriving rather than by looking anything up.
+ */
+export interface PowChallenge {
+  /** Random, and the replay key once a solution has been accepted. */
+  salt: string;
+  /** Leading zero bits required of `sha256(salt + nonce)`. */
+  difficulty: number;
+  /** Unix seconds, like every other timestamp here. */
+  expiresAt: number;
+  signature: string;
+}
+
+/** A solved challenge: the challenge exactly as issued, plus the answer. */
+export interface PowSolution extends PowChallenge {
+  nonce: number;
+}
+
+export interface SignUpBody {
+  nickname: string;
+  password: string;
+  pow: PowSolution;
+}
+
+/**
+ * Signing in carries no proof of work.
+ *
+ * Sign-up is the endpoint worth making expensive — it creates rows. Sign-in is
+ * defended by rate limiting instead, because a challenge here would tax the
+ * person who mistyped their password far more than anyone attacking it.
+ */
+export interface SignInBody {
+  nickname: string;
+  password: string;
+}
+
+/** Both sign-up and sign-in answer with the viewer they just became. */
+export interface AuthResponse {
+  user: MeUser;
 }
 
 /**
@@ -142,5 +192,9 @@ export type ApiErrorCode =
   | 'SELF_VOTE'
   | 'PAYLOAD_INVALID'
   | 'PAYLOAD_TOO_LARGE'
-  | 'STEAM_AUTH_FAILED'
+  /** One answer for both "no such nickname" and "wrong password". */
+  | 'INVALID_CREDENTIALS'
+  | 'NICKNAME_TAKEN'
+  /** The proof of work was missing, forged, expired, replayed or short. */
+  | 'CAPTCHA_FAILED'
   | 'INTERNAL';

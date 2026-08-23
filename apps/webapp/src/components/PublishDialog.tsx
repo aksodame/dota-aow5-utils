@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { CopyBlock } from '@/components/CopyBlock';
 import { createBuild } from '@/builds/api';
 import type { SiteStrings } from '@/i18n/site';
-import { ApiFailure, signInUrl } from '@/lib/api';
+import { ApiFailure } from '@/lib/api';
 import { setMe, useMe } from '@/auth/useMe';
 import { buildPath } from '@/lib/routes';
 
@@ -63,16 +63,6 @@ export function PublishDialog({
     return (
       <Panel title={t.published} lead={t.publishedLead} onClose={onClose}>
         <CopyBlock site={site}>{url}</CopyBlock>
-      </Panel>
-    );
-  }
-
-  if (me.status === 'ready' && me.user === null) {
-    return (
-      <Panel title={t.publishTitle} lead={t.signInToPublish} onClose={onClose}>
-        <Button asChild>
-          <a href={signInUrl()}>{site.auth.signIn}</a>
-        </Button>
       </Panel>
     );
   }

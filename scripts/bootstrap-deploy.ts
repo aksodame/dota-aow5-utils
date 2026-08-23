@@ -4,16 +4,14 @@
  *
  *   node scripts/bootstrap-deploy.ts
  *
- * Two of these can only be had by signing in to somebody else's website, so
- * this opens the browser at the right page and waits: the Steam Web API key and
- * the DuckDNS token. The rest it fills in itself.
+ * One of these can only be had by signing in to somebody else's website, so
+ * this opens the browser at the right page and waits: the DuckDNS token. The
+ * rest it fills in itself.
  *
  * What it produces by default is one file: `/srv/aow5/.env`, ready to copy to
  * the server. That is where the app's runtime secrets live — read by `docker
  * compose` at deploy time (infra/deploy.sh), never baked into an image, never
- * in GitHub. STEAM_API_KEY lives there and nowhere else, because Steam sign-in
- * is a server-side concern; having that backwards is the mistake that costs a
- * day.
+ * in GitHub.
  *
  * `--ci` additionally generates an SSH keypair, pins the host key, and offers
  * to set them as GitHub secrets. It is off by default because nothing in
@@ -46,7 +44,7 @@ const GH_ENVIRONMENT = 'production';
  * script about it would silently ship an empty value, so writeEnvFile refuses
  * to write when it meets a key that is not in this list.
  */
-const ENV_KEYS = ['SITE_DOMAIN', 'ACME_EMAIL', 'STEAM_API_KEY', 'DUCKDNS_SUBDOMAIN', 'DUCKDNS_TOKEN'] as const;
+const ENV_KEYS = ['SITE_DOMAIN', 'ACME_EMAIL', 'DUCKDNS_SUBDOMAIN', 'DUCKDNS_TOKEN'] as const;
 type EnvKey = (typeof ENV_KEYS)[number];
 
 type Answers = Record<EnvKey, string> & {
@@ -219,27 +217,8 @@ function prepareOutDir(): void {
 }
 
 // ---------------------------------------------------------------------------
-// The two credentials that come from somebody else's login page
+// The credential that comes from somebody else's login page
 // ---------------------------------------------------------------------------
-
-/**
- * Checked with a real call, because a mistyped key does not fail at deploy: it
- * fails at the first sign-in, as a 403 from Steam in the middle of a redirect,
- * which is a genuinely unpleasant thing to work backwards from. The SteamID is
- * Robin Walker's — a public profile that has existed as long as Steam has.
- */
-async function verifySteamKey(key: string): Promise<void> {
-  if (!VERIFY) return;
-  const url = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${key}&steamids=76561197960435530`;
-  try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
-    if (response.ok) console.log('  Key works.');
-    else if (response.status === 403) die('Steam rejected that key with a 403. Check it and run this again.');
-    else console.log(`  Steam answered ${response.status}, which is not a verdict on the key. Carrying on.`);
-  } catch {
-    console.log('  Could not reach Steam to check the key. Carrying on.');
-  }
-}
 
 /**
  * DuckDNS has no read-only endpoint. The only call that proves a token is the
@@ -395,8 +374,8 @@ function writeEnvFile(answers: Answers): string {
   }
 
   // LF, deliberately. This file is written on a laptop and read by a shell on
-  // Linux, where a trailing CR becomes part of the value — and a CR on the end
-  // of STEAM_API_KEY is a 403 with no explanation attached.
+  // Linux, where a trailing CR would become part of the value — and a token with
+  // an invisible character on its end fails in a way nothing explains.
   const path = join(OUT, 'aow5.env');
   writeFileSync(path, lines.join('\n'), 'utf8');
   try {
@@ -506,14 +485,6 @@ async function main(): Promise<void> {
     console.log("  Let's Encrypt for a certificate for exactly this name, and five failures an hour is the budget.");
   }
 
-  section('Steam Web API key');
-  console.log('Opening steamcommunity.com/dev/apikey. Sign in, give it the domain above when it asks for one,');
-  console.log('and copy the key. It needs an account that has spent $5. It reads public profiles and grants');
-  console.log('write access to nothing.');
-  openBrowser('https://steamcommunity.com/dev/apikey');
-  const steamKey = await askUntil('Steam API key', /^[0-9a-f]{32}$/i, '32 hex characters.', { secret: true });
-  await verifySteamKey(steamKey);
-
   section('DuckDNS token');
   console.log('Opening duckdns.org. Sign in and copy the token from the top of the page — it is one token for');
   console.log('the whole account rather than one per subdomain. The refresh timer in infra/systemd/ uses it.');
@@ -533,7 +504,6 @@ async function main(): Promise<void> {
   const answers: Answers = {
     SITE_DOMAIN: domain,
     ACME_EMAIL: acmeEmail,
-    STEAM_API_KEY: steamKey,
     DUCKDNS_SUBDOMAIN: subdomain,
     DUCKDNS_TOKEN: duckToken,
     deployHost,
@@ -565,7 +535,8 @@ async function main(): Promise<void> {
   console.log(`\n1. The env file. ${dir}/aow5.env is infra/.env.example with your values in it:\n`);
   console.log(`     scp -P ${deployPort} ${dir}/aow5.env ${deployUser}@${deployHost}:/srv/aow5/.env`);
   console.log(`     ssh -p ${deployPort} ${deployUser}@${deployHost} chmod 600 /srv/aow5/.env`);
-  console.log('\n   This is the file STEAM_API_KEY belongs in. Steam sign-in works once it is there and');
+  console.log('\n   Accounts are local, so nothing in here is a key to somebody else’s service — it is the');
+  console.log('   domain, the ACME contact and the DuckDNS token. The site works once it is there and');
   console.log('   infra/deploy.sh has run.');
 
   console.log('\n2. Deploy:\n');

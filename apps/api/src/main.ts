@@ -35,13 +35,6 @@ async function bootstrap(): Promise<INestApplication> {
   app.useBodyParser('json', { limit: '32kb' });
   app.enableShutdownHooks();
 
-  if (config.steamApiKey === '') {
-    new Logger('bootstrap').warn(
-      'STEAM_API_KEY is not set. Sign-in still works and names and avatars are ' +
-        'read from public community profiles, but a key is more reliable — see infra/.env.example.',
-    );
-  }
-
   await app.listen(config.port, '0.0.0.0');
   new Logger('bootstrap').log(`aow5-utils-api ${APP_VERSION} listening on :${config.port}`);
   return app;

@@ -16,25 +16,38 @@ export const users = sqliteTable(
   'users',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
+    /** As typed, NFC. The only name there is, and the one that gets rendered. */
+    nickname: text('nickname').notNull(),
     /**
-     * A SteamID64 is 17 digits — past 2^53, so it is not safely a number in
-     * JavaScript at any point. Text here, text on the wire, never parsed.
-     */
-    steamId: text('steam_id').notNull(),
-    persona: text('persona').notNull(),
-    avatarUrl: text('avatar_url').notNull(),
-    profileUrl: text('profile_url').notNull(),
-    /** When the profile above was last refetched from Steam. */
-    profileSyncedAt: integer('profile_synced_at').notNull(),
-    /**
-     * Steam's own account creation time, when the profile is public.
+     * What uniqueness is actually enforced on: `nickname` lowercased with `ё`
+     * folded to `е`, derived in JavaScript.
      *
-     * Stored from the first day and deliberately not enforced. The moment vote
-     * brigading appears, "accounts younger than a week cannot vote" is a one
-     * line change with the data already behind it; until then it does not
-     * punish somebody who just bought the game.
+     * Not `COLLATE NOCASE`, and not SQLite's `lower()`: both fold ASCII only,
+     * so under either of them `Вася` and `вася` would be two accounts that look
+     * identical on a build card — an impersonation hole pointed straight at the
+     * largest part of this audience. See `core/auth/nickname.ts`.
+     *
+     * The invariant that this always equals `nicknameKey(nickname)` cannot be a
+     * CHECK for the same reason: SQLite's own `lower()` would agree with the
+     * wrong answer. It holds because `createUser` is the only thing that writes
+     * a row, and `core/db/schema.test.ts` proves the database refuses a Cyrillic
+     * case-variant duplicate.
      */
-    steamCreatedAt: integer('steam_created_at'),
+    nicknameKey: text('nickname_key').notNull(),
+    /** `scrypt$N=…,r=…,p=…$salt$hash` — self-describing. See `core/auth/password.ts`. */
+    passwordHash: text('password_hash').notNull(),
+    /**
+     * Consecutive failed sign-ins, and when this account stops accepting them.
+     *
+     * On the row rather than in a map, because a map is cleared by every
+     * restart and this project deploys by hand — a lockout an attacker can
+     * reset with a deploy is not a lockout. It also means a spray across a
+     * million guessed nicknames allocates nothing at all, since a row only
+     * exists for a name that does.
+     */
+    failedAttempts: integer('failed_attempts').notNull().default(0),
+    /** Backoff, never permanent — see `core/auth/lockout.ts` for why that matters. */
+    lockedUntil: integer('locked_until'),
     role: text('role', { enum: ['user', 'admin'] })
       .notNull()
       .default('user'),
@@ -42,7 +55,14 @@ export const users = sqliteTable(
     bannedAt: integer('banned_at'),
     createdAt: integer('created_at').notNull(),
   },
-  (table) => [uniqueIndex('users_steam_id').on(table.steamId)],
+  (table) => [
+    uniqueIndex('users_nickname_key').on(table.nicknameKey),
+    // The role was a TypeScript-only enum before, which is to say enforced
+    // nowhere. Free to fix while the table is being written from scratch, and
+    // this file already argues that a rule living in one `if` is a rule the
+    // next endpoint forgets.
+    check('users_role', sql`${table.role} in ('user', 'admin')`),
+  ],
 );
 
 export const sessions = sqliteTable(

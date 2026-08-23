@@ -4,7 +4,7 @@ import { MAX_COMMENT, type CommentDto } from 'aow5-api-contract';
 import { Button } from '@/components/ui/button';
 import { useMe } from '@/auth/useMe';
 import type { SiteStrings } from '@/i18n/site';
-import { ApiFailure, api, signInUrl } from '@/lib/api';
+import { ApiFailure, api } from '@/lib/api';
 
 /**
  * The conversation under a build.
@@ -85,21 +85,11 @@ export function CommentThread({ slug, site }: { slug: string; site: SiteStrings 
       <ul className="mt-4 space-y-4">
         {items.map((comment) => (
           <li key={comment.id} className="flex gap-3">
-            {comment.author.avatarUrl !== '' ? (
-              <img
-                src={comment.author.avatarUrl}
-                alt=""
-                width={32}
-                height={32}
-                className="size-8 shrink-0 rounded-full border"
-              />
-            ) : (
-              <span className="size-8 shrink-0 rounded-full border" aria-hidden />
-            )}
+            <span className="size-8 shrink-0 rounded-full border" aria-hidden />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium">{comment.author.persona}</p>
+              <p className="text-sm font-medium">{comment.author.nickname}</p>
               {comment.deleted ? (
-                <p className="text-sm text-muted-foreground italic">{t.deleted}</p>
+                <p className="text-sm text-muted-foreground italic">{t.commentDeleted}</p>
               ) : (
                 // Plain text in a paragraph. No markdown, no HTML, nothing to
                 // sanitise and keep sanitised.
@@ -121,31 +111,24 @@ export function CommentThread({ slug, site }: { slug: string; site: SiteStrings 
         </Button>
       )}
 
-      {me.status === 'ready' && me.user === null ? (
-        <p className="mt-6 text-sm text-muted-foreground">
-          <a href={signInUrl()} className="underline">
-            {site.auth.signIn}
-          </a>{' '}
-          — {site.auth.signInWhy}
-        </p>
-      ) : (
-        me.status === 'ready' && (
-          <div className="mt-6 space-y-2">
-            <textarea
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder={t.commentPlaceholder}
-              maxLength={MAX_COMMENT}
-              rows={3}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            />
-            <div className="flex justify-end">
-              <Button onClick={() => void post()} disabled={busy || draft.trim() === ''}>
-                {t.postComment}
-              </Button>
-            </div>
+      {/* The box appears for somebody who can actually post. A signed-out
+          reader gets the thread and no prompt — see the header. */}
+      {me.status === 'ready' && me.user !== null && (
+        <div className="mt-6 space-y-2">
+          <textarea
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder={t.commentPlaceholder}
+            maxLength={MAX_COMMENT}
+            rows={3}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          />
+          <div className="flex justify-end">
+            <Button onClick={() => void post()} disabled={busy || draft.trim() === ''}>
+              {t.postComment}
+            </Button>
           </div>
-        )
+        </div>
       )}
     </section>
   );

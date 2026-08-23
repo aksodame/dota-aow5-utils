@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AuroraBackground } from '@/components/fx/AuroraBackground';
+import { SignInDialog } from '@/auth/SignInDialog';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { Toaster } from '@/components/ui/sonner';
@@ -140,6 +141,8 @@ export default function App() {
         <SiteFooter site={site} />
       </div>
 
+      {/* Mounted once here, opened only by the header. */}
+      <SignInDialog site={site} />
       <Toaster position="bottom-right" />
     </TooltipProvider>
   );

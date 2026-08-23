@@ -1,6 +1,6 @@
 # The AOW5 builds API
 
-The server behind `/builds` and `/builds/<slug>` on the site: Steam sign-in, saved builds, comments and
+The server behind `/builds` and `/builds/<slug>` on the site: accounts, saved builds, comments and
 votes, over one SQLite file. It is what turns the planner from a thing that encodes a board into a URL into
 a thing that also keeps builds other people can find.
 
@@ -28,7 +28,7 @@ payoff: the part worth testing has no framework in it.
 
 ```
 core/     no Nest import, ever. The codec check, the slug, the FTS query
-          builder, the Steam OpenID exchange, the schema, the queries.
+          builder, the password hash, the proof of work, the schema, the queries.
           `core/**/*.test.ts` is the test glob and it is a contract.
 src/      Nest, and only Nest. Controllers, modules, guards, filters.
           Thin by construction: it maps HTTP onto core/ and does no thinking.
@@ -47,11 +47,11 @@ pnpm --filter aow5-utils-api db:generate  # after editing core/db/schema.ts
 ```
 
 Nothing needs configuring to start: the database defaults to `./aow5.db` and is created and migrated on
-first boot. It is gitignored, disposable, and holds whichever Steam account you signed in with — if a
+first boot. It is gitignored, disposable, and holds whatever accounts you made while testing — if a
 migration is ever rewritten, the server refuses to start and tells you to move that file aside, which is
 the whole recovery procedure in development.
 
-From the repository root, `pnpm dev:site` starts this and the web app together. `SITE_ORIGIN` and `STEAM_API_KEY` are only required in production — see `infra/.env.example`.
+From the repository root, `pnpm dev:site` starts this and the web app together. `SITE_ORIGIN` is the only variable required in production — see `infra/.env.example`.
 
 ## The build, and the assertion attached to it
 
@@ -130,10 +130,16 @@ all four and is bound by all four:
 
 ## Sessions, and why there is no CSRF token
 
-Sign-in is Steam **OpenID 2.0**, which is not OAuth: no client secret, no token, no scopes. It is a signed
-assertion of one fact, and the verification step — posting the parameters back to Steam with
-`openid.mode=check_authentication` — is the only thing that makes it mean anything. It is hand-written in
-`core/steam/`, in about a hundred lines, because that is testable and a Passport strategy is not.
+Sign-in is a nickname and a password, checked here. There is no identity provider, no OAuth, and nothing to
+configure: an account is a row, and `core/auth/` is the whole of it — scrypt out of `node:crypto` for the
+hash, a self-describing stored format so the cost can be raised later without a migration, and a
+proof-of-work challenge in front of sign-up so an open registration endpoint is not free to script against.
+
+**There is no password recovery, by design.** No email address is collected, so there is nothing to send a
+reset link to, and the sign-up form says so before anybody commits. The nickname rules in
+`core/auth/nickname.ts` allow Cyrillic and refuse a name that mixes it with Latin, which is what stops the
+cheapest impersonation trick; uniqueness is enforced on a folded key rather than by `COLLATE NOCASE`, which
+folds ASCII only and would let `Вася` and `вася` be two accounts.
 
 A session is 32 random bytes in an httpOnly cookie, stored as its SHA-256 so a leaked backup is a list of
 hashes rather than a set of live logins. Not a JWT: the usual argument for one is avoiding a database read

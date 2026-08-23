@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { browseBuilds } from './browse.ts';
 import { createBuild } from './builds.ts';
 import { openDb, runMigrations, type Db } from './open.ts';
-import { upsertUserFromSteam } from './users.ts';
+import { createUser, type UserRow } from './users.ts';
+import { nicknameKey } from '../auth/nickname.ts';
 import { users } from './schema.ts';
 import { eq } from 'drizzle-orm';
 
@@ -17,14 +18,13 @@ function fixture() {
   return { db, sqlite };
 }
 
-function author(db: Db, steamId: string, persona: string) {
-  return upsertUserFromSteam(
-    db,
-    steamId,
-    { steamId, persona, avatarUrl: '', profileUrl: 'p', createdAt: null },
-    NOW,
-  );
+function seedUser(db: Db, nickname: string): UserRow {
+  const created = createUser(db, { nickname, key: nicknameKey(nickname), passwordHash: 'hash' }, NOW);
+  if (created === 'taken') throw new Error(`fixture reused the nickname ${nickname}`);
+  return created;
 }
+
+const author = (db: Db, _legacy: string, nickname: string) => seedUser(db, nickname);
 
 let slugCounter = 0;
 function publish(

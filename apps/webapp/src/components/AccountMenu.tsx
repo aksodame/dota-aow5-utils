@@ -3,7 +3,8 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { forgetMe, useMe } from '@/auth/useMe';
 import type { SiteStrings } from '@/i18n/site';
-import { ApiFailure, api, signInUrl } from '@/lib/api';
+import { ApiFailure, api } from '@/lib/api';
+import { openSignIn } from '@/auth/signInStore';
 
 /**
  * Sign in, or who you are signed in as.
@@ -21,11 +22,18 @@ export function AccountMenu({ site }: { site: SiteStrings }) {
 
   if (state.status === 'loading') return <div className="size-8" aria-hidden />;
 
+  // Both doors, and this is the only place on the site that offers either. The
+  // pages themselves show less when signed out rather than asking.
   if (state.user === null) {
     return (
-      <Button variant="outline" size="sm" asChild title={site.auth.signInWhy}>
-        <a href={signInUrl()}>{site.auth.signIn}</a>
-      </Button>
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" size="sm" onClick={() => openSignIn('signIn')} title={site.auth.signInWhy}>
+          {site.auth.signIn}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => openSignIn('signUp')}>
+          {site.auth.signUp}
+        </Button>
+      </div>
     );
   }
 
@@ -49,13 +57,9 @@ export function AccountMenu({ site }: { site: SiteStrings }) {
 
   return (
     <div className="flex items-center gap-1">
-      <span className="flex items-center gap-2 text-sm" title={`${user.persona} — ${count}`}>
-        {user.avatarUrl === '' ? (
-          <User className="size-6 rounded-full border p-1" aria-hidden />
-        ) : (
-          <img src={user.avatarUrl} alt="" width={24} height={24} className="size-6 rounded-full border" />
-        )}
-        <span className="hidden max-w-28 truncate lg:inline">{user.persona}</span>
+      <span className="flex items-center gap-2 text-sm" title={`${user.nickname} — ${count}`}>
+        <User className="size-6 rounded-full border p-1" aria-hidden />
+        <span className="hidden max-w-28 truncate lg:inline">{user.nickname}</span>
       </span>
       <Button
         variant="ghost"

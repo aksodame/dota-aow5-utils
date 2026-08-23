@@ -42,7 +42,7 @@ export class AuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<AuthedRequest>();
     if (request.user === undefined) {
-      throw new ApiException('UNAUTHENTICATED', 'Sign in through Steam to do that.');
+      throw new ApiException('UNAUTHENTICATED', 'Sign in to do that.');
     }
     return true;
   }

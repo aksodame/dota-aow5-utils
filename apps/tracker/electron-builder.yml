@@ -87,6 +87,16 @@ publish:
   # "pre-release" on GitHub is invisible to both it and the site.
   releaseType: release
 
+# What the release page says the build contains. `private/actualize.mjs` writes
+# this file on every data refresh — the newest changelog entry and only that,
+# because the release is what carries the new data and a whole history in every
+# release note is noise. Resolved relative to this directory.
+#
+# It is a normal tracked file: edit it before tagging to add anything about the
+# app itself, and the next refresh will overwrite it again.
+releaseInfo:
+  releaseNotesFile: RELEASE_NOTES.md
+
 # `tracker-v0.1.0-beta` is the tag; the file people download should say the same
 # thing without the prefix. The installer overrides this under `nsis:` above.
 artifactName: AOW5-Tracker-${version}-${os}.${ext}

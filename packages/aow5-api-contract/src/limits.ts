@@ -15,6 +15,31 @@ export const MAX_BODY = 8000;
 export const MAX_COMMENT = 2000;
 
 /**
+ * A nickname, in **code points** rather than UTF-16 units.
+ *
+ * The same rule the title counter follows, and for the same reason: counting
+ * `String.length` would give a Cyrillic name a different budget from a Latin
+ * one, which no writer could see or predict.
+ */
+export const MIN_NICKNAME = 3;
+export const MAX_NICKNAME = 24;
+
+/**
+ * A password, also in code points.
+ *
+ * The floor is deliberately modest. There is no password recovery on this site,
+ * so a rule that makes people invent something they will not remember costs
+ * more than it buys; length is the only requirement, because every composition
+ * rule ever written has produced `Password1!`.
+ *
+ * The ceiling is for storage and sanity, **not** a defence: scrypt's cost does
+ * not depend on how long the input is, so a long password is not a way to make
+ * the server work harder.
+ */
+export const MIN_PASSWORD = 8;
+export const MAX_PASSWORD = 200;
+
+/**
  * The encoded board, in characters.
  *
  * The web app's README puts the worst case — nine sections, every slot filled,

@@ -68,8 +68,3 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
 
   return payload as T;
 }
-
-/** Where to send somebody to sign in, coming back to where they are now. */
-export function signInUrl(returnPath: string = window.location.pathname + window.location.search): string {
-  return `/api/auth/steam/login?return=${encodeURIComponent(returnPath)}`;
-}

@@ -21,7 +21,6 @@ services:
       # container can read is exactly this list and adding a secret to the env
       # file does not silently hand it to every service.
       SITE_ORIGIN: https://${SITE_DOMAIN:?set SITE_DOMAIN in the env file}
-      STEAM_API_KEY: ${STEAM_API_KEY:?set STEAM_API_KEY in the env file}
     volumes:
       # A bind mount, not a named volume: this is the one thing you will want to
       # open with sqlite3, copy off the box and restore by hand.

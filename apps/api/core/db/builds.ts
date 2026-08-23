@@ -12,7 +12,7 @@ import type { PayloadFacets } from '../codec/validatePayload.ts';
 import type { BuildFields } from '../builds/validate.ts';
 import type { Db } from './open.ts';
 import { builds } from './schema.ts';
-import { toPublicUser, type UserRow } from './users.ts';
+import { toPublicUser, type UserRow, type UserSummary } from './users.ts';
 
 export type BuildRow = typeof builds.$inferSelect;
 
@@ -152,7 +152,7 @@ export function isVisible(build: BuildRow): boolean {
   return build.deletedAt === null && build.status === 'published';
 }
 
-export function toBuildSummary(build: BuildRow, author: UserRow): BuildSummary {
+export function toBuildSummary(build: BuildRow, author: UserSummary): BuildSummary {
   return {
     slug: build.slug,
     title: build.title,

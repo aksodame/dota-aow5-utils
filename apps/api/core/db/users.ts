@@ -6,100 +6,123 @@
  * rows stay, because a thread that loses a reply reshuffles around it and a
  * moderator looking at why somebody was banned needs to see what they wrote.
  */
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { PublicUser } from 'aow5-api-contract';
-import { placeholderPersona } from '../steam/profile.ts';
+import { lockoutSeconds } from '../auth/lockout.ts';
+import { nicknameKey } from '../auth/nickname.ts';
 import type { Db } from './open.ts';
 import { users } from './schema.ts';
 
 export type UserRow = typeof users.$inferSelect;
-
-export interface ProfileInput {
-  steamId: string;
-  persona: string;
-  avatarUrl: string;
-  profileUrl: string;
-  createdAt: number | null;
-}
-
-/** How stale a stored profile may get before the next sign-in refreshes it. */
-export const PROFILE_TTL_SECONDS = 7 * 24 * 60 * 60;
-
-export function findUserBySteamId(db: Db, steamId: string): UserRow | undefined {
-  return db.select().from(users).where(eq(users.steamId, steamId)).get();
-}
 
 export function findUserById(db: Db, id: number): UserRow | undefined {
   return db.select().from(users).where(eq(users.id, id)).get();
 }
 
 /**
- * Records a sign-in.
+ * Looks a person up by the name they typed.
  *
- * `profile` is null when Steam could not be reached, which is deliberately not
- * an error: an existing user keeps the profile already stored, and a first-time
- * visitor gets a placeholder that the next sign-in replaces. Steam having a bad
- * day is not a reason to refuse somebody entry.
+ * Through the key, never through `nickname` itself — that column holds the
+ * casing its owner chose, so matching on it would mean `Вася` could not sign in
+ * as `вася`.
  */
-export function upsertUserFromSteam(db: Db, steamId: string, profile: ProfileInput | null, now: number): UserRow {
-  const existing = findUserBySteamId(db, steamId);
-
-  if (existing !== undefined) {
-    if (profile === null) return existing;
-    db.update(users)
-      .set({
-        persona: profile.persona,
-        avatarUrl: profile.avatarUrl,
-        profileUrl: profile.profileUrl,
-        profileSyncedAt: now,
-        ...(profile.createdAt !== null ? { steamCreatedAt: profile.createdAt } : {}),
-      })
-      .where(eq(users.id, existing.id))
-      .run();
-    return findUserById(db, existing.id) ?? existing;
-  }
-
-  const inserted = db
-    .insert(users)
-    .values({
-      steamId,
-      persona: profile?.persona ?? placeholderPersona(steamId),
-      avatarUrl: profile?.avatarUrl ?? '',
-      profileUrl: profile?.profileUrl ?? `https://steamcommunity.com/profiles/${steamId}`,
-      // Zero, not `now`, when the profile is missing — so the next sign-in
-      // treats it as stale and tries again rather than waiting a week.
-      profileSyncedAt: profile === null ? 0 : now,
-      ...(profile?.createdAt != null ? { steamCreatedAt: profile.createdAt } : {}),
-      createdAt: now,
-    })
-    .returning()
-    .get();
-
-  return inserted;
+export function findUserByNickname(db: Db, nickname: string): UserRow | undefined {
+  return db.select().from(users).where(eq(users.nicknameKey, nicknameKey(nickname))).get();
 }
 
-export function profileIsStale(user: UserRow, now: number): boolean {
-  return now - user.profileSyncedAt > PROFILE_TTL_SECONDS;
+export interface NewUser {
+  /** As typed, already validated and NFC-normalised by `checkNickname`. */
+  nickname: string;
+  /** `checkNickname`'s key. Passed in rather than re-derived, so one function owns the rule. */
+  key: string;
+  passwordHash: string;
 }
 
 /**
- * Whether this user is still wearing the name we invented for them.
+ * Creates an account, or reports that the name is taken.
  *
- * `profileSyncedAt` is left at zero when Steam told us nothing, so this is the
- * cheap test for "we never actually learned who they are" — and it is the
- * difference between refreshing in the background and refreshing before
- * answering, because a wrong name in the header is not something to fix later.
+ * The race is real and is left to the database: two people submitting the same
+ * nickname in the same instant both pass a `findUserByNickname` check and one of
+ * them then hits the unique index. Catching the constraint is what makes that
+ * outcome correct rather than a 500, and it is why the check before it is a
+ * courtesy rather than the guarantee.
  */
-export function hasPlaceholderProfile(user: UserRow): boolean {
-  return user.profileSyncedAt === 0 || user.persona === placeholderPersona(user.steamId);
+export function createUser(db: Db, input: NewUser, now: number): UserRow | 'taken' {
+  try {
+    return db
+      .insert(users)
+      .values({
+        nickname: input.nickname,
+        nicknameKey: input.key,
+        passwordHash: input.passwordHash,
+        createdAt: now,
+      })
+      .returning()
+      .get();
+  } catch (error) {
+    if (isUniqueViolation(error)) return 'taken';
+    throw error;
+  }
 }
 
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code: unknown }).code === 'SQLITE_CONSTRAINT_UNIQUE'
+  );
+}
+
+/**
+ * Counts a wrong password and returns how long this account is now shut for.
+ */
+export function recordFailedSignIn(db: Db, userId: number, now: number): number {
+  // The increment is one statement so two attempts arriving together cannot
+  // both read the same counter and each add one to it. The *policy* then runs
+  // in JavaScript, where it is written once and tested — expressing that
+  // doubling-and-capping curve a second time in SQL would be two formulas to
+  // keep in agreement for the sake of saving one write.
+  const row = db
+    .update(users)
+    .set({ failedAttempts: sql`${users.failedAttempts} + 1` })
+    .where(eq(users.id, userId))
+    .returning({ failedAttempts: users.failedAttempts })
+    .get();
+  if (row === undefined) return 0;
+
+  const seconds = lockoutSeconds(row.failedAttempts);
+  db.update(users)
+    .set({ lockedUntil: seconds > 0 ? now + seconds : null })
+    .where(eq(users.id, userId))
+    .run();
+  return seconds;
+}
+
+/**
+ * Wipes the counter after a sign-in that worked.
+ *
+ * Conditional, so the overwhelming majority of sign-ins — the ones after no
+ * failures at all — stay a read plus the session insert, with no write here.
+ */
+export function clearFailedSignIns(db: Db, user: UserRow): void {
+  if (user.failedAttempts === 0 && user.lockedUntil === null) return;
+  db.update(users).set({ failedAttempts: 0, lockedUntil: null }).where(eq(users.id, user.id)).run();
+}
+
+/**
+ * Just enough of a person to render them.
+ *
+ * Narrower than `UserRow` on purpose: it lets the browse query select two
+ * columns instead of nine, and keeps password hashes out of a code path whose
+ * whole job is building a list of cards.
+ */
+export type UserSummary = Pick<UserRow, 'id' | 'nickname'>;
+
 /** The subset of a user that anyone is allowed to see. */
-export function toPublicUser(user: UserRow): PublicUser {
+export function toPublicUser(user: UserSummary): PublicUser {
   return {
-    steamId: user.steamId,
-    persona: user.persona,
-    avatarUrl: user.avatarUrl,
-    profileUrl: user.profileUrl,
+    id: user.id,
+    nickname: user.nickname,
   };
 }
