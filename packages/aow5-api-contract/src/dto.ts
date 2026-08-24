@@ -109,6 +109,18 @@ export interface BuildDetail extends BuildSummary {
    * round trip unchanged, which is only free if nothing rewrites the bytes.
    */
   payload: string;
+  /**
+   * The author's referral code, or `''` when they did not give one.
+   *
+   * On the build rather than on the account: it is the code that belongs with
+   * *this* board, and an author who plays on a second account — or who changes
+   * codes between one build and the next — would otherwise have every build
+   * they ever published rewritten by the change.
+   *
+   * Stored and served for everyone, because a build is read by strangers and
+   * the code being visible to them is the entire point of it.
+   */
+  referral: string;
   codecVersion: number;
   sectionCount: number;
   itemCount: number;
@@ -149,6 +161,8 @@ export interface CreateBuildBody {
   title: string;
   body?: string;
   payload: string;
+  /** Omitted means "no code"; the server normalises and caps whatever arrives. */
+  referral?: string;
   status?: BuildStatus;
 }
 

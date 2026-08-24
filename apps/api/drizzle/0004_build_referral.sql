@@ -1,0 +1,16 @@
+-- The author's referral code, on the build.
+--
+-- It already existed on the site, but only in the visitor's own browser and in
+-- `?ref=` on a shared link. That is exactly enough for an anonymous board,
+-- whose entire identity is its URL — and not nearly enough for a saved one,
+-- whose address is a slug: a stranger opening `/builds/<slug>` was shown their
+-- *own* stored code, and the author's was nowhere on the page.
+--
+-- Not folded into `payload`. The payload is the shared-link codec and is never
+-- rewritten once stored, so a code living inside it could not be corrected
+-- without minting a new link — and every anonymous share would have to carry a
+-- field only saved builds use.
+--
+-- NOT NULL with a default, so every row that already exists reads as "no code
+-- given" rather than as a null nobody downstream expects.
+ALTER TABLE `builds` ADD COLUMN `referral` text DEFAULT '' NOT NULL;

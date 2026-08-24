@@ -25,7 +25,7 @@ import type { Db, Sqlite } from '../../core/db/open.ts';
 import { findUserById, type UserRow } from '../../core/db/users.ts';
 import { findVote } from '../../core/db/votes.ts';
 import { generateSlug, isSlug } from '../../core/builds/slug.ts';
-import { validateBuildFields } from '../../core/builds/validate.ts';
+import { normaliseReferral, validateBuildFields } from '../../core/builds/validate.ts';
 import { DB, SQLITE } from '../db/tokens.ts';
 import { ApiException } from '../http/api-error.ts';
 
@@ -67,6 +67,19 @@ export class BuildsService {
     const result = validateBuildFields(input);
     if (!result.ok) throw new ApiException('VALIDATION_FAILED', 'Some fields need fixing.', result.errors);
     return result.fields;
+  }
+
+  /**
+   * The referral code, as it will be stored.
+   *
+   * Normalised on this side and not trusted from the browser's copy: the field
+   * in the planner is a plain text input, and what a person pastes into one is
+   * whatever their clipboard held.
+   */
+  private referral(raw: unknown): string {
+    const result = normaliseReferral(raw);
+    if (!result.ok) throw new ApiException('VALIDATION_FAILED', 'Some fields need fixing.', result.errors);
+    return result.referral;
   }
 
   /** Loads a build by slug, or throws the right kind of not-found. */
@@ -111,7 +124,15 @@ export class BuildsService {
 
     const created = createBuild(
       this.db,
-      { userId: user.id, slug: generateSlug(), fields, payload, facets, status },
+      {
+        userId: user.id,
+        slug: generateSlug(),
+        fields,
+        payload,
+        referral: this.referral(body.referral),
+        facets,
+        status,
+      },
       this.now(),
     );
 
@@ -135,11 +156,17 @@ export class BuildsService {
         body: body.body ?? build.body,
       });
     }
+    // Sending `''` erases the code; not sending the field at all leaves it be.
+    if (body.referral !== undefined) patch.referral = this.referral(body.referral);
     if (body.payload !== undefined) Object.assign(patch, this.checkPayload(body.payload));
     if (body.status !== undefined) patch.status = body.status === 'draft' ? 'draft' : 'published';
 
     const updated = updateBuild(this.db, build, patch, this.now());
-    return toBuildDetail(updated, this.author(updated), { myVote: 0, canEdit: true });
+    // The viewer's own vote, not a hard zero. An author cannot vote on their
+    // own build, but an admin editing one can have — and answering 0 would make
+    // the vote they cast vanish from the page the moment they saved a typo.
+    const myVote = findVote(this.db, updated.id, user.id);
+    return toBuildDetail(updated, this.author(updated), { myVote, canEdit: true });
   }
 
   remove(slug: string, user: UserRow): void {

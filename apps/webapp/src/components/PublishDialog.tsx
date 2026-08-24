@@ -23,10 +23,19 @@ import { buildPath } from '@/lib/routes';
  */
 export function PublishDialog({
   payload,
+  referral,
   site,
   onClose,
 }: {
   payload: string;
+  /**
+   * The code in the planner's field, saved with the build.
+   *
+   * It goes up here rather than in a second request, because a build published
+   * without one and corrected afterwards is a build somebody has already opened
+   * with the wrong code on it.
+   */
+  referral: string;
   site: SiteStrings;
   onClose: () => void;
 }) {
@@ -41,7 +50,7 @@ export function PublishDialog({
   async function submit(status: 'draft' | 'published') {
     setBusy(true);
     try {
-      const build = await createBuild({ title, body, payload, status });
+      const build = await createBuild({ title, body, payload, referral, status });
       setPublished(build);
       // The header shows "n of 5"; leaving it stale the moment somebody
       // publishes is exactly the kind of small wrongness that reads as a bug.

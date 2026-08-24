@@ -37,6 +37,7 @@ function make(db: Db, userId: number) {
       slug: `purge${String(n).padStart(5, '0')}`,
       fields: { title: `build ${n}`, body: '' },
       payload: '6.AAAA',
+      referral: '',
       facets: { codecVersion: 6, heroId: null, sectionCount: 1, itemCount: 1, spellCount: 0 },
       status: 'published',
     },

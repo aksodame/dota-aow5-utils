@@ -36,6 +36,8 @@ export interface NewBuild {
   slug: string;
   fields: BuildFields;
   payload: string;
+  /** Already normalised by `normaliseReferral`; `''` means none was given. */
+  referral: string;
   facets: PayloadFacets;
   status: BuildStatus;
 }
@@ -78,6 +80,7 @@ export function createBuild(db: Db, input: NewBuild, now: number): BuildRow | 'l
         title: input.fields.title,
         body: input.fields.body,
         payload: input.payload,
+        referral: input.referral,
         codecVersion: input.facets.codecVersion,
         heroId: input.facets.heroId,
         sectionCount: input.facets.sectionCount,
@@ -113,6 +116,14 @@ export function listBuildsForUser(db: Db, userId: number): BuildRow[] {
 export interface BuildPatch {
   fields?: BuildFields;
   payload?: string;
+  /**
+   * Absent leaves the stored code alone; `''` clears it.
+   *
+   * The distinction is the whole reason this is `string | undefined` rather
+   * than a plain string — a client that never sends the field must not blank
+   * a code somebody set, and one that sends an empty one means to erase it.
+   */
+  referral?: string;
   facets?: PayloadFacets;
   status?: BuildStatus;
 }
@@ -124,6 +135,7 @@ export function updateBuild(db: Db, build: BuildRow, patch: BuildPatch, now: num
     values.title = patch.fields.title;
     values.body = patch.fields.body;
   }
+  if (patch.referral !== undefined) values.referral = patch.referral;
   if (patch.payload !== undefined && patch.facets !== undefined) {
     values.payload = patch.payload;
     values.codecVersion = patch.facets.codecVersion;
@@ -176,6 +188,7 @@ export function toBuildDetail(
     ...toBuildSummary(build, author),
     body: build.body,
     payload: build.payload,
+    referral: build.referral,
     codecVersion: build.codecVersion,
     sectionCount: build.sectionCount,
     itemCount: build.itemCount,

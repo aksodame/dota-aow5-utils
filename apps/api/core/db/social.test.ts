@@ -37,6 +37,7 @@ function fixture() {
       slug: 'guideslug1',
       fields: { title: 'a build', body: '' },
       payload: '6.AAAA',
+      referral: '',
       facets: { codecVersion: 6, heroId: null, sectionCount: 1, itemCount: 1, spellCount: 0 },
       status: 'published',
     },

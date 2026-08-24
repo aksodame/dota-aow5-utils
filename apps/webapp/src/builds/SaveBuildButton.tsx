@@ -25,12 +25,15 @@ import { ApiFailure } from '@/lib/api';
 export function SaveBuildButton({
   build,
   payload,
+  referral,
   draft,
   site,
   onSaved,
 }: {
   build: BuildDetail;
   payload: string;
+  /** The author's code as the field currently has it; `''` erases the stored one. */
+  referral: string;
   draft: BuildDraft;
   site: SiteStrings;
   onSaved?: ((next: BuildDetail) => void) | undefined;
@@ -39,7 +42,11 @@ export function SaveBuildButton({
   const [busy, setBusy] = useState(false);
   const t = site.builds;
 
-  const dirty = payload !== build.payload || draft.title !== build.title || draft.body !== build.body;
+  const dirty =
+    payload !== build.payload ||
+    referral !== build.referral ||
+    draft.title !== build.title ||
+    draft.body !== build.body;
 
   // `canEdit` is the server's answer, so this does not have to reason about
   // ownership or about admins — and the same check guards the PATCH behind it.
@@ -49,7 +56,7 @@ export function SaveBuildButton({
   async function save() {
     setBusy(true);
     try {
-      onSaved?.(await updateBuild(build.slug, { payload, title: draft.title, body: draft.body }));
+      onSaved?.(await updateBuild(build.slug, { payload, referral, title: draft.title, body: draft.body }));
       toast.success(t.saved);
     } catch (error) {
       if (error instanceof ApiFailure && error.fields?.['title'] !== undefined) toast.error(error.fields['title']);

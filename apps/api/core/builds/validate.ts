@@ -6,7 +6,7 @@
  * read — a limit enforced here and displayed from a different constant is a
  * user typing happily into a field that is about to be rejected.
  */
-import { MAX_BODY, MAX_COMMENT, MAX_TITLE } from 'aow5-api-contract';
+import { MAX_BODY, MAX_COMMENT, MAX_REFERRAL, MAX_TITLE } from 'aow5-api-contract';
 
 export interface BuildFields {
   title: string;
@@ -47,6 +47,27 @@ export function normaliseLine(value: string): string {
  */
 export function stripControl(value: string): string {
   return [...value].filter((char) => char >= ' ' || char === '\n' || char === '\t').join('');
+}
+
+/**
+ * A referral code, as it gets stored.
+ *
+ * Uppercased rather than left as typed, because the code is compared and
+ * retyped by eye — `00ejt3t3` and `00EJT3T3` are one code, and storing both
+ * shapes would make two builds by the same author look like two authors. The
+ * same normalisation runs in the browser so the field shows exactly what will
+ * be saved; this is the copy that decides, because the browser's cannot.
+ *
+ * Nothing is assumed about the alphabet: the game documents the format nowhere
+ * beyond "a short code", so anything printable is allowed through and only the
+ * length is enforced.
+ */
+export function normaliseReferral(input: unknown): { ok: true; referral: string } | { ok: false; errors: FieldErrors } {
+  const referral = typeof input === 'string' ? normaliseLine(stripControl(input)).toUpperCase() : '';
+  if (textLength(referral) > MAX_REFERRAL) {
+    return { ok: false, errors: { referral: `Referral codes are at most ${MAX_REFERRAL} characters.` } };
+  }
+  return { ok: true, referral };
 }
 
 /**

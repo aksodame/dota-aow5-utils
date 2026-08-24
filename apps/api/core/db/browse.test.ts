@@ -41,6 +41,7 @@ function publish(
       slug: `slug${String(slugCounter).padStart(6, '0')}`,
       fields: { title: fields.title, body: fields.body ?? '' },
       payload: '6.AAAA',
+      referral: '',
       facets: {
         codecVersion: 6,
         heroId: fields.hero ?? 'npc_dota_hero_axe',

@@ -31,6 +31,7 @@ function make(db: Db, userId: number, slug: string, status: 'draft' | 'published
       slug,
       fields: { title: `title ${slug}`, body: '' },
       payload: '6.AAAA',
+      referral: '',
       facets: { codecVersion: 6, heroId: 'npc_dota_hero_axe', sectionCount: 1, itemCount: 2, spellCount: 0 },
       status,
     },
@@ -97,6 +98,7 @@ test('the board is stored exactly as given, and re-stored exactly as given', () 
       slug: 'verbatim',
       fields: { title: 't', body: '' },
       payload: original,
+      referral: '',
       facets: { codecVersion: 6, heroId: null, sectionCount: 2, itemCount: 3, spellCount: 1 },
       status: 'published',
     },
@@ -138,4 +140,44 @@ test("one author's cap does not affect another's", () => {
   for (let i = 0; i < MAX_BUILDS_PER_USER; i += 1) make(db, userId, `a${i}`);
   assert.equal(make(db, userId, 'a-extra'), 'limit-reached');
   assert.notEqual(make(db, other.id, 'b0'), 'limit-reached');
+});
+
+test('a referral code survives a round trip, and only a sent one changes it', () => {
+  const { db, userId } = fixture();
+  const build = createBuild(
+    db,
+    {
+      userId,
+      slug: 'referred',
+      fields: { title: 't', body: '' },
+      payload: '6.AAAA',
+      referral: '00EJT3T3',
+      facets: { codecVersion: 6, heroId: null, sectionCount: 1, itemCount: 0, spellCount: 0 },
+      status: 'published',
+    },
+    NOW,
+  );
+  if (build === 'limit-reached') return;
+  assert.equal(build.referral, '00EJT3T3');
+
+  // A patch that says nothing about the code leaves it alone — which is what
+  // keeps a client that predates the field from blanking one somebody set.
+  const retitled = updateBuild(db, build, { fields: { title: 'other', body: '' } }, NOW + 1);
+  assert.equal(retitled.referral, '00EJT3T3');
+
+  const changed = updateBuild(db, retitled, { referral: 'ABCD1234' }, NOW + 2);
+  assert.equal(changed.referral, 'ABCD1234');
+
+  // An empty string is an erase, and is the one way to get back to no code.
+  const erased = updateBuild(db, changed, { referral: '' }, NOW + 3);
+  assert.equal(erased.referral, '');
+});
+
+test('a build stored before referral codes existed reads as having none', () => {
+  const { db, userId } = fixture();
+  const build = make(db, userId, 'legacy');
+  if (build === 'limit-reached') return;
+  // The column is NOT NULL with a default, so the migration over an existing
+  // database leaves every old row saying "no code" rather than null.
+  assert.equal(findBuildBySlug(db, 'legacy')?.referral, '');
 });

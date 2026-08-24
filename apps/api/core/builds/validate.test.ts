@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MAX_BODY, MAX_COMMENT, MAX_TITLE } from 'aow5-api-contract';
+import { MAX_BODY, MAX_COMMENT, MAX_REFERRAL, MAX_TITLE } from 'aow5-api-contract';
 import {
   countLinks,
   normaliseLine,
+  normaliseReferral,
   stripControl,
   textLength,
   validateCommentBody,
@@ -107,4 +108,24 @@ test('links in a comment are counted, so an advert can be capped', () => {
   assert.equal(countLinks('see https://x.example and http://y.example'), 2);
   assert.equal(countLinks('www.a.example www.b.example www.c.example'), 3);
   assert.equal(countLinks('HTTPS://SHOUTY.example'), 1, 'case must not be an escape hatch');
+});
+
+test('a referral code is uppercased, tidied, and capped', () => {
+  const upper = normaliseReferral('  00ejt3t3 ');
+  assert.equal(upper.ok && upper.referral, '00EJT3T3');
+
+  // A code pasted out of chat arrives wrapped, and a code with a control
+  // character in it is somebody's clipboard rather than their intent.
+  const pasted = normaliseReferral(`00EJ
+T3T3${ESC}`);
+  assert.equal(pasted.ok && pasted.referral, '00EJ T3T3');
+
+  // Nothing given, and nothing that is a string, both mean "no code".
+  const missing = normaliseReferral(undefined);
+  assert.equal(missing.ok && missing.referral, '');
+  const wrongType = normaliseReferral(42);
+  assert.equal(wrongType.ok && wrongType.referral, '');
+
+  assert.equal(normaliseReferral('A'.repeat(MAX_REFERRAL)).ok, true);
+  assert.equal(normaliseReferral('A'.repeat(MAX_REFERRAL + 1)).ok, false);
 });

@@ -15,6 +15,15 @@ export const MAX_BODY = 8000;
 export const MAX_COMMENT = 2000;
 
 /**
+ * A referral code, in characters.
+ *
+ * The game does not document the format beyond "a short code you type into a
+ * box", so nothing here assumes an alphabet or a length — only a ceiling, so a
+ * field meant to hold eight characters cannot be used to store a paragraph.
+ */
+export const MAX_REFERRAL = 32;
+
+/**
  * A nickname, in **code points** rather than UTF-16 units.
  *
  * The same rule the title counter follows, and for the same reason: counting

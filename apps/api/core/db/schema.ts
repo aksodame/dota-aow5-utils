@@ -114,6 +114,20 @@ export const builds = sqliteTable(
      * no migration here at all.
      */
     payload: text('payload').notNull(),
+    /**
+     * The author's referral code, normalised, or `''` when they gave none.
+     *
+     * Here rather than on `users` because it belongs to the board: the code an
+     * author wants credited can differ between builds, and hanging it off the
+     * account would silently rewrite every build they ever published the first
+     * time they changed it.
+     *
+     * Not part of the payload, deliberately. The payload is the shared link's
+     * codec and is never rewritten; a code that lived inside it could not be
+     * changed without minting a new one, and every anonymous link ever shared
+     * would have to carry a field only saved builds use.
+     */
+    referral: text('referral').notNull().default(''),
     /** All derived from the payload once, at write time, so a list query decodes nothing. */
     codecVersion: integer('codec_version').notNull(),
     heroId: text('hero_id'),

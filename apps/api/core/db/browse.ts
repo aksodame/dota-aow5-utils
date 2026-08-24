@@ -73,7 +73,7 @@ function sortValueOf(row: Record<string, unknown>, sort: BuildSort): number {
 }
 
 const GUIDE_COLUMNS = `
-  g.id, g.slug, g.user_id, g.slot, g.title, g.body, g.payload,
+  g.id, g.slug, g.user_id, g.slot, g.title, g.body, g.payload, g.referral,
   g.codec_version, g.hero_id, g.section_count, g.item_count, g.status,
   g.like_count, g.dislike_count, g.comment_count, g.view_count,
   g.published_at, g.created_at, g.updated_at, g.deleted_at,
@@ -88,6 +88,7 @@ function toGuide(row: Record<string, unknown>): BuildRow {
     title: String(row['title']),
     body: String(row['body']),
     payload: String(row['payload']),
+    referral: String(row['referral']),
     codecVersion: Number(row['codec_version']),
     heroId: (row['hero_id'] as string | null) ?? null,
     sectionCount: Number(row['section_count']),

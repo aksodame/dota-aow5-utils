@@ -41,7 +41,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { loadCore, type CoreData } from 'aow5-shared/data';
 import type { Lang, Strings } from '@/i18n/strings';
-import { getInitialReferral, storeReferral, writeReferralToUrl } from '@/lib/referral';
+import { getInitialReferral, getOwnReferral, storeReferral, writeReferralToUrl } from '@/lib/referral';
 import { ABILITY_SLOTS, type HeroId } from 'aow5-shared/types';
 
 interface Target {
@@ -98,7 +98,25 @@ export function PlannerPage({
     title: build?.title ?? '',
     body: build?.body ?? '',
   }));
-  const [referral, setReferral] = useState<string>(() => getInitialReferral());
+  /**
+   * The code in the field above the roster.
+   *
+   * Where it starts from depends on whose board this is. A fresh planner uses
+   * the visitor's own — the URL's, then this browser's, then the default. A
+   * saved build uses the one stored *with the build*, because that is the
+   * author's and is the whole reason it is on the page; an author who saved
+   * before the field existed gets their own prefilled, so one click puts it on.
+   */
+  const [referral, setReferral] = useState<string>(() => {
+    if (build === undefined) return getInitialReferral();
+    if (build.referral !== '') return build.referral;
+    // Saved with no code. Yours: your own if you have one, prefilled and one
+    // click from being on it — but never the site's default, which would mark
+    // your build unsaved until you stamped a stranger's code onto it. Somebody
+    // else's: empty, and the card is not drawn at all, because filling a field
+    // labelled "author's code" with the *reader's* would be a lie.
+    return build.canEdit ? (getOwnReferral() ?? '') : '';
+  });
   const [core, setCore] = useState<CoreData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -111,9 +129,13 @@ export function PlannerPage({
 
   // Put the code in the address bar on arrival too, not just after an edit —
   // otherwise the default would never travel with a link the visitor shares.
+  //
+  // The planner only. A saved build's address is its slug and its code lives in
+  // the database, so `?ref=` there would be a second, staler copy of the same
+  // fact — and one that a later visit would read back in preference to it.
   useEffect(() => {
-    if (referral !== '') writeReferralToUrl(referral);
-  }, [referral]);
+    if (build === undefined && referral !== '') writeReferralToUrl(referral);
+  }, [build, referral]);
 
   // Load the index and the active language's names.
   useEffect(() => {
@@ -187,6 +209,15 @@ export function PlannerPage({
   // fragment here would give the same build two URLs that drift apart.
   useUrlSync(state, hydrated && build === undefined ? table : null, heroTable, onExternalChange);
   const shareUrl = useShareUrl(state, table, heroTable, referral);
+
+  /**
+   * Whether the code on screen is the viewer's to change.
+   *
+   * Yours on a blank planner, and yours on a build you may edit. On anybody
+   * else's build it is the author's, saved with their build, and is shown
+   * rather than offered.
+   */
+  const referralEditable = build === undefined || build.canEdit;
 
   const empty = isEmptyState(state);
   const unknownCount = state.sections.reduce((n, s) => n + s.slots.filter((v) => v?.k === 'unknown').length, 0);
@@ -315,6 +346,7 @@ export function PlannerPage({
             <SaveBuildButton
               build={build}
               payload={encodeBuild(state, table, heroTable ?? undefined)}
+              referral={referral}
               draft={draft}
               site={site}
               {...(onBuildChanged ? { onSaved: onBuildChanged } : {})}
@@ -352,7 +384,12 @@ export function PlannerPage({
 
         {publishing && build === undefined && (
           <PublishDialog
-            payload={shareUrl.slice(shareUrl.indexOf('#b=') + 3)}
+            /* Encoded straight from the board rather than sliced back out of
+               the share URL: that string also carries `?ref=`, and reading a
+               payload out of it depended on a `#b=` that an empty board does
+               not have. */
+            payload={encodeBuild(state, table, heroTable ?? undefined)}
+            referral={referral}
             site={site}
             onClose={() => setPublishing(false)}
           />
@@ -377,15 +414,25 @@ export function PlannerPage({
         </Alert>
       )}
 
-      <ReferralCode
-        code={referral}
-        strings={strings}
-        onChange={(next) => {
-          setReferral(next);
-          storeReferral(next);
-          writeReferralToUrl(next);
-        }}
-      />
+      {/*
+        Hidden only on somebody else's build that carries no code at all — an
+        empty read-only field would be a question the page cannot answer.
+      */}
+      {(referralEditable || referral !== '') && (
+        <ReferralCode
+          code={referral}
+          strings={strings}
+          variant={build === undefined ? 'own' : referralEditable ? 'build' : 'author'}
+          onChange={(next) => {
+            setReferral(next);
+            // Still yours even when it is being saved onto a build, so the
+            // planner remembers it next time. The URL copy stays a planner
+            // thing — see the effect above.
+            storeReferral(next);
+            if (build === undefined) writeReferralToUrl(next);
+          }}
+        />
+      )}
 
       <HeroPicker
         heroes={core.heroes}

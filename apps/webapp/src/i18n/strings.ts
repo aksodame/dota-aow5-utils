@@ -93,6 +93,11 @@ export interface Strings {
 
   referralCode: string;
   referralHint: string;
+  /** The author's, on a build somebody else saved. */
+  referralAuthorCode: string;
+  referralAuthorHint: string;
+  /** The author's own, on their saved build — where it is stored with it. */
+  referralBuildHint: string;
   referralCopy: string;
   referralCopied: string;
   referralClear: string;
@@ -199,6 +204,9 @@ const en: Strings = {
 
   referralCode: 'Referral code',
   referralHint: 'Kept in this browser and in the page address, so it travels with a link you share.',
+  referralAuthorCode: 'Author’s referral code',
+  referralAuthorHint: 'The code the author of this build asked to be credited with.',
+  referralBuildHint: 'Saved with this build, so everyone who opens it sees your code — and kept in this browser for the planner.',
   referralCopy: 'Copy referral code',
   referralCopied: 'Referral code copied',
   referralClear: 'Erase referral code',
@@ -303,6 +311,9 @@ const ru: Strings = {
 
   referralCode: 'Реферальный код',
   referralHint: 'Хранится в этом браузере и в адресе страницы, поэтому передаётся вместе с вашей ссылкой.',
+  referralAuthorCode: 'Реферальный код автора',
+  referralAuthorHint: 'Код, который автор этой сборки просит указывать.',
+  referralBuildHint: 'Сохраняется вместе со сборкой, поэтому его видит каждый, кто её откроет, — и остаётся в этом браузере для планировщика.',
   referralCopy: 'Скопировать реферальный код',
   referralCopied: 'Реферальный код скопирован',
   referralClear: 'Стереть реферальный код',
