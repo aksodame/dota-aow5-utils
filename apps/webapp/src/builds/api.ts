@@ -40,12 +40,14 @@ export interface BrowseQuery {
   hero?: string;
   sort?: BuildSort;
   cursor?: string;
+  /** Rows per page. A request: the server clamps it to `PAGE_SIZE`. */
+  limit?: number;
 }
 
 export function browseBuilds(query: BrowseQuery, signal?: AbortSignal): Promise<Page<BuildSummary>> {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
-    if (value !== undefined && value !== '') params.set(key, value);
+    if (value !== undefined && value !== '') params.set(key, String(value));
   }
   const suffix = params.toString();
   return api<Page<BuildSummary>>(`/builds${suffix === '' ? '' : `?${suffix}`}`, signal ? { signal } : {});

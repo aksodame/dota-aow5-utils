@@ -80,25 +80,13 @@ export function readCards(raw: unknown): CardId[] {
   return CARD_IDS.filter((id) => seen.has(id));
 }
 
-/**
- * How each card is described where it is chosen rather than drawn.
+/*
+ * How a card is *described* is not here.
  *
- * A full name and a sentence, because Settings is read once with attention
- * while the HUD is glanced at all evening — `gold/ses` is the right label on a
- * card two centimetres wide and tells a first-time reader nothing. The terse
- * labels stay beside the cards in `Hud.tsx`, which is where they can be read
- * against the thing they label.
+ * It used to be: a `CARD_INFO` table of names and sentences, in English,
+ * beside the ids. That was the wrong home for it the moment the overlay
+ * learned a second language — a name is a word, and words live in
+ * `src/i18n/`, keyed by these same ids. What stays here is what both
+ * processes need and neither can translate: which cards exist, in what
+ * order, and how to read a saved list of them.
  */
-export const CARD_INFO: Record<CardId, { name: string; hint: string }> = {
-  session: { name: 'Session time', hint: 'Since the session started. The hideout and the loading screens count.' },
-  sessionGold: { name: 'Session gold', hint: 'Everything this session has dropped, at your prices.' },
-  sessionBest: { name: 'Session best', hint: 'The single most valuable pile, said in its icon.' },
-  mapTime: { name: 'Current time', hint: 'How long you have been in the room you are standing in.' },
-  mapGold: { name: 'Current gold', hint: 'What the room below has dropped, priced the way the list is.' },
-  mapGoldAverage: {
-    name: 'Gold per map',
-    hint: 'Mean gold of the rooms you have finished. The open one does not count until it does.',
-  },
-  mapTimeAverage: { name: 'Time per map', hint: 'Mean clear time of the rooms you have finished.' },
-  goldPerHour: { name: 'Hourly gold', hint: 'Counting only the time spent inside rooms, not the hideout.' },
-};

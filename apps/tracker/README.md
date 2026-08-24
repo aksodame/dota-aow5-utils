@@ -82,7 +82,9 @@ core/ipc.ts             the preload contract and its limits, shared by main and 
 core/sources/mock.ts    scripted session standing in for the real feed
 core/sources/console.ts tails the log (Node-only; main process)
 core/sources/logfile.ts trims the log to our own lines when the game lets go (Node-only)
-core/rooms.ts           room id -> name, from data/rooms.json
+core/rooms.ts           room id -> name in one language, from data/rooms.json
+core/locale.ts          which languages exist, and how `auto` resolves against Windows
+core/style.ts           which skins exist; a style is CSS tokens and nothing else
 
 electron/main.ts        lifecycle and the IPC surface; wiring, nothing else
 electron/config.ts      the settings file: defaults, clamping, migration
@@ -93,13 +95,14 @@ electron/preload.ts     the only bridge; contextIsolation stays on
 
 src/shell/              the frame every overlay draws inside: chrome, scale, grip
 src/features/session/   subscribes to the feed, exposes the derived numbers
-src/features/items/     the item table, built once from aow5-shared
+src/features/items/     the item table, one per language, built from aow5-shared
+src/i18n/               every word the overlay says, in en / ru / zh
 src/overlays/farm/      the HUD: state line, cards, sortable loot list
 src/overlays/settings/  a window of its own: prices, tracked items, appearance, the log
 src/overlays/history/   a window of its own: past sessions, repriced against today
 src/overlays/recipe/    the ingredient strip — README.md is its design notes
 
-data/rooms.json         20 rooms, EN+RU names, type/level/gold
+data/rooms.json         20 rooms, EN+RU+ZH names, type/level/gold
 ```
 
 **The renderer never touches the filesystem.** Main tails and parses; the renderer receives validated events

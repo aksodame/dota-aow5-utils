@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, RefreshCw, Trash2 } from 'lucide-react';
 import { sessionTotals, type HistoryRun, type SessionHistory } from '@core/history.ts';
-import { iconUrl, qualityColor } from '@core/items.ts';
+import { iconUrl, qualityColor, type ItemTable } from '@core/items.ts';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Pricing } from '@/features/items/prices';
-import { itemTable } from '@/features/items/table';
-import { roomTable } from '@/features/rooms/table';
+import { useItems } from '@/features/items/table';
+import { useRooms } from '@/features/rooms/table';
+import { useLocale, useMessages, type Messages } from '@/i18n';
 import { clock, compact, stamp } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -46,6 +47,10 @@ interface Props {
 }
 
 export function HistoryView({ sessions, pricing, onRefresh }: Props) {
+  const m = useMessages();
+  const locale = useLocale();
+  const items = useItems();
+
   // The newest session is the one you just played, so it starts open.
   const [openSessions, setOpenSessions] = useState<Set<number> | null>(null);
   const [openRuns, setOpenRuns] = useState<Set<string>>(new Set());
@@ -114,13 +119,8 @@ export function HistoryView({ sessions, pricing, onRefresh }: Props) {
   return (
     <ScrollArea className="min-h-0 flex-1" viewportClassName="hud-fade-bottom">
       <div className="space-y-2 pe-2 pb-4 text-xs">
-        {visible === null && <Empty>Reading the archive…</Empty>}
-        {visible?.length === 0 && (
-          <Empty>
-            Nothing recorded yet. A session lands here once its first run finishes — the run you are in is still the
-            overlay&apos;s.
-          </Empty>
-        )}
+        {visible === null && <Empty>{m.history.reading}</Empty>}
+        {visible?.length === 0 && <Empty>{m.history.empty}</Empty>}
 
         {visible?.map((session) => {
           const totals = sessionTotals(session);
@@ -134,7 +134,7 @@ export function HistoryView({ sessions, pricing, onRefresh }: Props) {
                 <Checkbox
                   checked={selected.has(session.id)}
                   onCheckedChange={() => toggleSelected(session.id)}
-                  aria-label={`Select the session of ${stamp(session.id)}`}
+                  aria-label={m.history.select(stamp(session.id, locale))}
                   className="size-3.5 shrink-0"
                 />
                 <button
@@ -143,14 +143,14 @@ export function HistoryView({ sessions, pricing, onRefresh }: Props) {
                   className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
                 >
                   <Caret open={open} />
-                  <span className="min-w-0 flex-1 truncate font-semibold">{stamp(session.id)}</span>
+                  <span className="min-w-0 flex-1 truncate font-semibold">{stamp(session.id, locale)}</span>
                   {/* The source is only worth saying when it is the fake one. */}
                   {session.source === 'mock' && (
                     <span className="shrink-0 rounded bg-white/10 px-1 text-[0.5rem] text-muted-foreground uppercase">
-                      mock
+                      {m.history.mock}
                     </span>
                   )}
-                  <span className="shrink-0 tabular-nums text-muted-foreground">{totals.runs} runs</span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">{m.history.runCount(totals.runs)}</span>
                 </button>
               </div>
 
@@ -164,15 +164,17 @@ export function HistoryView({ sessions, pricing, onRefresh }: Props) {
                 is priced from the drops.
               */}
               <div className="flex flex-wrap gap-x-3 gap-y-0.5 px-2 pb-1.5 ps-6 text-[0.625rem] text-muted-foreground">
-                <Stat label="active" value={clock(totals.activeTime)} />
-                {totals.gold > 0 && <Stat label="gold" value={compact(totals.gold)} gold />}
-                <Stat label="value" value={compact(itemsValue(totals.byItem, pricing))} gold />
-                <Stat label="items" value={String(totals.items)} />
+                <Stat label={m.history.stats.active} value={clock(totals.activeTime)} />
+                {totals.gold > 0 && <Stat label={m.history.stats.gold} value={compact(totals.gold)} gold />}
+                <Stat label={m.history.stats.value} value={compact(itemsValue(totals.byItem, pricing))} gold />
+                <Stat label={m.history.stats.items} value={String(totals.items)} />
               </div>
 
               {open && (
                 <div className="space-y-1 px-2 pb-2">
-                  {session.runs.length === 0 && <p className="ps-4 text-[0.625rem] text-muted-foreground">No runs.</p>}
+                  {session.runs.length === 0 && (
+                    <p className="ps-4 text-[0.625rem] text-muted-foreground">{m.history.noRuns}</p>
+                  )}
                   {session.runs.map((run, index) => {
                     const key = `${session.id}:${index}`;
                     return (
@@ -180,6 +182,8 @@ export function HistoryView({ sessions, pricing, onRefresh }: Props) {
                         key={key}
                         run={run}
                         pricing={pricing}
+                        items={items}
+                        m={m}
                         open={openRuns.has(key)}
                         onToggle={() => toggleRun(key)}
                       />
@@ -201,13 +205,15 @@ export function HistoryView({ sessions, pricing, onRefresh }: Props) {
                       >
                         <Caret open={openTotals.has(session.id)} />
                         <span className="min-w-0 flex-1 text-[0.5rem] tracking-wide text-muted-foreground uppercase">
-                          session total
+                          {m.history.sessionTotal}
                         </span>
                         <span className="shrink-0 text-[0.5rem] tabular-nums text-muted-foreground">
-                          {totals.byItem.length} items
+                          {m.history.itemCount(totals.byItem.length)}
                         </span>
                       </button>
-                      {openTotals.has(session.id) && <Items items={totals.byItem} pricing={pricing} />}
+                      {openTotals.has(session.id) && (
+                        <Items items={totals.byItem} pricing={pricing} table={items} />
+                      )}
                     </div>
                   )}
                 </div>
@@ -218,7 +224,7 @@ export function HistoryView({ sessions, pricing, onRefresh }: Props) {
 
         <div className="flex gap-1">
           <Button variant="outline" className="h-7 flex-1 text-xs" onClick={onRefresh}>
-            <RefreshCw className="size-3.5" /> Refresh
+            <RefreshCw className="size-3.5" /> {m.common.refresh}
           </Button>
           {/* Only when there is something to clear: a destructive button beside
               an empty list is an offer to break something that is not there.
@@ -243,20 +249,16 @@ export function HistoryView({ sessions, pricing, onRefresh }: Props) {
                   onRefresh();
                 });
               }}
-              title={
-                selected.size > 0
-                  ? 'Delete the ticked sessions and the runs recorded under them.'
-                  : 'Delete every archived session. The session on screen keeps counting.'
-              }
+              title={selected.size > 0 ? m.history.deleteSelectedHint : m.history.deleteAllHint}
             >
               <Trash2 className="size-3.5" />{' '}
               {arming
                 ? selected.size > 0
-                  ? `Delete ${selected.size}?`
-                  : 'Delete all?'
+                  ? m.history.confirmSelected(selected.size)
+                  : m.history.confirmAll
                 : selected.size > 0
-                  ? `Delete ${selected.size}`
-                  : 'Clear all'}
+                  ? m.history.deleteSelected(selected.size)
+                  : m.history.deleteAll}
             </Button>
           )}
         </div>
@@ -265,18 +267,31 @@ export function HistoryView({ sessions, pricing, onRefresh }: Props) {
   );
 }
 
-/** One run: the summary line always, its drops when opened. */
+/**
+ * One run: the summary line always, its drops when opened.
+ *
+ * The catalog and the item table come down as props rather than out of a hook.
+ * Both are already in hand one component up, this is drawn once per archived
+ * run — a busy archive is hundreds of them — and a leaf that is handed what it
+ * renders cannot end up disagreeing with its parent about which language it is
+ * in mid-list.
+ */
 function Run({
   run,
   pricing,
+  items: table,
+  m,
   open,
   onToggle,
 }: {
   run: HistoryRun;
   pricing: Pricing;
+  items: ItemTable;
+  m: Messages;
   open: boolean;
   onToggle: () => void;
 }) {
+  const rooms = useRooms();
   const items = run.items.map(([id, qty]) => ({ id, qty }));
   return (
     <div className="rounded bg-black/20">
@@ -287,7 +302,7 @@ function Run({
       >
         <Caret open={open} />
         <span className="min-w-0 flex-1 truncate font-medium" title={run.room}>
-          {roomTable.name(run.room)}
+          {rooms.name(run.room)}
         </span>
         {/* Two different things worth saying, in two different colours. A
             `chained` run counted — the player walked into the next room and the
@@ -300,7 +315,7 @@ function Run({
               run.outcome === 'chained' ? 'bg-white/10 text-muted-foreground' : 'bg-destructive/20 text-destructive',
             )}
           >
-            {run.outcome}
+            {m.history.outcome[run.outcome]}
           </span>
         )}
         <span className="w-10 shrink-0 text-right tabular-nums text-muted-foreground">{clock(run.duration)}</span>
@@ -314,9 +329,9 @@ function Run({
       {open && (
         <div className="pb-1">
           {items.length === 0 ? (
-            <p className="px-1.5 ps-6 text-[0.625rem] text-muted-foreground">Nothing dropped.</p>
+            <p className="px-1.5 ps-6 text-[0.625rem] text-muted-foreground">{m.history.nothingDropped}</p>
           ) : (
-            <Items items={items} pricing={pricing} />
+            <Items items={items} pricing={pricing} table={table} />
           )}
         </div>
       )}
@@ -325,13 +340,21 @@ function Run({
 }
 
 /** The drop list, priced against today's item table and today's presets. */
-function Items({ items, pricing }: { items: { id: string; qty: number }[]; pricing: Pricing }) {
+function Items({
+  items,
+  pricing,
+  table,
+}: {
+  items: { id: string; qty: number }[];
+  pricing: Pricing;
+  table: ItemTable;
+}) {
   return (
     <ul className="space-y-0.5 ps-4">
       {[...items]
         .sort((a, b) => pricing.value(b.id, b.qty) - pricing.value(a.id, a.qty))
         .map((item) => {
-          const info = itemTable.get(item.id);
+          const info = table.get(item.id);
           return (
             <li key={item.id} className="flex items-center gap-1.5 px-1.5">
               <img src={iconUrl(info.icon)} alt="" className="size-4 shrink-0 rounded-sm object-cover" loading="lazy" />

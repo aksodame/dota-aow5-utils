@@ -1,7 +1,9 @@
 import type { CardId } from './cards.ts';
 import type { TrackerEvent } from './events.ts';
 import type { SessionHistory } from './history.ts';
+import type { LanguageSetting } from './locale.ts';
 import type { SoundSettings } from './sounds.ts';
+import type { TrackerStyle } from './style.ts';
 
 /**
  * The contract across the preload bridge.
@@ -172,6 +174,25 @@ export const OPACITY = { min: 0, max: 1, step: 0.02, default: 0.92 } as const;
 
 export interface TrackerConfig {
   source: SourceKind;
+  /**
+   * Which language the overlay speaks — and with it, which of the extracted
+   * name tables it reads.
+   *
+   * `auto` by default, resolved per window against `app.getLocale()`. It is the
+   * one setting whose stored value is deliberately *not* a language: writing
+   * the resolved locale into the file at first launch would pin a machine to
+   * whatever Windows was set to the day the tracker was installed. See
+   * `core/locale.ts`.
+   */
+  language: LanguageSetting;
+  /**
+   * Which skin the panels are drawn in.
+   *
+   * A set of CSS tokens and nothing else — same components, same layout, same
+   * measurements. See `core/style.ts` for why that boundary is drawn where it
+   * is.
+   */
+  style: TrackerStyle;
   logFile: string;
   /** Item ids pinned to the tracked list. Empty means "show everything". */
   tracked: string[];
@@ -383,6 +404,17 @@ export type Unsubscribe = () => void;
 export interface TrackerApi {
   /** Which overlay this renderer is. Set by the preload from the window's query string. */
   readonly overlay: OverlayId;
+
+  /**
+   * What Windows is set to, as a BCP 47 tag — `en-GB`, `ru-RU`, `zh-CN`.
+   *
+   * Carried in the same query string as `overlay`, and readonly for the same
+   * reason: it cannot change while the process is running, so a channel to
+   * re-ask for it would be a channel that never fires. It is the input to
+   * `resolveLocale`, and it is only consulted while the language setting says
+   * `auto` — which is its default.
+   */
+  readonly systemLocale: string;
 
   onEvent: (handler: (event: TrackerEvent) => void) => Unsubscribe;
   onStatus: (handler: (status: TrackerStatus) => void) => Unsubscribe;

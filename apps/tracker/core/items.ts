@@ -46,6 +46,21 @@ export interface ItemInfo {
  * a move can be tested, and a future one does not strand whatever is already
  * installed. Changing the default is a release, and the new host must be added
  * to the CSP in the same commit.
+ *
+ * As of 0.1.6 that host answers 301 to `dota-aow5-utils.duckdns.org`, which is
+ * fine in itself — but the hop rewrites `/icons/items/x.png` to
+ * `/builder/icons/items/x.png`, and there is no `/builder` prefix on that
+ * deployment. Every icon therefore lands on the site's SPA index instead, comes
+ * back as 200 `text/html`, and draws as a broken image. It is a redirect that
+ * has to be fixed where it is configured; the icons themselves are all present
+ * and correct one path segment up.
+ *
+ * This constant is deliberately *not* the place to work around it. It is
+ * compiled into every build that has ever shipped, so an already-installed copy
+ * can only ever be repaired by fixing the hop — repointing it here would rescue
+ * new installs and strand every old one for good. The redirect target is
+ * allowlisted in the renderer's CSP (`src/index.html`) so that the hop is
+ * followable once it points somewhere real.
  */
 const DEFAULT_ICON_BASE = 'https://aow5-builder.pages.dev/icons/items';
 

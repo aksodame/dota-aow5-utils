@@ -1,5 +1,5 @@
 import type { ValueOf } from '@core/stats.ts';
-import { itemTable } from './table';
+import { itemCost } from './table';
 
 /**
  * What an item is worth, with the player's own prices on top of the tables.
@@ -40,7 +40,10 @@ export function pricing(overrides: Record<string, number> | undefined, halved = 
   // Floored, not rounded: half of an odd price is not a coin, and a tracker
   // that guesses upward is a tracker that flatters the session.
   const table = (id: string): number => {
-    const cost = itemTable.get(id).cost;
+    // `itemCost` rather than a name table: a price has no language, and reading
+    // it through one would tie every gold figure in the app to a setting that
+    // cannot change any of them.
+    const cost = itemCost(id);
     return halved ? Math.floor(cost / 2) : cost;
   };
   const unit = (id: string): number => prices[id] ?? table(id);

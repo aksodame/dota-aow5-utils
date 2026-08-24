@@ -1,6 +1,7 @@
 import { useRef, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useMessages } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { ChromeButton } from './ChromeButton';
 import { ResizeGrip } from './ResizeGrip';
@@ -83,6 +84,7 @@ export function OverlayShell({
   hotkey,
   children,
 }: Props) {
+  const m = useMessages();
   const panel = useRef<HTMLDivElement | null>(null);
 
   // Only meaningful because the panel stops being `h-screen` below when it is
@@ -93,7 +95,7 @@ export function OverlayShell({
 
   const toggle = onToggleCollapsed && (
     <ChromeButton
-      label={collapsed ? 'Expand to the full readout' : 'Collapse to the summary cards'}
+      label={collapsed ? m.shell.expand : m.shell.collapse}
       onClick={onToggleCollapsed}
     >
       {collapsed ? <ChevronDown className="size-3.5" /> : <ChevronUp className="size-3.5" />}
@@ -176,7 +178,7 @@ export function OverlayShell({
           the live one. */}
       {!collapsed && (
         <footer className="hud-text-outline shrink-0 text-center text-[0.625rem] text-muted-foreground">
-          {interactive ? `${hotkey} to unfocus and pin it over the game` : `${hotkey} to configure`}
+          {interactive ? m.shell.pinHint(hotkey) : m.shell.configureHint(hotkey)}
         </footer>
       )}
 

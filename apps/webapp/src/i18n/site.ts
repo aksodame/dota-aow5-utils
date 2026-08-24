@@ -129,7 +129,15 @@ export interface SiteStrings {
     searchPlaceholder: string;
     sort: { new: string; top: string; discussed: string };
     anyHero: string;
+    /** Another page of *comments*. The build list pages instead — see below. */
     more: string;
+    /**
+     * Paging the build list: a stack rather than page numbers, because a
+     * keyset cursor cannot count pages it has not walked to.
+     */
+    previousPage: string;
+    nextPage: string;
+    pageNumber: (n: number) => string;
     loading: string;
     failed: string;
     retry: string;
@@ -410,6 +418,9 @@ const en: SiteStrings = {
     sort: { new: 'Newest', top: 'Top rated', discussed: 'Most discussed' },
     anyHero: 'Any hero',
     more: 'Load more',
+    previousPage: 'Previous',
+    nextPage: 'Next',
+    pageNumber: (n) => `Page ${n}`,
     loading: 'Loading',
     failed: 'Something went wrong.',
     retry: 'Try again',
@@ -689,6 +700,9 @@ const ru: SiteStrings = {
     sort: { new: 'Новые', top: 'С лучшей оценкой', discussed: 'Больше обсуждают' },
     anyHero: 'Любой герой',
     more: 'Показать ещё',
+    previousPage: 'Назад',
+    nextPage: 'Вперёд',
+    pageNumber: (n) => `Страница ${n}`,
     loading: 'Загрузка',
     failed: 'Что-то пошло не так.',
     retry: 'Попробовать снова',

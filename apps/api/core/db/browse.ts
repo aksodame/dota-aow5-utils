@@ -118,7 +118,14 @@ function toAuthor(row: Record<string, unknown>): UserSummary {
 
 export function browseBuilds(sqlite: Sqlite, filters: BrowseFilters): BrowseResult {
   const sort: BuildSort = filters.sort !== undefined && filters.sort in SORT_KEY ? filters.sort : 'new';
-  const limit = Math.min(Math.max(filters.limit ?? PAGE_SIZE, 1), PAGE_SIZE);
+  // `Number.isFinite` before the clamp, not after: `Math.max(NaN, 1)` is NaN,
+  // so a hand-typed `?limit=abc` would otherwise arrive at the statement as a
+  // NaN bound. Truncated too — a fractional limit is not a row count.
+  const asked = filters.limit;
+  const limit =
+    asked !== undefined && Number.isFinite(asked)
+      ? Math.min(Math.max(Math.trunc(asked), 1), PAGE_SIZE)
+      : PAGE_SIZE;
   const key = SORT_KEY[sort];
 
   const fts = filters.q !== undefined && filters.q.trim() !== '' ? buildFtsQuery(filters.q) : null;

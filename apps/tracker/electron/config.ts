@@ -2,7 +2,9 @@ import { app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { DEFAULT_CARDS, readCards } from '../core/cards.ts';
+import { readLanguage } from '../core/locale.ts';
 import { DEFAULT_SOUNDS, readSoundSettings } from '../core/sounds.ts';
+import { DEFAULT_STYLE, readStyle } from '../core/style.ts';
 import {
   OPACITY,
   OVERLAY_IDS,
@@ -36,6 +38,16 @@ const defaultView = (id: OverlayId): OverlayView => ({
 
 export const DEFAULTS: TrackerConfig = {
   source: 'mock',
+  /*
+   * Whatever Windows is set to, resolved per window rather than written down.
+   *
+   * The addon is a Chinese map with a Russian following, and the tables carry
+   * all three languages, so there is no reason a first launch should be in a
+   * language the player does not read. See `core/locale.ts` for why the stored
+   * value stays `auto` instead of being resolved once and frozen.
+   */
+  language: 'auto',
+  style: DEFAULT_STYLE,
   /*
    * The path the site tells people to create, so following it needs no fourth
    * step: the tracker is already looking where the log was told to appear.
@@ -193,6 +205,10 @@ export function loadConfig(): TrackerConfig {
     ...DEFAULTS,
     ...raw,
     source: raw['source'] === 'console' ? 'console' : 'mock',
+    // Both absent in a file written before 0.1.6, and absent is the default in
+    // each case: follow Windows, and the skin the tracker started with.
+    language: readLanguage(raw['language']),
+    style: readStyle(raw['style']),
     logFile: typeof raw['logFile'] === 'string' ? raw['logFile'] : DEFAULTS.logFile,
     tracked: Array.isArray(raw['tracked']) ? raw['tracked'].filter((t): t is string => typeof t === 'string') : [],
     prices: readPrices(raw['prices']),

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MessageSquare, ThumbsDown, ThumbsUp } from 'lucide-react';
-import type { BuildSort, BuildSummary } from 'aow5-api-contract';
+import { ChevronLeft, ChevronRight, MessageSquare, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { BUILDS_PER_PAGE, type BuildSort, type BuildSummary } from 'aow5-api-contract';
 import heroesData from 'aow5-shared/public/data/heroes.json';
 import { heroIconUrl } from 'aow5-shared/data';
 import { Button } from '@/components/ui/button';
@@ -50,7 +50,15 @@ function readFilters(): Filters {
   };
 }
 
-/** Mirrors the filters into the URL without adding a history entry per keystroke. */
+/**
+ * Mirrors the filters into the URL without adding a history entry per keystroke.
+ *
+ * The page is deliberately not among them. A keyset cursor is an opaque encoding
+ * of one row's sort key, so putting it in a shareable URL would hand somebody a
+ * link that means nothing once that row moves — and a page *number* cannot be
+ * turned back into a cursor without walking to it. A shared search link opens at
+ * the first page, which is the page worth sharing anyway.
+ */
 function writeFilters(filters: Filters): void {
   const params = new URLSearchParams();
   if (filters.q !== '') params.set('q', filters.q);
@@ -64,7 +72,19 @@ export function BuildsPage({ site, lang }: { site: SiteStrings; lang: Lang }) {
   const t = site.builds;
   const [filters, setFilters] = useState<Filters>(() => readFilters());
   const [items, setItems] = useState<BuildSummary[]>([]);
+  /** Where the *next* page starts, or null when this is the last one. */
   const [cursor, setCursor] = useState<string | null>(null);
+  /**
+   * The cursor that opened each page visited so far; `[null]` is page one.
+   *
+   * A stack rather than an offset, because the API pages by keyset: a response
+   * says where the next page begins and nothing else. That is deliberate — an
+   * OFFSET renumbers, so a build published while somebody reads page three
+   * shifts a row from page three onto page four and it is never seen. The cost
+   * is that there is no page count and no jumping to page seven: you can only
+   * walk to a page, so walking back means remembering how you got here.
+   */
+  const [trail, setTrail] = useState<Array<string | null>>([null]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const requestId = useRef(0);
 
@@ -76,20 +96,21 @@ export function BuildsPage({ site, lang }: { site: SiteStrings; lang: Lang }) {
     return new Map(entries);
   }, [lang]);
 
-  const load = useCallback((next: Filters, append: string | null) => {
+  const load = useCallback((next: Filters, from: string | null) => {
     const id = (requestId.current += 1);
     setStatus('loading');
     browseBuilds({
       q: next.q,
       hero: next.hero,
       sort: next.sort,
-      ...(append !== null ? { cursor: append } : {}),
+      limit: BUILDS_PER_PAGE,
+      ...(from !== null ? { cursor: from } : {}),
     })
       .then((page) => {
         // Only the newest request may write: a slow first search must not land
         // on top of the results for what is now in the box.
         if (id !== requestId.current) return;
-        setItems((previous) => (append === null ? page.items : [...previous, ...page.items]));
+        setItems(page.items);
         setCursor(page.cursor);
         setStatus('ready');
       })
@@ -102,9 +123,27 @@ export function BuildsPage({ site, lang }: { site: SiteStrings; lang: Lang }) {
   // letters is never worth a round trip.
   useEffect(() => {
     writeFilters(filters);
-    const timer = setTimeout(() => load(filters, null), filters.q === '' ? 0 : DEBOUNCE_MS);
+    const timer = setTimeout(() => {
+      // Any change to what is being asked for starts the walk again. Keeping
+      // the trail would page a new result set with another one's cursors.
+      setTrail([null]);
+      load(filters, null);
+    }, filters.q === '' ? 0 : DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [filters, load]);
+
+  const goTo = (direction: 1 | -1) => {
+    if (direction === 1) {
+      if (cursor === null) return;
+      setTrail((previous) => [...previous, cursor]);
+      load(filters, cursor);
+    } else {
+      if (trail.length < 2) return;
+      const back = trail[trail.length - 2] ?? null;
+      setTrail((previous) => previous.slice(0, -1));
+      load(filters, back);
+    }
+  };
 
   const set = (patch: Partial<Filters>) => setFilters((previous) => ({ ...previous, ...patch }));
 
@@ -150,7 +189,8 @@ export function BuildsPage({ site, lang }: { site: SiteStrings; lang: Lang }) {
       {status === 'error' && (
         <div className="mt-8 text-center">
           <p className="text-muted-foreground">{t.failed}</p>
-          <Button variant="outline" size="sm" className="mt-3" onClick={() => load(filters, null)}>
+          {/* Retries the page you were on, not the first one. */}
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => load(filters, trail[trail.length - 1] ?? null)}>
             {t.retry}
           </Button>
         </div>
@@ -202,14 +242,40 @@ export function BuildsPage({ site, lang }: { site: SiteStrings; lang: Lang }) {
 
       {/* One row, always here, whatever it holds. A footer that appears and
           disappears is the other half of the shift the dimming above removes. */}
-      <div className="mt-6 flex h-9 items-center justify-center">
-        {status === 'loading' && items.length === 0 && (
+      <div className="mt-6 flex h-9 items-center justify-center gap-2">
+        {status === 'loading' && items.length === 0 ? (
           <span className="text-sm text-muted-foreground">{t.loading}</span>
-        )}
-        {status === 'ready' && cursor !== null && (
-          <Button variant="outline" size="sm" onClick={() => load(filters, cursor)}>
-            {t.more}
-          </Button>
+        ) : (
+          /*
+            Both controls stay mounted on a single page of results, disabled
+            rather than hidden. A pair of buttons that vanish once there is
+            nothing left to page through moves everything under them.
+          */
+          (trail.length > 1 || cursor !== null) && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={status === 'loading' || trail.length < 2}
+                onClick={() => goTo(-1)}
+              >
+                <ChevronLeft /> {t.previousPage}
+              </Button>
+
+              <span className="min-w-24 text-center text-sm text-muted-foreground tabular-nums">
+                {t.pageNumber(trail.length)}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={status === 'loading' || cursor === null}
+                onClick={() => goTo(1)}
+              >
+                {t.nextPage} <ChevronRight />
+              </Button>
+            </>
+          )
         )}
       </div>
     </div>

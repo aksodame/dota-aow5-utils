@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GripVertical, Hammer, Minus, Plus, X } from 'lucide-react';
-import { iconUrl, qualityColor } from '@core/items.ts';
+import { iconUrl, qualityColor, type ItemTable } from '@core/items.ts';
 import type { RecipeTarget } from '@core/ipc.ts';
 import type { RequirementProgress } from '@core/recipes.ts';
 import { useSession } from '@/features/session/useSession';
 import { useRecipes, type RecipeGroup } from '@/features/recipes/useRecipes';
-import { itemTable } from '@/features/items/table';
+import { useItems } from '@/features/items/table';
+import { useMessages, type Messages } from '@/i18n';
 import { useContentSize } from '@/shell/useContentSize';
 import { useOverlay } from '@/shell/useOverlay';
 import { cn } from '@/lib/utils';
@@ -69,6 +70,8 @@ const CHIP = 'rounded bg-black/60';
  * can do is name what you are collecting.
  */
 export function RecipeOverlay() {
+  const m = useMessages();
+  const items = useItems();
   const { config, interactive } = useOverlay();
   const { state } = useSession();
   const targets = useMemo(() => config?.recipe ?? [], [config]);
@@ -165,6 +168,8 @@ export function RecipeOverlay() {
           group={group}
           interactive={interactive}
           craftable={craftable}
+          items={items}
+          m={m}
           onAdjust={adjust}
           onToggle={toggleTicked}
           onExpand={toggleExpanded}
@@ -179,15 +184,15 @@ export function RecipeOverlay() {
           <button
             type="button"
             onClick={() => setPicking(true)}
-            title="Add a recipe or an item"
-            aria-label="Add a recipe or an item"
+            title={m.recipe.add}
+            aria-label={m.recipe.add}
             className={cn(
               CHIP,
               'flex flex-1 items-center justify-center gap-1 px-2 py-0.5 text-[0.625rem] text-muted-foreground hover:text-foreground',
             )}
           >
             <Plus className="size-4" />
-            {targets.length === 0 && 'recipe'}
+            {targets.length === 0 && m.recipe.addLabel}
           </button>
         </div>
       )}
@@ -208,6 +213,8 @@ function Line({
   group,
   interactive,
   craftable,
+  items,
+  m,
   onAdjust,
   onToggle,
   onExpand,
@@ -215,12 +222,15 @@ function Line({
   group: RecipeGroup;
   interactive: boolean;
   craftable: (id: string) => boolean;
+  /** Passed down rather than hooked, as in `HistoryView` and for the same reason. */
+  items: ItemTable;
+  m: Messages;
   onAdjust: (id: string, by: number) => void;
   onToggle: (id: string) => void;
   onExpand: (id: string) => void;
 }) {
   const { id, count, derived, rows, complete } = group;
-  const info = itemTable.get(id);
+  const info = items.get(id);
 
   return (
     <div
@@ -261,6 +271,8 @@ function Line({
           row={row}
           interactive={interactive}
           craftable={craftable(row.id)}
+          items={items}
+          m={m}
           onToggle={onToggle}
           onExpand={onExpand}
         />
@@ -277,8 +289,8 @@ function Line({
           <button
             type="button"
             onClick={() => onExpand(id)}
-            aria-label={`Do not craft ${info.name}`}
-            title="Stop making this — count it as a material instead"
+            aria-label={m.recipe.stopCrafting(info.name)}
+            title={m.recipe.stopCraftingHint}
             className="text-muted-foreground hover:text-destructive"
           >
             <X className="size-3.5" />
@@ -288,8 +300,8 @@ function Line({
             <button
               type="button"
               onClick={() => onAdjust(id, -1)}
-              aria-label={count > 1 ? `One fewer ${info.name}` : `Remove ${info.name}`}
-              title={count > 1 ? 'One fewer' : 'Remove'}
+              aria-label={count > 1 ? m.recipe.oneFewer(info.name) : m.recipe.removeTarget(info.name)}
+              title={count > 1 ? m.recipe.oneFewerHint : m.recipe.removeTargetHint}
               className="text-muted-foreground hover:text-destructive"
             >
               <Minus className="size-3.5" />
@@ -297,8 +309,8 @@ function Line({
             <button
               type="button"
               onClick={() => onAdjust(id, 1)}
-              aria-label={`One more ${info.name}`}
-              title="One more"
+              aria-label={m.recipe.oneMore(info.name)}
+              title={m.recipe.oneMoreHint}
               className="text-muted-foreground hover:text-foreground"
             >
               <Plus className="size-3.5" />
@@ -337,6 +349,8 @@ function IngredientTile({
   row,
   interactive,
   craftable,
+  items,
+  m,
   onToggle,
   onExpand,
 }: {
@@ -344,10 +358,12 @@ function IngredientTile({
   interactive: boolean;
   /** It has a recipe, so it is only a material here because the player said so. */
   craftable: boolean;
+  items: ItemTable;
+  m: Messages;
   onToggle: (id: string) => void;
   onExpand: (id: string) => void;
 }) {
-  const info = itemTable.get(row.id);
+  const info = items.get(row.id);
   const shown = Math.min(row.have, row.count);
 
   return (
@@ -359,8 +375,8 @@ function IngredientTile({
         <button
           type="button"
           onClick={() => onExpand(row.id)}
-          aria-label={`Craft ${info.name} instead`}
-          title="Craft this instead — give it a line of its own"
+          aria-label={m.recipe.craftInstead(info.name)}
+          title={m.recipe.craftInsteadHint}
           className={cn(CHIP, 'absolute -start-1 -top-1 z-10 p-0.5 text-muted-foreground hover:text-foreground')}
         >
           <Hammer className="size-4" />
@@ -371,8 +387,8 @@ function IngredientTile({
       onClick={() => onToggle(row.id)}
       // Not disabled while click-through: the window itself is transparent to
       // the mouse, and a disabled button would only dim the text as well.
-      title={interactive ? `${info.name} ${row.have}/${row.count} — click to tick off` : `${info.name}`}
-      aria-label={`${info.name}, ${row.have} of ${row.count}`}
+      title={interactive ? m.recipe.tickHint(info.name, row.have, row.count) : info.name}
+      aria-label={m.recipe.ingredient(info.name, row.have, row.count)}
       aria-pressed={row.done}
       className={cn('rounded', interactive && 'hover:bg-white/10')}
     >

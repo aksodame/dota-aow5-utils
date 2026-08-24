@@ -206,7 +206,12 @@ Check, in this order:
 - **Pricing** (`src/features/items/prices.ts`) — one resolver every gold figure reads: a price the
   player set wins outright, otherwise the extracted table cost, halved when *Trader pays half* is on
   (the default, because that is what the trader actually pays). Player prices are never halved.
-- **Rooms** (`core/rooms.ts` + `data/rooms.json`) — room ids to names; an unknown id shows as its id.
+- **Rooms** (`core/rooms.ts` + `data/rooms.json`) — room ids to names in the chosen language; an unknown id
+  shows as its id.
+- **Language** (`core/locale.ts` + `src/i18n/`) — English, Russian and Simplified Chinese. The chrome comes
+  from the catalogs in `src/i18n/`, typed against English so a missing translation is a build error rather
+  than a blank label; item and room names come from the same extracted tables the game draws from. The
+  setting defaults to `auto`, which follows `app.getLocale()` per window.
 - **Archive** (`core/history.ts`, `electron/history.ts`) — finished runs, one JSON object per line,
   append-only. Mock sessions are never written. Main folds the whole session too, so a window opened
   at nine o'clock can ask what happened at seven (`tracker:getSession`).

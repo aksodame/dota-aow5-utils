@@ -1,4 +1,4 @@
-import { BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, screen } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { OVERLAY_SPEC, type OverlayId, type TrackerConfig } from '../core/ipc.ts';
@@ -133,9 +133,16 @@ export class Overlay {
     win.on('moved', () => this.rememberGeometry());
     win.on('resized', () => this.rememberGeometry());
 
+    /*
+     * The window's identity and the machine's language, both on the query
+     * string, because both are fixed for the life of the window and both are
+     * wanted by the first paint. The preload turns them into `window.tracker`;
+     * see the note there for why the locale does not travel over a channel.
+     */
+    const query = { overlay: this.id, locale: app.getLocale() };
     const devUrl = process.env['ELECTRON_RENDERER_URL'];
-    if (devUrl) void win.loadURL(`${devUrl}?overlay=${this.id}`);
-    else void win.loadFile(path.join(dirname, '../renderer/index.html'), { query: { overlay: this.id } });
+    if (devUrl) void win.loadURL(`${devUrl}?${new URLSearchParams(query).toString()}`);
+    else void win.loadFile(path.join(dirname, '../renderer/index.html'), { query });
 
     win.webContents.on('did-finish-load', () => {
       // A fresh renderer has measured nothing yet and will report within a

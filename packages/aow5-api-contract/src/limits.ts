@@ -68,7 +68,22 @@ export const SLUG_LENGTH = 10;
  */
 export const SLUG_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
+/**
+ * The most rows `GET /builds` will hand back in one response, whatever is asked
+ * for. A ceiling, not the page the site draws — see `BUILDS_PER_PAGE`.
+ */
 export const PAGE_SIZE = 20;
+
+/**
+ * How many builds the browse page shows at once.
+ *
+ * Small on purpose. The list is one card per build with no thumbnail, so twenty
+ * of them is a wall of near-identical rows that nobody reads to the bottom of;
+ * five is a glance. It is a *request* rather than a rule — the server clamps it
+ * to `PAGE_SIZE` — which is what keeps this number changeable without a deploy
+ * of both halves.
+ */
+export const BUILDS_PER_PAGE = 5;
 
 /**
  * How long after posting a comment may still be edited, in **seconds**.

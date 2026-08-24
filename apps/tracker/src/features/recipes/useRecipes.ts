@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RecipeTarget } from '@core/ipc.ts';
 import { craftPlan, progress, type NeedsOf, type RequirementProgress } from '@core/recipes.ts';
-import { itemTable } from '@/features/items/table';
+import { useItems } from '@/features/items/table';
 
 /**
  * The recipe graph, and what it says you still have to farm.
@@ -71,6 +71,7 @@ export function useRecipes(
   /** Ingredients the player is making rather than finding, each its own step. */
   expanded: ReadonlySet<string>,
 ): Recipes {
+  const itemTable = useItems();
   const [graph, setGraph] = useState<RecipeGraph | null>(null);
 
   useEffect(() => {
@@ -123,9 +124,10 @@ export function useRecipes(
       };
     });
     // The `*Key` strings stand in for the collections, which are new objects on
-    // every broadcast from main.
+    // every broadcast from main. `itemTable` is in the list because the tie
+    // break below orders by name, and a name depends on the language.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph, targetKey, tickKey, expandKey, have]);
+  }, [graph, targetKey, tickKey, expandKey, have, itemTable]);
 
   const craftable = useCallback((id: string) => graph?.craftable(id) ?? false, [graph]);
 

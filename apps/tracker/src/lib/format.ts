@@ -40,14 +40,19 @@ export const percent = (fraction: number): string => `${Math.round(fraction * 10
 /**
  * Epoch milliseconds as `21 Aug 21:44`.
  *
- * Date-first and locale-driven, since the only reader is the person whose
- * machine it is. The year is left off deliberately: History is read to compare
- * this week's farming with last week's, and a column of identical years would
- * cost width the item names want.
+ * The one thing in the app that is formatted rather than translated, so it
+ * takes the chosen language rather than the machine's: a player reading the
+ * overlay in Russian wants `21 авг.`, whatever Windows is set to, and the two
+ * used to be the same only by accident. Month name, day order and the 12- or
+ * 24-hour clock all follow from it.
+ *
+ * The year is left off deliberately: History is read to compare this week's
+ * farming with last week's, and a column of identical years would cost width
+ * the item names want.
  */
-export function stamp(ms: number): string {
+export function stamp(ms: number, locale: string): string {
   if (!Number.isFinite(ms) || ms <= 0) return '—';
-  return new Date(ms).toLocaleString(undefined, {
+  return new Date(ms).toLocaleString(locale, {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',

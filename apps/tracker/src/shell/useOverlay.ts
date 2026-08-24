@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { OPACITY, UI_SCALE, type OverlayId, type TrackerConfig } from '@core/ipc.ts';
+import { DEFAULT_STYLE, type TrackerStyle } from '@core/style.ts';
 
 /**
  * Everything about the window this renderer is drawing into.
@@ -41,6 +42,7 @@ export interface OverlayChrome {
   setScale: (next: number) => void;
   setOpacity: (next: number) => void;
   setTransparentBackground: (next: boolean) => void;
+  setStyle: (next: TrackerStyle) => void;
 }
 
 export function useOverlay(): OverlayChrome {
@@ -86,6 +88,21 @@ export function useOverlay(): OverlayChrome {
     document.documentElement.style.setProperty('--hud-panel-alpha', `${panelAlpha.toFixed(2)}%`);
   }, [panelAlpha]);
 
+  /*
+   * The skin, as an attribute on the root element.
+   *
+   * `styles.css` defines the palette once on `:root` and overrides it under
+   * `[data-style='torchlight']`, so switching is one attribute write and no
+   * remount — the same trick `--ui-scale` and `--hud-panel-alpha` above use,
+   * and for the same reason: these are settings the player judges by looking at
+   * the result, so the result has to keep up with the click.
+   */
+  const style = config?.style ?? DEFAULT_STYLE;
+
+  useEffect(() => {
+    document.documentElement.dataset['style'] = style;
+  }, [style]);
+
   const collapsed = config?.overlays[id]?.collapsed ?? false;
 
   const toggleCollapsed = useCallback(() => {
@@ -98,8 +115,19 @@ export function useOverlay(): OverlayChrome {
     (next: boolean) => void window.tracker.setConfig({ transparentBackground: next }),
     [],
   );
+  const setStyle = useCallback((next: TrackerStyle) => void window.tracker.setConfig({ style: next }), []);
 
-  return { id, config, interactive, collapsed, toggleCollapsed, setScale, setOpacity, setTransparentBackground };
+  return {
+    id,
+    config,
+    interactive,
+    collapsed,
+    toggleCollapsed,
+    setScale,
+    setOpacity,
+    setTransparentBackground,
+    setStyle,
+  };
 }
 
 /**

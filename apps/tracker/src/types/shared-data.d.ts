@@ -19,7 +19,26 @@ declare module 'aow5-shared/public/data/items.index.json' {
   export default value;
 }
 
+/*
+ * One per extracted language. Three modules rather than a wildcard, because a
+ * wildcard would also type `locale.fr.names.json` — a file that does not exist
+ * — as a valid import, and the point of declaring these at all is that a
+ * language the extraction has not emitted fails at the build rather than at
+ * launch.
+ */
 declare module 'aow5-shared/public/data/locale.en.names.json' {
+  import type { LocaleNames } from 'aow5-shared/types';
+  const value: LocaleNames;
+  export default value;
+}
+
+declare module 'aow5-shared/public/data/locale.ru.names.json' {
+  import type { LocaleNames } from 'aow5-shared/types';
+  const value: LocaleNames;
+  export default value;
+}
+
+declare module 'aow5-shared/public/data/locale.zh.names.json' {
   import type { LocaleNames } from 'aow5-shared/types';
   const value: LocaleNames;
   export default value;

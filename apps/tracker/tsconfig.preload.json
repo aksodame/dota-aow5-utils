@@ -30,7 +30,9 @@
     "core/events.ts",
     "core/ipc.ts",
     "core/history.ts",
+    "core/locale.ts",
     "core/sounds.ts",
+    "core/style.ts",
     "core/stats.ts"
   ]
 }

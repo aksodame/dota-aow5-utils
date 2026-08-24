@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { PAGE_SIZE } from 'aow5-api-contract';
 import { browseBuilds } from './browse.ts';
 import { createBuild } from './builds.ts';
 import { openDb, runMigrations, type Db } from './open.ts';
@@ -238,4 +239,50 @@ test('the limit is clamped, so one request cannot ask for the whole table', () =
   publishMany(db, 25, (i) => `g${i}`, (i) => NOW + i);
   assert.equal(browseBuilds(sqlite, { limit: 10_000 }).rows.length, 20);
   assert.equal(browseBuilds(sqlite, { limit: -5 }).rows.length, 1);
+});
+
+test('the page size is a request, clamped, and never reaches SQL as nonsense', () => {
+  const { db, sqlite } = fixture();
+  // Across two authors, because five builds each is the structural cap.
+  const one = author(db, '', 'pager-one');
+  const two = author(db, '', 'pager-two');
+  for (let i = 0; i < 7; i += 1) publish(db, i < 4 ? one.id : two.id, { title: `build ${i}` }, NOW + i);
+
+  assert.equal(browseBuilds(sqlite, { sort: 'new', limit: 5 }).rows.length, 5);
+  assert.notEqual(browseBuilds(sqlite, { sort: 'new', limit: 5 }).cursor, null, 'more to come');
+
+  // Asking for more than the ceiling gets the ceiling, and asking for none or
+  // for a fraction of a row gets one whole row.
+  assert.equal(browseBuilds(sqlite, { sort: 'new', limit: PAGE_SIZE + 50 }).rows.length, 7);
+  assert.equal(browseBuilds(sqlite, { sort: 'new', limit: 0 }).rows.length, 1);
+  assert.equal(browseBuilds(sqlite, { sort: 'new', limit: 2.7 }).rows.length, 2);
+
+  // `?limit=abc` becomes NaN on the way in. Before the guard this reached the
+  // statement as a NaN bound rather than falling back to the default.
+  assert.equal(browseBuilds(sqlite, { sort: 'new', limit: Number.NaN }).rows.length, 7);
+  assert.equal(browseBuilds(sqlite, { sort: 'new', limit: Number.POSITIVE_INFINITY }).rows.length, 7);
+});
+
+test('paging by cursor walks every build exactly once', () => {
+  const { db, sqlite } = fixture();
+  const one = author(db, '', 'walker-one');
+  const two = author(db, '', 'walker-two');
+  for (let i = 0; i < 7; i += 1) publish(db, i < 4 ? one.id : two.id, { title: `build ${i}` }, NOW + i);
+
+  const seen: string[] = [];
+  let cursor: string | null = null;
+  for (let guard = 0; guard < 10; guard += 1) {
+    const page: ReturnType<typeof browseBuilds> = browseBuilds(sqlite, {
+      sort: 'new',
+      limit: 5,
+      ...(cursor !== null ? { cursor } : {}),
+    });
+    seen.push(...titles(page));
+    cursor = page.cursor;
+    if (cursor === null) break;
+  }
+
+  assert.equal(cursor, null, 'the walk ended rather than running out of guard');
+  assert.equal(seen.length, 7);
+  assert.equal(new Set(seen).size, 7, 'no build appeared on two pages');
 });

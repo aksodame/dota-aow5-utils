@@ -5,6 +5,7 @@ import { pricing } from '@/features/items/prices';
 import { ChromeButton } from '@/shell/ChromeButton';
 import { OverlayShell } from '@/shell/OverlayShell';
 import { useOverlay, useScaleShortcuts } from '@/shell/useOverlay';
+import { useMessages } from '@/i18n';
 import { Settings } from './Settings';
 
 /**
@@ -29,7 +30,8 @@ import { Settings } from './Settings';
 const REFRESH = 2000;
 
 export function SettingsOverlay() {
-  const { config, interactive, setScale, setOpacity, setTransparentBackground } = useOverlay();
+  const m = useMessages();
+  const { config, interactive, setScale, setOpacity, setTransparentBackground, setStyle } = useOverlay();
   const [session, setSession] = useState<SessionSnapshot>({ rooms: [], skipped: [] });
   /**
    * Whether the feed is actually reading anything.
@@ -82,7 +84,7 @@ export function SettingsOverlay() {
     <OverlayShell
       title={
         <span className="font-semibold tracking-wide uppercase">
-          AOW5 <span className="text-muted-foreground">settings</span>
+          {m.window.brand} <span className="text-muted-foreground">{m.window.settings}</span>
         </span>
       }
       // A page of controls, not a readout: there is no one-line version of it,
@@ -92,7 +94,7 @@ export function SettingsOverlay() {
       interactive={interactive}
       hotkey={config?.hotkey ?? 'Ctrl+Alt+T'}
       actions={
-        <ChromeButton label="Close this window" onClick={close} className="hover:text-destructive">
+        <ChromeButton label={m.common.close} onClick={close} className="hover:text-destructive">
           <X className="size-3.5" />
         </ChromeButton>
       }
@@ -107,6 +109,7 @@ export function SettingsOverlay() {
         onScale={setScale}
         onOpacity={setOpacity}
         onTransparentBackground={setTransparentBackground}
+        onStyle={setStyle}
       />
     </OverlayShell>
   );

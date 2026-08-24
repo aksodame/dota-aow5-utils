@@ -31,6 +31,21 @@ function currentOverlay(): OverlayId {
   return OVERLAY_IDS.find((id) => id === asked) ?? 'farm';
 }
 
+/**
+ * What Windows is set to, as main read it off `app.getLocale()`.
+ *
+ * On the query string beside `overlay` rather than fetched over a channel,
+ * because it is the same kind of fact: fixed for the life of the window, known
+ * before the renderer starts, and needed by the very first paint — a language
+ * that arrived a frame late would show every window in English and then swap.
+ *
+ * Empty when a window was somehow opened without it, which `resolveLocale`
+ * reads as "no idea" and answers with English.
+ */
+function systemLocale(): string {
+  return new URLSearchParams(window.location.search).get('locale') ?? '';
+}
+
 const overlay = currentOverlay();
 
 /** Subscribes and hands back an unsubscribe, so React effects clean up properly. */
@@ -44,6 +59,7 @@ function on<T>(channel: string, handler: (payload: T) => void): () => void {
 
 const api: TrackerApi = {
   overlay,
+  systemLocale: systemLocale(),
 
   onEvent: (handler: (event: TrackerEvent) => void) => on<TrackerEvent>('tracker:event', handler),
   onStatus: (handler: (status: TrackerStatus) => void) => on<TrackerStatus>('tracker:status', handler),

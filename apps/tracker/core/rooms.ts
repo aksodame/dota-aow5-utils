@@ -13,10 +13,13 @@
  * `src/features/items/table.ts`.
  */
 
+import type { Locale } from './locale.ts';
+
 /** One row of `data/rooms.json`. Every field optional — it is extracted data, not a contract. */
 export interface RoomRow {
   en?: string;
   ru?: string;
+  zh?: string;
   type?: string;
   level?: number;
 }
@@ -48,16 +51,19 @@ export class RoomTable {
   }
 
   /**
-   * English, matching the item table.
+   * One language of the table, matching the item table's.
    *
-   * `rooms.json` carries `ru` as well, but the overlay's own chrome is English
-   * and translating the room names alone would produce a half-translated panel.
+   * `rooms.json` carries all three, extracted from the same `name_*` tokens the
+   * addon prints the room line with, so a room reads here exactly as it reads
+   * on the loading screen. English is the fallback per row rather than per
+   * table: a room the extraction has caught up with in one language and not
+   * another should show the name it has, not the id.
    */
-  static from(rows: Record<string, RoomRow>): RoomTable {
+  static from(rows: Record<string, RoomRow>, locale: Locale): RoomTable {
     return new RoomTable(
       Object.entries(rows).map(([id, row]) => ({
         id,
-        name: row.en ?? id,
+        name: row[locale] ?? row.en ?? id,
         type: row.type ?? 'unknown',
         level: row.level ?? 0,
       })),

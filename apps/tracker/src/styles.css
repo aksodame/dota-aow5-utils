@@ -38,6 +38,10 @@
   /*
    * Item rarity tints, the planner's dark-theme values verbatim — the overlay
    * is always dark, so the lighter light-theme set never applies.
+   *
+   * These are the one group a style may not touch. A player learns what a
+   * purple name means once and reads it for a thousand hours; a skin that
+   * recoloured rarity would be a skin that lies about the loot.
    */
   --quality-0: #6b7280;
   --quality-1: #9ca3af;
@@ -47,6 +51,100 @@
   --quality-5: #f472b6;
   --quality-6: #fb923c;
   --quality-7: #fbbf24;
+
+  /*
+   * What a panel is made of, as four numbers the skins disagree about.
+   *
+   * `.hud-panel` below is written against these rather than against literals,
+   * so a style is a block of custom properties and never a second copy of the
+   * rule. See `core/style.ts` for why that boundary is drawn so tightly.
+   */
+  --hud-blur: 10px;
+  --hud-border-width: 1px;
+  --hud-radius: var(--radius);
+  --hud-shadow: 0 8px 28px oklch(0 0 0 / 45%);
+  --hud-font: 'Segoe UI', system-ui, sans-serif;
+  /*
+   * The panel's outer edge, kept apart from `--border`.
+   *
+   * They are the same line here and very much not in Torchlight, where the
+   * frame is a bright orange rule around a panel whose internal hairlines stay
+   * dark. One token for "the edge of the slab", another for "a division inside
+   * it".
+   */
+  --hud-frame: var(--border);
+}
+
+/*
+ * Torchlight: the ARPG loot-tracker skin.
+ *
+ * Selected by `data-style` on the root element, which the shell writes from
+ * config — one attribute, no remount, so the change lands under the click that
+ * made it (see `useOverlay`).
+ *
+ * This is only half of the style. The other half is `TorchlightHud`, which
+ * arranges the readout completely differently — one headline number and a band
+ * of ruled cells instead of a grid of equals. Colour alone was never going to
+ * get there; see `core/style.ts` for where that line is drawn.
+ *
+ * The palette is cooler than it looks at a glance. The slab is a dark blue-grey
+ * rather than anything warm, and the *only* saturated colour on the panel is
+ * the orange — which is spent on headings and on nothing else. Figures are a
+ * warm off-white, because in this idiom a number is not decorated; it is the
+ * thing you read, and colouring all of them would leave the accent with nothing
+ * left to point at.
+ */
+:root[data-style='torchlight'] {
+  /* All but square. This idiom builds its panels out of straight edges, and a
+     10px radius reads as a web card however it is coloured. */
+  --radius: 0.1875rem;
+
+  --background: oklch(0.15 0.012 260);
+  --foreground: oklch(0.97 0.003 260);
+  /* Barely lit. The slab is a ground for the orange, not a colour of its own. */
+  --card: oklch(0.185 0.015 258);
+  --card-foreground: oklch(0.97 0.003 260);
+  --popover: oklch(0.21 0.016 258);
+  --popover-foreground: oklch(0.97 0.003 260);
+  /* The one saturated colour in the skin: headings, the frame, custom prices. */
+  --primary: oklch(0.72 0.19 47);
+  --primary-foreground: oklch(0.16 0.012 258);
+  --secondary: oklch(0.26 0.018 258);
+  --secondary-foreground: oklch(0.97 0.003 260);
+  --muted: oklch(0.26 0.018 258);
+  --muted-foreground: oklch(0.63 0.014 258);
+  --accent: oklch(0.3 0.02 258);
+  --accent-foreground: oklch(0.97 0.003 260);
+  --destructive: oklch(0.63 0.21 27);
+  /* Hairlines *inside* the panel stay dark and cool. Only the outer frame is
+     orange — see `--hud-frame`, which is why the two are separate tokens. */
+  --border: oklch(0.33 0.018 258);
+  --input: oklch(0.38 0.02 258);
+  --ring: oklch(0.72 0.19 47);
+
+  /*
+   * Warm off-white, not gold.
+   *
+   * The reference prints its totals in plain white and keeps orange for the
+   * headings; going gold here would put three competing accents on one panel.
+   * A trace of warmth is left in so a figure is still distinguishable from body
+   * text at a glance.
+   */
+  --gold: oklch(0.93 0.045 78);
+
+  --hud-frame: oklch(0.68 0.2 47);
+  --hud-blur: 4px;
+  --hud-border-width: 1px;
+  --hud-radius: var(--radius);
+  /* A cast shadow, then a dim orange bloom just outside the frame. The bloom is
+     what stops a 1px line from disappearing against a bright game. */
+  --hud-shadow:
+    0 8px 24px oklch(0 0 0 / 60%),
+    0 0 10px -2px oklch(0.68 0.2 47 / 35%);
+  /* Sans, deliberately. The reference is a condensed UI face, not a fantasy
+     serif — and a serif would be the wrong call for the Chinese catalog
+     regardless. */
+  --hud-font: 'Segoe UI', system-ui, sans-serif;
 }
 
 @theme inline {
@@ -107,7 +205,9 @@
     margin: 0;
     background: transparent;
     color: var(--foreground);
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    /* The skin's, not a literal: an ARPG readout is a serif thing, and a
+       bronze panel set in Segoe UI reads as a recoloured web app. */
+    font-family: var(--hud-font);
     overflow: hidden;
     /* The overlay is click-through; text selection would only ever be a bug. */
     user-select: none;
@@ -134,10 +234,10 @@
   */
   .hud-panel {
     background: color-mix(in oklab, var(--card) var(--hud-panel-alpha, 82%), transparent);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: 0 8px 28px oklch(0 0 0 / 45%);
+    backdrop-filter: blur(var(--hud-blur));
+    border: var(--hud-border-width) solid var(--hud-frame);
+    border-radius: var(--hud-radius);
+    box-shadow: var(--hud-shadow);
   }
 
   /*
@@ -186,5 +286,134 @@
   }
   .hud-no-drag {
     -webkit-app-region: no-drag;
+  }
+
+  /*
+    The Torchlight layout's own pieces.
+    ----------------------------------------------------------------------
+
+    Classes rather than utilities on the elements, for the parts whose *look* is
+    the theme's business rather than the layout's: a third skin that wanted to
+    reuse `TorchlightHud` unchanged would redefine these and nothing else.
+    Anything that is arrangement — the flex rows, the widths, the truncation —
+    stays in the component, where it can be read next to the thing it arranges.
+  */
+
+  /*
+    The frame around the readout, and the rules that divide it.
+
+    The single most important thing about this layout, and the thing a row of
+    cards cannot imitate: the cells run edge to edge with a hairline between
+    them and no gap at all, so the block reads as one instrument with several
+    dials rather than as five widgets that happen to be adjacent.
+  */
+  .hud-tl-grid {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: oklch(0 0 0 / 22%);
+  }
+
+  /* A division between cells. `-s` is the inline start edge, so it follows the
+     text direction rather than assuming left-to-right. */
+  .hud-tl-rule-s {
+    border-inline-start: 1px solid var(--border);
+  }
+  .hud-tl-rule-t {
+    border-top: 1px solid var(--border);
+  }
+
+  /* The small grey heading over every figure in the layout. Uppercase and
+     letter-spaced at 0.5rem, under the minimal skin's smallest label — it can
+     be, because these sit over numbers two to six times their size. */
+  .hud-tl-label {
+    font-size: 0.5rem;
+    letter-spacing: 0.09em;
+    line-height: 1.3;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  /* The headline's own heading, which is the one label on the panel that is
+     not grey. Orange, because it names the number the layout is built around. */
+  .hud-tl-heading {
+    font-size: 0.5rem;
+    letter-spacing: 0.09em;
+    line-height: 1.3;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  /* The dot before it. Four pixels of "this one". */
+  .hud-tl-dot {
+    width: 0.25rem;
+    height: 0.25rem;
+    flex: none;
+    border-radius: 9999px;
+    background: var(--primary);
+  }
+
+  /*
+    The headline figure. The largest thing on the panel by a long way, and the
+    only place in the app that sets a size in rem directly rather than picking a
+    Tailwind step — the steps stop before they get here.
+  */
+  .hud-tl-headline {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--gold);
+  }
+
+  /* Its icon, sized to the number beside it rather than to the other icons. */
+  .hud-tl-headline-icon {
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 2px;
+  }
+
+  /* `(×8)` beside the headline: a footnote to the number, not a second one. */
+  .hud-tl-trailing {
+    font-size: 0.625rem;
+    color: var(--muted-foreground);
+  }
+
+  /* The leftovers line: small, and one band whatever it holds. */
+  .hud-tl-strip {
+    font-size: 0.5625rem;
+    line-height: 1.5;
+    background: oklch(0 0 0 / 22%);
+  }
+
+  /*
+    The loot heading, in the accent.
+
+    Under `[data-style]` rather than in the layout, because `LootList` is shared
+    and has no business knowing which skin it is drawn in — this is exactly the
+    kind of difference a token block should be able to make on its own.
+  */
+  :root[data-style='torchlight'] .hud-loot-head {
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  /* The room's worth, on the heading's line. */
+  .hud-loot-total {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: var(--gold);
+  }
+
+  /*
+    The room line loses its slab in this skin.
+
+    `StateLine` is chrome shared by both styles and draws itself on a rounded
+    tinted block, which is right on a panel made of blocks and wrong on one made
+    of rules — there it reads as a sixth widget stacked on top of the
+    instrument. Flattening it is a theme decision, so it is made here.
+  */
+  :root[data-style='torchlight'] .hud-state-line {
+    background: transparent;
+    padding-inline: 0.125rem;
   }
 }

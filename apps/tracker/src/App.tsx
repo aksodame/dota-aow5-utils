@@ -4,6 +4,7 @@ import { FarmOverlay } from '@/overlays/farm/FarmOverlay';
 import { HistoryOverlay } from '@/overlays/history/HistoryOverlay';
 import { RecipeOverlay } from '@/overlays/recipe/RecipeOverlay';
 import { SettingsOverlay } from '@/overlays/settings/SettingsOverlay';
+import { I18nProvider } from '@/i18n';
 
 /**
  * Which overlay this window is.
@@ -20,7 +21,18 @@ const OVERLAYS: Record<OverlayId, ComponentType> = {
   settings: SettingsOverlay,
 };
 
+/**
+ * The provider wraps every window rather than only the ones with prose in them.
+ *
+ * All four say something — the recipe panel's are all tooltips and aria labels,
+ * which is exactly the text a translation is for — and a language that applied
+ * to three windows out of four would be worse than none.
+ */
 export default function App() {
   const Overlay = OVERLAYS[window.tracker.overlay];
-  return <Overlay />;
+  return (
+    <I18nProvider>
+      <Overlay />
+    </I18nProvider>
+  );
 }

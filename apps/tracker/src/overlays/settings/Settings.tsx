@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Check, Download, FolderOpen, Play, Plus, RefreshCw, RotateCw, Scissors, Volume2, X } from 'lucide-react';
-import { CARD_IDS, CARD_INFO, DEFAULT_CARDS, readCards, type CardId } from '@core/cards.ts';
-import { iconUrl, qualityColor } from '@core/items.ts';
+import { CARD_IDS, DEFAULT_CARDS, readCards, type CardId } from '@core/cards.ts';
+import { iconUrl, qualityColor, type ItemTable } from '@core/items.ts';
+import { LOCALES, type LanguageSetting } from '@core/locale.ts';
 import { BUILTIN_JACKPOT, DEFAULT_SOUNDS, LIMIT, soundLabel, VOLUME, type SoundSettings } from '@core/sounds.ts';
+import { DEFAULT_STYLE, TRACKER_STYLES, type TrackerStyle } from '@core/style.ts';
 import {
   OPACITY,
   UI_SCALE,
@@ -21,8 +23,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import type { Pricing } from '@/features/items/prices';
 import { useSoundPreview } from '@/features/sounds/useSoundPreview';
-import { itemTable } from '@/features/items/table';
-import { roomTable } from '@/features/rooms/table';
+import { useItems } from '@/features/items/table';
+import { useRooms } from '@/features/rooms/table';
+import { useMessages, type Messages } from '@/i18n';
 import { clock, compact, percent } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +55,7 @@ interface Props {
   onScale: (next: number) => void;
   onOpacity: (next: number) => void;
   onTransparentBackground: (next: boolean) => void;
+  onStyle: (next: TrackerStyle) => void;
 }
 
 export function Settings({
@@ -64,7 +68,11 @@ export function Settings({
   onScale,
   onOpacity,
   onTransparentBackground,
+  onStyle,
 }: Props) {
+  const m = useMessages();
+  const itemTable = useItems();
+  const roomTable = useRooms();
   const [query, setQuery] = useState('');
   const [priceQuery, setPriceQuery] = useState('');
   const [trim, setTrim] = useState<LogTrim | null>(null);
@@ -123,29 +131,58 @@ export function Settings({
     <ScrollArea className="min-h-0 flex-1" viewportClassName="hud-fade-bottom">
       <div className="space-y-5 pe-2 pb-4 text-xs">
         {/*
-          First, because it is the only setting here that changes what the
-          numbers *say* — everything below it changes where they are drawn or
-          which of them are drawn. The tracked list follows because it is the
-          same gesture, find an item and say something about it, and because
-          the two together are the whole of "what am I farming for".
+          Above everything, and it is the one section whose position is not
+          about farming.
+
+          It is the setting that changes every other setting's own words, so a
+          player who cannot read this panel has to be able to find it without
+          reading it — and its four buttons are the only controls here that are
+          legible whatever language the panel is currently in, because each
+          language is named in itself. Anywhere further down and finding it
+          would mean scrolling through a page of prose you cannot read.
         */}
         <section className="space-y-1.5">
-          <Label>Item prices</Label>
-          <p className="text-[0.625rem] text-muted-foreground">
-            The tables carry what an item sells for, which is not always what it is worth to you. Set your own and
-            every gold figure follows it: g/hr, the session total, the loot list and the archive alike. Items you say
-            nothing about keep the table price.
-          </p>
+          <Label>{m.settings.language.title}</Label>
+          <p className="text-[0.625rem] text-muted-foreground">{m.settings.language.blurb}</p>
+          <div className="flex gap-1">
+            <Choice
+              active={(config?.language ?? 'auto') === 'auto'}
+              onClick={() => void window.tracker.setConfig({ language: 'auto' })}
+            >
+              {m.settings.language.auto}
+            </Choice>
+            {LOCALES.map((locale) => (
+              <Choice
+                key={locale}
+                active={config?.language === locale}
+                onClick={() => void window.tracker.setConfig({ language: locale satisfies LanguageSetting })}
+              >
+                {m.settings.language[locale]}
+              </Choice>
+            ))}
+          </div>
+        </section>
+
+        {/*
+          First of the farming settings, because it is the only one that changes
+          what the numbers *say* — everything below it changes where they are
+          drawn or which of them are drawn. The tracked list follows because it
+          is the same gesture, find an item and say something about it, and
+          because the two together are the whole of "what am I farming for".
+        */}
+        <section className="space-y-1.5">
+          <Label>{m.settings.prices.title}</Label>
+          <p className="text-[0.625rem] text-muted-foreground">{m.settings.prices.blurb}</p>
           <CheckboxRow
-            label="Trader pays half"
-            hint="The trader buys at half the table price, so value every unpriced drop at half. Prices you set below are used exactly as you set them, either way."
+            label={m.settings.prices.halve}
+            hint={m.settings.prices.halveHint}
             checked={config?.halvePrices ?? false}
             onChange={(next) => void window.tracker.setConfig({ halvePrices: next })}
           />
           <Input
             value={priceQuery}
             onChange={(e) => setPriceQuery(e.target.value)}
-            placeholder="Search an item to price…"
+            placeholder={m.settings.prices.search}
             className="h-7 text-xs"
           />
 
@@ -190,6 +227,8 @@ export function Settings({
                   id={id}
                   gold={gold}
                   tablePrice={pricing.table(id)}
+                  items={itemTable}
+                  m={m}
                   onCommit={(next) => setPrice(id, next)}
                   onClear={() => clearPrice(id)}
                 />
@@ -199,15 +238,12 @@ export function Settings({
         </section>
 
         <section className="space-y-1.5">
-          <Label>Tracked items</Label>
-          <p className="text-[0.625rem] text-muted-foreground">
-            Pin the items you care about and the expanded readout lists only those, with a session total to match.
-            With none pinned, everything picked up is listed. History always records the lot, whatever is pinned here.
-          </p>
+          <Label>{m.settings.tracked.title}</Label>
+          <p className="text-[0.625rem] text-muted-foreground">{m.settings.tracked.blurb}</p>
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name…"
+            placeholder={m.settings.tracked.search}
             className="h-7 text-xs"
           />
 
@@ -246,7 +282,11 @@ export function Settings({
               {tracked.map((id) => (
                 <Badge key={id} variant="secondary" className="gap-1 py-0 ps-1.5 pe-1 text-[0.625rem]">
                   {itemTable.get(id).name}
-                  <button type="button" onClick={() => toggle(id)} aria-label={`Stop tracking ${id}`}>
+                  <button
+                    type="button"
+                    onClick={() => toggle(id)}
+                    aria-label={m.settings.tracked.untrack(itemTable.get(id).name)}
+                  >
                     <X className="size-3 hover:text-destructive" />
                   </button>
                 </Badge>
@@ -263,10 +303,10 @@ export function Settings({
           a blanket setting.
         */}
         <section className="space-y-1.5">
-          <Label>Sounds</Label>
+          <Label>{m.settings.sounds.title}</Label>
           <CheckboxRow
-            label="Play a sound on drops"
-            hint="Rings once per pickup of a bound item. Crimson Heart comes bound to the jackpot sound; unbind it and it stays unbound."
+            label={m.settings.sounds.enabled}
+            hint={m.settings.sounds.enabledHint}
             checked={sounds.enabled}
             onChange={(next) => setSounds({ enabled: next })}
           />
@@ -274,7 +314,7 @@ export function Settings({
           {sounds.enabled && (
             <>
               <SliderRow
-                label="Volume"
+                label={m.settings.sounds.volume}
                 value={sounds.volume}
                 min={VOLUME.min}
                 max={VOLUME.max}
@@ -286,27 +326,27 @@ export function Settings({
               {/* A notification that outlasts the moment it is about becomes
                   something to sit through, so it is capped by default. */}
               <CheckboxRow
-                label="Cut long sounds"
-                hint="Fade the sound out after a few seconds instead of playing the whole file."
+                label={m.settings.sounds.limit}
+                hint={m.settings.sounds.limitHint}
                 checked={sounds.limitSeconds !== null}
                 onChange={(next) => setSounds({ limitSeconds: next ? LIMIT.default : null })}
               />
               {sounds.limitSeconds !== null && (
                 <SliderRow
-                  label="Cut after"
+                  label={m.settings.sounds.limitAfter}
                   value={sounds.limitSeconds}
                   min={LIMIT.min}
                   max={LIMIT.max}
                   step={LIMIT.step}
                   onChange={(next) => setSounds({ limitSeconds: next })}
-                  format={(v) => `${v}s`}
+                  format={m.settings.sounds.seconds}
                 />
               )}
 
               <Input
                 value={soundQuery}
                 onChange={(e) => setSoundQuery(e.target.value)}
-                placeholder="Search an item to bind a sound…"
+                placeholder={m.settings.sounds.search}
                 className="h-7 text-xs"
               />
 
@@ -359,13 +399,28 @@ export function Settings({
                         <span className="w-20 shrink-0 truncate text-right text-[0.5rem] text-muted-foreground" title={ref}>
                           {soundLabel(ref)}
                         </span>
-                        <button type="button" onClick={() => preview(ref)} aria-label={`Play ${soundLabel(ref)}`} title="Play it">
+                        <button
+                          type="button"
+                          onClick={() => preview(ref)}
+                          aria-label={m.settings.sounds.play(soundLabel(ref))}
+                          title={m.settings.sounds.playHint}
+                        >
                           <Play className="size-3 text-muted-foreground hover:text-foreground" />
                         </button>
-                        <button type="button" onClick={() => rebind(id)} aria-label={`Choose a sound for ${info.name}`} title="Choose a file">
+                        <button
+                          type="button"
+                          onClick={() => rebind(id)}
+                          aria-label={m.settings.sounds.pick(info.name)}
+                          title={m.settings.sounds.pickHint}
+                        >
                           <FolderOpen className="size-3 text-muted-foreground hover:text-foreground" />
                         </button>
-                        <button type="button" onClick={() => unbind(id)} aria-label={`Unbind ${info.name}`} title="Unbind">
+                        <button
+                          type="button"
+                          onClick={() => unbind(id)}
+                          aria-label={m.settings.sounds.unbind(info.name)}
+                          title={m.settings.sounds.unbindHint}
+                        >
                           <X className="size-3 text-muted-foreground hover:text-destructive" />
                         </button>
                       </li>
@@ -384,10 +439,10 @@ export function Settings({
           measured and an evening of zeros.
         */}
         <section className="space-y-1.5">
-          <Label>Session</Label>
+          <Label>{m.settings.session.title}</Label>
           <CheckboxRow
-            label="Start the clock on the first room"
-            hint="A session begins paused, so the tracker can sit open while Dota loads without counting that as farming. With this on, walking into a room presses play for you. A pause you press mid-session still holds until the next room."
+            label={m.settings.session.autoResume}
+            hint={m.settings.session.autoResumeHint}
             checked={config?.autoResume ?? true}
             onChange={(next) => void window.tracker.setConfig({ autoResume: next })}
           />
@@ -399,22 +454,18 @@ export function Settings({
           after a session or two of reading past a number they do not use.
         */}
         <section className="space-y-1.5">
-          <Label>HUD cards</Label>
-          <p className="text-[0.625rem] text-muted-foreground">
-            The stat cards on the farm overlay, drawn three to a row in the order below. Turning one off closes the
-            space and the rest keep their order, so the row is always full from the left. The order itself is fixed:
-            the rows are meant to be read as the session and the map.
-          </p>
+          <Label>{m.settings.cards.title}</Label>
+          <p className="text-[0.625rem] text-muted-foreground">{m.settings.cards.blurb}</p>
           {CARD_IDS.map((id) => {
-            const info = CARD_INFO[id];
+            const hint = m.settings.cards.hint[id];
             const on = cards.includes(id);
             return (
               <CheckboxRow
                 key={id}
-                label={info.name}
+                label={m.settings.cards.name[id]}
                 // The last one on says why it cannot be turned off, rather than
                 // being a checkbox that silently ignores the click.
-                hint={on && last ? `${info.hint} The HUD needs one card; turn another on to free this one.` : info.hint}
+                hint={on && last ? m.settings.cards.lastOne(hint) : hint}
                 checked={on}
                 disabled={on && last}
                 onChange={(next) => toggleCard(id, next)}
@@ -429,7 +480,28 @@ export function Settings({
           find without reading, where the one above is a list you have to.
         */}
         <section className="space-y-1.5">
-          <Label>Appearance</Label>
+          <Label>{m.settings.appearance.title}</Label>
+
+          {/*
+            The style leads the section, because it is the control that decides
+            what the two below are adjusting. Transparency and scale are knobs
+            on a panel; this one chooses which panel.
+          */}
+          <div className="space-y-1">
+            <div className="flex gap-1">
+              {TRACKER_STYLES.map((option) => (
+                <Choice
+                  key={option}
+                  active={(config?.style ?? DEFAULT_STYLE) === option}
+                  onClick={() => onStyle(option)}
+                  title={m.settings.style[option === 'minimal' ? 'minimalHint' : 'torchlightHint']}
+                >
+                  {m.settings.style[option]}
+                </Choice>
+              ))}
+            </div>
+            <p className="text-[0.625rem] text-muted-foreground">{m.settings.style.blurb}</p>
+          </div>
 
           {/*
             Transparency is the panel's, never the window's — the numbers stay
@@ -438,15 +510,15 @@ export function Settings({
             there dead.
           */}
           <CheckboxRow
-            label="Transparent background"
-            hint="Let the game show through the panel. The readout stays solid either way."
+            label={m.settings.appearance.transparent}
+            hint={m.settings.appearance.transparentHint}
             checked={transparentBackground}
             onChange={onTransparentBackground}
           />
 
           {transparentBackground && (
             <SliderRow
-              label="Background"
+              label={m.settings.appearance.background}
               value={config?.opacity ?? OPACITY.default}
               min={OPACITY.min}
               max={OPACITY.max}
@@ -457,7 +529,7 @@ export function Settings({
           )}
 
           <SliderRow
-            label="UI scale"
+            label={m.settings.appearance.scale}
             value={config?.uiScale ?? UI_SCALE.default}
             min={UI_SCALE.min}
             max={UI_SCALE.max}
@@ -466,11 +538,7 @@ export function Settings({
             format={percent}
           />
 
-          <p className="text-[0.625rem] text-muted-foreground">
-            Ctrl +/− also changes the scale, and Ctrl+Alt +/− does it without clicking in first. The chevron collapses
-            the panel to its cards, which are as tall as they are — so there the corner drags width only. Expanded, it
-            keeps the height you drag it to.
-          </p>
+          <p className="text-[0.625rem] text-muted-foreground">{m.settings.appearance.blurb}</p>
         </section>
 
         {/*
@@ -488,11 +556,8 @@ export function Settings({
           HUD's title bar, in development builds.
         */}
         <section className="space-y-1.5">
-          <Label>Console log</Label>
-          <p className="text-[0.625rem] text-muted-foreground">
-            Dota writes its client console to a file when you launch it with <code>-con_logfile</code>. Point the
-            tracker at that file and it reads the game's own tracker lines as they land.
-          </p>
+          <Label>{m.settings.log.title}</Label>
+          <p className="text-[0.625rem] text-muted-foreground">{m.settings.log.blurb}</p>
           <div className="flex items-center gap-1">
             {/* What the tail is doing with that path. An overlay showing zeros
               looks identical to a broken one, and this is the sentence that
@@ -508,19 +573,19 @@ export function Settings({
               className="min-w-0 flex-1 truncate rounded-md bg-black/25 px-2 py-1 text-[0.625rem] text-muted-foreground"
               title={config?.logFile}
             >
-              {config?.logFile ?? 'Not set'}
+              {config?.logFile ?? m.common.notSet}
             </span>
             <Button
               variant="outline"
               className="h-7 shrink-0 text-xs"
               onClick={() => void window.tracker.pickLogFile()}
             >
-              <FolderOpen className="size-3.5" /> Choose
+              <FolderOpen className="size-3.5" /> {m.common.choose}
             </Button>
           </div>
-          <Label>Optimization</Label>
+          <Label>{m.settings.log.optimization}</Label>
           <CheckboxRow
-            label="Keep the log small"
+            label={m.settings.log.trim}
             checked={config?.trimLog ?? true}
             onChange={(next) => void window.tracker.setConfig({ trimLog: next })}
           />
@@ -533,24 +598,24 @@ export function Settings({
               className="h-7 shrink-0 text-xs"
               onClick={() => void window.tracker.compactLog().then(setTrim)}
             >
-              <Scissors className="size-3.5" /> Trim now
+              <Scissors className="size-3.5" /> {m.settings.log.trimNow}
             </Button>
             <span className="min-w-0 flex-1 truncate text-[0.625rem] text-muted-foreground">
-              {trim === null ? '' : describeTrim(trim)}
+              {trim === null ? '' : m.trim(trim, megabytes)}
             </span>
           </div>
         </section>
 
         {rooms.length > 0 && (
           <section className="space-y-1.5">
-            <Label>Per room</Label>
+            <Label>{m.settings.rooms.title}</Label>
             <table className="w-full text-[0.625rem] tabular-nums">
               <thead className="text-muted-foreground">
                 <tr>
-                  <th className="text-left font-medium">room</th>
-                  <th className="text-right font-medium">runs</th>
-                  <th className="text-right font-medium">avg</th>
-                  <th className="text-right font-medium">items</th>
+                  <th className="text-left font-medium">{m.settings.rooms.room}</th>
+                  <th className="text-right font-medium">{m.settings.rooms.runs}</th>
+                  <th className="text-right font-medium">{m.settings.rooms.average}</th>
+                  <th className="text-right font-medium">{m.settings.rooms.items}</th>
                 </tr>
               </thead>
               <tbody>
@@ -562,7 +627,7 @@ export function Settings({
                       {roomTable.name(r.room)}
                     </td>
                     <td className="text-right">{r.runs}</td>
-                    <td className="text-right">{r.averageClear > 0 ? clock(r.averageClear) : '—'}</td>
+                    <td className="text-right">{r.averageClear > 0 ? clock(r.averageClear) : m.common.none}</td>
                     <td className="text-right">{r.totalItems}</td>
                   </tr>
                 ))}
@@ -573,10 +638,8 @@ export function Settings({
 
         {skipped.length > 0 && (
           <section className="space-y-1">
-            <Label>Unreadable lines</Label>
-            <p className="text-[0.625rem] text-muted-foreground">
-              The game emitted tracker lines this build could not use — most likely a schema change.
-            </p>
+            <Label>{m.settings.skipped.title}</Label>
+            <p className="text-[0.625rem] text-muted-foreground">{m.settings.skipped.blurb}</p>
             <ul className="space-y-0.5 text-[0.625rem] text-destructive">
               {skipped.slice(-5).map((s, i) => (
                 <li key={i} className="truncate" title={s.line}>
@@ -593,11 +656,12 @@ export function Settings({
           rather than something you notice on the way past.
         */}
         <section className="space-y-1.5">
-          <Label>About</Label>
+          <Label>{m.settings.about.title}</Label>
           <p className="text-[0.625rem] text-muted-foreground">
-            AOW5 Tracker <span className="tabular-nums text-foreground">{update?.current ?? '—'}</span>
+            {m.settings.about.app}{' '}
+            <span className="tabular-nums text-foreground">{update?.current ?? m.common.none}</span>
           </p>
-          <UpdateRow state={update} />
+          <UpdateRow state={update} m={m} />
         </section>
       </div>
     </ScrollArea>
@@ -617,18 +681,13 @@ export function Settings({
  * here: main answers it with a real dialog, because a modal drawn inside a
  * frameless transparent overlay would have nothing to sit on.
  */
-function UpdateRow({ state }: { state: UpdateState | null }) {
+function UpdateRow({ state, m }: { state: UpdateState | null; m: Messages }) {
   // Before the first message from main. A button that might be about to
   // disable itself is worse than a beat of nothing.
   if (state === null) return null;
 
   if (state.status === 'unsupported') {
-    return (
-      <p className="text-[0.625rem] text-muted-foreground">
-        Updates are for an installed build. This one runs from the source tree, so it updates the way the source
-        tree does.
-      </p>
-    );
+    return <p className="text-[0.625rem] text-muted-foreground">{m.update.unsupportedBlurb}</p>;
   }
 
   const busy = state.status === 'checking' || state.status === 'downloading';
@@ -644,15 +703,16 @@ function UpdateRow({ state }: { state: UpdateState | null }) {
       <Button variant="outline" className="h-7 shrink-0 text-xs" disabled={busy} onClick={press}>
         {state.status === 'available' ? (
           <>
-            <Download className="size-3.5" /> Download
+            <Download className="size-3.5" /> {m.update.download}
           </>
         ) : state.status === 'ready' ? (
           <>
-            <RotateCw className="size-3.5" /> Restart and update
+            <RotateCw className="size-3.5" /> {m.update.restart}
           </>
         ) : (
           <>
-            <RefreshCw className={cn('size-3.5', state.status === 'checking' && 'animate-spin')} /> Check for updates
+            <RefreshCw className={cn('size-3.5', state.status === 'checking' && 'animate-spin')} />{' '}
+            {m.update.check}
           </>
         )}
       </Button>
@@ -661,9 +721,9 @@ function UpdateRow({ state }: { state: UpdateState | null }) {
           'min-w-0 flex-1 truncate text-[0.625rem]',
           state.status === 'error' ? 'text-destructive' : 'text-muted-foreground',
         )}
-        title={describeUpdate(state)}
+        title={describe(state, m)}
       >
-        {describeUpdate(state)}
+        {describe(state, m)}
       </span>
     </div>
   );
@@ -672,29 +732,14 @@ function UpdateRow({ state }: { state: UpdateState | null }) {
 /**
  * Where the updater is, in a sentence.
  *
- * `ready` says what pressing the button will cost, because the dialog that
- * says it properly only appears after the press — and somebody who has just
- * sat down to farm should be able to decide not to from here.
+ * The sentences themselves live in the catalogs; what stays here is the one
+ * thing that is not a translation — cutting GitHub's release notes down to
+ * something that fits on a row before handing them over. Doing that inside each
+ * catalog would be the same regex written three times.
  */
-function describeUpdate(state: UpdateState): string {
-  switch (state.status) {
-    case 'unsupported':
-      return 'Only an installed build can update itself.';
-    case 'idle':
-      return '';
-    case 'checking':
-      return 'Asking GitHub…';
-    case 'current':
-      return 'This is the newest build.';
-    case 'available':
-      return state.notes === null ? `${state.version} is out.` : `${state.version} is out — ${firstLine(state.notes)}`;
-    case 'downloading':
-      return `Downloading ${state.version}… ${state.percent}%`;
-    case 'ready':
-      return `${state.version} is ready. Restarting ends the run you are in.`;
-    case 'error':
-      return `Could not check: ${state.message}`;
-  }
+function describe(state: UpdateState, m: Messages): string {
+  const notes = state.status === 'available' && state.notes !== null ? firstLine(state.notes) : null;
+  return m.update.describe(state, notes);
 }
 
 /**
@@ -713,27 +758,13 @@ function firstLine(notes: string): string {
 }
 
 /**
- * What a trim did, in a sentence.
+ * Bytes as megabytes, for the sentence a trim produces.
  *
- * `in-use` means the rewrite was attempted and the filesystem refused, which
- * on Windows is what a file another process holds open looks like. The error
- * code rides along because it is the difference between "the game has it",
- * which is expected and harmless, and something else entirely — and the two
- * used to print the same sentence.
+ * Handed to the catalog rather than written in it, so all three report the same
+ * number in the same unit and only the words around it differ — see `m.trim`,
+ * which is where the sentences went.
  */
-function describeTrim(trim: LogTrim): string {
-  const mb = (bytes: number) => `${(bytes / 1_048_576).toFixed(2)} MB`;
-  switch (trim.skipped) {
-    case 'in-use':
-      return `Dota still has the file open${trim.error ? ` (${trim.error})` : ''} — ${mb(trim.before)} for now.`;
-    case 'missing':
-      return 'No log there yet. Dota writes it when you launch with -con_logfile.';
-    case 'small':
-      return 'Nothing in it but tracker lines already.';
-    default:
-      return `${mb(trim.before)} → ${mb(trim.after)}, ${trim.kept} tracker lines kept.`;
-  }
-}
+const megabytes = (bytes: number): string => `${(bytes / 1_048_576).toFixed(2)} MB`;
 
 /**
  * One priced item: what it is, what you say it is worth, and the way back.
@@ -747,6 +778,8 @@ function PriceRow({
   id,
   gold,
   tablePrice,
+  items,
+  m,
   onCommit,
   onClear,
 }: {
@@ -754,10 +787,12 @@ function PriceRow({
   gold: number;
   /** What it would fetch with no price of its own — the trader's cut already taken. */
   tablePrice: number;
+  items: ItemTable;
+  m: Messages;
   onCommit: (next: number) => void;
   onClear: () => void;
 }) {
-  const info = itemTable.get(id);
+  const info = items.get(id);
   const [draft, setDraft] = useState(String(gold));
 
   // A price changed anywhere else — another window, a reset — replaces the
@@ -780,11 +815,8 @@ function PriceRow({
         {info.name}
       </span>
       {/* "10k" + "g" reads as kilograms, so the word carries the unit instead. */}
-      <span
-        className="shrink-0 text-[0.5rem] tabular-nums text-muted-foreground"
-        title="What it would fetch without a price of its own"
-      >
-        table {compact(tablePrice)}
+      <span className="shrink-0 text-[0.5rem] tabular-nums text-muted-foreground" title={m.settings.prices.tableHint}>
+        {m.settings.prices.table(compact(tablePrice))}
       </span>
       <Input
         value={draft}
@@ -795,7 +827,7 @@ function PriceRow({
           if (e.key === 'Enter') e.currentTarget.blur();
           if (e.key === 'Escape') setDraft(String(gold));
         }}
-        aria-label={`Price for ${info.name}`}
+        aria-label={m.settings.prices.field(info.name)}
         className="h-6 w-16 shrink-0 text-right text-[0.625rem] tabular-nums"
       />
       {/* An X, because this removes the row. It was a `RotateCcw`, which is the
@@ -806,8 +838,8 @@ function PriceRow({
       <button
         type="button"
         onClick={onClear}
-        aria-label={`Remove your price for ${info.name}`}
-        title="Remove this price — back to the table price"
+        aria-label={m.settings.prices.clear(info.name)}
+        title={m.settings.prices.clearHint}
       >
         <X className="size-3 text-muted-foreground hover:text-destructive" />
       </button>
@@ -891,6 +923,44 @@ function CheckboxRow({
       </label>
       {hint !== undefined && <p className="text-[0.625rem] text-muted-foreground">{hint}</p>}
     </div>
+  );
+}
+
+/**
+ * One of a short row of mutually exclusive options.
+ *
+ * A row of buttons rather than a `<select>`, and the same shape the recipe
+ * picker uses for its two modes. Both settings that need this — the language
+ * and the style — have three or four answers, all of them a word long, and a
+ * dropdown would hide them behind a click for no width saved. It also keeps the
+ * language buttons visible without being read, which is the whole reason that
+ * section sits where it does.
+ */
+function Choice({
+  active,
+  onClick,
+  title,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  /** What this option means, for the ones a word cannot say on its own. */
+  title?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-pressed={active}
+      className={cn(
+        'flex-1 rounded px-1.5 py-1 text-[0.625rem]',
+        active ? 'bg-primary/25 text-primary' : 'bg-white/5 text-muted-foreground hover:bg-white/10',
+      )}
+    >
+      {children}
+    </button>
   );
 }
 

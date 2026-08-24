@@ -188,6 +188,10 @@ export class BuildsService {
       ...(query['hero'] !== undefined ? { hero: query['hero'] } : {}),
       ...(query['lang'] !== undefined ? { lang: query['lang'] } : {}),
       ...(query['cursor'] !== undefined ? { cursor: query['cursor'] } : {}),
+      // Clamped inside `browseBuilds`, which is also where a missing or
+      // unparseable one falls back to `PAGE_SIZE` — so `NaN` from a hand-typed
+      // query string cannot reach the statement as a limit.
+      ...(query['limit'] !== undefined ? { limit: Number(query['limit']) } : {}),
       // Anything unrecognised falls back inside browseBuilds rather than here,
       // so there is one place that decides what a sort may be.
       ...(sort !== undefined ? { sort: sort as BuildSort } : {}),
