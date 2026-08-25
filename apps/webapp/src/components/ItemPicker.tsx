@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 import type { ItemSummary } from 'aow5-shared/data';
 import { itemFitsSlot } from 'aow5-shared/types';
-import { useItemDetails } from '@/data/useItemDetails';
+import { useItemDetailsStore } from '@/data/ItemDetailsProvider';
 import type { Strings } from '@/i18n/strings';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,6 @@ interface Props {
   /** Slot-kind mask the target slot accepts; only matching items are listed. */
   slotKind: number;
   slotLabel: string;
-  lang: string;
   strings: Strings;
   onSelect: (item: ItemSummary) => void;
   onClear: () => void;
@@ -54,7 +53,6 @@ export function ItemPicker({
   currentId,
   slotKind,
   slotLabel,
-  lang,
   strings,
   onSelect,
   onClear,
@@ -64,16 +62,17 @@ export function ItemPicker({
   const [focusId, setFocusId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Only fetch the heavy detail files once the dialog has actually been opened.
-  const [everOpened, setEverOpened] = useState(false);
-  const details = useItemDetails(lang, everOpened);
+  // The board's shared store, so opening the dialog after a slot has already
+  // been hovered costs nothing — and opening it first leaves the stats there
+  // for the hover cards.
+  const details = useItemDetailsStore();
 
   useEffect(() => {
     if (!open) return;
-    setEverOpened(true);
+    details?.request();
     setQuery('');
     setFocusId(currentId);
-  }, [open, currentId]);
+  }, [open, currentId, details]);
 
   const { shown, total } = useMemo(() => {
     // Slot type first, then the text query: a potion slot never lists armour.
@@ -173,13 +172,13 @@ export function ItemPicker({
           <ScrollArea className="min-h-0">
             <ItemDetails
               summary={focused}
-              full={focused ? details.full?.[focused.id] : undefined}
-              detail={focused ? details.detail?.[focused.id] : undefined}
+              full={focused ? details?.full?.[focused.id] : undefined}
+              detail={focused ? details?.detail?.[focused.id] : undefined}
               names={byId}
               strings={strings}
-              loading={details.loading && !!focused}
+              loading={!!details?.loading && !!focused}
             />
-            {details.error && <p className="px-4 pb-4 text-sm text-destructive">{details.error}</p>}
+            {details?.error && <p className="px-4 pb-4 text-sm text-destructive">{details.error}</p>}
           </ScrollArea>
         </div>
 

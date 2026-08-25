@@ -55,6 +55,11 @@ export interface Strings {
   manaCost: string;
   castRange: string;
   craftTime: string;
+  /** The two lines above an item's stats: what kind of skill it is, and on whom. */
+  skill: string;
+  affects: string;
+  behavior: Record<'passive' | 'active' | 'toggle', string>;
+  affectsLabel: (team: 'enemy' | 'friendly' | 'both', scope: 'units' | 'heroes' | 'creeps') => string;
   pickerHint: string;
   heads_up: string;
   attribution: string;
@@ -156,6 +161,11 @@ const en: Strings = {
   manaCost: 'Mana cost',
   castRange: 'Cast range',
   craftTime: 'Craft time',
+  skill: 'Skill',
+  affects: 'Affects',
+  behavior: { passive: 'Passive', active: 'Active', toggle: 'Toggle' },
+  affectsLabel: (team, scope) =>
+    `${{ enemy: 'Enemy', friendly: 'Allied', both: 'All' }[team]} ${{ units: 'units', heroes: 'heroes', creeps: 'creeps' }[scope]}`,
   pickerHint: 'Click an item to inspect it, then place it in the slot. Double-click to place it directly.',
   heads_up: 'Heads up',
   attribution:
@@ -264,6 +274,11 @@ const ru: Strings = {
   manaCost: 'Расход маны',
   castRange: 'Дальность',
   craftTime: 'Время создания',
+  skill: 'Навык',
+  affects: 'Действует на',
+  behavior: { passive: 'Пассивный', active: 'Активный', toggle: 'Переключаемый' },
+  affectsLabel: (team, scope) =>
+    `${{ enemy: 'вражеских', friendly: 'союзных', both: 'всех' }[team]} ${{ units: 'юнитов', heroes: 'героев', creeps: 'крипов' }[scope]}`,
   pickerHint: 'Нажмите на предмет, чтобы посмотреть характеристики, затем поместите его в ячейку. Двойной клик — сразу поместить.',
   heads_up: 'Обратите внимание',
   attribution:

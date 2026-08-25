@@ -2,8 +2,10 @@ import { Plus, X } from 'lucide-react';
 import type { SlotValue } from 'aow5-shared/codec';
 import type { ItemSummary } from 'aow5-shared/data';
 import type { Strings } from '@/i18n/strings';
+import { useItemDetailsStore } from '@/data/ItemDetailsProvider';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ItemHoverCard } from './ItemHoverCard';
 import { ItemIcon, qualityColor } from './ItemIcon';
 
 interface Props {
@@ -19,6 +21,10 @@ interface Props {
 
 export function Slot({ value, item, sectionName, slotLabel, strings, onPick, onClear }: Props) {
   const label = `${sectionName}, ${slotLabel}`;
+  // Null when a board is rendered outside the planner's provider; the hover
+  // card then falls back to the one-line summary rather than pulling a
+  // megabyte of stats somewhere that never meant to.
+  const details = useItemDetailsStore();
 
   if (!value) {
     return (
@@ -69,6 +75,11 @@ export function Slot({ value, item, sectionName, slotLabel, strings, onPick, onC
           <Button
             variant="outline"
             onClick={onPick}
+            // The stats files are fetched on the first hover of any filled
+            // slot rather than with the board, so a visitor who only reads a
+            // build still pays for them — but not before they ask.
+            onPointerEnter={() => details?.request()}
+            onFocus={() => details?.request()}
             aria-label={`${label}, ${item.name}`}
             style={{ borderColor: qualityColor(item.quality) }}
             className="aspect-square size-auto h-auto w-full overflow-hidden border-2 p-0"
@@ -82,12 +93,34 @@ export function Slot({ value, item, sectionName, slotLabel, strings, onPick, onC
             <ItemIcon icon={item.icon} alt="" fill fit="cover" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
-          <p className="font-medium">{item.name}</p>
-          <p className="text-muted-foreground">
-            {item.type} · {strings.level} {item.level} · {strings.cost} {item.cost}
-          </p>
-        </TooltipContent>
+        {details ? (
+          /*
+            The in-game tooltip, on a hover.
+
+            To the side rather than above, because the card is as tall as a
+            section and would otherwise bury the rows the cursor came from —
+            Radix flips it to the other side at the edge of the window. No
+            height cap: the card is as tall as what it has to say, and a
+            tooltip you have to scroll is a panel wearing a tooltip's clothes.
+          */
+          <TooltipContent variant="card" side="right" align="start" sideOffset={8} collisionPadding={12}>
+            <ItemHoverCard
+              summary={item}
+              full={details.full?.[item.id]}
+              detail={details.detail?.[item.id]}
+              names={details.byId}
+              strings={strings}
+              loading={details.loading}
+            />
+          </TooltipContent>
+        ) : (
+          <TooltipContent>
+            <p className="font-medium">{item.name}</p>
+            <p className="text-muted-foreground">
+              {item.type} · {strings.level} {item.level} · {strings.cost} {item.cost}
+            </p>
+          </TooltipContent>
+        )}
       </Tooltip>
       <ClearButton label={`${strings.clearSlot}: ${item.name}`} title={strings.clearSlot} onClear={onClear} />
     </div>

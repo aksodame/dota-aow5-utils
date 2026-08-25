@@ -5,6 +5,7 @@ import type { Strings } from '@/i18n/strings';
 import type { AbilitySlotKey } from 'aow5-shared/types';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { SpellHoverCard } from './SpellHoverCard';
 
 interface Props {
   slot: AbilitySlotKey;
@@ -89,11 +90,11 @@ export function SpellSlot({ slot, value, spell, sectionName, strings, selectable
             />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
-          <p className="font-medium">
-            {keyLabel} · {spell.name}
-          </p>
-          {spell.text?.descPlain && <p className="max-w-64 text-muted-foreground">{spell.text.descPlain}</p>}
+        {/* To the side, and no height cap — see the item slot's card. The
+            ability's own text is small enough to load with the board, so this
+            one needs nothing fetched to be complete. */}
+        <TooltipContent variant="card" side="right" align="start" sideOffset={8} collisionPadding={12}>
+          <SpellHoverCard spell={spell} slot={slot} strings={strings} />
         </TooltipContent>
       </Tooltip>
       <ClearSpellButton label={`${strings.clearSpell}: ${spell.name}`} title={strings.clearSpell} onClear={onClear} />

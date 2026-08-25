@@ -24,6 +24,7 @@ import { Reveal } from '@/components/fx/Reveal';
 import { HeroPicker } from '@/components/HeroPicker';
 import { ReferralCode } from '@/components/ReferralCode';
 import { ItemPicker } from '@/components/ItemPicker';
+import { ItemDetailsProvider } from '@/data/ItemDetailsProvider';
 import { Section } from '@/components/Section';
 import type { BuildDetail } from 'aow5-api-contract';
 import { decodeBuild, encodeBuild } from 'aow5-shared/codec';
@@ -308,238 +309,242 @@ export function PlannerPage({
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 pb-16">
-      <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        {build === undefined ? (
-          <div className="space-y-1">
-            <h1 className="text-2xl font-extrabold tracking-tight">{strings.title}</h1>
-            <p className="max-w-prose text-sm text-muted-foreground">{strings.tagline}</p>
-          </div>
-        ) : (
-          <BuildHeader
-            build={build}
-            site={site}
-            {...(build.canEdit ? { draft, onDraft: setDraft } : {})}
-          />
-        )}
-
-        {/* Language and theme moved to the site header — they are the site's
-            preferences, not this page's. What is left are the two things you
-            can do to the board in front of you. */}
-        <div className="flex shrink-0 items-center gap-2">
-          {/* Yours, or nobody's yet. Reset wipes the board, which is not a
-              thing to offer on somebody else's page even though the copy on
-              screen is only ever local. */}
-          {(build === undefined || build.canEdit) && (
-            <Button
-              variant="outline"
-              disabled={empty}
-              onClick={() => {
-                if (window.confirm(strings.resetConfirm)) dispatch({ type: 'clearAll' });
-              }}
-            >
-              <RotateCcw /> {strings.reset}
-            </Button>
+    /* One loader for every stat block on the page — the picker's pane and the
+       hover card on each filled slot. It is mounted here, around the board and
+       the dialog both, and stays idle until one of them asks. */
+    <ItemDetailsProvider lang={lang} byId={core.byId}>
+      <div className="mx-auto max-w-6xl px-4 py-6 pb-16">
+        <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
+          {build === undefined ? (
+            <div className="space-y-1">
+              <h1 className="text-2xl font-extrabold tracking-tight">{strings.title}</h1>
+              <p className="max-w-prose text-sm text-muted-foreground">{strings.tagline}</p>
+            </div>
+          ) : (
+            <BuildHeader
+              build={build}
+              site={site}
+              {...(build.canEdit ? { draft, onDraft: setDraft } : {})}
+            />
           )}
 
-          {build !== undefined && table !== null && (
-            <SaveBuildButton
-              build={build}
+          {/* Language and theme moved to the site header — they are the site's
+              preferences, not this page's. What is left are the two things you
+              can do to the board in front of you. */}
+          <div className="flex shrink-0 items-center gap-2">
+            {/* Yours, or nobody's yet. Reset wipes the board, which is not a
+                thing to offer on somebody else's page even though the copy on
+                screen is only ever local. */}
+            {(build === undefined || build.canEdit) && (
+              <Button
+                variant="outline"
+                disabled={empty}
+                onClick={() => {
+                  if (window.confirm(strings.resetConfirm)) dispatch({ type: 'clearAll' });
+                }}
+              >
+                <RotateCcw /> {strings.reset}
+              </Button>
+            )}
+
+            {build !== undefined && table !== null && (
+              <SaveBuildButton
+                build={build}
+                payload={encodeBuild(state, table, heroTable ?? undefined)}
+                referral={referral}
+                draft={draft}
+                site={site}
+                {...(onBuildChanged ? { onSaved: onBuildChanged } : {})}
+              />
+            )}
+          </div>
+        </header>
+
+        <div className="mb-4">
+          <ShareBar
+            url={shareUrl}
+            isEmpty={empty}
+            state={state}
+            strings={strings}
+            onImport={(next) => dispatch({ type: 'hydrate', state: next })}
+          />
+
+          {/*
+            Saving sits beside the share bar rather than inside it. Copying a link
+            is instant, needs no account and changes nothing; saving puts your
+            name on something searchable and spends one of five slots. One control
+            for both would make the cheap act feel like the expensive one.
+          */}
+          {build === undefined
+            ? signedIn &&
+              !empty &&
+              !publishing && (
+                <div className="mt-2 flex justify-end">
+                  <Button variant="outline" size="sm" onClick={() => setPublishing(true)}>
+                    {site.builds.publish}
+                  </Button>
+                </div>
+              )
+            : null}
+
+          {publishing && build === undefined && (
+            <PublishDialog
+              /* Encoded straight from the board rather than sliced back out of
+                 the share URL: that string also carries `?ref=`, and reading a
+                 payload out of it depended on a `#b=` that an empty board does
+                 not have. */
               payload={encodeBuild(state, table, heroTable ?? undefined)}
               referral={referral}
-              draft={draft}
               site={site}
-              {...(onBuildChanged ? { onSaved: onBuildChanged } : {})}
+              onClose={() => setPublishing(false)}
             />
           )}
         </div>
-      </header>
 
-      <div className="mb-4">
-        <ShareBar
-          url={shareUrl}
-          isEmpty={empty}
-          state={state}
+        {banner && (fatal || tableMismatch || unknownCount > 0 || unknownSpellCount > 0 || state.heroUnknown !== null) && (
+          <Alert variant={fatal ? 'destructive' : 'default'} className="mb-4">
+            {fatal ? <AlertTriangle /> : <Info />}
+            <AlertTitle>{fatal ? strings.loadFailed : strings.heads_up}</AlertTitle>
+            <AlertDescription>
+              {fatal?.kind === 'version' && <p>{strings.errUnsupportedVersion}</p>}
+              {fatal?.kind === 'malformed' && <p>{strings.errMalformed}</p>}
+              {tableMismatch && <p>{strings.warnTableMismatch}</p>}
+              {unknownCount > 0 && <p>{strings.warnUnknownItems(unknownCount)}</p>}
+              {state.heroUnknown !== null && <p>{strings.warnUnknownHero}</p>}
+              {unknownSpellCount > 0 && <p>{strings.warnUnknownSpells(unknownSpellCount)}</p>}
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => setBanner(false)}>
+                {strings.dismiss}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/*
+          Hidden only on somebody else's build that carries no code at all — an
+          empty read-only field would be a question the page cannot answer.
+        */}
+        {(referralEditable || referral !== '') && (
+          <ReferralCode
+            code={referral}
+            strings={strings}
+            variant={build === undefined ? 'own' : referralEditable ? 'build' : 'author'}
+            onChange={(next) => {
+              setReferral(next);
+              // Still yours even when it is being saved onto a build, so the
+              // planner remembers it next time. The URL copy stays a planner
+              // thing — see the effect above.
+              storeReferral(next);
+              if (build === undefined) writeReferralToUrl(next);
+            }}
+          />
+        )}
+
+        <HeroPicker
+          heroes={core.heroes}
+          nameOf={heroName}
+          selected={state.hero}
+          unknown={state.heroUnknown}
           strings={strings}
-          onImport={(next) => dispatch({ type: 'hydrate', state: next })}
+          onSelect={chooseHero}
         />
 
         {/*
-          Saving sits beside the share bar rather than inside it. Copying a link
-          is instant, needs no account and changes nothing; saving puts your
-          name on something searchable and spends one of five slots. One control
-          for both would make the cheap act feel like the expensive one.
+          Thirds once there is room for them. A card cannot go below roughly
+          250px without its slot grid overflowing — three 54px tiles plus the
+          right-hand column and padding — so the ladder stops at two columns
+          until `lg`, where a third still leaves each card over 320px.
         */}
-        {build === undefined
-          ? signedIn &&
-            !empty &&
-            !publishing && (
-              <div className="mt-2 flex justify-end">
-                <Button variant="outline" size="sm" onClick={() => setPublishing(true)}>
-                  {site.builds.publish}
-                </Button>
-              </div>
-            )
-          : null}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {state.sections.map((section, i) => (
+            <Reveal key={i} index={i}>
+              <Section
+                index={i}
+                section={section}
+                byId={core.byId}
+                hero={hero}
+                spells={core.heroes.spells}
+                strings={strings}
+                canRemove={state.sections.length > MIN_SECTIONS}
+                onRename={(name) => dispatch({ type: 'renameSection', section: i, name })}
+                onDescribe={(description) => dispatch({ type: 'describeSection', section: i, description })}
+                onClearSection={() => dispatch({ type: 'clearSection', section: i, defaults })}
+                onRemoveSection={() => dispatch({ type: 'removeSection', section: i })}
+                onPickSlot={(slot) => setTarget({ section: i, slot })}
+                onClearSlot={(slot) => dispatch({ type: 'clearSlot', section: i, slot })}
+                onPickSpell={(spell) => setSpellTarget({ section: i, spell })}
+                onClearSpell={(spell) => dispatch({ type: 'clearSpell', section: i, spell })}
+              />
+            </Reveal>
+          ))}
 
-        {publishing && build === undefined && (
-          <PublishDialog
-            /* Encoded straight from the board rather than sliced back out of
-               the share URL: that string also carries `?ref=`, and reading a
-               payload out of it depended on a `#b=` that an empty board does
-               not have. */
-            payload={encodeBuild(state, table, heroTable ?? undefined)}
-            referral={referral}
-            site={site}
-            onClose={() => setPublishing(false)}
-          />
-        )}
-      </div>
+          {state.sections.length < MAX_SECTIONS && (
+            <Reveal index={state.sections.length}>
+              <AddSectionCard
+                count={state.sections.length}
+                sources={copySources}
+                strings={strings}
+                onAdd={() => dispatch({ type: 'addSection', defaults })}
+                onCopy={(section) => dispatch({ type: 'duplicateSection', section })}
+              />
+            </Reveal>
+          )}
+        </div>
 
-      {banner && (fatal || tableMismatch || unknownCount > 0 || unknownSpellCount > 0 || state.heroUnknown !== null) && (
-        <Alert variant={fatal ? 'destructive' : 'default'} className="mb-4">
-          {fatal ? <AlertTriangle /> : <Info />}
-          <AlertTitle>{fatal ? strings.loadFailed : strings.heads_up}</AlertTitle>
-          <AlertDescription>
-            {fatal?.kind === 'version' && <p>{strings.errUnsupportedVersion}</p>}
-            {fatal?.kind === 'malformed' && <p>{strings.errMalformed}</p>}
-            {tableMismatch && <p>{strings.warnTableMismatch}</p>}
-            {unknownCount > 0 && <p>{strings.warnUnknownItems(unknownCount)}</p>}
-            {state.heroUnknown !== null && <p>{strings.warnUnknownHero}</p>}
-            {unknownSpellCount > 0 && <p>{strings.warnUnknownSpells(unknownSpellCount)}</p>}
-            <Button variant="outline" size="sm" className="mt-2" onClick={() => setBanner(false)}>
-              {strings.dismiss}
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
+        <Separator className="mt-8 mb-4" />
 
-      {/*
-        Hidden only on somebody else's build that carries no code at all — an
-        empty read-only field would be a question the page cannot answer.
-      */}
-      {(referralEditable || referral !== '') && (
-        <ReferralCode
-          code={referral}
-          strings={strings}
-          variant={build === undefined ? 'own' : referralEditable ? 'build' : 'author'}
-          onChange={(next) => {
-            setReferral(next);
-            // Still yours even when it is being saved onto a build, so the
-            // planner remembers it next time. The URL copy stays a planner
-            // thing — see the effect above.
-            storeReferral(next);
-            if (build === undefined) writeReferralToUrl(next);
-          }}
-        />
-      )}
-
-      <HeroPicker
-        heroes={core.heroes}
-        nameOf={heroName}
-        selected={state.hero}
-        unknown={state.heroUnknown}
-        strings={strings}
-        onSelect={chooseHero}
-      />
-
-      {/*
-        Thirds once there is room for them. A card cannot go below roughly
-        250px without its slot grid overflowing — three 54px tiles plus the
-        right-hand column and padding — so the ladder stops at two columns
-        until `lg`, where a third still leaves each card over 320px.
-      */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {state.sections.map((section, i) => (
-          <Reveal key={i} index={i}>
-            <Section
-              index={i}
-              section={section}
-              byId={core.byId}
-              hero={hero}
-              spells={core.heroes.spells}
-              strings={strings}
-              canRemove={state.sections.length > MIN_SECTIONS}
-              onRename={(name) => dispatch({ type: 'renameSection', section: i, name })}
-              onDescribe={(description) => dispatch({ type: 'describeSection', section: i, description })}
-              onClearSection={() => dispatch({ type: 'clearSection', section: i, defaults })}
-              onRemoveSection={() => dispatch({ type: 'removeSection', section: i })}
-              onPickSlot={(slot) => setTarget({ section: i, slot })}
-              onClearSlot={(slot) => dispatch({ type: 'clearSlot', section: i, slot })}
-              onPickSpell={(spell) => setSpellTarget({ section: i, spell })}
-              onClearSpell={(spell) => dispatch({ type: 'clearSpell', section: i, spell })}
-            />
-          </Reveal>
-        ))}
-
-        {state.sections.length < MAX_SECTIONS && (
-          <Reveal index={state.sections.length}>
-            <AddSectionCard
-              count={state.sections.length}
-              sources={copySources}
-              strings={strings}
-              onAdd={() => dispatch({ type: 'addSection', defaults })}
-              onCopy={(section) => dispatch({ type: 'duplicateSection', section })}
-            />
-          </Reveal>
-        )}
-      </div>
-
-      <Separator className="mt-8 mb-4" />
-
-      {/* What the board is drawn from. The attribution and the workshop
-          link are the site footer's, on every page rather than this one. */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-        <span className="flex items-center gap-2">
-          <Badge variant="secondary">
-            <CountUp value={core.meta.playableCount} /> items
-          </Badge>
-          <span className="font-mono">
-            icons <CountUp value={core.meta.icons.vpk} /> addon / <CountUp value={core.meta.icons.cdn} /> stock
+        {/* What the board is drawn from. The attribution and the workshop
+            link are the site footer's, on every page rather than this one. */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+          <span className="flex items-center gap-2">
+            <Badge variant="secondary">
+              <CountUp value={core.meta.playableCount} /> items
+            </Badge>
+            <span className="font-mono">
+              icons <CountUp value={core.meta.icons.vpk} /> addon / <CountUp value={core.meta.icons.cdn} /> stock
+            </span>
           </span>
-        </span>
+        </div>
+
+        <ItemPicker
+          open={target !== null}
+          items={core.items}
+          byId={core.byId}
+          currentId={currentSlotId}
+          slotKind={targetKind}
+          slotLabel={targetLabel}
+          strings={strings}
+          onSelect={(item) => {
+            if (target) dispatch({ type: 'setSlot', ...target, value: { k: 'id', id: item.id } });
+            setTarget(null);
+          }}
+          onClear={() => {
+            if (target) dispatch({ type: 'clearSlot', ...target });
+            setTarget(null);
+          }}
+          onClose={() => setTarget(null)}
+        />
+
+        <SpellPicker
+          open={spellTarget !== null}
+          slot={spellSlotKey ?? null}
+          candidates={spellCandidates}
+          currentId={currentSpellId}
+          canClear={currentSpell != null}
+          heroName={state.hero ? heroName(state.hero) : ''}
+          strings={strings}
+          onSelect={(id) => {
+            if (spellTarget) dispatch({ type: 'setSpell', ...spellTarget, value: { k: 'id', id } });
+            setSpellTarget(null);
+          }}
+          onClear={() => {
+            if (spellTarget) dispatch({ type: 'clearSpell', ...spellTarget });
+            setSpellTarget(null);
+          }}
+          onClose={() => setSpellTarget(null)}
+        />
+
+        {build !== undefined && <CommentThread slug={build.slug} site={site} />}
       </div>
-
-      <ItemPicker
-        open={target !== null}
-        items={core.items}
-        byId={core.byId}
-        currentId={currentSlotId}
-        slotKind={targetKind}
-        slotLabel={targetLabel}
-        lang={lang}
-        strings={strings}
-        onSelect={(item) => {
-          if (target) dispatch({ type: 'setSlot', ...target, value: { k: 'id', id: item.id } });
-          setTarget(null);
-        }}
-        onClear={() => {
-          if (target) dispatch({ type: 'clearSlot', ...target });
-          setTarget(null);
-        }}
-        onClose={() => setTarget(null)}
-      />
-
-      <SpellPicker
-        open={spellTarget !== null}
-        slot={spellSlotKey ?? null}
-        candidates={spellCandidates}
-        currentId={currentSpellId}
-        canClear={currentSpell != null}
-        heroName={state.hero ? heroName(state.hero) : ''}
-        strings={strings}
-        onSelect={(id) => {
-          if (spellTarget) dispatch({ type: 'setSpell', ...spellTarget, value: { k: 'id', id } });
-          setSpellTarget(null);
-        }}
-        onClear={() => {
-          if (spellTarget) dispatch({ type: 'clearSpell', ...spellTarget });
-          setSpellTarget(null);
-        }}
-        onClose={() => setSpellTarget(null)}
-      />
-
-      {build !== undefined && <CommentThread slug={build.slug} site={site} />}
-    </div>
+    </ItemDetailsProvider>
   );
 }

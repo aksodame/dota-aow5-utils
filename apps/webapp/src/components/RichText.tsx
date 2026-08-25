@@ -24,7 +24,14 @@ function renderNode(node: RichNode) {
   const children = <RichText nodes={node.c} />;
   switch (node.tag) {
     case 'h1':
-      return <strong className="mt-2 block font-semibold">{children}</strong>;
+      // Tagged so a view can style the game's own section headings — "Passive:
+      // Soul Scatter" and the like — without also catching every inline bold
+      // run, which lands on the same element.
+      return (
+        <strong data-rich="h1" className="mt-2 block font-semibold">
+          {children}
+        </strong>
+      );
     case 'b':
       return <strong className="font-semibold">{children}</strong>;
     case 'i':

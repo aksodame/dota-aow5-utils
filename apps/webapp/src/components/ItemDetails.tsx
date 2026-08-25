@@ -1,6 +1,7 @@
 import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
 import type { ItemSummary } from 'aow5-shared/data';
 import type { Strings } from '@/i18n/strings';
+import { affectsOf, behaviorOf, gemRows, hasNamedSkill, statRows, type StatRow } from '@/lib/itemStats';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ItemIcon, qualityColor } from './ItemIcon';
@@ -15,17 +16,6 @@ interface Props {
   loading: boolean;
 }
 
-/** Turns `bonus_attack_damage` into `Bonus attack damage` when the game has no label. */
-function prettifyKey(key: string): string {
-  const spaced = key.replace(/_/g, ' ').trim();
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
-
-function formatValue(value: number | string): string {
-  if (typeof value === 'string') return value;
-  return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
-}
-
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-1.5">
@@ -35,13 +25,13 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function StatList({ rows }: { rows: [string, string][] }) {
+function StatList({ rows }: { rows: StatRow[] }) {
   return (
     <dl className="grid gap-px">
-      {rows.map(([label, value]) => (
-        <div key={label} className="flex items-baseline justify-between gap-3 border-b border-dotted py-1 text-sm">
-          <dt className="min-w-0 text-muted-foreground">{label}</dt>
-          <dd className="shrink-0 tabular-nums">{value}</dd>
+      {rows.map((row) => (
+        <div key={row.key} className="flex items-baseline justify-between gap-3 border-b border-dotted py-1 text-sm">
+          <dt className="min-w-0 text-muted-foreground">{row.label}</dt>
+          <dd className="shrink-0 tabular-nums">{row.value}</dd>
         </div>
       ))}
     </dl>
@@ -57,23 +47,24 @@ export function ItemDetails({ summary, full, detail, names, strings, loading }: 
     );
   }
 
-  const stats: [string, string][] = full
-    ? Object.entries(full.values).map(([key, value]) => [
-        detail?.values?.[key] ?? prettifyKey(key),
-        formatValue(value),
-      ])
-    : [];
+  const stats = statRows(full, detail);
+  const gem = gemRows(full);
+  const named = hasNamedSkill(full, detail);
+  const behavior = named ? behaviorOf(full) : null;
+  const affects = named ? affectsOf(full) : null;
 
   const ability = full?.ability;
-  const abilityRows: [string, string][] = [];
-  if (ability?.cooldown) abilityRows.push([strings.cooldown, String(ability.cooldown)]);
-  if (ability?.manaCost) abilityRows.push([strings.manaCost, String(ability.manaCost)]);
-  if (ability?.castRange) abilityRows.push([strings.castRange, String(ability.castRange)]);
-  if (full?.timeCost) abilityRows.push([strings.craftTime, String(full.timeCost)]);
-
-  const gemRows: [string, string][] = full?.gem
-    ? Object.entries(full.gem.values).map(([k, v]) => [prettifyKey(k), formatValue(v)])
-    : [];
+  const abilityRows: StatRow[] = [];
+  if (ability?.cooldown)
+    abilityRows.push({ key: 'cooldown', label: strings.cooldown, value: String(ability.cooldown) });
+  if (ability?.manaCost)
+    abilityRows.push({ key: 'manaCost', label: strings.manaCost, value: String(ability.manaCost) });
+  if (ability?.castRange)
+    abilityRows.push({ key: 'castRange', label: strings.castRange, value: String(ability.castRange) });
+  if (full?.timeCost) abilityRows.push({ key: 'craftTime', label: strings.craftTime, value: String(full.timeCost) });
+  // The numbers the description interpolates. Out of the stat block, where
+  // they read as extra bonuses, but kept here — this pane is the inspector.
+  abilityRows.push(...statRows(full, detail, 'tuning'));
 
   return (
     <div className="space-y-4 p-4">
@@ -101,19 +92,26 @@ export function ItemDetails({ summary, full, detail, names, strings, loading }: 
 
       {loading && <p className="text-sm text-muted-foreground">{strings.loadingDetails}</p>}
 
-      {detail?.desc && detail.desc.length > 0 && (
-        <>
-          <Separator />
-          <div className="space-y-1 text-sm leading-relaxed [&_strong]:mt-2 [&_strong]:block">
-            <RichText nodes={detail.desc} />
-          </div>
-        </>
-      )}
-
       {stats.length > 0 && (
         <Block title={strings.stats}>
           <StatList rows={stats} />
         </Block>
+      )}
+
+      {(behavior || affects) && (
+        <p className="text-sm text-muted-foreground">
+          {behavior && (
+            <>
+              {strings.skill}: {strings.behavior[behavior]}
+            </>
+          )}
+          {behavior && affects && ' · '}
+          {affects && (
+            <>
+              {strings.affects}: {strings.affectsLabel(affects.team, affects.scope)}
+            </>
+          )}
+        </p>
       )}
 
       {abilityRows.length > 0 && (
@@ -122,9 +120,19 @@ export function ItemDetails({ summary, full, detail, names, strings, loading }: 
         </Block>
       )}
 
-      {gemRows.length > 0 && (
+      {/* Last, under its own heading, the way the game prints it. */}
+      {detail?.desc && detail.desc.length > 0 && (
+        <>
+          <Separator />
+          <div className="text-sm leading-relaxed [&_[data-rich=h1]]:mt-2">
+            <RichText nodes={detail.desc} />
+          </div>
+        </>
+      )}
+
+      {gem.length > 0 && (
         <Block title={strings.glyph}>
-          <StatList rows={gemRows} />
+          <StatList rows={gem} />
         </Block>
       )}
 
