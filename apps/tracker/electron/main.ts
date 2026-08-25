@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, type Tray } from 'electron';
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, session, type Tray } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { TrackerEvent } from '../core/events.ts';
@@ -218,7 +218,7 @@ if (!single) {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // `app.quit()` above does not stop this from firing, and a losing copy that
   // built windows and opened the feed would be exactly the second tracker the
   // lock exists to prevent — for however long it took to go away.
@@ -241,6 +241,29 @@ app.whenReady().then(() => {
    * built, which is a different question.
    */
   if (app.isPackaged) config.source = 'console';
+
+  /*
+   * An upgrade starts from an empty cache.
+   *
+   * A release exists to change something, and one of the things it can be
+   * shipped to change is what the app asks a server for — or what it is willing
+   * to accept back, which is a CSP, which is compiled in. Neither reaches a
+   * client whose cache is still answering the old question, and Chromium keeps
+   * an answer for as long as the server said to: a month, in the case that made
+   * this necessary. So the drawer is emptied on the way in, rather than left for
+   * the player to find the button in Settings.
+   *
+   * Awaited, and here rather than later, because the whole point is to be
+   * finished before a window loads anything. It runs once per upgrade —
+   * `cacheVersion` is stamped immediately after — so an ordinary launch pays
+   * one string comparison.
+   */
+  const version = app.getVersion();
+  if (config.cacheVersion !== version) {
+    await session.defaultSession.clearCache();
+    config.cacheVersion = version;
+    saveConfig(config);
+  }
 
   // Before the feed starts, so the tail begins at the end of a log that is
   // already the size it should be — and so a launch after a long evening does
@@ -437,6 +460,15 @@ app.whenReady().then(() => {
   // quietly: most presses land on a log the game is still holding, and
   // "nothing happened" has to be distinguishable from "nothing works".
   ipcMain.handle('tracker:compactLog', () => trimLog({ asked: true }));
+
+  // The default session is the only one there is: every overlay is an ordinary
+  // window with no partition, so one clear covers all of them. Reloading after
+  // is what the player actually sees — see `clearCache` in core/ipc.ts for why
+  // an empty cache alone leaves a broken icon broken.
+  ipcMain.handle('tracker:clearCache', async () => {
+    await session.defaultSession.clearCache();
+    for (const win of BrowserWindow.getAllWindows()) win.webContents.reload();
+  });
 
   ipcMain.handle('tracker:pickLogFile', async (e): Promise<string | null> => {
     const parent = BrowserWindow.fromWebContents(e.sender);

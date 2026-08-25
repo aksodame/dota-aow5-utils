@@ -259,6 +259,9 @@ export const zh: Messages = {
       optimization: '优化',
       trim: '保持日志较小',
       trimNow: '立即精简',
+      cache: '清除缓存',
+      cacheHint:
+        '丢弃已下载的物品图标并重新打开面板。更新时会自动清除；若在此期间图标空白或损坏，可点击此处 —— 图标服务器的错误响应可能在缓存里滞留数周。',
     },
     rooms: {
       title: '按秘境统计',

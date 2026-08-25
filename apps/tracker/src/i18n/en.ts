@@ -300,6 +300,9 @@ export const en = {
       optimization: 'Optimization',
       trim: 'Keep the log small',
       trimNow: 'Trim now',
+      cache: 'Clear cache',
+      cacheHint:
+        'Throws away the downloaded item art and reopens the panels. An update does this for you; press it if icons are blank or broken in between, since a bad answer from the art host can sit in the cache for weeks.',
     },
     rooms: {
       title: 'Per room',

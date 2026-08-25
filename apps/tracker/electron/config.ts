@@ -86,6 +86,9 @@ export const DEFAULTS: TrackerConfig = {
   // On: the failure it prevents — an evening measured as zero — costs more
   // than the one it can cause, which is a clock you have to stop again.
   autoResume: true,
+  // Empty means "nothing has filled it yet", which is what a first launch and a
+  // pre-0.1.7 file both amount to. Either way the first run clears and stamps.
+  cacheVersion: '',
 };
 
 export const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
@@ -230,6 +233,9 @@ export function loadConfig(): TrackerConfig {
     cards: readCards(raw['cards']),
     // Absent means the default here, and the default is on.
     autoResume: raw['autoResume'] !== false,
+    // A version string or nothing. Anything else is a file edited by hand into
+    // a state we would rather read as "unknown, so clear".
+    cacheVersion: typeof raw['cacheVersion'] === 'string' ? raw['cacheVersion'] : '',
     // Playback speed is a development knob owned by the default and `--speed`,
     // never by the saved file — a stale value there would silently undo it.
     mockSpeed: DEFAULTS.mockSpeed,

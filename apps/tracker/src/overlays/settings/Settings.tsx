@@ -1,5 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Check, Download, FolderOpen, Play, Plus, RefreshCw, RotateCw, Scissors, Volume2, X } from 'lucide-react';
+import {
+  Check,
+  Download,
+  FolderOpen,
+  Images,
+  Play,
+  Plus,
+  RefreshCw,
+  RotateCw,
+  Scissors,
+  Volume2,
+  X,
+} from 'lucide-react';
 import { CARD_IDS, DEFAULT_CARDS, readCards, type CardId } from '@core/cards.ts';
 import { iconUrl, qualityColor, type ItemTable } from '@core/items.ts';
 import { LOCALES, type LanguageSetting } from '@core/locale.ts';
@@ -602,6 +614,31 @@ export function Settings({
             </Button>
             <span className="min-w-0 flex-1 truncate text-[0.625rem] text-muted-foreground">
               {trim === null ? '' : m.trim(trim, megabytes)}
+            </span>
+          </div>
+
+          {/*
+            Under Optimization with the trim, because the two are the same kind
+            of thing: a drawer the app fills on its own, and a way to empty it
+            by hand when it has filled with something wrong. Neither is a
+            preference — nothing here changes what the tracker does, only what
+            it is still holding on to.
+
+            The item art is the only thing in the app fetched rather than
+            bundled, so it is the only thing a player can be stuck behind a
+            stale answer about — and a bad answer is kept for as long as the
+            server asked, which was a month the time it mattered.
+          */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="h-7 shrink-0 text-xs"
+              onClick={() => void window.tracker.clearCache()}
+            >
+              <Images className="size-3.5" /> {m.settings.log.cache}
+            </Button>
+            <span className="min-w-0 flex-1 text-[0.625rem] text-muted-foreground">
+              {m.settings.log.cacheHint}
             </span>
           </div>
         </section>

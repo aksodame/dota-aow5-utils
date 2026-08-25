@@ -39,6 +39,27 @@
 		reverse_proxy api:3000
 	}
 
+	# Clients holding the retired pages.dev redirect ask for /builder/icons/...
+	#
+	# aow5-builder's public/_redirects used to prefix every path on that origin
+	# with /builder/, and Pages served the rule as a 301 carrying a 30-day
+	# Cache-Control. Fixing it at the source therefore does not reach a client
+	# that already stored the entry: it skips pages.dev altogether until the
+	# entry expires. This aliases /builder/* onto the same tree as /*, so those
+	# requests resolve to real files instead of falling through to the SPA
+	# fallback and coming back as 200 text/html.
+	#
+	# `handle_path` strips the prefix but leaves the browser's URL alone, so the
+	# planner's own /builder route still renders from the fallback below — and
+	# bare /builder, which does not match /builder/*, is untouched entirely.
+	#
+	# Transitional. Delete it once the cached 301s have aged out.
+	handle_path /builder/* {
+		root * /srv/www
+		try_files {path} /index.html
+		file_server
+	}
+
 	handle {
 		root * /srv/www
 

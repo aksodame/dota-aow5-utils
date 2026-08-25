@@ -47,20 +47,22 @@ export interface ItemInfo {
  * installed. Changing the default is a release, and the new host must be added
  * to the CSP in the same commit.
  *
- * As of 0.1.6 that host answers 301 to `dota-aow5-utils.duckdns.org`, which is
- * fine in itself — but the hop rewrites `/icons/items/x.png` to
- * `/builder/icons/items/x.png`, and there is no `/builder` prefix on that
- * deployment. Every icon therefore lands on the site's SPA index instead, comes
- * back as 200 `text/html`, and draws as a broken image. It is a redirect that
- * has to be fixed where it is configured; the icons themselves are all present
- * and correct one path segment up.
+ * The paragraph above is not hypothetical; it happened. The builder moved to
+ * `dota-aow5-utils.duckdns.org` and retired its old origin with a single splat
+ * in `aow5-builder/public/_redirects`, which caught `/icons/*` along with
+ * everything else and rewrote it to `/builder/icons/...`. That prefix is an SPA
+ * route, not a directory — the site is served from the root — so every icon
+ * request fell through to the SPA fallback and came back as 200 `text/html`.
+ * An <img> handed HTML draws a broken-image glyph and reports nothing, so the
+ * only symptom was a panel that had quietly lost its art, on every machine
+ * without a warm cache.
  *
- * This constant is deliberately *not* the place to work around it. It is
- * compiled into every build that has ever shipped, so an already-installed copy
- * can only ever be repaired by fixing the hop — repointing it here would rescue
- * new installs and strand every old one for good. The redirect target is
- * allowlisted in the renderer's CSP (`src/index.html`) so that the hop is
- * followable once it points somewhere real.
+ * It was fixed by removing `/icons/*` from that splat, which is the one repair
+ * that also reaches 0.1.5 and earlier: no redirect means no CSP question. The
+ * lasting rule is the one at the top — this path is an API with shipped clients,
+ * so retiring the origin around it has to leave it standing. This constant is
+ * deliberately *not* the place to paper over a server-side mistake: repointing
+ * it rescues new installs and strands every old one for good.
  */
 const DEFAULT_ICON_BASE = 'https://aow5-builder.pages.dev/icons/items';
 

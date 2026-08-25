@@ -1,3 +1,41 @@
+Item icons are back, and the tracker clears its cached art on every update.
+
+## 0.1.7-beta
+
+### Fixed
+
+- **Item icons were missing.** The builder's old address began redirecting icon
+  requests onto a path that serves the site's HTML page, so the overlay was
+  handed a web page where a picture should have been and drew a broken image.
+  It failed silently, and only on machines that had not already downloaded the
+  art — which is why some people saw every icon, some saw none, and some saw a
+  mix. Fixed at the server.
+
+### Added
+
+- **The tracker clears its downloaded art on every update.** A stale answer from
+  a server can otherwise sit in the cache for weeks, outliving the fix — so a new
+  version now always starts clean.
+- **Clear cache**, in Settings under *Console log → Optimization*, does the same
+  on demand. Reach for it if icons ever go blank or broken between updates.
+
+## 0.1.6-beta
+
+### Added
+
+- **English, Русский and 简体中文.** The whole overlay, and the item and room
+  names with it — the tables carry all three, so nothing is left half-translated.
+  It follows Windows by default and can be set by hand in Settings.
+- **Tracker style.** Two layouts for the farm readout, chosen in Settings under
+  *Appearance*:
+  - **Minimalistic** — the original. Every stat gets the same card, three to a
+    row, and you read the one you came for.
+  - **Torchlight** — built around your best drop of the session: its art, its
+    worth and its name across the top, with the rest demoted to a band of
+    smaller figures underneath. Expanded still shows the full loot list.
+
+  Both are the same numbers; only the arrangement differs.
+
 ## Pak 2883951116 — published 2026-08-23 10:55
 
 1749 → **1812** items, 1640 → **1703** playable, 40 → **45** abilities.

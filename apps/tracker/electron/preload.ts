@@ -91,6 +91,7 @@ const api: TrackerApi = {
   pickLogFile: (): Promise<string | null> => ipcRenderer.invoke('tracker:pickLogFile'),
   compactLog: (): Promise<LogTrim> => ipcRenderer.invoke('tracker:compactLog'),
   newSession: (): Promise<void> => ipcRenderer.invoke('tracker:newSession'),
+  clearCache: (): Promise<void> => ipcRenderer.invoke('tracker:clearCache'),
 
   getUpdate: (): Promise<UpdateState> => ipcRenderer.invoke('tracker:getUpdate'),
   checkUpdate: (): Promise<void> => ipcRenderer.invoke('tracker:checkUpdate'),

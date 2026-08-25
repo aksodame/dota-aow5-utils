@@ -312,6 +312,20 @@ export interface TrackerConfig {
    * stretch, and the next room is a new one.
    */
   autoResume: boolean;
+
+  /**
+   * The app version that filled the HTTP cache.
+   *
+   * Not a preference — the only field here the player never sets. It rides in
+   * the config because that is the file the app already keeps, and it exists so
+   * that an upgrade can notice it is an upgrade: on a mismatch main empties the
+   * cache before any window loads, then writes the new version here.
+   *
+   * Empty in a file written before 0.1.7, which reads as "some older build
+   * filled it" — exactly the case that wants clearing, and exactly the case
+   * that made this necessary. See `clearCache`.
+   */
+  cacheVersion: string;
 }
 
 /**
@@ -556,6 +570,34 @@ export interface TrackerApi {
    * also applies on the next ordinary quit, so declining costs nothing.
    */
   installUpdate: () => Promise<void>;
+
+  /**
+   * Empty the HTTP cache and reload the overlays.
+   *
+   * Exactly one thing in this app comes over the network rather than out of the
+   * bundle — the item art — so "the HTTP cache" and "the icon cache" are the
+   * same drawer, and emptying it is the only way to walk back an answer a
+   * server has already given.
+   *
+   * Which is the whole reason this exists. When the builder's origin briefly
+   * redirected `/icons/*` onto a path that served the site's HTML index,
+   * Chromium filed the 301 under the month-long lifetime it arrived with — so
+   * repairing the server could not reach a client that had already stored the
+   * hop, and on builds before 0.1.6 the CSP refuses the redirect target in any
+   * case. A cached mistake outlives the mistake.
+   *
+   * An upgrade clears it too, without being asked — see `cacheVersion`. That is
+   * the arm that reaches the people who will never open this panel: whatever a
+   * release is shipped to fix, it starts from an empty drawer. This one is for
+   * when the fix arrives *without* a release, which is what a server repair is,
+   * and for anyone who simply sees a hole where the art should be.
+   *
+   * The reload is not incidental: clearing the drawer does not re-request an
+   * `<img>` that has already failed, so without it nothing on screen changes.
+   * Every window rebuilds from main's state, which is where all of it lives
+   * anyway — see `getConfig`, `getSession` and the note on `getUpdate`.
+   */
+  clearCache: () => Promise<void>;
 
   quit: () => Promise<void>;
 }
