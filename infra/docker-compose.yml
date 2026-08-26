@@ -21,6 +21,9 @@ services:
       # container can read is exactly this list and adding a secret to the env
       # file does not silently hand it to every service.
       SITE_ORIGIN: https://${SITE_DOMAIN:?set SITE_DOMAIN in the env file}
+      # Optional: without it the API answers "not configured" to sound search
+      # and the tracker's picker hides its search box. Nothing else notices.
+      FREESOUND_TOKEN: ${FREESOUND_TOKEN:-}
     volumes:
       # A bind mount, not a named volume: this is the one thing you will want to
       # open with sqlite3, copy off the box and restore by hand.

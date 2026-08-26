@@ -2,6 +2,8 @@ import type { CardId } from './cards.ts';
 import type { TrackerEvent } from './events.ts';
 import type { SessionHistory } from './history.ts';
 import type { LanguageSetting } from './locale.ts';
+import type { SoundHit, SoundSearchResponse } from 'aow5-api-contract';
+import type { PackFail, SoundPack } from './packs.ts';
 import type { SoundSettings } from './sounds.ts';
 import type { TrackerStyle } from './style.ts';
 
@@ -227,6 +229,28 @@ export interface TrackerConfig {
   /** What to play when something drops, and how loudly. See `core/sounds.ts`. */
   sounds: SoundSettings;
   /**
+   * Sounds that came from somewhere else, by pack id. See `core/packs.ts`.
+   *
+   * Beside `sounds` rather than inside it, because they are different kinds of
+   * thing: `sounds` is what the player decided, this is the library those
+   * decisions can point at. It is also the half that makes a config worth
+   * sharing — a binding to `C:\Users\someone\boom.mp3` means nothing on anybody
+   * else's machine, and a binding to `pack:jackpots/boom` means the same thing
+   * everywhere the pack has been fetched.
+   */
+  soundPacks: Record<string, SoundPack>;
+  /**
+   * The server the sound search is asked through, or empty to switch it off.
+   *
+   * A setting rather than a constant, and this is the one network dependency
+   * the tracker has — see `core/items.ts` on why the icons stopped being one.
+   * The difference is that a catalogue cannot be bundled: it is half a million
+   * sounds that change daily. So it is named here where somebody can point it
+   * somewhere else or empty it, and everything it powers degrades to the
+   * picker it was before rather than to an error.
+   */
+  soundSearchUrl: string;
+  /**
    * Keep Dota's console log down to the lines this tracker reads.
    *
    * `-con_logfile` writes the whole console and cannot be told not to: a
@@ -313,19 +337,6 @@ export interface TrackerConfig {
    */
   autoResume: boolean;
 
-  /**
-   * The app version that filled the HTTP cache.
-   *
-   * Not a preference — the only field here the player never sets. It rides in
-   * the config because that is the file the app already keeps, and it exists so
-   * that an upgrade can notice it is an upgrade: on a mismatch main empties the
-   * cache before any window loads, then writes the new version here.
-   *
-   * Empty in a file written before 0.1.7, which reads as "some older build
-   * filled it" — exactly the case that wants clearing, and exactly the case
-   * that made this necessary. See `clearCache`.
-   */
-  cacheVersion: string;
 }
 
 /**
@@ -356,6 +367,55 @@ export interface LogTrim {
   kept: number;
   /** The OS error code behind an `in-use`, when there was one. */
   error?: string;
+}
+
+/**
+ * What a pack URL turned out to be, before anything is fetched from it.
+ *
+ * The whole reason this type exists separately from `PackInstall` is that the
+ * two steps are separate: a pasted link buys a description, and the sounds are
+ * only fetched once somebody has read it. An app that downloaded on paste would
+ * be an app that goes to arbitrary URLs because a Discord message told it to.
+ */
+export interface PackPreview {
+  /** What would be installed, or null when `error` says why not. */
+  pack: SoundPack | null;
+  /** Sound ids the manifest named and the reader would not take. */
+  dropped: string[];
+  /** What the download would actually transfer — the sounds not already stored. */
+  bytes: number;
+  /** How many of them there are. Zero means it is all here already. */
+  missing: number;
+  error: PackFail | null;
+}
+
+/**
+ * Why a sound search came back with nothing to show.
+ *
+ * Separate from `PackFail` even though two of the names repeat, because the
+ * sentences a settings window puts against them are different. "The server has
+ * no key" is something the person running the server can fix; "you are offline"
+ * is not; "search is switched off" is a field in this player's own config. One
+ * union that meant all three would render as one apologetic shrug.
+ */
+export type SearchFail =
+  /** `soundSearchUrl` is empty — the player turned it off, or never had it. */
+  | 'off'
+  /** The tracker could not reach the server at all. */
+  | 'offline'
+  /** The server is there and has no catalogue key. Nothing the player can do. */
+  | 'unconfigured'
+  /** Too many searches, here or upstream. Try again shortly. */
+  | 'busy'
+  /** It answered, and not with a list of sounds. */
+  | 'failed';
+
+/** And what installing it did. Per sound, because one dead link is not a dead pack. */
+export interface PackInstall {
+  pack: SoundPack;
+  /** Sound ids now in the store, including the ones that already were. */
+  installed: string[];
+  failed: { id: string; reason: PackFail }[];
 }
 
 /**
@@ -503,8 +563,63 @@ export interface TrackerApi {
    * refused by the page's own CSP — so the bytes come across and are decoded
    * in memory. Null when the file is gone, unreadable, or larger than a
    * notification has any business being.
+   *
+   * Takes any `SoundRef` that is not a built-in: a path the player picked, or a
+   * `pack:` reference, which main resolves through the installed packs and the
+   * content store. The renderer never learns the difference, which is why
+   * adding packs cost the player nothing.
    */
   readSound: (ref: string) => Promise<Uint8Array | null>;
+
+  /**
+   * Read a pack manifest and report what installing it would cost.
+   *
+   * Fetches the manifest and nothing else — see `PackPreview`. Never rejects:
+   * every way this can go wrong is a `PackFail` code the settings window
+   * translates, because "could not add pack" with a stack trace behind it is
+   * not a thing to show somebody who pasted a link.
+   */
+  previewPack: (url: string) => Promise<PackPreview>;
+  /**
+   * Fetch a previewed pack's sounds and keep it.
+   *
+   * Takes the URL again rather than the previewed pack: what a renderer hands
+   * back is not evidence of what the manifest said, and re-reading it costs one
+   * request. Resolves to what landed and what did not; the config is saved and
+   * broadcast before it returns, so the caller can simply re-render.
+   */
+  installPack: (url: string) => Promise<PackInstall | { error: PackFail }>;
+  /**
+   * Forget a pack, and delete the stored sounds nothing else refers to.
+   *
+   * Bindings pointing into it are left exactly as they are. A pack removed by
+   * accident is one re-install away, and a binding silently rewritten to
+   * silence is a decision the player never gets told about.
+   */
+  removePack: (id: string) => Promise<void>;
+
+  /**
+   * Search the sound catalogue, through this deployment's own server.
+   *
+   * The one call in this bridge that leaves the machine on the player's behalf,
+   * and it carries a search term and nothing else — no id, no config, no
+   * account. Never rejects: every failure is a `SearchFail` code the picker
+   * renders as a sentence.
+   *
+   * Nothing is fetched or stored by searching. A hit is a name, a length, a
+   * licence and a URL; the audio arrives only if `importSound` is called.
+   */
+  searchSounds: (query: string, page: number) => Promise<SoundSearchResponse | { error: SearchFail }>;
+  /**
+   * Fetch one search hit and keep it, resolving to the ref it can be bound by.
+   *
+   * The preview mp3 comes straight from the catalogue's own CDN — not through
+   * the search server, which never touches audio — and lands in the same
+   * content store the packs use, recorded as an entry in the imported pack. So
+   * an imported sound is a pack sound in every way that matters: it appears in
+   * every picker, it survives a restart, and it travels with a shared config.
+   */
+  importSound: (hit: SoundHit) => Promise<{ ref: string } | { error: PackFail }>;
 
   /**
    * Delete these sessions and the runs recorded under them.
@@ -570,34 +685,6 @@ export interface TrackerApi {
    * also applies on the next ordinary quit, so declining costs nothing.
    */
   installUpdate: () => Promise<void>;
-
-  /**
-   * Empty the HTTP cache and reload the overlays.
-   *
-   * Exactly one thing in this app comes over the network rather than out of the
-   * bundle — the item art — so "the HTTP cache" and "the icon cache" are the
-   * same drawer, and emptying it is the only way to walk back an answer a
-   * server has already given.
-   *
-   * Which is the whole reason this exists. When the builder's origin briefly
-   * redirected `/icons/*` onto a path that served the site's HTML index,
-   * Chromium filed the 301 under the month-long lifetime it arrived with — so
-   * repairing the server could not reach a client that had already stored the
-   * hop, and on builds before 0.1.6 the CSP refuses the redirect target in any
-   * case. A cached mistake outlives the mistake.
-   *
-   * An upgrade clears it too, without being asked — see `cacheVersion`. That is
-   * the arm that reaches the people who will never open this panel: whatever a
-   * release is shipped to fix, it starts from an empty drawer. This one is for
-   * when the fix arrives *without* a release, which is what a server repair is,
-   * and for anyone who simply sees a hole where the art should be.
-   *
-   * The reload is not incidental: clearing the drawer does not re-request an
-   * `<img>` that has already failed, so without it nothing on screen changes.
-   * Every window rebuilds from main's state, which is where all of it lives
-   * anyway — see `getConfig`, `getSession` and the note on `getUpdate`.
-   */
-  clearCache: () => Promise<void>;
 
   quit: () => Promise<void>;
 }

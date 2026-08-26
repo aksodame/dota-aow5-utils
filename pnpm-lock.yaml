@@ -12,8 +12,66 @@ importers:
         specifier: ^2.10.8
         version: 2.10.11
 
+  apps/api:
+    dependencies:
+      '@nestjs/common':
+        specifier: ^11.2.1
+        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: ^11.2.1
+        version: 11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-express':
+        specifier: ^11.2.1
+        version: 11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)
+      '@nestjs/throttler':
+        specifier: ^6.5.0
+        version: 6.5.0(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)(reflect-metadata@0.2.2)
+      aow5-api-contract:
+        specifier: workspace:*
+        version: link:../../packages/aow5-api-contract
+      aow5-shared:
+        specifier: workspace:*
+        version: link:../../packages/aow5-shared
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
+    devDependencies:
+      '@swc/core':
+        specifier: ^1.16.1
+        version: 1.16.1
+      '@types/better-sqlite3':
+        specifier: ^9.6.0
+        version: 9.6.0
+      '@types/express':
+        specifier: ^5.0.6
+        version: 5.0.6
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(@swc/core@1.16.1)(jiti@2.7.0)(postcss@8.5.26)(tsx@4.23.12)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+
   apps/tracker:
     dependencies:
+      aow5-api-contract:
+        specifier: workspace:*
+        version: link:../../packages/aow5-api-contract
       aow5-shared:
         specifier: workspace:*
         version: link:../../packages/aow5-shared
@@ -75,61 +133,6 @@ importers:
       vite:
         specifier: ^6.3.0
         version: 6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.50.0)(tsx@4.23.12)
-
-  apps/api:
-    dependencies:
-      '@nestjs/common':
-        specifier: ^11.2.1
-        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core':
-        specifier: ^11.2.1
-        version: 11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/platform-express':
-        specifier: ^11.2.1
-        version: 11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)
-      '@nestjs/throttler':
-        specifier: ^6.5.0
-        version: 6.5.0(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)(reflect-metadata@0.2.2)
-      aow5-api-contract:
-        specifier: workspace:*
-        version: link:../../packages/aow5-api-contract
-      aow5-shared:
-        specifier: workspace:*
-        version: link:../../packages/aow5-shared
-      better-sqlite3:
-        specifier: ^13.0.3
-        version: 13.0.3
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)
-      reflect-metadata:
-        specifier: ^0.2.2
-        version: 0.2.2
-      rxjs:
-        specifier: ^7.8.2
-        version: 7.8.2
-    devDependencies:
-      '@swc/core':
-        specifier: ^1.16.1
-        version: 1.16.1
-      '@types/better-sqlite3':
-        specifier: ^9.6.0
-        version: 9.6.0
-      '@types/express':
-        specifier: ^5.0.6
-        version: 5.0.6
-      '@types/node':
-        specifier: ^22.15.0
-        version: 22.20.1
-      drizzle-kit:
-        specifier: ^0.31.10
-        version: 0.31.10
-      tsup:
-        specifier: ^8.5.1
-        version: 8.5.1(@swc/core@1.16.1)(jiti@2.7.0)(postcss@8.5.26)(tsx@4.23.12)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.8.0
-        version: 5.9.3
 
   apps/webapp:
     dependencies:

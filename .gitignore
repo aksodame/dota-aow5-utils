@@ -33,6 +33,11 @@ apps/tracker/private/
 apps/tracker/release/
 apps/tracker/build/
 
+# The tracker's copy of the item art, written by its `scripts/gen-icons.ts` on
+# every build from the originals in packages/aow5-shared. Committing it would
+# be 14 MB of second copy that a refresh has to remember to update.
+apps/tracker/public/
+
 # Deployment secrets. The template beside it, infra/.env.example, is the public
 # half; the filled-in copy lives at /srv/aow5/.env on the server and nowhere else.
 infra/.env

@@ -1,5 +1,5 @@
 import { BUILTIN_PREFIX, isBuiltin, type SoundSettings } from '@core/sounds.ts';
-import jackpot from '../../../assets/sounds/jackpot.mp3?inline';
+import { BUILTIN_URLS } from './builtins';
 
 /**
  * Plays a short sound when something drops, and stops it playing over itself.
@@ -16,16 +16,6 @@ import jackpot from '../../../assets/sounds/jackpot.mp3?inline';
  * like two things happening.
  */
 
-/**
- * Sounds that ship with the app, by the name after `builtin:`.
- *
- * Inlined as data URLs rather than emitted as files, because a packaged
- * renderer is loaded with `loadFile` and its origin is `file:` — where Chromium
- * refuses `fetch` outright, whatever the CSP says. Bytes that are already in
- * the bundle need no request at all.
- */
-const BUILTIN: Record<string, string> = { jackpot };
-
 /** `data:audio/mpeg;base64,…` to the bytes it stands for. No request, no origin, no CSP. */
 function decodeDataUrl(url: string): ArrayBuffer | null {
   const comma = url.indexOf(',');
@@ -41,9 +31,6 @@ const CANCEL_FADE = 0.12;
 
 /** How long the fade is when a sound is cut at the limit. Longer, because nothing is replacing it. */
 const LIMIT_FADE = 0.2;
-
-/** Anything larger is not a notification. Read once per binding, so this is about memory, not speed. */
-export const MAX_SOUND_BYTES = 10 * 1024 * 1024;
 
 interface Voice {
   source: AudioBufferSourceNode;
@@ -81,7 +68,7 @@ export function createSoundPlayer(initial: SoundSettings): SoundPlayer {
 
   const bytes = async (ref: string): Promise<ArrayBuffer | null> => {
     if (isBuiltin(ref)) {
-      const url = BUILTIN[ref.slice(BUILTIN_PREFIX.length)];
+      const url = BUILTIN_URLS[ref.slice(BUILTIN_PREFIX.length)];
       if (url === undefined) return null;
       return decodeDataUrl(url);
     }

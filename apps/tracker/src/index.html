@@ -4,13 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--
-      No remote code, and since the item tables became a bundled import from
-      aow5-shared, no remote data either. Item icons are the only outbound
-      request the overlay makes.
+      No remote anything. The item tables are a bundled import from aow5-shared
+      and the icons beside them are copied into the renderer's own directory by
+      scripts/gen-icons.ts, so the overlay makes no outbound request at all —
+      which is why the three art hosts that used to be allowed here are gone.
+      Adding one back means an app that stops working when a name stops
+      resolving; see the note over ICON_BASE in core/items.ts.
+
+      'self' covers the icons: a packaged renderer is loaded from file:, where
+      it matches the app's own directory — the same rule already loading this
+      page's script and stylesheet.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; img-src 'self' https://aow5-builder.pages.dev https://dota-aow5-utils.duckdns.org https://aow5.duckdns.org data:; connect-src 'self'; style-src 'self' 'unsafe-inline'"
+      content="default-src 'self'; img-src 'self' data:; connect-src 'self'; style-src 'self' 'unsafe-inline'"
     />
     <title>AOW5 Tracker</title>
   </head>

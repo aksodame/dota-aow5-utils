@@ -1,10 +1,15 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { TrackerEvent } from '../core/events.ts';
 import type { SessionHistory } from '../core/history.ts';
+import type { SoundHit, SoundSearchResponse } from 'aow5-api-contract';
+import type { PackFail } from '../core/packs.ts';
 import {
   OVERLAY_IDS,
   type LogTrim,
   type OverlayId,
+  type PackInstall,
+  type PackPreview,
+  type SearchFail,
   type SessionSnapshot,
   type SkippedLine,
   type TrackerApi,
@@ -85,13 +90,20 @@ const api: TrackerApi = {
   getSession: (): Promise<SessionSnapshot> => ipcRenderer.invoke('tracker:getSession'),
   pickSound: (): Promise<string | null> => ipcRenderer.invoke('tracker:pickSound'),
   readSound: (ref: string): Promise<Uint8Array | null> => ipcRenderer.invoke('tracker:readSound', ref),
+  previewPack: (url: string): Promise<PackPreview> => ipcRenderer.invoke('tracker:previewPack', url),
+  installPack: (url: string): Promise<PackInstall | { error: PackFail }> =>
+    ipcRenderer.invoke('tracker:installPack', url),
+  removePack: (id: string): Promise<void> => ipcRenderer.invoke('tracker:removePack', id),
+  searchSounds: (query: string, page: number): Promise<SoundSearchResponse | { error: SearchFail }> =>
+    ipcRenderer.invoke('tracker:searchSounds', query, page),
+  importSound: (hit: SoundHit): Promise<{ ref: string } | { error: PackFail }> =>
+    ipcRenderer.invoke('tracker:importSound', hit),
 
   clearHistory: (): Promise<void> => ipcRenderer.invoke('tracker:clearHistory'),
   deleteSessions: (ids: number[]): Promise<void> => ipcRenderer.invoke('tracker:deleteSessions', ids),
   pickLogFile: (): Promise<string | null> => ipcRenderer.invoke('tracker:pickLogFile'),
   compactLog: (): Promise<LogTrim> => ipcRenderer.invoke('tracker:compactLog'),
   newSession: (): Promise<void> => ipcRenderer.invoke('tracker:newSession'),
-  clearCache: (): Promise<void> => ipcRenderer.invoke('tracker:clearCache'),
 
   getUpdate: (): Promise<UpdateState> => ipcRenderer.invoke('tracker:getUpdate'),
   checkUpdate: (): Promise<void> => ipcRenderer.invoke('tracker:checkUpdate'),

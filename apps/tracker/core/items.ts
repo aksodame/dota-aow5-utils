@@ -28,54 +28,35 @@ export interface ItemInfo {
 }
 
 /**
- * Icons are ~22 MB across 1,088 files.
+ * Icons ship with the app: `icons/items/…`, relative to the renderer's own
+ * document.
  *
- * They live in `aow5-shared/public/icons` and are deployed with the planner, but
- * shipping them inside a desktop app would multiply its size for art that is
- * already on a CDN. They load from the deployed planner and are left to
- * Chromium's cache; a miss degrades to a broken image rather than a broken
- * overlay.
+ * They used to be fetched from the deployed planner, and that made them the one
+ * part of an otherwise entirely local overlay that could fail on a machine
+ * where everything else worked. Two ways it did:
  *
- * **This value is compiled into every binary that ships.** An installed copy
- * keeps asking the host below forever, so wherever it points has to keep
- * serving files — and it cannot be fixed by redirecting, because the renderer's
- * Content-Security-Policy (src/index.html) allowlists the host, and a redirect
- * to a different one is refused by the policy rather than followed.
+ *   1. The builder moved to `dota-aow5-utils.duckdns.org` and retired its old
+ *      origin with a single splat in `_redirects`, which caught `/icons/*`
+ *      along with everything else and rewrote it to an SPA route. Every icon
+ *      request came back as 200 `text/html`, and an <img> handed HTML draws a
+ *      broken-image glyph and reports nothing — so the only symptom was a panel
+ *      that had quietly lost its art on every machine without a warm cache.
+ *   2. A player whose resolver would not answer for the art host. Nothing to
+ *      clear, nothing to retry, nothing the app could do about it.
  *
- * Which is why it is overridable: `AOW5_ICON_BASE` in the environment wins, so
- * a move can be tested, and a future one does not strand whatever is already
- * installed. Changing the default is a release, and the new host must be added
- * to the CSP in the same commit.
+ * The staleness argument for keeping them remote was that the art could be
+ * refreshed without a release — but the item *tables* are a bundled import from
+ * `aow5-shared`, so a new item has always meant a new release, and the icons
+ * were never the thing holding that back. Bundling them costs ~14 MB in a 94 MB
+ * installer, downloaded once: `electron-updater`'s differential update skips
+ * blocks that did not change, and between releases these do not.
  *
- * The paragraph above is not hypothetical; it happened. The builder moved to
- * `dota-aow5-utils.duckdns.org` and retired its old origin with a single splat
- * in `aow5-builder/public/_redirects`, which caught `/icons/*` along with
- * everything else and rewrote it to `/builder/icons/...`. That prefix is an SPA
- * route, not a directory — the site is served from the root — so every icon
- * request fell through to the SPA fallback and came back as 200 `text/html`.
- * An <img> handed HTML draws a broken-image glyph and reports nothing, so the
- * only symptom was a panel that had quietly lost its art, on every machine
- * without a warm cache.
- *
- * It was fixed by removing `/icons/*` from that splat, which is the one repair
- * that also reaches 0.1.5 and earlier: no redirect means no CSP question. The
- * lasting rule is the one at the top — this path is an API with shipped clients,
- * so retiring the origin around it has to leave it standing. This constant is
- * deliberately *not* the place to paper over a server-side mistake: repointing
- * it rescues new installs and strands every old one for good.
+ * `scripts/gen-icons.ts` is what puts them there, out of the same
+ * `aow5-shared/public/icons` the planner deploys. Relative and not root-
+ * relative: a packaged renderer is loaded with `loadFile`, where `/icons/…`
+ * resolves against the filesystem root rather than the app.
  */
-const DEFAULT_ICON_BASE = 'https://aow5-builder.pages.dev/icons/items';
-
-export const ICON_BASE: string = readIconBase();
-
-function readIconBase(): string {
-  // Read off globalThis rather than naming `process`, because this file is part
-  // of core/ and core/ is checked against the browser libs — it has to compile
-  // with no Node types at all, the same rule that keeps Electron out of here.
-  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
-  const override = env?.['AOW5_ICON_BASE'];
-  return override !== undefined && override !== '' ? override.replace(/\/+$/, '') : DEFAULT_ICON_BASE;
-}
+const ICON_BASE = 'icons/items';
 
 export function iconUrl(icon: string): string {
   return `${ICON_BASE}/${icon}`;

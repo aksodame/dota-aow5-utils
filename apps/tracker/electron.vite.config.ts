@@ -73,6 +73,19 @@ export default defineConfig({
         '@core': path.join(root, 'core'),
       },
     },
+    /*
+     * The item art, written by `scripts/gen-icons.ts` before every build and
+     * every `dev` — 1,053 PNGs copied verbatim into `out/renderer/icons`, and
+     * served by the dev server at the same path.
+     *
+     * Explicit because Vite's default is `<root>/public` and this root is
+     * `src/`: the directory is generated, so it belongs beside the other
+     * generated output rather than inside the source tree. Static rather than
+     * imported, because 1,053 `import` statements would put every icon through
+     * the bundler for no gain — they are referenced by name at runtime and
+     * nothing about them is code.
+     */
+    publicDir: path.join(root, 'public'),
     build: {
       minify,
       outDir: path.join(root, 'out/renderer'),

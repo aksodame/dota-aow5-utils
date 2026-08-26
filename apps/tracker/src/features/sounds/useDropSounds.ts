@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import type { TrackerEvent } from '@core/events.ts';
-import { DEFAULT_SOUNDS, type SoundSettings } from '@core/sounds.ts';
+import type { ItemTable } from '@core/items.ts';
+import { DEFAULT_SOUNDS, resolveSound, type SoundSettings } from '@core/sounds.ts';
+import { useItems } from '@/features/items/table';
 import { createSoundPlayer, type SoundPlayer } from './player';
 
 /**
@@ -14,10 +16,23 @@ import { createSoundPlayer, type SoundPlayer } from './player';
  * One sound per drop event. A pickup of four Crimson Hearts is one event and
  * one ring: the sound means "that dropped", not "that many dropped", and four
  * restarts in a row would say neither.
+ *
+ * What a drop *should* sound like is `resolveSound`'s question, not this hook's:
+ * the item's own binding, then its rarity, then its level. All this end knows is
+ * that a pickup carries ids, and that an id has to become a grade before a rule
+ * can match it — which is what the table is for.
  */
 export function useDropSounds(settings: SoundSettings | null): void {
   const live = useRef<SoundSettings | null>(settings);
   const player = useRef<SoundPlayer | null>(null);
+
+  // Through a ref because the feed is subscribed to once, on mount. The table
+  // only changes when the language does, and quality and level are the same row
+  // in every language — but a stale closure is a stale closure, and this costs
+  // an assignment.
+  const items = useItems();
+  const table = useRef<ItemTable>(items);
+  table.current = items;
 
   useEffect(() => {
     const created = createSoundPlayer(live.current ?? DEFAULT_SOUNDS);
@@ -27,12 +42,12 @@ export function useDropSounds(settings: SoundSettings | null): void {
       const now = live.current;
       if (!now?.enabled || event.e !== 'drop') return;
 
-      // Two ids in one pickup can be bound to the same file; it should ring
-      // once, not fight itself.
+      // Two ids in one pickup can resolve to the same file — easily, now that
+      // a rule covers a whole tier; it should ring once, not fight itself.
       const rung = new Set<string>();
       for (const [id] of event.items) {
-        const ref = now.bindings[id];
-        if (ref === undefined || rung.has(ref)) continue;
+        const ref = resolveSound(now, table.current.get(id));
+        if (ref === null || rung.has(ref)) continue;
         rung.add(ref);
         created.play(ref);
       }

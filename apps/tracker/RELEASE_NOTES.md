@@ -1,4 +1,44 @@
-Item icons are back, and the tracker clears its cached art on every update.
+Item art ships inside the app now, and drop sounds can be set by rarity and level.
+
+## 0.1.8-beta
+
+### Added
+
+- **Drop sounds by grade.** Under *Sounds*, a sound can be set on a whole rarity
+  — Common through Divine — or on a level, instead of on one item at a time.
+  What a drop plays is decided in that order: a sound you set on the item itself
+  wins, then its rarity, then its level, and a pickup rings once whatever else
+  it matches.
+- **More than one sound in the box.** Every sound the app ships is offered in
+  the menu behind any grade or bound item, beside *Choose a file…* for your own.
+- **The top two rarities ring out of the box.** A new install starts with a
+  sound on Legendary and another on Mythic — the two grades worth looking up
+  from a fight for. Everything below stays silent, and either can be changed or
+  cleared in one click. An existing install is left exactly as it is: rules you
+  never set are not added to a config you already have.
+
+### Changed
+
+- **Item art is part of the download.** All 1,053 icons ship inside the app
+  instead of loading from the builder's site, so they draw on a machine that
+  cannot reach it — a DNS server that will not answer for the art host, a VPN,
+  an office network. The overlay now makes no outbound request at all. It costs
+  about 14 MB in the installer, and an update only downloads the parts that
+  changed.
+- **Clear cache is gone**, along with the automatic clear on every update. Both
+  existed for downloaded art, and there is none left to clear.
+- **Overridden prices fit.** The field is wider and its digits a size smaller,
+  so a six-figure price is readable while it is being typed.
+- **Tracked items are a list, not a row of pills.** Each pinned item now gets a
+  row with its icon, its name in its rarity's colour and what it is worth —
+  matching the repriced items above it, and readable at a glance once there are
+  more than a few.
+
+### Fixed
+
+- **The unknown-item icon.** An id the tables have never heard of drew a broken
+  image rather than the placeholder — it was the one icon that had never been
+  where the app asked for it.
 
 ## 0.1.7-beta
 

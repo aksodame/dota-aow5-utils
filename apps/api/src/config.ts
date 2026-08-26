@@ -15,6 +15,15 @@ export interface AppConfig {
    * accept, and it is what decides whether cookies are marked `Secure`.
    */
   siteOrigin: string;
+  /**
+   * The Freesound API key, or null where the deployment has none.
+   *
+   * Optional on purpose, including in production: sound search is a convenience
+   * in a desktop app, and a missing key should cost that one feature rather
+   * than stop the site from booting. `FreesoundService` answers "not
+   * configured" and the tracker's picker hides its search box.
+   */
+  freesoundToken: string | null;
   isProduction: boolean;
 }
 
@@ -34,6 +43,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     // Required in production only, so `pnpm --filter aow5-utils-api dev` needs no
     // setup at all to answer /api/health.
     siteOrigin: isProduction ? required('SITE_ORIGIN') : (env['SITE_ORIGIN'] ?? 'http://localhost:5173'),
+    freesoundToken: env['FREESOUND_TOKEN']?.trim() || null,
     isProduction,
   };
 }

@@ -1,21 +1,31 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check,
   Download,
   FolderOpen,
-  Images,
   Play,
   Plus,
   RefreshCw,
   RotateCw,
   Scissors,
+  Search,
   Volume2,
   X,
 } from 'lucide-react';
 import { CARD_IDS, DEFAULT_CARDS, readCards, type CardId } from '@core/cards.ts';
 import { iconUrl, qualityColor, type ItemTable } from '@core/items.ts';
 import { LOCALES, type LanguageSetting } from '@core/locale.ts';
-import { BUILTIN_JACKPOT, DEFAULT_SOUNDS, LIMIT, soundLabel, VOLUME, type SoundSettings } from '@core/sounds.ts';
+import { importedSoundId, IMPORTED_PACK, packRef, type SoundPack } from '@core/packs.ts';
+import {
+  BUILTIN_JACKPOT,
+  DEFAULT_SOUNDS,
+  LEVELS,
+  LIMIT,
+  QUALITIES,
+  soundLabel,
+  VOLUME,
+  type SoundSettings,
+} from '@core/sounds.ts';
 import { DEFAULT_STYLE, TRACKER_STYLES, type TrackerStyle } from '@core/style.ts';
 import {
   OPACITY,
@@ -27,13 +37,22 @@ import {
   type TrackerStatus,
   type UpdateState,
 } from '@core/ipc.ts';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
+import type { SoundHit } from 'aow5-api-contract';
 import type { Pricing } from '@/features/items/prices';
+import { BUILTIN_REFS } from '@/features/sounds/builtins';
 import { useSoundPreview } from '@/features/sounds/useSoundPreview';
 import { useItems } from '@/features/items/table';
 import { useRooms } from '@/features/rooms/table';
@@ -101,6 +120,7 @@ export function Settings({
   const sounds = config?.sounds ?? DEFAULT_SOUNDS;
   const soundResults = soundQuery.trim() !== '' ? itemTable.search(soundQuery, 8) : [];
   const preview = useSoundPreview(config?.sounds ?? null);
+  const soundChoices = useSoundChoices(config?.soundPacks, m);
 
   const setSounds = (patch: Partial<SoundSettings>) =>
     void window.tracker.setConfig({ sounds: { ...sounds, ...patch } });
@@ -114,6 +134,27 @@ export function Settings({
   const rebind = (id: string) =>
     void window.tracker.pickSound().then((file) => {
       if (file !== null) bind(id, file);
+    });
+
+  /*
+   * The two rule maps, edited through one pair of helpers.
+   *
+   * Keyed by the grade as a string because that is what survives a round trip
+   * through the config file — `{ 6: 'x' }` comes back as `{ '6': 'x' }`, and a
+   * lookup written against the number would miss it on the second launch and
+   * on no other.
+   */
+  type RuleMap = 'byQuality' | 'byLevel';
+  const setRule = (map: RuleMap, grade: number, ref: string) =>
+    setSounds({ [map]: { ...sounds[map], [grade]: ref } });
+  const clearRule = (map: RuleMap, grade: number) => {
+    const next = { ...sounds[map] };
+    delete next[String(grade)];
+    setSounds({ [map]: next });
+  };
+  const pickRule = (map: RuleMap, grade: number) =>
+    void window.tracker.pickSound().then((file) => {
+      if (file !== null) setRule(map, grade, file);
     });
 
   /*
@@ -289,21 +330,48 @@ export function Settings({
             </ul>
           )}
 
+          {/*
+            Rows, like the repriced items above, and not the chips this used to
+            be. Both lists answer the same kind of question — which items have I
+            said something about — and they were answering it in two different
+            shapes a few pixels apart. Rows also carry what a chip could not: the
+            icon you actually recognise an item by, its rarity in the colour the
+            rest of the app uses, and what it is worth, which is most of why it
+            got pinned. A name alone in a pill made a list of twelve into a wall
+            of text you had to read rather than scan.
+          */}
           {tracked.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {tracked.map((id) => (
-                <Badge key={id} variant="secondary" className="gap-1 py-0 ps-1.5 pe-1 text-[0.625rem]">
-                  {itemTable.get(id).name}
-                  <button
-                    type="button"
-                    onClick={() => toggle(id)}
-                    aria-label={m.settings.tracked.untrack(itemTable.get(id).name)}
-                  >
-                    <X className="size-3 hover:text-destructive" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
+            <ul className="space-y-0.5">
+              {tracked.map((id) => {
+                const info = itemTable.get(id);
+                return (
+                  <li key={id} className="flex items-center gap-2 rounded px-1 py-0.5 odd:bg-white/[0.03]">
+                    <img src={iconUrl(info.icon)} alt="" className="size-5 shrink-0 rounded-sm object-cover" />
+                    <span
+                      className="min-w-0 flex-1 truncate"
+                      style={{ color: qualityColor(info.quality) }}
+                      title={id}
+                    >
+                      {info.name}
+                    </span>
+                    {/* What it is worth *now* — through `prices`, so an override
+                        set in the section above shows here rather than the two
+                        lists quietly disagreeing about the same item. */}
+                    <span className="shrink-0 text-[0.625rem] tabular-nums text-muted-foreground">
+                      {pricing.unit(id)}g
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggle(id)}
+                      aria-label={m.settings.tracked.untrack(info.name)}
+                      title={m.settings.tracked.untrackHint}
+                    >
+                      <X className="size-3 text-muted-foreground hover:text-destructive" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </section>
 
@@ -354,6 +422,75 @@ export function Settings({
                   format={m.settings.sounds.seconds}
                 />
               )}
+
+              {/*
+                The grades, before the search box, because they are the answer
+                for almost everybody: what a player reacts to is "something
+                Mythic dropped", and saying that by hand meant binding 239
+                items one at a time. The per-item list underneath is still
+                where an *item* gets an opinion — it outranks both grids.
+              */}
+              <div className="space-y-1.5 rounded-md bg-black/25 p-1.5">
+                <div className="text-[0.625rem] font-medium">{m.settings.sounds.rules}</div>
+                <p className="text-[0.5rem] leading-snug text-muted-foreground">{m.settings.sounds.rulesHint}</p>
+
+                <RuleGrid
+                  label={m.settings.sounds.byQuality}
+                  grades={QUALITIES}
+                  rules={sounds.byQuality}
+                  name={(grade) => m.settings.sounds.rarity[grade] ?? String(grade)}
+                  choices={soundChoices}
+                  // The same tint the item lists use, so a tier reads as the
+                  // colour the player already associates with it.
+                  tint={qualityColor}
+                  m={m}
+                  onPick={(grade, ref) => setRule('byQuality', grade, ref)}
+                  onChoose={(grade) => pickRule('byQuality', grade)}
+                  onClear={(grade) => clearRule('byQuality', grade)}
+                  onPlay={preview}
+                />
+
+                <RuleGrid
+                  label={m.settings.sounds.byLevel}
+                  grades={LEVELS}
+                  rules={sounds.byLevel}
+                  name={(grade) => m.settings.sounds.level(grade)}
+                  choices={soundChoices}
+                  m={m}
+                  onPick={(grade, ref) => setRule('byLevel', grade, ref)}
+                  onChoose={(grade) => pickRule('byLevel', grade)}
+                  onClear={(grade) => clearRule('byLevel', grade)}
+                  onPlay={preview}
+                />
+              </div>
+
+              {/*
+                The catalogue search, off for now.
+
+                Commented rather than gated, deliberately. It was already off by
+                default — `soundSearchUrl` ships empty — but a default only
+                governs a profile that has never been written to, and any config
+                saved while the field had a value still carries it and would
+                still draw this. Taking the element out is the version that is
+                true of every profile.
+
+                A sound therefore comes from one of two places: the ones in the
+                box, and a file on this machine. Both are offered by the menu
+                behind every binding and every grade chip.
+
+                To bring it back: uncomment this, and put the deployment's
+                origin in `soundSearchUrl` (see `electron/config.ts`). Nothing
+                else was removed — `SoundSearch` below, the IPC either side of
+                it, and `apps/api/src/sounds/` are all still here and still
+                tested.
+
+              <SoundSearch
+                packs={config?.soundPacks}
+                m={m}
+                onPlay={preview}
+                enabled={(config?.soundSearchUrl ?? '').trim() !== ''}
+              />
+              */}
 
               <Input
                 value={soundQuery}
@@ -407,10 +544,28 @@ export function Settings({
                           {info.name}
                         </span>
                         {/* The file's name, with the whole path on hover: the
-                            rest of it is where you keep your sounds. */}
-                        <span className="w-20 shrink-0 truncate text-right text-[0.5rem] text-muted-foreground" title={ref}>
-                          {soundLabel(ref)}
-                        </span>
+                            rest of it is where you keep your sounds. It is the
+                            menu too — there are several sounds in the box now,
+                            and a folder button could only ever offer the one
+                            answer that needs a file dialog. */}
+                        <SoundMenu
+                          sound={ref}
+                          choices={soundChoices}
+                          m={m}
+                          onPick={(next) => bind(id, next)}
+                          onChoose={() => rebind(id)}
+                          onClear={() => unbind(id)}
+                          onPlay={() => preview(ref)}
+                        >
+                          <button
+                            type="button"
+                            className="w-20 shrink-0 truncate rounded text-right text-[0.5rem] text-muted-foreground hover:text-foreground"
+                            title={ref}
+                            aria-label={m.settings.sounds.pick(info.name)}
+                          >
+                            {soundLabel(ref)}
+                          </button>
+                        </SoundMenu>
                         <button
                           type="button"
                           onClick={() => preview(ref)}
@@ -418,14 +573,6 @@ export function Settings({
                           title={m.settings.sounds.playHint}
                         >
                           <Play className="size-3 text-muted-foreground hover:text-foreground" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => rebind(id)}
-                          aria-label={m.settings.sounds.pick(info.name)}
-                          title={m.settings.sounds.pickHint}
-                        >
-                          <FolderOpen className="size-3 text-muted-foreground hover:text-foreground" />
                         </button>
                         <button
                           type="button"
@@ -614,31 +761,6 @@ export function Settings({
             </Button>
             <span className="min-w-0 flex-1 truncate text-[0.625rem] text-muted-foreground">
               {trim === null ? '' : m.trim(trim, megabytes)}
-            </span>
-          </div>
-
-          {/*
-            Under Optimization with the trim, because the two are the same kind
-            of thing: a drawer the app fills on its own, and a way to empty it
-            by hand when it has filled with something wrong. Neither is a
-            preference — nothing here changes what the tracker does, only what
-            it is still holding on to.
-
-            The item art is the only thing in the app fetched rather than
-            bundled, so it is the only thing a player can be stuck behind a
-            stale answer about — and a bad answer is kept for as long as the
-            server asked, which was a month the time it mattered.
-          */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              className="h-7 shrink-0 text-xs"
-              onClick={() => void window.tracker.clearCache()}
-            >
-              <Images className="size-3.5" /> {m.settings.log.cache}
-            </Button>
-            <span className="min-w-0 flex-1 text-[0.625rem] text-muted-foreground">
-              {m.settings.log.cacheHint}
             </span>
           </div>
         </section>
@@ -865,7 +987,10 @@ function PriceRow({
           if (e.key === 'Escape') setDraft(String(gold));
         }}
         aria-label={m.settings.prices.field(info.name)}
-        className="h-6 w-16 shrink-0 text-right text-[0.625rem] tabular-nums"
+        // Wider and a size down from the row's text: six figures is an ordinary
+        // price here, and at 0.625rem in 4rem of field the end of one scrolled
+        // out of sight while it was being typed.
+        className="h-6 w-[4.75rem] shrink-0 text-right text-[0.5625rem] tabular-nums"
       />
       {/* An X, because this removes the row. It was a `RotateCcw`, which is the
           icon every other application uses for "refresh" — so the one control
@@ -1003,4 +1128,438 @@ function Choice({
 
 function Label({ children }: { children: React.ReactNode }) {
   return <div className="text-[0.625rem] font-medium tracking-wide text-muted-foreground uppercase">{children}</div>;
+}
+
+/**
+ * One ladder of grades, each a chip that carries the sound it plays.
+ *
+ * The layout is the game's own: `Pickup Quality` and `Pickup Level` in the pet
+ * panel are a row of tinted chips, and this is the same question asked about
+ * sound — so it is worth looking like the thing it is next to. A chip with no
+ * sound is an outline; one with a sound wears the grade's colour and says what
+ * it will play, because a grid of identical chips answers "which of these did I
+ * set?" only by being clicked through one at a time.
+ */
+function RuleGrid({
+  label,
+  grades,
+  rules,
+  name,
+  tint,
+  choices,
+  m,
+  onPick,
+  onChoose,
+  onClear,
+  onPlay,
+}: {
+  label: string;
+  grades: readonly number[];
+  rules: Record<string, string>;
+  name: (grade: number) => string;
+  /** Passed straight through to every chip's menu. See `useSoundChoices`. */
+  choices: SoundChoice[];
+  /** The grade's colour, where it has one. Levels do not: the game gives them no palette. */
+  tint?: (grade: number) => string;
+  m: Messages;
+  onPick: (grade: number, ref: string) => void;
+  onChoose: (grade: number) => void;
+  onClear: (grade: number) => void;
+  onPlay: (ref: string) => void;
+}) {
+  return (
+    <div className="space-y-0.5">
+      <div className="text-[0.5rem] tracking-wide text-muted-foreground uppercase">{label}</div>
+      <div className="flex flex-wrap gap-1">
+        {grades.map((grade) => {
+          const sound = rules[String(grade)];
+          const color = tint?.(grade);
+          return (
+            <SoundMenu
+              key={grade}
+              sound={sound}
+              choices={choices}
+              m={m}
+              onPick={(ref) => onPick(grade, ref)}
+              onChoose={() => onChoose(grade)}
+              onClear={() => onClear(grade)}
+              onPlay={() => sound !== undefined && onPlay(sound)}
+            >
+              <button
+                type="button"
+                aria-label={m.settings.sounds.rule(name(grade))}
+                className={cn(
+                  'flex min-w-0 flex-col items-start rounded-md border px-1.5 py-0.5 text-[0.625rem] leading-tight transition-colors',
+                  sound === undefined && 'border-white/10 text-muted-foreground hover:border-white/25 hover:text-foreground',
+                  // Set, and no palette to wear: the levels. Explicit rather
+                  // than left to `border`'s default of `currentColor`, which
+                  // would make the chip's edge whatever its text happens to be.
+                  sound !== undefined && 'bg-white/[0.04]',
+                  sound !== undefined && color === undefined && 'border-primary/60 text-foreground',
+                )}
+                // Inline, because the tint is a CSS variable per grade rather
+                // than a class: `qualityColor` is the same function the item
+                // lists colour their names with.
+                style={sound === undefined ? undefined : { color, borderColor: color }}
+              >
+                <span>{name(grade)}</span>
+                {sound !== undefined && (
+                  <span className="max-w-[4.5rem] truncate text-[0.5rem] text-muted-foreground">
+                    {soundLabel(sound)}
+                  </span>
+                )}
+              </button>
+            </SoundMenu>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Search a catalogue of sounds, and keep the ones you want.
+ *
+ * The one place in this app that goes and looks something up, which is why it
+ * says so: a line of text under the box naming where the results come from and
+ * what licence they carry. A player who does not want that can empty
+ * `soundSearchUrl` in the config and this disappears — every other sound
+ * setting works exactly as before.
+ *
+ * Adding is one button rather than an audition-then-add pair, and that is a
+ * consequence of where the audio can be played. The renderer's CSP allows no
+ * connection but its own, so nothing can be heard until main has fetched it —
+ * and once main has fetched it, it is on disk and there is nothing left to
+ * decide. So adding plays it: you hear what you added, immediately, and the
+ * sound is now in every picker in this window.
+ *
+ * Searching is on Enter and on the button, never per keystroke. The catalogue
+ * is behind a shared daily quota, and a search-as-you-type box would spend a
+ * server's whole day on one person exploring.
+ */
+// Exported only so that commenting out its one use above does not make it an
+// unused local — `noUnusedLocals` is on, and deleting the component to satisfy
+// the compiler would be deleting the feature rather than switching it off.
+export function SoundSearch({
+  packs,
+  m,
+  onPlay,
+  enabled,
+}: {
+  packs: Record<string, SoundPack> | undefined;
+  m: Messages;
+  onPlay: (ref: string) => void;
+  /** False when no server is configured, which hides this entirely. */
+  enabled: boolean;
+}) {
+  const [query, setQuery] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [hits, setHits] = useState<SoundHit[] | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  /** Ids added this session, so a row can say so before the config round-trips. */
+  const [adding, setAdding] = useState<number | null>(null);
+
+  const imported = packs?.[IMPORTED_PACK]?.sounds ?? {};
+
+  const run = () => {
+    const asked = query.trim();
+    if (asked === '' || busy) return;
+    setBusy(true);
+    setProblem(null);
+    void window.tracker
+      .searchSounds(asked, 1)
+      .then((answer) => {
+        if ('error' in answer) {
+          setHits(null);
+          setProblem(m.settings.sounds.searchFail[answer.error]);
+          return;
+        }
+        setHits(answer.hits);
+        // An empty list is an answer, not a failure — and it needs saying, or
+        // the panel looks like it is still thinking.
+        setProblem(answer.hits.length === 0 ? m.settings.sounds.noHits : null);
+      })
+      .finally(() => setBusy(false));
+  };
+
+  const add = (hit: SoundHit) => {
+    setAdding(hit.id);
+    void window.tracker
+      .importSound(hit)
+      .then((result) => {
+        if ('error' in result) {
+          setProblem(m.settings.sounds.addFail);
+          return;
+        }
+        // Played straight away: it is the only audition there is, and hearing
+        // it is how you find out whether to keep it.
+        onPlay(result.ref);
+      })
+      .finally(() => setAdding(null));
+  };
+
+  if (!enabled) return null;
+
+  return (
+    <div className="space-y-1.5 rounded-md bg-black/25 p-1.5">
+      <div className="text-[0.625rem] font-medium">{m.settings.sounds.find}</div>
+      <p className="text-[0.5rem] leading-snug text-muted-foreground">{m.settings.sounds.findHint}</p>
+
+      <div className="flex gap-1">
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') run();
+          }}
+          placeholder={m.settings.sounds.findPlaceholder}
+          className="h-7 flex-1 text-xs"
+        />
+        <Button type="button" size="sm" variant="secondary" className="h-7 px-2 text-[0.625rem]" onClick={run} disabled={busy}>
+          {busy ? <RotateCw className="size-3 animate-spin" /> : <Search className="size-3" />}
+        </Button>
+      </div>
+
+      {problem !== null && <p className="text-[0.5rem] text-muted-foreground">{problem}</p>}
+
+      {hits !== null && hits.length > 0 && (
+        <ul className="space-y-0.5">
+          {hits.map((hit) => {
+            const here = imported[importedSoundId(hit.name, hit.id)] !== undefined;
+            return (
+              <li key={hit.id} className="flex items-center gap-2 rounded px-1 py-0.5 odd:bg-white/[0.03]">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[0.625rem]" title={hit.name}>
+                    {hit.name}
+                  </div>
+                  {/* The author and the licence on the row, not behind a
+                      tooltip: most of this catalogue is CC-BY, and a credit you
+                      have to go looking for is a credit nobody gives. */}
+                  <div className="truncate text-[0.5rem] text-muted-foreground" title={hit.license}>
+                    {m.settings.sounds.by(hit.username)} · {m.settings.sounds.seconds(Math.round(hit.duration))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => (here ? onPlay(packRef(IMPORTED_PACK, importedSoundId(hit.name, hit.id))) : add(hit))}
+                  disabled={adding === hit.id}
+                  aria-label={here ? m.settings.sounds.play(hit.name) : m.settings.sounds.add(hit.name)}
+                  title={here ? m.settings.sounds.playHint : m.settings.sounds.addHint}
+                  className="shrink-0"
+                >
+                  {adding === hit.id ? (
+                    <RotateCw className="size-3.5 animate-spin text-muted-foreground" />
+                  ) : here ? (
+                    <Check className="size-3.5 text-primary" />
+                  ) : (
+                    <Plus className="size-3.5 text-muted-foreground hover:text-foreground" />
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** One sound that can be bound: what to call it, and which list it came from. */
+interface SoundChoice {
+  ref: string;
+  label: string;
+  /** The heading it sits under — the box, or the pack it arrived with. */
+  group: string;
+}
+
+/**
+ * Everything bindable, in the order the menu should offer it.
+ *
+ * The sounds in the box first, then each installed pack, because the built-ins
+ * are the ones that are certainly there — a pack whose files are still being
+ * fetched is a heading with names under it that will not play yet, and that is
+ * a better thing to meet second than first.
+ *
+ * Memoised on the packs themselves rather than rebuilt per menu: there is one
+ * of these menus per grade chip and per bound item, which is upwards of twenty
+ * on a settings window that has been used for a while.
+ */
+function useSoundChoices(packs: Record<string, SoundPack> | undefined, m: Messages): SoundChoice[] {
+  return useMemo(
+    () => [
+      ...BUILTIN_REFS.map((ref) => ({ ref, label: soundLabel(ref), group: m.settings.sounds.builtins })),
+      ...Object.values(packs ?? {}).flatMap((pack) =>
+        Object.keys(pack.sounds)
+          .sort((a, b) => a.localeCompare(b))
+          // The sound's id is its name here. A pack writes those to be read —
+          // `vine-boom`, not a filename with a hash in it — so there is nothing
+          // to prettify, and prettifying would hide the half of the reference
+          // somebody has to type into a shared config.
+          .map((id) => ({ ref: packRef(pack.id, id), label: id, group: pack.name })),
+      ),
+    ],
+    [packs, m],
+  );
+}
+
+/**
+ * Longer than this and the list is one you search rather than read.
+ *
+ * The box ships one sound, so this is really a threshold about packs: a menu
+ * that grows a filter field the moment it needs one, and does not carry an
+ * empty search box around before then.
+ */
+const FILTER_AT = 8;
+
+/**
+ * The menu behind anything that has a sound: the grade chips and the bound
+ * items alike.
+ *
+ * One control rather than a row of icon buttons, because the answer is a
+ * choice from a list — the sounds in the box, one out of a pack, or a file of
+ * your own — and a list is what a menu is for. Play sits at the top of it: the
+ * reason to open this at all is usually to hear what is already there.
+ */
+function SoundMenu({
+  sound,
+  choices,
+  m,
+  onPick,
+  onChoose,
+  onClear,
+  onPlay,
+  children,
+}: {
+  /** The sound now, or undefined for a grade nothing has been set on. */
+  sound: string | undefined;
+  /** Everything it could be instead. See `useSoundChoices`. */
+  choices: SoundChoice[];
+  m: Messages;
+  onPick: (ref: string) => void;
+  onChoose: () => void;
+  onClear: () => void;
+  onPlay: () => void;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState('');
+  const field = useRef<HTMLInputElement>(null);
+  const searchable = choices.length > FILTER_AT;
+
+  /*
+   * Puts the cursor in the filter field, once the menu has finished opening.
+   *
+   * Radix focuses the menu itself on open — right for a list you arrow through,
+   * wrong for one that starts with a text box — and its `onOpenAutoFocus` is
+   * not exposed on a dropdown's content, so this cannot be done by preventing
+   * it. A frame later is after the content has mounted and taken focus, which
+   * is the only ordering that is actually guaranteed here.
+   */
+  useEffect(() => {
+    if (!open || !searchable) return;
+    const frame = requestAnimationFrame(() => field.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [open, searchable]);
+
+  const needle = filter.trim().toLowerCase();
+  // The pack's name matches too, so "jackpots" narrows to a pack rather than
+  // finding nothing — the name is how people refer to a set of sounds, and a
+  // filter that only knows the leaves cannot answer "show me those".
+  const matches =
+    needle === ''
+      ? choices
+      : choices.filter((c) => c.label.toLowerCase().includes(needle) || c.group.toLowerCase().includes(needle));
+
+  // Grouped in encounter order rather than sorted, so the headings stay where
+  // `useSoundChoices` put them however the filter thins them out.
+  const groups: [string, SoundChoice[]][] = [];
+  for (const choice of matches) {
+    const last = groups[groups.length - 1];
+    if (last && last[0] === choice.group) last[1].push(choice);
+    else groups.push([choice.group, [choice]]);
+  }
+
+  return (
+    <DropdownMenu
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        // A filter left over from last time would open the menu on a list that
+        // is already narrowed, with the reason offscreen above it.
+        if (!next) setFilter('');
+      }}
+    >
+      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {sound !== undefined && (
+          <>
+            <DropdownMenuItem onSelect={onPlay}>
+              <Play /> {m.settings.sounds.playHint}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+
+        {searchable && (
+          // Sticky, because the content is its own scroll container: a filter
+          // that scrolls away is one you cannot correct without going back up.
+          <div className="sticky top-0 z-10 -mx-1 -mt-1 mb-1 bg-popover px-1 pt-1 pb-1">
+            <Input
+              ref={field}
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              /*
+               * Held back from the menu, with one exception.
+               *
+               * A menu reads plain keypresses as typeahead and jumps focus to
+               * the item they match, which in a text field means every letter
+               * typed lands somewhere else. Escape is let through on purpose:
+               * it is handled on the document by the dismissable layer, so
+               * stopping it here would leave the menu with no way to close from
+               * the field it opens focused in.
+               */
+              onKeyDown={(e) => {
+                if (e.key !== 'Escape') e.stopPropagation();
+              }}
+              placeholder={m.settings.sounds.filter}
+              aria-label={m.settings.sounds.filter}
+              className="h-6 text-[0.625rem]"
+            />
+          </div>
+        )}
+
+        {groups.map(([group, entries]) => (
+          <div key={group}>
+            <DropdownMenuLabel>{group}</DropdownMenuLabel>
+            {entries.map((choice) => (
+              <DropdownMenuItem key={choice.ref} onSelect={() => onPick(choice.ref)}>
+                {choice.ref === sound ? (
+                  <Check className="text-primary" />
+                ) : (
+                  <Volume2 className="text-muted-foreground" />
+                )}
+                {choice.label}
+              </DropdownMenuItem>
+            ))}
+          </div>
+        ))}
+
+        {/* Said rather than shown as an empty menu: nothing under a filter box
+            looks exactly like a menu that failed to load. */}
+        {groups.length === 0 && (
+          <div className="px-2 py-1.5 text-[0.625rem] text-muted-foreground">{m.settings.sounds.noMatch}</div>
+        )}
+
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onChoose}>
+          <FolderOpen className="text-muted-foreground" /> {m.settings.sounds.choose}
+        </DropdownMenuItem>
+        {sound !== undefined && (
+          <DropdownMenuItem variant="destructive" onSelect={onClear}>
+            <X /> {m.settings.sounds.remove}
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

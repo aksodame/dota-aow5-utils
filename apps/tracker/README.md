@@ -135,8 +135,14 @@ relative `fetch` is blocked by the origin, so the previous fetch-with-a-remote-f
 download them". Importing makes the overlay work offline, and it removed the copy step that used to keep a
 stale duplicate of the tables inside this app.
 
-Icons stay remote (1,088 files, ~22 MB) and load from `https://aow5-builder.pages.dev/icons/items/`, cached
-by Chromium. They are the overlay's only outbound request.
+Icons ship with the app, for the same reason. They used to load from `https://aow5-builder.pages.dev`, which
+made them the one part of an otherwise local overlay that a resolver, a VPN or a retired origin could break —
+and a player behind any of those has nothing to clear and nothing to retry. `scripts/gen-icons.ts` copies them
+out of `aow5-shared` before every build, dropping every PNG chunk that is not pixels on the way: 1,053 files,
+19 MB down to 14 MB, the same pixels. The overlay now makes no outbound request at all, and its CSP says so.
+
+The copy lands in `apps/tracker/public/` and is gitignored — generated, not committed. A build that skips the
+script is a build with no icons, which is why `dev` and `build` both run it rather than leaving it to memory.
 
 ## Development
 
@@ -173,6 +179,22 @@ exclusive fullscreen will cover it.
 Stored in `%APPDATA%/aow5-tracker/config.json`. A corrupt, hand-edited or older file never stops the app from
 starting: every value is clamped and defaulted on read, and the pre-0.2 single-window `bounds` field is
 migrated, so upgrading does not move your overlay back to a corner.
+
+### Drop sounds
+
+Three ways to say what a pickup should sound like, and `resolveSound` in `core/sounds.ts` is the only place
+their order lives: the sound set on the **item** wins, then its **rarity**, then its **level**. A drop rings
+once whatever else it matches — the sound means "that dropped", not "that dropped and it was also level 9".
+
+Rarity above level because rarity is what a player looks up for; the level ladder is the floor under it, for
+the tiers you have said nothing about. Both grids ship empty: quality 6 alone is 239 items, and a fresh
+install that rings all evening is one that gets switched off rather than tuned.
+
+The sounds in the box are whatever is in `assets/sounds/` — `features/sounds/builtins.ts` globs it, so adding
+one is dropping an `.mp3` in, and the file's name minus its extension is the `builtin:` name that bindings
+point at. They are inlined as data URLs, unlike the icons beside them: a packaged renderer runs on a `file:`
+origin where Chromium refuses `fetch`, and `decodeAudioData` needs the bytes. Keep them short — base64 costs
+a third on top of the file.
 
 ## Releases
 

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, session, type Tray } from 'electron';
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, net, type Tray } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { TrackerEvent } from '../core/events.ts';
@@ -8,16 +8,22 @@ import {
   OVERLAY_SPEC,
   UI_SCALE,
   type OverlayId,
+  type PackInstall,
+  type SearchFail,
   type SessionSnapshot,
   type SkippedLine,
   type TrackerConfig,
   type UpdateState,
 } from '../core/ipc.ts';
+import type { SoundHit, SoundSearchResponse } from 'aow5-api-contract';
+import { importedSoundId, IMPORTED_PACK, packedSound, packRef, type PackFail } from '../core/packs.ts';
+import { MAX_SOUND_BYTES } from '../core/sounds.ts';
 import { compactLog, type CompactResult } from '../core/sources/logfile.ts';
 import { byRoom } from '../core/stats.ts';
 import { applyArgs, clamp, loadConfig, saveConfig } from './config.ts';
 import { History } from './history.ts';
 import { Overlay } from './overlay.ts';
+import { SoundStore } from './packs.ts';
 import { SourceFeed } from './sources.ts';
 import { createTray } from './tray.ts';
 import { Updater } from './update.ts';
@@ -50,6 +56,14 @@ const broadcast = (channel: string, payload: unknown) => each((overlay) => overl
 let history: History = null as unknown as History;
 
 /**
+ * The fetched sounds, kept by content under `userData/sounds`.
+ *
+ * Built in `whenReady` rather than here, because `app.getPath('userData')` is
+ * not answerable until then.
+ */
+let store: SoundStore = null as unknown as SoundStore;
+
+/**
  * How many unreadable lines are kept for a window that asks later.
  *
  * The settings window shows the last handful as a diagnostic, not a log: if
@@ -58,9 +72,160 @@ let history: History = null as unknown as History;
  */
 const SKIPPED_LIMIT = 20;
 
-/** Anything bigger is not a notification. Mirrors the renderer's own limit. */
-const MAX_SOUND_BYTES = 10 * 1024 * 1024;
 const skippedLines: SkippedLine[] = [];
+
+/** A search nobody is still waiting for. Shorter than a download's: this is a keystroke's answer. */
+const SEARCH_TIMEOUT_MS = 12_000;
+
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/**
+ * A search hit, out of whatever the renderer sent back.
+ *
+ * Checked even though this process is what handed the renderer the hit in the
+ * first place. It is the argument to a call that fetches a URL and writes a
+ * file, and a channel that takes one of those on trust is a channel where trust
+ * is the only thing between a compromised renderer and an arbitrary download.
+ * https is required here for the same reason `core/packs.ts` requires it of a
+ * manifest.
+ */
+function readHit(raw: unknown): SoundHit | null {
+  if (!isRecord(raw)) return null;
+  const { id, name, username, license, duration, preview, page } = raw;
+  if (typeof id !== 'number' || !Number.isInteger(id) || id <= 0) return null;
+  if (typeof preview !== 'string' || !preview.startsWith('https://')) return null;
+  return {
+    id,
+    name: typeof name === 'string' && name !== '' ? name.slice(0, 120) : `#${id}`,
+    username: typeof username === 'string' ? username.slice(0, 80) : 'unknown',
+    license: typeof license === 'string' ? license.slice(0, 200) : 'unknown',
+    duration: typeof duration === 'number' && Number.isFinite(duration) ? duration : 0,
+    preview,
+    page: typeof page === 'string' && page.startsWith('https://') ? page : `https://freesound.org/s/${id}/`,
+  };
+}
+
+/** And the server's answer, held to the same standard for the same reason. */
+function readSearch(raw: unknown): SoundSearchResponse | { error: SearchFail } {
+  if (!isRecord(raw) || !Array.isArray(raw['hits'])) return { error: 'failed' };
+  const hits = raw['hits'].map(readHit).filter((hit): hit is SoundHit => hit !== null);
+  return {
+    hits,
+    total: typeof raw['total'] === 'number' ? raw['total'] : hits.length,
+    page: typeof raw['page'] === 'number' ? raw['page'] : 1,
+    nextPage: typeof raw['nextPage'] === 'number' ? raw['nextPage'] : null,
+  };
+}
+
+/**
+ * A page of search hits, or a code the picker turns into a sentence.
+ *
+ * In main rather than the renderer, and not only because of the page's CSP.
+ * This is the one request the tracker makes on a player's behalf, so it is
+ * worth being somewhere the whole of it can be read at once: a GET to the
+ * configured server, a query string, no cookies, no identity, and a body thrown
+ * away unless it parses into the shape above.
+ *
+ * A function rather than an inline handler because it is worth being callable
+ * without an IPC message behind it — the two things this feature can get wrong
+ * are both here, and neither is reachable through a unit test of `core/`.
+ */
+async function searchSounds(query: unknown, page: unknown): Promise<SoundSearchResponse | { error: SearchFail }> {
+  const base = config.soundSearchUrl.trim();
+  // Emptied on purpose is a setting, not a failure — the picker hides its
+  // search box rather than showing an error nobody asked to see.
+  if (base === '') return { error: 'off' };
+  if (typeof query !== 'string' || query.trim() === '') return { error: 'failed' };
+
+  let url: URL;
+  try {
+    url = new URL('/api/sounds/search', base);
+  } catch {
+    // A hand-edited `soundSearchUrl` that is not a URL. The same answer as off,
+    // because it is the same situation: there is nothing here to search.
+    return { error: 'off' };
+  }
+  url.searchParams.set('q', query.trim());
+  url.searchParams.set('page', String(typeof page === 'number' && page >= 1 ? Math.floor(page) : 1));
+
+  let response: Response;
+  try {
+    response = await net.fetch(url.href, {
+      signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
+      // Nothing about a search is personal, and the server has no account for
+      // this app to be signed in to.
+      credentials: 'omit',
+    });
+  } catch {
+    return { error: 'offline' };
+  }
+
+  // 404 is how the API says it has no catalogue key — a different thing from a
+  // query with no matches, which is a 200 and an empty list.
+  if (response.status === 404) return { error: 'unconfigured' };
+  if (response.status === 429) return { error: 'busy' };
+  if (!response.ok) return { error: 'failed' };
+
+  try {
+    const body: unknown = await response.json();
+    return readSearch(body);
+  } catch {
+    return { error: 'failed' };
+  }
+}
+
+/**
+ * Fetches one hit's preview and files it under the imported pack.
+ *
+ * The audio comes from the catalogue's own CDN rather than through the search
+ * server. That is both the honest arrangement — nobody is mirroring anybody's
+ * sounds — and the reason none of this needs an account: a preview is public.
+ *
+ * What gets written down afterwards is an ordinary pack entry carrying the URL,
+ * the real size and the real hash of what arrived. That is what makes an import
+ * shareable: on somebody else's machine it is indistinguishable from a sound out
+ * of a pack they installed themselves.
+ */
+async function importSound(raw: unknown): Promise<{ ref: string } | { error: PackFail }> {
+  const hit = readHit(raw);
+  if (hit === null) return { error: 'shape' };
+
+  let stored: { sha256: string; bytes: number };
+  try {
+    stored = await store.capture(hit.preview);
+  } catch (cause) {
+    return { error: cause instanceof Error && 'reason' in cause ? (cause.reason as PackFail) : 'offline' };
+  }
+
+  const soundId = importedSoundId(hit.name, hit.id);
+  const existing = config.soundPacks[IMPORTED_PACK];
+  const pack = {
+    id: IMPORTED_PACK,
+    name: existing?.name ?? 'Freesound',
+    // Null, and it has to be: there is no manifest behind this pack to re-read.
+    // It was assembled here, one search at a time.
+    source: null,
+    sounds: {
+      ...existing?.sounds,
+      [soundId]: {
+        url: hit.preview,
+        sha256: stored.sha256,
+        bytes: stored.bytes,
+        license: hit.license,
+        // Stored rather than shown once and forgotten: most of the catalogue is
+        // CC-BY, which asks for the author by name, and the person who has to
+        // honour that is whoever ends up holding this config.
+        credit: `${hit.name} by ${hit.username} — ${hit.page}`,
+      },
+    },
+  };
+
+  config = { ...config, soundPacks: { ...config.soundPacks, [IMPORTED_PACK]: pack } };
+  save();
+  broadcast('tracker:config', config);
+  return { ref: packRef(IMPORTED_PACK, soundId) };
+}
 
 /**
  * Every event goes to the windows and to the archive.
@@ -226,6 +391,26 @@ app.whenReady().then(async () => {
 
   config = loadConfig();
   history = new History();
+  store = new SoundStore(path.join(app.getPath('userData'), 'sounds'));
+
+  /*
+   * Catch the store up with the config, without waiting for it.
+   *
+   * The usual way a pack arrives is not the settings window — it is a config
+   * file somebody was handed, which lands with `soundPacks` already in it and
+   * nothing on disk to play. Fetching them at launch means the first drop of
+   * the evening rings; fetching them *before* the windows open would mean a
+   * tracker that starts slower because a file host is slow, which is the wrong
+   * trade for a feature that is decoration until something drops.
+   *
+   * The sweep goes first and is not awaited either: it only deletes files no
+   * installed pack refers to, so it can never race the fetch that follows it
+   * into wanting the same hash.
+   */
+  store.sweep(config.soundPacks);
+  void store.ensure(config.soundPacks).then(({ fetched, failed }) => {
+    if (fetched || failed) console.log(`[packs] fetched ${fetched}, failed ${failed}`);
+  });
   const cli = applyArgs(config, process.argv.slice(1));
 
   /*
@@ -241,29 +426,6 @@ app.whenReady().then(async () => {
    * built, which is a different question.
    */
   if (app.isPackaged) config.source = 'console';
-
-  /*
-   * An upgrade starts from an empty cache.
-   *
-   * A release exists to change something, and one of the things it can be
-   * shipped to change is what the app asks a server for — or what it is willing
-   * to accept back, which is a CSP, which is compiled in. Neither reaches a
-   * client whose cache is still answering the old question, and Chromium keeps
-   * an answer for as long as the server said to: a month, in the case that made
-   * this necessary. So the drawer is emptied on the way in, rather than left for
-   * the player to find the button in Settings.
-   *
-   * Awaited, and here rather than later, because the whole point is to be
-   * finished before a window loads anything. It runs once per upgrade —
-   * `cacheVersion` is stamped immediately after — so an ordinary launch pays
-   * one string comparison.
-   */
-  const version = app.getVersion();
-  if (config.cacheVersion !== version) {
-    await session.defaultSession.clearCache();
-    config.cacheVersion = version;
-    saveConfig(config);
-  }
 
   // Before the feed starts, so the tail begins at the end of a log that is
   // already the size it should be — and so a launch after a long evening does
@@ -423,9 +585,22 @@ app.whenReady().then(async () => {
    * the app and kept decoded, so this is a handful of calls a session. The size
    * cap is what stops somebody's 300 MB wav from being loaded into the overlay
    * because they picked the wrong file in a dialog.
+   *
+   * A `pack:` reference resolves through the installed packs to a hash and out
+   * of the content store — never to a path the reference itself supplied, which
+   * is the whole reason a shared config can be trusted with this channel at
+   * all. The renderer asks the same question either way and is told the same
+   * kind of answer: bytes, or nothing.
    */
   ipcMain.handle('tracker:readSound', (_e, ref: unknown): Uint8Array | null => {
     if (typeof ref !== 'string' || ref === '') return null;
+
+    const packed = packedSound(config.soundPacks, ref);
+    // Null while a pack is still being fetched, or after a sound in it failed
+    // to arrive. Both read as silence, and both fix themselves on the next
+    // launch when `ensure` tries again.
+    if (packed) return store.read(packed.sha256);
+
     try {
       if (fs.statSync(ref).size > MAX_SOUND_BYTES) return null;
       return fs.readFileSync(ref);
@@ -436,6 +611,67 @@ app.whenReady().then(async () => {
     }
   });
 
+  /**
+   * What a pasted pack URL turns out to be. Fetches the manifest, and no audio.
+   *
+   * The two-step — preview, then install — is the whole safety story of this
+   * feature, and it is worth saying why it is a step and not a confirmation
+   * dialog. A pack manifest is a list of URLs that an app will go and fetch,
+   * arriving from a chat window. Downloading on paste would put that decision
+   * in the hands of whoever wrote the message. So a paste buys a description:
+   * names, sizes, licences and the hosts they are on, which somebody reads
+   * before the second call happens.
+   */
+  ipcMain.handle('tracker:previewPack', (_e, url: unknown) => store.preview(typeof url === 'string' ? url : ''));
+
+  /** And the second call. The URL is re-read rather than trusted from the renderer. */
+  ipcMain.handle('tracker:installPack', async (_e, url: unknown): Promise<PackInstall | { error: PackFail }> => {
+    if (typeof url !== 'string') return { error: 'url' };
+    const preview = await store.preview(url);
+    if (preview.pack === null) return { error: preview.error ?? 'shape' };
+
+    const result = await store.install(preview.pack);
+    /*
+     * Kept only if something landed.
+     *
+     * A pack whose every sound failed is a row in the settings list that can
+     * never play anything — the same thing `readPack` refuses an empty manifest
+     * for, arriving by a different route. A partial install is kept, though:
+     * nineteen of twenty is a working pack, and `ensure` retries the twentieth
+     * on every launch.
+     */
+    if (result.installed.length > 0) {
+      config = { ...config, soundPacks: { ...config.soundPacks, [preview.pack.id]: preview.pack } };
+      save();
+      broadcast('tracker:config', config);
+    }
+    return result;
+  });
+
+  /** Forget a pack, and drop the stored files nothing else still wants. */
+  ipcMain.handle('tracker:removePack', (_e, id: unknown) => {
+    if (typeof id !== 'string' || config.soundPacks[id] === undefined) return;
+    const soundPacks = { ...config.soundPacks };
+    delete soundPacks[id];
+    config = { ...config, soundPacks };
+    save();
+    // After the config is the truth, never before: the sweep keeps whatever the
+    // remaining packs refer to, and it can only answer that from the new one.
+    store.sweep(config.soundPacks);
+    broadcast('tracker:config', config);
+  });
+
+  /**
+   * A page of search hits, or a code the picker turns into a sentence.
+   *
+   * In main rather than the renderer, and not only because of the page's CSP.
+   * This is the one request the tracker makes on a player's behalf, so it is
+   * worth being somewhere the whole of it can be read at once: a GET to the
+   * configured server, a query string, no cookies, no identity, and a body
+   * thrown away unless it parses into the shape below.
+   */
+  ipcMain.handle('tracker:searchSounds', (_e, query: unknown, page: unknown) => searchSounds(query, page));
+  ipcMain.handle('tracker:importSound', (_e, hit: unknown) => importSound(hit));
   ipcMain.handle('tracker:clearHistory', () => history.clear());
 
   ipcMain.handle('tracker:deleteSessions', (_e, ids: unknown) => {
@@ -460,15 +696,6 @@ app.whenReady().then(async () => {
   // quietly: most presses land on a log the game is still holding, and
   // "nothing happened" has to be distinguishable from "nothing works".
   ipcMain.handle('tracker:compactLog', () => trimLog({ asked: true }));
-
-  // The default session is the only one there is: every overlay is an ordinary
-  // window with no partition, so one clear covers all of them. Reloading after
-  // is what the player actually sees — see `clearCache` in core/ipc.ts for why
-  // an empty cache alone leaves a broken icon broken.
-  ipcMain.handle('tracker:clearCache', async () => {
-    await session.defaultSession.clearCache();
-    for (const win of BrowserWindow.getAllWindows()) win.webContents.reload();
-  });
 
   ipcMain.handle('tracker:pickLogFile', async (e): Promise<string | null> => {
     const parent = BrowserWindow.fromWebContents(e.sender);

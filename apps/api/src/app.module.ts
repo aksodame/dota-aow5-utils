@@ -6,13 +6,14 @@ import { DbModule } from './db/db.module.ts';
 import { BuildsModule } from './builds/builds.module.ts';
 import { HealthModule } from './health/health.module.ts';
 import { SocialModule } from './social/social.module.ts';
+import { SoundsModule } from './sounds/sounds.module.ts';
 import { AllExceptionsFilter } from './http/all-exceptions.filter.ts';
 import { OriginGuard } from './auth/origin.guard.ts';
 import { SessionGuard } from './auth/session.guard.ts';
 import { ScopedThrottlerGuard, THROTTLE_DEFAULTS } from './throttle.ts';
 
 @Module({
-  imports: [ThrottlerModule.forRoot(THROTTLE_DEFAULTS), DbModule, HealthModule, AuthModule, BuildsModule, SocialModule],
+  imports: [ThrottlerModule.forRoot(THROTTLE_DEFAULTS), DbModule, HealthModule, AuthModule, BuildsModule, SocialModule, SoundsModule],
   // A provider rather than `app.useGlobalFilters`, so the filter can be
   // constructed by DI when it eventually needs something injected.
   //

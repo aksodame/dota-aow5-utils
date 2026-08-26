@@ -1,16 +1,17 @@
 {
   "name": "aow5-tracker",
   "private": true,
-  "version": "0.1.7-beta",
+  "version": "0.1.8-beta",
   "type": "module",
   "description": "Always-on-top farm tracker overlay for the Dota 2 custom game Age of Weapons 5",
   "main": "out/main/main.js",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "tsc -b && electron-vite build",
+    "dev": "node scripts/gen-icons.ts && electron-vite dev",
+    "build": "node scripts/gen-icons.ts && tsc -b && electron-vite build",
     "check-types": "tsc -b",
     "preview": "electron-vite preview",
     "test": "node --test \"core/**/*.test.ts\" \"src/lib/*.test.ts\" \"src/features/**/*.test.ts\"",
+    "gen-icons": "node scripts/gen-icons.ts",
     "gen-tray-icon": "node scripts/gen-tray-icon.ts",
     "gen-app-icon": "node scripts/gen-app-icon.ts",
     "release": "node scripts/gen-app-icon.ts && electron-builder --publish always",
@@ -19,6 +20,7 @@
     "resolve": "node spike/resolve.ts"
   },
   "dependencies": {
+    "aow5-api-contract": "workspace:*",
     "aow5-shared": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

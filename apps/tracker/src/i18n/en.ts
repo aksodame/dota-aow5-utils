@@ -204,17 +204,67 @@ export const en = {
         'Pin the items you care about and the expanded readout lists only those, with a session total to match. With none pinned, everything picked up is listed. History always records the lot, whatever is pinned here.',
       search: 'Search by name…',
       untrack: (item: string) => `Stop tracking ${item}`,
+      untrackHint: 'Stop tracking it',
     },
     sounds: {
       title: 'Sounds',
       enabled: 'Play a sound on drops',
       enabledHint:
-        'Rings once per pickup of a bound item. Crimson Heart comes bound to the jackpot sound; unbind it and it stays unbound.',
+        'Rings once per pickup that matches — a grade below, or an item you gave a sound of its own. Crimson Heart comes bound to the jackpot sound; unbind it and it stays unbound.',
       volume: 'Volume',
       limit: 'Cut long sounds',
       limitHint: 'Fade the sound out after a few seconds instead of playing the whole file.',
       limitAfter: 'Cut after',
       seconds: (value: number) => `${value}s`,
+      /*
+        The grid, before the per-item list, because it is the answer for almost
+        everybody: what you react to is "something Mythic dropped", and binding
+        that by name meant 239 rows.
+      */
+      rules: 'By grade',
+      rulesHint:
+        'A sound set on an item itself wins, then its rarity, then its level — and a drop rings once whatever else it matches.',
+      byQuality: 'Rarity',
+      byLevel: 'Level',
+      /** The addon ships quality as a bare number; these are the names the planner gives the tiers. */
+      rarity: {
+        1: 'Common',
+        2: 'Uncommon',
+        3: 'Rare',
+        4: 'Epic',
+        5: 'Legendary',
+        6: 'Mythic',
+        7: 'Divine',
+      } as Record<number, string>,
+      level: (n: number) => `Lv ${n}`,
+      rule: (grade: string) => `Sound for ${grade}`,
+      builtins: 'In the box',
+      /*
+        The search panel, which is the one part of this window that leaves the
+        machine. What it says out loud matters: where the results come from, and
+        that most of them ask to be credited.
+      */
+      find: 'Find a sound',
+      findHint:
+        'Searches Freesound, a library of Creative Commons sounds. Adding one downloads it and keeps it with your settings, credit and licence included — then bind it to an item or a grade above. Most of the library asks only that the author is named.',
+      findPlaceholder: 'coin, fanfare, boom…',
+      by: (who: string) => `by ${who}`,
+      add: (sound: string) => `Add ${sound}`,
+      addHint: 'Add it and hear it',
+      addFail: 'That sound could not be downloaded.',
+      noHits: 'Nothing found. Try a plainer word.',
+      searchFail: {
+        off: 'Sound search is switched off in this config.',
+        offline: 'Could not reach the search server.',
+        unconfigured: 'This server has no sound library key.',
+        busy: 'Too many searches just now. Try again shortly.',
+        failed: 'The search did not come back with anything usable.',
+      },
+      /** Only shown once there is more here than a list you can read at a glance. */
+      filter: 'Filter sounds…',
+      noMatch: 'No sound by that name',
+      choose: 'Choose a file…',
+      remove: 'Clear',
       search: 'Search an item to bind a sound…',
       play: (sound: string) => `Play ${sound}`,
       playHint: 'Play it',
@@ -300,9 +350,6 @@ export const en = {
       optimization: 'Optimization',
       trim: 'Keep the log small',
       trimNow: 'Trim now',
-      cache: 'Clear cache',
-      cacheHint:
-        'Throws away the downloaded item art and reopens the panels. An update does this for you; press it if icons are blank or broken in between, since a bad answer from the art host can sit in the cache for weeks.',
     },
     rooms: {
       title: 'Per room',

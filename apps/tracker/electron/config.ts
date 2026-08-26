@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DEFAULT_CARDS, readCards } from '../core/cards.ts';
 import { readLanguage } from '../core/locale.ts';
+import { readPacks } from '../core/packs.ts';
 import { DEFAULT_SOUNDS, readSoundSettings } from '../core/sounds.ts';
 import { DEFAULT_STYLE, readStyle } from '../core/style.ts';
 import {
@@ -69,7 +70,36 @@ export const DEFAULTS: TrackerConfig = {
   prices: {},
   halvePrices: true,
   trimLog: true,
-  sounds: { ...DEFAULT_SOUNDS, bindings: { ...DEFAULT_SOUNDS.bindings } },
+  // Copied a level down, all three maps: this constant is handed out to a first
+  // launch, and a caller that edited one of its rules would be editing the
+  // default every later read is built from.
+  sounds: {
+    ...DEFAULT_SOUNDS,
+    byQuality: { ...DEFAULT_SOUNDS.byQuality },
+    byLevel: { ...DEFAULT_SOUNDS.byLevel },
+    bindings: { ...DEFAULT_SOUNDS.bindings },
+  },
+  // Nothing fetched out of the box. Every sound a fresh install can play ships
+  // inside it, and the first thing a pack does is go to the network — which is
+  // not something to do on somebody's behalf before they have asked for it.
+  soundPacks: {},
+  /*
+   * Empty, which is off: the sound search does not exist until this names a
+   * server.
+   *
+   * The whole feature hangs off this one string. Empty, the settings window
+   * draws no search panel, no request is ever made, and the tracker is the
+   * entirely local app it was before — which is the state it should ship in
+   * until the server behind it has a catalogue key and somebody has decided
+   * this is worth turning on.
+   *
+   * To turn it on: put the deployment's origin here — `https://<host>`, the
+   * same one serving the guides. Nothing is sent to it but a search term, and
+   * nothing comes back but a list of names; the audio is fetched straight from
+   * the catalogue's own CDN and never touches that server. See
+   * `apps/api/src/sounds/` for the half that holds the key.
+   */
+  soundSearchUrl: '',
   opacity: OPACITY.default,
   // Solid by default: a readout you can see is worth more than a game you can
   // see through it, and the slider is right there for anyone who disagrees.
@@ -86,9 +116,6 @@ export const DEFAULTS: TrackerConfig = {
   // On: the failure it prevents — an evening measured as zero — costs more
   // than the one it can cause, which is a clock you have to stop again.
   autoResume: true,
-  // Empty means "nothing has filled it yet", which is what a first launch and a
-  // pre-0.1.7 file both amount to. Either way the first run clears and stamps.
-  cacheVersion: '',
 };
 
 export const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
@@ -196,11 +223,28 @@ function readTargets(raw: unknown): RecipeTarget[] {
 /** A corrupt or hand-edited config must not stop the app from starting. */
 export function loadConfig(): TrackerConfig {
   let raw: Record<string, unknown> = {};
+  /*
+   * Whether this profile has ever been written to, which only this function can
+   * know.
+   *
+   * It exists for the grade rules and nothing else. `DEFAULT_SOUNDS` puts a
+   * sound on Legendary and Mythic, and `readSoundSettings` deliberately refuses
+   * to apply that when it meets a settings block it cannot read — because an
+   * upgrade from a build that predates the rules is indistinguishable, from in
+   * there, from a new install, and only one of the two should suddenly start
+   * ringing at a whole tier. Up here the two are distinguishable: no file at
+   * all is a first launch.
+   *
+   * An unreadable file is deliberately not counted. It is a profile that exists
+   * and has settings in it, and the recovery for a broken one should not also
+   * hand somebody rules they never asked for.
+   */
+  let firstLaunch = false;
   try {
     const parsed: unknown = JSON.parse(fs.readFileSync(configPath(), 'utf8'));
     if (isRecord(parsed)) raw = parsed;
-  } catch {
-    // No file yet, or an unreadable one. Defaults it is.
+  } catch (cause) {
+    firstLaunch = (cause as NodeJS.ErrnoException).code === 'ENOENT';
   }
 
   const overlays = isRecord(raw['overlays']) ? raw['overlays'] : {};
@@ -218,7 +262,12 @@ export function loadConfig(): TrackerConfig {
     // Absent means the default here, and the default is on.
     halvePrices: raw['halvePrices'] !== false,
     trimLog: raw['trimLog'] !== false,
-    sounds: readSoundSettings(raw['sounds']),
+    sounds: firstLaunch ? DEFAULTS.sounds : readSoundSettings(raw['sounds']),
+    // The half of the sound settings that names URLs, so it is read by the
+    // strictest reader in the app — see `core/packs.ts`. A pack that does not
+    // survive it is dropped here, before anything can be fetched from it.
+    soundPacks: readPacks(raw['soundPacks']),
+    soundSearchUrl: typeof raw['soundSearchUrl'] === 'string' ? raw['soundSearchUrl'] : DEFAULTS.soundSearchUrl,
     opacity: clamp(number(raw['opacity'], DEFAULTS.opacity), OPACITY.min, OPACITY.max),
     // Absent in a pre-0.3 file, where opacity always meant the whole window —
     // and absent means the default, which is off.
@@ -233,9 +282,6 @@ export function loadConfig(): TrackerConfig {
     cards: readCards(raw['cards']),
     // Absent means the default here, and the default is on.
     autoResume: raw['autoResume'] !== false,
-    // A version string or nothing. Anything else is a file edited by hand into
-    // a state we would rather read as "unknown, so clear".
-    cacheVersion: typeof raw['cacheVersion'] === 'string' ? raw['cacheVersion'] : '',
     // Playback speed is a development knob owned by the default and `--speed`,
     // never by the saved file — a stale value there would silently undo it.
     mockSpeed: DEFAULTS.mockSpeed,
