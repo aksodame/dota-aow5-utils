@@ -92,6 +92,20 @@
   --input: oklch(0.3 0.015 260);
   --ring: oklch(0.65 0.16 258);
 
+}
+
+/*
+ * The rarity palette for a dark surface.
+ *
+ * `.dark` is the obvious one. `.game-card` is the in-game item and ability
+ * tooltips, which stay dark on a light page — the same way an ordinary tooltip
+ * stays inverted — so they need the pastels even when the page around them is
+ * white. Without this they would take the light theme's deeper hues, and the
+ * same item would be bordered in two different oranges depending on a setting
+ * that has nothing to do with it.
+ */
+.dark,
+.game-card {
   --quality-0: #6b7280;
   --quality-1: #9ca3af;
   --quality-2: #4ade80;

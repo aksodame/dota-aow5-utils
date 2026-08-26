@@ -15,7 +15,10 @@ export function GameCard({ className, children }: { className?: string; children
   return (
     <div
       className={cn(
-        'w-[21rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-[#3c4762] bg-[#131a27] text-[#dbe3f0] shadow-2xl',
+        // `game-card` is not a Tailwind class: it pins the rarity variables to
+        // the dark palette, since this surface is dark whatever the page is.
+        // See styles.css.
+        'game-card w-[21rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-[#3c4762] bg-[#131a27] text-[#dbe3f0] shadow-2xl',
         className,
       )}
     >
@@ -35,11 +38,17 @@ export function GameCardBody({ children }: { children: ReactNode }) {
   return <div className="space-y-2.5 p-3">{children}</div>;
 }
 
-/** A dim run-in label — "Skill: Active / Damage". */
+/**
+ * A dim run-in label — "Skill: Active / Damage".
+ *
+ * The label arrives with its own punctuation, because what separates it from
+ * the value is a translated string too.
+ */
 export function GameFact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <p className="text-[12px] leading-snug text-[#7f96b2]">
-      {label}: <span className="text-[#a9bdd6]">{children}</span>
+      {label}
+      <span className="text-[#a9bdd6]">{children}</span>
     </p>
   );
 }
