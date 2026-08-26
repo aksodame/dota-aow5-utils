@@ -68,9 +68,12 @@ decoding, and a PR that violates one will be sent back:
 
 ## The other invariants
 
-- **Both languages, always.** UI text goes in `src/i18n/strings.ts` (the planner) or `src/i18n/site.ts`
-  (chrome, landing, tracker page), with an English *and* a Russian value. No bare user-facing literals in
-  JSX. The two files are separate because they change for different reasons — keep it that way.
+- **All three languages, always.** UI text goes in `src/i18n/strings.ts` (the planner) or `src/i18n/site.ts`
+  (chrome, landing, tracker page), with an English, a Russian *and* a Chinese value — the type makes a
+  missing one a build error. Chinese is the addon's own language, so where a string names something the
+  game names too, copy the game's wording out of `locale.zh.*` rather than translating the English. No bare
+  user-facing literals in JSX. The two files are separate because they change for different reasons — keep
+  it that way.
 - **Both themes, always.** Light and dark share one set of CSS variables; check your change in both. Item
   rarity tints are variables for exactly this reason — the dark palette's pastels are unreadable on white.
 - **The previews are the real UI.** `BoardPreview` draws with the planner's own parts so tile size and
@@ -148,7 +151,7 @@ have to reverse-engineer — why this component and not that one, what you tried
 
 ## Copy and languages
 
-Keys added or changed, in strings.ts / site.ts, EN + RU. "None" is a valid answer.
+Keys added or changed, in strings.ts / site.ts, EN + RU + ZH. "None" is a valid answer.
 
 ## Screenshots
 

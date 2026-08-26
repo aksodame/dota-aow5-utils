@@ -79,9 +79,9 @@ export function SpellHoverCard({ spell, slot, strings }: Props) {
       <GameCardBody>
         {(kind || affects) && (
           <div className="space-y-0.5">
-            {kind && <GameFact label={strings.skill}>{kind}</GameFact>}
+            {kind && <GameFact label={`${strings.skill}${strings.colon}`}>{kind}</GameFact>}
             {affects && (
-              <GameFact label={strings.affects}>{strings.affectsLabel(affects.team, affects.scope)}</GameFact>
+              <GameFact label={`${strings.affects}${strings.colon}`}>{strings.affectsLabel(affects.team, affects.scope)}</GameFact>
             )}
           </div>
         )}

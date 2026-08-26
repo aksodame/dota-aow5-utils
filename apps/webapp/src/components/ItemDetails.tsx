@@ -1,6 +1,6 @@
 import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
 import type { ItemSummary } from 'aow5-shared/data';
-import type { Strings } from '@/i18n/strings';
+import { rarityLabel, type Strings } from '@/i18n/strings';
 import { affectsOf, behaviorOf, gemRows, hasNamedSkill, statRows, type StatRow } from '@/lib/itemStats';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -79,8 +79,8 @@ export function ItemDetails({ summary, full, detail, names, strings, loading }: 
             <Badge variant="outline">
               {strings.level} {summary.level}
             </Badge>
-            <Badge variant="outline">
-              {strings.quality} {summary.quality}
+            <Badge variant="outline" style={{ color: qualityColor(summary.quality) }}>
+              {rarityLabel(strings, summary.quality)}
             </Badge>
             <Badge variant="outline">
               {strings.cost} {summary.cost}
@@ -102,13 +102,17 @@ export function ItemDetails({ summary, full, detail, names, strings, loading }: 
         <p className="text-sm text-muted-foreground">
           {behavior && (
             <>
-              {strings.skill}: {strings.behavior[behavior]}
+              {strings.skill}
+              {strings.colon}
+              {strings.behavior[behavior]}
             </>
           )}
           {behavior && affects && ' · '}
           {affects && (
             <>
-              {strings.affects}: {strings.affectsLabel(affects.team, affects.scope)}
+              {strings.affects}
+              {strings.colon}
+              {strings.affectsLabel(affects.team, affects.scope)}
             </>
           )}
         </p>

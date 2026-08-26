@@ -1,7 +1,7 @@
 import { Coins } from 'lucide-react';
 import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
 import type { ItemSummary } from 'aow5-shared/data';
-import type { Strings } from '@/i18n/strings';
+import { rarityLabel, type Strings } from '@/i18n/strings';
 import { affectsOf, behaviorOf, gemRows, hasNamedSkill, statRows, type StatRow } from '@/lib/itemStats';
 import { splitDescription } from '@/lib/richDesc';
 import { GameBlock, GameCard, GameCardBody, GameCardHeader, GameDescription, GameFact } from './GameTooltip';
@@ -69,13 +69,11 @@ export function ItemHoverCard({ summary, full, detail, names, strings, loading }
           </div>
 
           <div className="mt-1.5 flex flex-wrap items-center gap-1">
-            {/* No rarity names in the extracted data — the number carries the
-                grade, and the colour is the one the rest of the site uses. */}
             <span
               className="rounded-sm px-1.5 py-px text-[10px] font-semibold text-white uppercase"
               style={{ backgroundColor: qualityColor(summary.quality) }}
             >
-              {strings.quality} {summary.quality}
+              {rarityLabel(strings, summary.quality)}
             </span>
             <span className="rounded-sm bg-white/10 px-1.5 py-px text-[10px] font-medium text-[#c3cddf] uppercase">
               {summary.type}
@@ -92,9 +90,9 @@ export function ItemHoverCard({ summary, full, detail, names, strings, loading }
       <GameCardBody>
         {(behavior || affects) && (
           <div className="space-y-0.5">
-            {behavior && <GameFact label={strings.skill}>{strings.behavior[behavior]}</GameFact>}
+            {behavior && <GameFact label={`${strings.skill}${strings.colon}`}>{strings.behavior[behavior]}</GameFact>}
             {affects && (
-              <GameFact label={strings.affects}>{strings.affectsLabel(affects.team, affects.scope)}</GameFact>
+              <GameFact label={`${strings.affects}${strings.colon}`}>{strings.affectsLabel(affects.team, affects.scope)}</GameFact>
             )}
           </div>
         )}

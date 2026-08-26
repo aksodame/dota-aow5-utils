@@ -37,20 +37,23 @@ const item = (
   cost: number,
   en: string,
   ru: string,
-): ShowcaseItem => ({ id, icon, type, quality, level, cost, name: { en, ru } });
+  zh: string,
+): ShowcaseItem => ({ id, icon, type, quality, level, cost, name: { en, ru, zh } });
 
+// The Chinese column is the addon's own wording, copied from
+// `locale.zh.names.json` rather than translated from the English.
 export const SHOWCASE = {
-  lesserHealth: item('item_P000', 'icon_m2_21.png', 'potion', 1, 1, 60, 'Lesser Health Potion', 'Слабое зелье жизни'),
-  health: item('item_P001', 'icon_m5_09.png', 'potion', 2, 2, 120, 'Health Potion', 'Зелье жизни'),
-  lesserMana: item('item_P004', 'icon_m2_24.png', 'potion', 1, 1, 60, 'Lesser Mana Potion', 'Слабое магическое зелье'),
-  powerTreads: item('item_0113', 'power_treads.png', 'equip', 2, 1, 200, 'Power Treads', 'Энергетические сапоги'),
-  maelstrom: item('item_0117', 'maelstrom.png', 'equip', 4, 3, 1800, 'Maelstrom', 'Вихрь'),
-  greatSword: item('item_0114', 'claymore.png', 'equip', 3, 1, 300, 'Great Sword', 'Большой меч'),
-  glyphAssault: item('item_G001', 'icon_fsz_72.png', 'gem', 2, 1, 200, 'Glyph: Assault I', 'Руна: Силовая атака I'),
-  glyphFocus: item('item_G002', 'icon_fsz_46.png', 'gem', 2, 2, 200, 'Glyph: Focus I', 'Руна: Сосредоточенность I'),
-  glyphAssaultII: item('item_G001_2', 'icon_fs_1__10.png', 'gem', 3, 2, 600, 'Glyph: Assault II', 'Руна: Силовая атака II'),
-  skyfallFragment: item('item_0587', 'icon_m600_01.png', 'material', 4, 6, 800, 'Skyfall Fragment', 'Осколок небес'),
-  skyfallCrystal: item('item_0588', 'icon_m600_02.png', 'material', 4, 7, 2500, 'Skyfall Crystal', 'Кристалл небес'),
+  lesserHealth: item('item_P000', 'icon_m2_21.png', 'potion', 1, 1, 60, 'Lesser Health Potion', 'Слабое зелье жизни', '弱效生命药剂'),
+  health: item('item_P001', 'icon_m5_09.png', 'potion', 2, 2, 120, 'Health Potion', 'Зелье жизни', '生命药剂'),
+  lesserMana: item('item_P004', 'icon_m2_24.png', 'potion', 1, 1, 60, 'Lesser Mana Potion', 'Слабое магическое зелье', '弱效魔法药剂'),
+  powerTreads: item('item_0113', 'power_treads.png', 'equip', 2, 1, 200, 'Power Treads', 'Энергетические сапоги', '动力靴'),
+  maelstrom: item('item_0117', 'maelstrom.png', 'equip', 4, 3, 1800, 'Maelstrom', 'Вихрь', '漩涡'),
+  greatSword: item('item_0114', 'claymore.png', 'equip', 3, 1, 300, 'Great Sword', 'Большой меч', '大剑'),
+  glyphAssault: item('item_G001', 'icon_fsz_72.png', 'gem', 2, 1, 200, 'Glyph: Assault I', 'Руна: Силовая атака I', '符印：强攻Ⅰ'),
+  glyphFocus: item('item_G002', 'icon_fsz_46.png', 'gem', 2, 2, 200, 'Glyph: Focus I', 'Руна: Сосредоточенность I', '符印：专注Ⅰ'),
+  glyphAssaultII: item('item_G001_2', 'icon_fs_1__10.png', 'gem', 3, 2, 600, 'Glyph: Assault II', 'Руна: Силовая атака II', '符印：强攻Ⅱ'),
+  skyfallFragment: item('item_0587', 'icon_m600_01.png', 'material', 4, 6, 800, 'Skyfall Fragment', 'Осколок небес', '倾天碎片'),
+  skyfallCrystal: item('item_0588', 'icon_m600_02.png', 'material', 4, 7, 2500, 'Skyfall Crystal', 'Кристалл небес', '倾天晶体'),
 } satisfies Record<string, ShowcaseItem>;
 
 /**

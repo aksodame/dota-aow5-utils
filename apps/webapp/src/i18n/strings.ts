@@ -1,8 +1,19 @@
 /** UI chrome strings. Item names and descriptions come from the game data. */
 
-export type Lang = 'en' | 'ru';
-export const LANGUAGES: Lang[] = ['en', 'ru'];
-export const LANGUAGE_LABELS: Record<Lang, string> = { en: 'English', ru: 'Русский' };
+export type Lang = 'en' | 'ru' | 'zh';
+export const LANGUAGES: Lang[] = ['en', 'ru', 'zh'];
+export const LANGUAGE_LABELS: Record<Lang, string> = { en: 'English', ru: 'Русский', zh: '中文' };
+
+/**
+ * The rarity scale, 1–7.
+ *
+ * The addon ships quality as a bare number and never names the tiers, so these
+ * are the site's names for them. Two are anchored in the data — the essence a
+ * quality-5 item dismantles into is "Legendary", a quality-6 one "Mythic" — and
+ * the ladder below them is the usual one. Seven is two potions and nothing
+ * else; "Divine" is a guess, and the only one here.
+ */
+export type Rarity = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface Strings {
   title: string;
@@ -50,7 +61,9 @@ export interface Strings {
   recipe: string;
   usedIn: (n: number) => string;
   tags: string;
+  /** Fallback for a grade with no name — see `rarityLabel`. */
   quality: string;
+  rarity: Record<Rarity, string>;
   cooldown: string;
   manaCost: string;
   castRange: string;
@@ -58,6 +71,13 @@ export interface Strings {
   /** The two lines above an item's stats: what kind of skill it is, and on whom. */
   skill: string;
   affects: string;
+  /**
+   * What goes between a label and its value — `Skill: Passive`.
+   *
+   * A string rather than a literal `:` in the JSX because Chinese sets it as a
+   * fullwidth colon, which carries its own spacing.
+   */
+  colon: string;
   behavior: Record<'passive' | 'active' | 'toggle', string>;
   affectsLabel: (team: 'enemy' | 'friendly' | 'both', scope: 'units' | 'heroes' | 'creeps') => string;
   pickerHint: string;
@@ -157,12 +177,22 @@ const en: Strings = {
   usedIn: (n) => `Used in ${n} recipe${n === 1 ? '' : 's'}`,
   tags: 'Tags',
   quality: 'Quality',
+  rarity: {
+    1: 'Common',
+    2: 'Uncommon',
+    3: 'Rare',
+    4: 'Epic',
+    5: 'Legendary',
+    6: 'Mythic',
+    7: 'Divine',
+  },
   cooldown: 'Cooldown',
   manaCost: 'Mana cost',
   castRange: 'Cast range',
   craftTime: 'Craft time',
   skill: 'Skill',
   affects: 'Affects',
+  colon: ': ',
   behavior: { passive: 'Passive', active: 'Active', toggle: 'Toggle' },
   affectsLabel: (team, scope) =>
     `${{ enemy: 'Enemy', friendly: 'Allied', both: 'All' }[team]} ${{ units: 'units', heroes: 'heroes', creeps: 'creeps' }[scope]}`,
@@ -270,12 +300,22 @@ const ru: Strings = {
   usedIn: (n) => `Используется в ${n} рецептах`,
   tags: 'Теги',
   quality: 'Качество',
+  rarity: {
+    1: 'Обычное',
+    2: 'Необычное',
+    3: 'Редкое',
+    4: 'Эпическое',
+    5: 'Легендарное',
+    6: 'Мифическое',
+    7: 'Божественное',
+  },
   cooldown: 'Перезарядка',
   manaCost: 'Расход маны',
   castRange: 'Дальность',
   craftTime: 'Время создания',
   skill: 'Навык',
   affects: 'Действует на',
+  colon: ': ',
   behavior: { passive: 'Пассивный', active: 'Активный', toggle: 'Переключаемый' },
   affectsLabel: (team, scope) =>
     `${{ enemy: 'вражеских', friendly: 'союзных', both: 'всех' }[team]} ${{ units: 'юнитов', heroes: 'героев', creeps: 'крипов' }[scope]}`,
@@ -334,7 +374,146 @@ const ru: Strings = {
   referralClear: 'Стереть реферальный код',
 };
 
-export const STRINGS: Record<Lang, Strings> = { en, ru };
+/**
+ * Simplified Chinese, the language the addon itself is written in.
+ *
+ * The item and ability text has always been here — the extraction pipeline
+ * ships `locale.zh.*` alongside the other two, because the addon's own strings
+ * are Chinese and everything else is a translation of them. This is the site's
+ * chrome catching up with its data.
+ */
+const zh: Strings = {
+  title: 'AOW5 配装规划器',
+  tagline: '规划 Age of Weapons 5 的配装，并用一条链接分享出去。',
+  loading: '正在加载物品数据…',
+  loadFailed: '无法加载物品数据。',
+  retry: '重试',
+  defaultSection: (n) => `第 ${n} 段`,
+  renameSection: '重命名分段',
+  clearSection: '清空分段',
+  emptySlot: '空',
+  slotLabel: (section, slot) => `${section}，第 ${slot} 格`,
+  unknownItem: '未知物品',
+  copyLink: '复制分享链接',
+  copied: '链接已复制',
+  copyFailed: '复制失败 — 请手动选中链接复制',
+  linkLength: (n) => `${n} 个字符`,
+  emptyBoardHint: '放入一件物品即可生成分享链接。',
+  reset: '重置面板',
+  resetConfirm: '清空整个面板，只保留一个空分段？',
+  exportJson: '导出到文件',
+  importJson: '从文件导入',
+  importFailed: '这看起来不是导出的配装文件。',
+  pickItem: '选择物品',
+  searchPlaceholder: '按名称或 id 搜索…',
+  noResults: '没有匹配的物品。',
+  resultsCapped: (shown, total) => `已显示 ${total} 个匹配中的 ${shown} 个 — 请细化搜索条件。`,
+  clearSlot: '清空此格',
+  close: '关闭',
+  warnTableMismatch: '这条链接生成于物品表最近一次更新之前，因此可能有物品对不上。',
+  warnUnknownItems: (n) => `有 ${n} 格装着本页面不认识的物品。继续分享链接时，它们会原样保留。`,
+  errUnsupportedVersion: '这条链接由更新版本的规划器生成，无法在此打开。请尝试刷新页面。',
+  errMalformed: '无法读取这条链接，已载入空面板。',
+  dismiss: '知道了',
+  itemCount: (n) => `${n} 件物品`,
+  level: 'Lv',
+  cost: '价格',
+  provisional: '仅按名称搜索',
+  placeInSlot: '放入此格',
+  detailsHint: '选择一件物品即可查看它的属性。',
+  loadingDetails: '正在加载详情…',
+  stats: '属性',
+  ability: '技能数据',
+  glyph: '符印',
+  recipe: '配方',
+  usedIn: (n) => `用于 ${n} 个配方`,
+  tags: '标签',
+  quality: '品质',
+  rarity: {
+    1: '普通',
+    2: '优秀',
+    3: '稀有',
+    4: '史诗',
+    5: '传说',
+    6: '神话',
+    7: '神圣',
+  },
+  cooldown: '冷却',
+  manaCost: '魔法消耗',
+  castRange: '施法距离',
+  craftTime: '制作时间',
+  skill: '技能',
+  affects: '作用于',
+  colon: '：',
+  behavior: { passive: '被动', active: '主动', toggle: '切换' },
+  affectsLabel: (team, scope) =>
+    `${{ enemy: '敌方', friendly: '友方', both: '全体' }[team]}${{ units: '单位', heroes: '英雄', creeps: '小兵' }[scope]}`,
+  pickerHint: '点击物品查看详情，再放入格子。双击可直接放入。',
+  heads_up: '请注意',
+  attribution:
+    'Age of Weapons 5 的玩家自制配装分享工具。与 Valve 无关；物品图标与名称仍归 Valve 及模组作者所有。',
+  addSection: '添加分段',
+  removeSection: '删除分段',
+  copyFrom: '或复制',
+  copySection: (name) => `添加“${name}”的副本`,
+  sectionsUsed: (used, max) => `${used} / ${max}`,
+  slotGroup: {
+    potion: '药剂',
+    equip: '装备',
+    rune: '符印',
+    pet: '宠物',
+    neutral: '中立',
+    backpack: '背包',
+  },
+  addDescription: '添加备注',
+  descriptionPlaceholder: '这一段是干什么的？回车保存，Shift+回车换行。',
+  longLinkWarning: '链接有点长了 — 有些聊天软件会把它截断。真遇上了，就改发文件。',
+  theme: '切换主题',
+  language: '语言',
+  workshopLink: 'Steam 创意工坊上的 Age of Weapons 5',
+
+  hero: '英雄',
+  chooseHero: '选择英雄',
+  noHero: '不选英雄',
+  heroHint: '选择这套配装针对的英雄。之后每个分段的每个按键都可以选一个技能。',
+  unknownHero: '未知英雄',
+  heroChangeConfirm: (n) => `技能属于特定英雄，更换英雄会清空已选的 ${n} 个技能。是否继续？`,
+  spells: '技能',
+  spellSlot: { q: 'Q', w: 'W', e: 'E', d: 'D', r: 'R', passive: '被动', f: 'F' },
+  pickSpell: '选择技能',
+  clearSpell: '清除此技能',
+  emptySpell: '空',
+  unknownSpell: '未知技能',
+  pickHeroFirst: '先选好英雄才能选技能。',
+  noSpellsForHero: '模组还没做完这个英雄的技能，暂时无从选起。',
+  noSpellsInSlot: '这个按键上没有已完成的技能。',
+  unfinishedAbilities: (n) => `有 ${n} 个技能在游戏里尚未完成，无法选择。`,
+  warnUnknownHero: '这套配装针对的英雄本页面不认识。继续分享链接时，它会原样保留。',
+  warnUnknownSpells: (n) => `有 ${n} 个技能格装着本页面不认识的技能。继续分享链接时，它们会原样保留。`,
+
+  referralCode: '推荐码',
+  referralHint: '保存在这个浏览器和页面地址里，因此会随你分享的链接一起传出去。',
+  referralAuthorCode: '作者的推荐码',
+  referralAuthorHint: '这套配装的作者希望填写的推荐码。',
+  referralBuildHint: '与这套配装一起保存，打开它的人都会看到你的推荐码 — 同时也留在这个浏览器里供规划器使用。',
+  referralCopy: '复制推荐码',
+  referralCopied: '推荐码已复制',
+  referralClear: '清除推荐码',
+};
+
+export const STRINGS: Record<Lang, Strings> = { en, ru, zh };
+
+/**
+ * A rarity's name, or the bare grade when it has none.
+ *
+ * Only 1–7 are named. Quality 0 is the one vanilla item whose grade the addon
+ * writes as a string, and no playable item has it — so it falls back rather
+ * than being invented.
+ */
+export function rarityLabel(strings: Strings, quality: number): string {
+  const named = (strings.rarity as Record<number, string | undefined>)[quality];
+  return named ?? `${strings.quality} ${quality}`;
+}
 
 const STORAGE_KEY = 'aow5.lang';
 
@@ -345,7 +524,11 @@ export function detectLang(): Lang {
   if (fromQuery && (LANGUAGES as string[]).includes(fromQuery)) return fromQuery as Lang;
   const stored = window.localStorage.getItem(STORAGE_KEY);
   if (stored && (LANGUAGES as string[]).includes(stored)) return stored as Lang;
-  return window.navigator.language.startsWith('ru') ? 'ru' : 'en';
+  const browser = window.navigator.language;
+  if (browser.startsWith('ru')) return 'ru';
+  // `zh-Hans`, `zh-CN`, `zh-TW` — one Chinese translation for all of them.
+  if (browser.startsWith('zh')) return 'zh';
+  return 'en';
 }
 
 export function storeLang(lang: Lang): void {

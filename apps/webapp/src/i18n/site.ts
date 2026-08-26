@@ -917,4 +917,289 @@ const ru: SiteStrings = {
   },
 };
 
-export const SITE: Record<Lang, SiteStrings> = { en, ru };
+const zh: SiteStrings = {
+  brand: 'AOW5 utils',
+  copy: {
+    label: '复制',
+    done: '已复制',
+    failed: '复制失败 — 请手动选中文本复制',
+  },
+  skipToContent: '跳到正文',
+  theme: '切换主题',
+  language: '语言',
+
+  nav: {
+    home: '首页',
+    planner: '配装',
+    tracker: '刷图统计',
+    source: 'GitHub',
+  },
+
+  auth: {
+    signIn: '登录',
+    signUp: '注册账号',
+    signInWhy: '只有发布配装、评论和投票才需要账号。规划器本身不用登录也能用。',
+    signOut: '退出登录',
+    account: '账号',
+    myBuilds: '我的配装',
+    buildCount: '{n} / {max}',
+
+    dialogTitleSignIn: '登录',
+    dialogTitleSignUp: '注册账号',
+    dialogLeadSignIn: '你的配装、评论和投票都记在你的昵称下。',
+    dialogLeadSignUp: '一个昵称，一个密码。没有别的，也不要邮箱。',
+    nickname: '昵称',
+    nicknameHint: '3–24 个字符。字母、数字、- 和 _。拉丁字母或西里尔字母，不能混用。',
+    password: '密码',
+    passwordHint: '至少 8 个字符。除了长度没有别的要求。',
+    noRecovery: '密码忘了就找不回来 — 没有邮箱可以给你发重置链接。请找个安全的地方记下来。',
+    switchToSignUp: '还没有账号？注册一个',
+    switchToSignIn: '已经有账号了？去登录',
+    solving: '正在检查你的浏览器…',
+    working: '请稍候…',
+
+    errorCredentials: '昵称或密码不对。',
+    errorTaken: '这个昵称已经有人用了。',
+    errorCaptcha: '这次校验已过期，请重试。',
+    errorRateLimited: '尝试次数太多，请稍等一会儿再试。',
+    errorBanned: '这个账号已被封禁。',
+    errorNickname: '这个昵称不行 — 见输入框下方的说明。',
+    errorPassword: '密码太短或太长。',
+    errorGeneric: '没成功，请再试一次。',
+  },
+
+  builds: {
+    title: '配装',
+    lead: '玩家发布的配装，附带他们实际用过的面板。',
+
+    navNew: '新建配装',
+    navMine: '我的配装',
+
+    empty: '还没有人发布配装。第一个可以是你的。',
+    emptySearch: '没有匹配的结果。',
+    searchLabel: '搜索配装',
+    searchPlaceholder: '标题或简介',
+    sort: { new: '最新', top: '评分最高', discussed: '讨论最多' },
+    anyHero: '所有英雄',
+    more: '加载更多',
+    previousPage: '上一页',
+    nextPage: '下一页',
+    pageNumber: (n) => `第 ${n} 页`,
+    loading: '加载中',
+    failed: '出了点问题。',
+    retry: '重试',
+
+    by: '作者',
+    deleted: '这套配装已被删除。',
+    commentDeleted: '这条评论已被删除。',
+    notFound: '这个链接下没有配装。',
+    backToBuilds: '返回配装列表',
+    draft: '草稿',
+    commentsTitle: '评论',
+    commentPlaceholder: '哪里好用，哪里你会改。',
+    postComment: '发表',
+    selfVote: '不能给自己的配装投票。',
+
+    publish: '保存为配装',
+    publishTitle: '保存这套配装',
+    publishLead: '它会有自己的链接，并出现在搜索里。之后你随时可以编辑或删除。',
+    fieldTitle: '标题',
+    fieldTitlePlaceholder: '斧王打野路线',
+    fieldBody: '说明',
+    fieldBodyPlaceholder: '什么时候买什么、什么可以跳过，以及面板说不出来的东西。',
+    saveDraft: '存为草稿',
+    publishAction: '发布',
+    cancel: '取消',
+    published: '已保存',
+    publishedLead: '拿到这条链接的人都能看。',
+    limitReached: '你已经有五套配装了。删掉一套才能腾出位置。',
+
+    saveChanges: '保存修改',
+    saved: '已保存',
+
+    mineTitle: '我的配装',
+    mineLead: '五个位置。删掉一套就立刻空出来。',
+    mineSignedOut: '从页首登录，即可看到你保存过的配装。',
+    mineEmpty: '还没有保存过东西。先摆一个面板，再从那里保存。',
+    slotsUsed: '已用 {n} / {max} 个位置',
+    unpublish: '转为草稿',
+    delete: '删除',
+    deleteConfirm: '删除这套配装？所有人的链接都会失效。',
+  },
+
+  landing: {
+    title: '两个为 Age of Weapons 5 做的工具。',
+
+    planner: {
+      kicker: '就在这个标签页里',
+      title: '配装规划器',
+      lead: '先选这套配装针对的英雄，再把配装按分段摆出来 — 从一段起，最多九段。整套东西都装在链接里，分享配装就是发一个网址。不用注册，也不用安装。',
+      features: [
+        '每个格子只收该放的东西 — 药剂格永远不会给你列出护甲。',
+        '技能也算在内：在争同一个按键的技能之间做选择，只有一个候选的按键会自动填好。',
+        '最多九个分段，每段有自己的名字和备注 — 前期、成型之后、后期。',
+        '每件物品的属性、由什么合成、又能合成什么，支持英文、俄文和中文。',
+        '推荐码会跟着你分享的链接一起走，并且不会覆盖打开链接的人自己的码。',
+      ],
+      cta: '打开规划器',
+      note: '配装就是那条链接。什么都不会上传，服务器上也不留东西。',
+    },
+
+    tracker: {
+      kicker: '需要单独下载',
+      title: '刷图统计',
+      lead: '一个刷图时浮在游戏上面的面板：这一晚每小时挣多少、这一间打了多久、整晚里有多少时间真的在刷 — 外加所有掉落和它们值多少钱。',
+      features: [
+        '玩的时候鼠标直接穿过它。想改点什么，按一个热键就行。',
+        '可以收成三个数字：本轮、每小时金钱，以及你实际刷了多久。',
+        '每件掉落都列出来并计价，商人的抽成已经扣掉 — 游戏估错价的东西，你可以自己定价。',
+        '过往场次的历史记录，还有你正在攒的东西的材料清单。',
+        '只读你自己的日志文件。不碰游戏文件，不代打，也不把任何东西发到外面。',
+      ],
+      cta: '了解刷图统计',
+      note: 'Windows。请用窗口或无边框模式：全屏会盖住所有浮层。',
+    },
+  },
+
+  tracker: {
+    kicker: '适用于 Windows',
+    title: '刷图统计',
+    lead: '一个刷图时浮在 Dota 上面的面板，回答两个问题：这间房值不值得打，以及今晚整体如何。玩的时候看三个数字，想看细账时再展开完整的掉落列表。',
+
+    windows: {
+      title: '它会在屏幕上放什么',
+      lead: '几块面板，每块都是浮在游戏上的独立窗口。留下你要的那几块；每块都记得你把它放在哪。',
+      items: [
+        {
+          name: '刷图面板',
+          text: '一开始很小：你在哪、打了几轮，以及三个数字 — 本轮、每小时金钱，还有这一场里真正花在房间里的比例。展开后是全部掉落，随你排序，逐件计价也按整叠计价。',
+        },
+        {
+          name: '历史',
+          text: '过往场次，最新的在前，里面还有每一轮。全部按今天的价格计价，所以以前的一晚值多少，是它现在值多少。',
+        },
+        {
+          name: '设置',
+          text: '你自己的物品价格、想盯着的物品、透明度和缩放，以及要跟踪哪个日志文件。',
+        },
+        {
+          name: '配方',
+          text: '你正在攒的东西的材料条，不用退出游戏就能看到还缺什么。',
+        },
+      ],
+    },
+
+    fitting: {
+      title: '把它调到合适的大小',
+      lead: '浮层只有在合适的大小和透明度下才好用 — 所以两者都能调，而且都会记住。',
+      items: [
+        {
+          name: '收起',
+          text: '把面板收成一行，窗口也跟着缩小，不会留一块看不见的东西压在游戏上。',
+        },
+        { name: '调整大小', text: '拖角或拖边，拖到你要的尺寸。' },
+        {
+          name: '缩放',
+          text: '滑杆从 60% 到 160% — 或者 Ctrl+Alt 加 + / − / 0，玩的时候也能用。',
+        },
+        {
+          name: '透明度',
+          text: '默认关着，之后随时可调。只有数字后面的底板会变淡，数字本身仍然清楚。',
+        },
+      ],
+    },
+
+    setup: {
+      title: '怎么装起来',
+      lead: '统计工具是靠读 Dota 在你玩的时候写的日志文件来跟上进度的。先建好文件，再让游戏指向它，最后让统计工具指向它 — 三次都是同一个路径。',
+      logPath: 'C:\\Users\\Public\\aow5-console.log',
+      launchOption: '-con_logfile C:\\Users\\Public\\aow5-console.log',
+      pathWarning:
+        '路径请用纯英文字母，并保留 .log 结尾。如果文件夹名带非拉丁字符 — 你的用户文件夹就可能是这样 — Dota 会什么都不写，而且不会报错：游戏照常运行，文件却始终是空的，看起来就像下载坏了。上面推荐 C:\\Users\\Public，是因为它在每台 Windows 上写法都一样、不需要权限，也彻底绕开了这个问题。',
+      labels: {
+        file: '这个文件 — 第二步要建的那个',
+        option: '启动项 — 同一个路径，跟在 -con_logfile 后面',
+      },
+      alert: {
+        title: 'Dota 需要一个启动项，否则统计工具什么都看不到',
+        text: '没有它，游戏什么都不写，浮层读到的是空文件，所有数字都停在零 — 看起来就跟下载坏了一模一样。两个框里必须是同一个路径，而且必须是第二步建的那个文件。',
+      },
+      steps: [
+        '把上面那份 autoexec.cfg 按给出的路径存进你的 Dota 目录。Dota 会把整个控制台都写进日志，而其中大部分是同一条引擎警告每秒重复五次 — 不加这个，文件会以每小时若干兆的速度膨胀，而统计工具真正要读的只有寥寥几行。游戏画面不会有任何变化，删掉这个文件就能还原。',
+        '自己把文件建出来。打开 C:\\Users\\Public，右键 → 新建 → 文本文档，然后改名为 aow5-console.log — 包括后缀，这意味着如果你还没开，就要在资源管理器里打开“查看 → 文件扩展名”。提前建好，第四步才选得到它：统计工具打开的是文件对话框，而对话框选不了还不存在的文件。',
+        '在 Steam 里右键 Dota 2 → 属性 → 启动选项，把上面的启动项粘进去 — 如果你换了路径，就用你自己的。',
+        '启动统计工具，按 Ctrl+Alt+T 让它能被点到，然后打开 设置 → 控制台日志 → 选择，挑中你建的那个文件。',
+        '请用窗口或无边框模式玩 — 全屏会盖住所有浮层，这个也不例外。',
+      ],
+      note: 'Dota 会把整个控制台写进那个文件，所以它长得很快。统计工具可以替你把它压小：同一个设置页里有一个开关，还有一个“立即清理”按钮。',
+
+      tuning: {
+        text: '统计工具只读一种行，而 Dota 什么都写。实测两个半小时的一场下来是 12 MB，其中属于统计工具的只有 0.08 MB — 剩下的大半是同一条引擎警告每秒重复五次。这个文件让 Dota 把那些频道留在屏幕上、挡在日志外。游戏里看到的东西不会变，删掉文件就全部还原。',
+        cfgLabel: '存在这里，也就是你的 Steam 目录里',
+        cfgPath: 'steamapps\\common\\dota 2 beta\\game\\dota\\cfg\\autoexec.cfg',
+        caveat:
+          '频道名会随 Dota 版本变动，写到一个已经不存在的频道时，那一行在启动时直接失败 — 该频道照常记日志，别的什么都不受影响。想给自己的客户端列一份清单，就在控制台里跑 log_dumpchannels；统计工具的 SETUP.md 里有完整说明。',
+        instead:
+          '统计工具自己也会清理日志：先启动它再开 Dota，它会在启动过程中把文件裁小 — 那是文件唯一没被占用的时刻，因为游戏一旦打开它，别的程序就不能再重写。那是给漏网之鱼兜底的，不是这个文件的替代品。',
+      },
+    },
+
+    pricing: {
+      title: '金钱数字是怎么来的',
+      text: 'Age of Weapons 5 有自己的一套经济系统，并且不会把你的金钱报给游戏之外的任何东西，所以统计工具改为给你捡到的东西计价，用的是游戏自己的物品价值。商人只付一半，所以默认也按一半算 — 凡是你觉得游戏估高或估低了的，都可以自己定价。',
+    },
+
+    privacy: {
+      title: '它碰什么，不碰什么',
+      text: '它只读一样东西：Dota 在你自己电脑上写的那个日志文件。不改游戏文件，不读游戏内存，不替你操作，也不会把任何东西发给 Valve、模组作者或别的什么地方。它唯一会下载的是物品图标，你的设置只留在你自己的机器上。',
+    },
+  },
+
+  preview: {
+    plannerCaption: '规划器画出来的一段配装。',
+    trackerCaption: '浮层展开与收起的样子。',
+    section: '前期',
+    spells: '技能',
+    potions: '药剂',
+    equipment: '装备',
+    runes: '符印',
+    neutral: '中立',
+    backpack: '背包',
+    at: '位置',
+    inHideout: '在营地',
+    runs: '轮',
+    run: '轮',
+    goldPerHour: '金/时',
+    session: '本场',
+    room: '倾天之境',
+    colItem: '物品',
+    colValue: '单价',
+    colTotal: '合计',
+    hotkeyHint: 'Ctrl+Alt+T 可交互',
+    collapsed: '已收起',
+    expanded: '已展开',
+  },
+
+  download: {
+    checking: '正在查找最新版本…',
+    label: '下载 Windows 版',
+    version: (tag) => `版本 ${tag}`,
+    size: (mb) => `${mb} MB`,
+    published: (date) => `发布于 ${date}`,
+    allReleases: '全部版本',
+    none: '尚未发布',
+    noneHint: '第一个版本一出来，下载就会出现在这里。',
+    error: '无法连接 GitHub',
+    errorHint: '所有版本都列在下载页上。',
+  },
+
+  footer: {
+    attribution:
+      '为 Age of Weapons 5 自定义游戏做的玩家自制工具。与 Valve 无关，也未获其认可。Dota 2 及其物品美术归 Valve Corporation 所有；Age of Weapons 5 的数据与自制美术归模组作者所有，此处仅用于展示这个自定义游戏的相关信息。',
+    workshop: 'Steam 创意工坊上的 Age of Weapons 5',
+    source: 'GitHub',
+    builtWith: '免费、开源。没有广告，没有统计追踪，不需要账号。',
+  },
+};
+
+export const SITE: Record<Lang, SiteStrings> = { en, ru, zh };
