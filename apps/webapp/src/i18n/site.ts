@@ -231,6 +231,18 @@ export interface SiteStrings {
       title: string;
       lead: string;
       /**
+       * The headings over the two halves of this panel: a video of the whole
+       * thing being done, then the written walkthrough that was here first.
+       * Both are on the page — the video answers the questions the text has to
+       * anticipate, and the text is the half that can be copied from, which is
+       * what `videoNote` sends the watcher down to.
+       */
+      guide: {
+        video: string;
+        text: string;
+        videoNote: string;
+      };
+      /**
        * The launch option itself, verbatim and untranslated.
        *
        * Its own field rather than a sentence inside `steps`, because it is the
@@ -548,6 +560,11 @@ const en: SiteStrings = {
     setup: {
       title: 'Setting it up',
       lead: 'The tracker follows along by reading a log file that Dota can write as you play. Make the file, point the game at it, then point the tracker at it — the same path all three times.',
+      guide: {
+        video: 'Video Guide',
+        text: 'Text Guide',
+        videoNote: 'The paths and the launch option are written out below, where they can be copied.',
+      },
       logPath: 'C:\\Users\\Public\\aow5-console.log',
       launchOption: '-con_logfile C:\\Users\\Public\\aow5-console.log',
       pathWarning: 'Keep the path in plain English letters, and keep the .log ending. A folder named in Russian — which is what your user folder is, if your Windows account name is — makes Dota write nothing at all, and it does not complain: the game runs normally and the file stays empty, which reads exactly like a broken download. C:\\Users\\Public is suggested above because it is spelled the same on every Windows machine, needs no permissions, and sidesteps the problem entirely.',
@@ -830,6 +847,11 @@ const ru: SiteStrings = {
     setup: {
       title: 'Как настроить',
       lead: 'Трекер следит за игрой, читая лог-файл, который Dota умеет писать по ходу дела. Создайте файл, укажите его игре, потом трекеру — путь везде один и тот же.',
+      guide: {
+        video: 'Видеоинструкция',
+        text: 'Текстовая инструкция',
+        videoNote: 'Пути и параметр запуска — ниже, там их можно скопировать.',
+      },
       logPath: 'C:\\Users\\Public\\aow5-console.log',
       launchOption: '-con_logfile C:\\Users\\Public\\aow5-console.log',
       pathWarning: 'Путь — только латинскими буквами, расширение — .log. Если папка названа по-русски — а именно такова ваша папка пользователя, если русское имя учётной записи — Dota не напишет ничего и ничего не скажет: игра запустится как обычно, а файл останется пустым — выглядит это ровно как сломанная сборка. C:\\Users\\Public предложен выше потому, что пишется одинаково на любой Windows, не требует прав и снимает вопрос целиком.',
@@ -1112,6 +1134,11 @@ const zh: SiteStrings = {
     setup: {
       title: '怎么装起来',
       lead: '统计工具是靠读 Dota 在你玩的时候写的日志文件来跟上进度的。先建好文件，再让游戏指向它，最后让统计工具指向它 — 三次都是同一个路径。',
+      guide: {
+        video: '视频教程',
+        text: '图文教程',
+        videoNote: '路径和启动项写在下面，那里可以直接复制。',
+      },
       logPath: 'C:\\Users\\Public\\aow5-console.log',
       launchOption: '-con_logfile C:\\Users\\Public\\aow5-console.log',
       pathWarning:

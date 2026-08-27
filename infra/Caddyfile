@@ -109,7 +109,13 @@
 		# was here only for avatars. `script-src 'self'` covers the sign-up
 		# proof-of-work worker, which Vite emits as a real file for exactly that
 		# reason; a `blob:` worker would need widening this and does not exist.
-		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.github.com; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+		#
+		# `frame-src` is the tracker page's setup video, and is spelled out
+		# because without it the frame falls back to `default-src 'self'` and the
+		# player is a silent empty box. The nocookie host is the only one named:
+		# it is what the page embeds, and the player pulls everything else from
+		# inside its own frame, where our policy does not reach.
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.github.com; frame-src https://www.youtube-nocookie.com; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
