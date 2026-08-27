@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { History as HistoryIcon, Pause, Play, RotateCcw, Settings2, Skull, X } from 'lucide-react';
 import { DEFAULT_CARDS } from '@core/cards.ts';
 import { UI_SCALE } from '@core/ipc.ts';
@@ -8,7 +8,7 @@ import { useSession } from '@/features/session/useSession';
 import { useDropSounds } from '@/features/sounds/useDropSounds';
 import { ChromeButton } from '@/shell/ChromeButton';
 import { OverlayShell } from '@/shell/OverlayShell';
-import { useOverlay, useScaleShortcuts } from '@/shell/useOverlay';
+import { focusHotkey, useOverlay, useScaleShortcuts } from '@/shell/useOverlay';
 import { useMessages } from '@/i18n';
 import { layoutFor } from './layouts';
 import { StateLine } from './StateLine';
@@ -44,7 +44,26 @@ export function FarmOverlay() {
 
   // Here rather than in the shell: this is the window that watches the feed,
   // and a second window ringing the same drop would be an echo.
-  useDropSounds(config?.sounds ?? null);
+  useDropSounds(config?.sounds ?? null, prices);
+
+  /*
+   * The skull's global key.
+   *
+   * Subscribed here rather than in the shell because this is the window that
+   * holds the session — main sends the *action*, not its effect, since whether
+   * the last room counts as a death is a fact about `useSession`'s state and
+   * nothing in main has a copy of it.
+   *
+   * `focus` never arrives here: click-through is a window property and main
+   * handles that one itself.
+   */
+  useEffect(
+    () =>
+      window.tracker.onAction((action) => {
+        if (action === 'die') toggleLastRunDied();
+      }),
+    [toggleLastRunDied],
+  );
 
   /** Restart: a fresh session on screen and a fresh one in the archive. */
   const restart = useCallback(() => {
@@ -113,7 +132,7 @@ export function FarmOverlay() {
       // and wants the height the window was dragged to.
       fitsContent={collapsed}
       interactive={interactive}
-      hotkey={config?.hotkey ?? 'Ctrl+Alt+T'}
+      hotkey={focusHotkey(config)}
     >
       <Layout
         rates={rates}

@@ -105,6 +105,29 @@ export class ItemTable {
     return this.get(id).cost * qty;
   }
 
+  /**
+   * Every item of a grade, cheapest first, with either half left open.
+   *
+   * For browsing rather than finding, which is why it is not `search`: the mute
+   * list is filled in by looking at a tier and picking out the drops that
+   * arrive by the fistful, and those have no name you would think to type.
+   *
+   * Cheapest first, against the house style of every other list here. The other
+   * lists answer "what carried this session", where this one answers "what is
+   * making all the noise" — and the answer to that is at the bottom of the
+   * price order, which is exactly what a descending list would push off the end
+   * of a capped view.
+   */
+  grade(quality: number | null, level: number | null): ItemInfo[] {
+    const hits = this.all.filter(
+      (i) => (quality === null || i.quality === quality) && (level === null || i.level === level),
+    );
+    // By name after price, so the order is total: two items worth the same gold
+    // hold their places instead of reshuffling under a re-render.
+    hits.sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
+    return hits;
+  }
+
   /** Substring search over name and id, best (cheapest to type) first. */
   search(query: string, limit = 40): ItemInfo[] {
     const q = query.trim().toLowerCase();

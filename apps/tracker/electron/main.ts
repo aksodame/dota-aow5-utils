@@ -17,6 +17,7 @@ import {
 } from '../core/ipc.ts';
 import type { SoundHit, SoundSearchResponse } from 'aow5-api-contract';
 import { importedSoundId, IMPORTED_PACK, packedSound, packRef, type PackFail } from '../core/packs.ts';
+import { accelerator, shortcutLabel, SHORTCUT_IDS, type ShortcutId } from '../core/shortcuts.ts';
 import { MAX_SOUND_BYTES } from '../core/sounds.ts';
 import { compactLog, type CompactResult } from '../core/sources/logfile.ts';
 import { byRoom } from '../core/stats.ts';
@@ -352,10 +353,56 @@ function setInteractive(next: boolean): void {
 const unavailableHotkeys: string[] = [];
 
 /** Registers an accelerator, recording a clash rather than failing silently. */
-function bind(accelerator: string, handler: () => void): void {
-  if (globalShortcut.register(accelerator, handler)) return;
+function bind(chord: string, handler: () => void): void {
+  if (globalShortcut.register(chord, handler)) return;
   // The overlay still works; it just cannot be driven by this key.
-  unavailableHotkeys.push(accelerator);
+  unavailableHotkeys.push(chord);
+}
+
+/**
+ * What each configurable shortcut does, once main has caught it.
+ *
+ * Filled in during `start`, because both handlers close over things that do not
+ * exist until the windows do. Here rather than inline in `bindShortcuts` so
+ * that rebinding is only ever a re-`register`: the behaviour is attached to the
+ * action, not to the key, which is what makes a key a setting.
+ */
+let actions: Record<ShortcutId, () => void> | null = null;
+
+/**
+ * Registers the player's shortcuts, replacing whatever was registered before.
+ *
+ * Called at launch and again on every config change, because a rebinding that
+ * only took effect at the next launch would look exactly like a rebinding that
+ * did not work — and the field that made it is two windows away from anything
+ * that would say otherwise.
+ *
+ * The scale keys are re-registered alongside them: they hang off the action key
+ * too, so changing it has to move them or they would be the three shortcuts
+ * that stayed behind on Ctrl.
+ *
+ * `unregisterAll` rather than unregistering the old chords one at a time.
+ * Whatever is registered is exactly what this function registered, and a list
+ * of previous accelerators kept in step by hand is a list that drifts — the
+ * first drift being a chord nothing remembers holding and nobody can rebind.
+ */
+function bindShortcuts(): void {
+  globalShortcut.unregisterAll();
+  unavailableHotkeys.length = 0;
+
+  for (const id of SHORTCUT_IDS) bind(accelerator(config.shortcuts, id), () => actions?.[id]());
+
+  const key = config.shortcuts.actionKey;
+  // Not in `SHORTCUT_IDS`, deliberately: these are the same three keys every
+  // application on the machine uses for zoom, and three more rows in the
+  // settings window would be three nobody opens it for.
+  bind(`${key}+Alt+=`, () => setScale(config.uiScale + UI_SCALE.step));
+  bind(`${key}+Alt+-`, () => setScale(config.uiScale - UI_SCALE.step));
+  bind(`${key}+Alt+0`, () => setScale(UI_SCALE.default));
+
+  // A chord another application already owns is not an error anything else can
+  // report: `register` returns false and the key silently does nothing forever.
+  broadcast('tracker:unavailable', [...unavailableHotkeys]);
 }
 
 /**
@@ -448,6 +495,15 @@ app.whenReady().then(async () => {
   const onReady = (overlay: Overlay) => {
     overlay.send('tracker:config', config);
     overlay.send('tracker:update', updater.current);
+    /*
+     * Replayed, because the broadcast that carries this happens at launch and
+     * the settings window is opened hours later.
+     *
+     * The same reason `unavailableHotkeys` is remembered rather than only sent:
+     * a message emitted before any window has finished loading reaches nobody,
+     * which is how a dead shortcut used to look exactly like a working one.
+     */
+    overlay.send('tracker:unavailable', [...unavailableHotkeys]);
     // Through `setInteractive`, not a bare send: a window that ignores the
     // hotkey has its own answer to this question, and only it knows it.
     overlay.setInteractive(interactive);
@@ -461,7 +517,7 @@ app.whenReady().then(async () => {
     if (unavailableHotkeys.length > 0) {
       overlay.send('tracker:status', {
         source: config.source,
-        detail: `hotkey ${unavailableHotkeys.join(', ')} unavailable`,
+        detail: `hotkey ${unavailableHotkeys.map(shortcutLabel).join(', ')} unavailable`,
         error: true,
       });
     }
@@ -480,14 +536,29 @@ app.whenReady().then(async () => {
     overlays.get(cli.screenshotOverlay)?.open(onReady);
   }
 
-  tray = createTray({ overlays: [...overlays.values()], hotkey: () => config.hotkey, onCreated: onReady });
+  tray = createTray({
+    overlays: [...overlays.values()],
+    // The label, not the accelerator: a tray menu is read, and `Control` is
+    // spelled `Ctrl` in every other menu on the machine.
+    hotkey: () => shortcutLabel(accelerator(config.shortcuts, 'focus')),
+    onCreated: onReady,
+  });
 
-  bind(config.hotkey, () => setInteractive(!interactive));
-  // Scale is reachable without the overlay having focus, because normally it
-  // has none — it is click-through until the hotkey says otherwise.
-  bind('Control+Alt+=', () => setScale(config.uiScale + UI_SCALE.step));
-  bind('Control+Alt+-', () => setScale(config.uiScale - UI_SCALE.step));
-  bind('Control+Alt+0', () => setScale(UI_SCALE.default));
+  actions = {
+    // Click-through is a window property, so this one never leaves main.
+    focus: () => setInteractive(!interactive),
+    /*
+     * The skull, which main cannot press itself.
+     *
+     * Whether the last room counts as a death is a fact about the session, and
+     * the session is folded in the farm overlay — main has no `TrackerState` to
+     * toggle. So the key arrives at the renderer as the action rather than as
+     * its effect, which is what keeps the button and the shortcut doing one
+     * thing rather than two that can drift apart.
+     */
+    die: () => overlays.get('farm')?.send('tracker:action', 'die'),
+  };
+  bindShortcuts();
 
   /** The overlay a message is about, defaulting to the HUD if the id is unknown. */
   const target = (id: unknown): Overlay | undefined =>
@@ -510,6 +581,9 @@ app.whenReady().then(async () => {
     // the window — so there is nothing to push at the window here.
     if (patch.opacity !== undefined) config.opacity = clamp(patch.opacity, OPACITY.min, OPACITY.max);
     if (patch.uiScale !== undefined) config.uiScale = clamp(patch.uiScale, UI_SCALE.min, UI_SCALE.max);
+    // Immediately, not at the next launch: a rebinding that does not take until
+    // the app restarts looks exactly like one that did not work.
+    if (patch.shortcuts !== undefined) bindShortcuts();
     save();
     // A different source is a different session: mock runs must never average
     // in with real ones.

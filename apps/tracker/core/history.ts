@@ -133,6 +133,49 @@ export function groupSessions(records: Iterable<HistoryRecord>): SessionHistory[
   return out.sort((a, b) => b.id - a.id);
 }
 
+/**
+ * How many sessions one page of the archive shows.
+ *
+ * Ten because it is roughly a fortnight of evenings, and because the window it
+ * is drawn in has a floor of 240px: a page has to be short enough that the
+ * pager under it is reachable without scrolling past the sessions to find out
+ * there are more. The archive itself is uncapped — this is what is *drawn*, and
+ * nothing here deletes or forgets anything.
+ */
+export const SESSIONS_PER_PAGE = 10;
+
+/** One page of a list, and where it sits in the whole. */
+export interface Page<T> {
+  items: T[];
+  /** 0-based, and always inside the list — see `pageOf`. */
+  index: number;
+  /** At least 1, so an empty archive is still page 1 of 1 rather than 1 of 0. */
+  count: number;
+}
+
+/**
+ * One page of sessions, with the page number clamped into range.
+ *
+ * The clamping is the whole reason this is a function rather than a `slice` in
+ * the view. The list under it changes while a page number is being held: a
+ * refresh picks up a session that ended, and deleting the ticked ones can take
+ * a whole page away. A page index left pointing past the end draws an empty
+ * archive — which is indistinguishable from a broken one, and arrives at the
+ * exact moment somebody has just deleted something.
+ *
+ * Clamped rather than reset to the first page: page 4 losing a session should
+ * land on the last page there is, not send the reader back to the top of an
+ * archive they were partway through.
+ */
+export function pageOf<T>(all: readonly T[], page: number, size = SESSIONS_PER_PAGE): Page<T> {
+  const count = Math.max(1, Math.ceil(all.length / size));
+  // `|| 0` for a NaN out of a hand-edited or absent value: an index that is not
+  // a number should be the first page, not an empty one.
+  const index = Math.min(Math.max(Math.trunc(page) || 0, 0), count - 1);
+  const start = index * size;
+  return { items: all.slice(start, start + size), index, count };
+}
+
 /** Totals for one session, the numbers its header shows. */
 export interface SessionTotals {
   runs: number;

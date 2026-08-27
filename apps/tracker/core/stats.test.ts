@@ -647,3 +647,33 @@ test('the skull does nothing at all before the first room', () => {
   assert.equal(toggleLastRunDead(s), false);
   assert.equal(isLastRunDead(s), false);
 });
+
+/**
+ * The map row, which is two cards about one room and therefore has to agree
+ * with itself. The gold half is summed off the loot list in the renderer, and
+ * the list goes on showing a room's drops until the next room starts — so the
+ * time half has to follow the same run or the row describes two different ones.
+ */
+
+test('the map clock follows the room the loot list is showing', () => {
+  const s = build([enter(0, 'M001'), drop(10, [['item_A', 5]]), exit(120, 'M001')]);
+  const r = rates(s, price, 200);
+  // The bug this exists for: the list still has the room's five items on it,
+  // and the card beside it read 00:00.
+  assert.deepEqual(runItems(s), [{ id: 'item_A', qty: 5 }], 'the list still shows the room you left');
+  assert.equal(r.mapElapsed, 120, 'and the card still shows how long it took');
+  assert.equal(r.currentRunElapsed, 0, 'while "is a run open" keeps its own honest answer');
+});
+
+test('the map clock is the open run while there is one', () => {
+  const s = build([enter(0, 'M001'), exit(60, 'M001'), enter(90, 'M002')]);
+  // Not the 60-second room that came before it: entering empties the list, so
+  // the card has to move to the new room at the same moment.
+  assert.equal(rates(s, price, 100).mapElapsed, 10);
+  assert.equal(rates(s, price, 100).currentRunElapsed, 10, 'and they agree while a run is open');
+});
+
+test('the map clock is zero only when nothing has been entered at all', () => {
+  const s = createState();
+  assert.equal(rates(s, price, 500).mapElapsed, 0, 'no room yet is the one case with nothing to describe');
+});

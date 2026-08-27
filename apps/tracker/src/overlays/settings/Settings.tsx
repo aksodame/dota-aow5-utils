@@ -10,15 +10,28 @@ import {
   Scissors,
   Search,
   Volume2,
+  VolumeX,
   X,
 } from 'lucide-react';
 import { CARD_IDS, DEFAULT_CARDS, readCards, type CardId } from '@core/cards.ts';
-import { iconUrl, qualityColor, type ItemTable } from '@core/items.ts';
+import { iconUrl, qualityColor, type ItemInfo, type ItemTable } from '@core/items.ts';
 import { LOCALES, type LanguageSetting } from '@core/locale.ts';
 import { importedSoundId, IMPORTED_PACK, packRef, type SoundPack } from '@core/packs.ts';
 import {
+  accelerator,
+  ACTION_KEYS,
+  conflicts,
+  DEFAULT_SHORTCUTS,
+  readBinding,
+  SHORTCUT_IDS,
+  shortcutLabel,
+  type ShortcutId,
+  type Shortcuts,
+} from '@core/shortcuts.ts';
+import {
   BUILTIN_JACKPOT,
   DEFAULT_SOUNDS,
+  GOLD,
   LEVELS,
   LIMIT,
   QUALITIES,
@@ -108,6 +121,15 @@ export function Settings({
   const [priceQuery, setPriceQuery] = useState('');
   const [trim, setTrim] = useState<LogTrim | null>(null);
   const [soundQuery, setSoundQuery] = useState('');
+  /**
+   * Chords another application already owns, as main last found them.
+   *
+   * Pushed rather than asked for, and re-sent after every rebinding: whether a
+   * key registered is only knowable at the moment of registering it, and by
+   * then the window that asked has already drawn the field.
+   */
+  const [unavailable, setUnavailable] = useState<Set<string>>(new Set());
+  useEffect(() => window.tracker.onUnavailable((chords) => setUnavailable(new Set(chords))), []);
   const tracked = config?.tracked ?? [];
   const prices = config?.prices ?? {};
   const transparentBackground = config?.transparentBackground ?? true;
@@ -156,6 +178,33 @@ export function Settings({
     void window.tracker.pickSound().then((file) => {
       if (file !== null) setRule(map, grade, file);
     });
+
+  /*
+   * The mute list, as a Set for the browse rows and an array in the config.
+   *
+   * The browse list draws up to `MUTE_PAGE` rows and every one of them asks
+   * whether it is muted; against the array that is a scan per row, and the
+   * whole point of the list is that it grows.
+   */
+  const muted = useMemo(() => new Set(sounds.muted), [sounds.muted]);
+  const toggleMute = (id: string) =>
+    setSounds({ muted: muted.has(id) ? sounds.muted.filter((m) => m !== id) : [...sounds.muted, id] });
+
+  /**
+   * Why a bound item will not ring, or null if it will.
+   *
+   * The one place in this window where two things the player set disagree: the
+   * binding row says `jackpot`, and the mute list or the floor under it means
+   * that file is never going to play. Silence with a cause is a setting; silence
+   * without one is a bug report, and the difference is this sentence.
+   */
+  const silenced = (id: string): 'muted' | 'floor' | null => {
+    if (muted.has(id)) return 'muted';
+    // The player's own price, the same figure the floor is compared against
+    // when the drop actually lands. See `useDropSounds`.
+    if (sounds.minGold !== null && pricing.unit(id) < sounds.minGold) return 'floor';
+    return null;
+  };
 
   /*
    * The floor of one is enforced here and again in `readCards`, deliberately.
@@ -376,6 +425,21 @@ export function Settings({
         </section>
 
         {/*
+          The keys, above the sounds and below the lists.
+
+          It is the section a player goes looking for after the first evening
+          where `Ctrl+Alt+T` turned out to belong to something else — which is
+          a thing that happens before they have opinions about drop sounds, and
+          which leaves the overlay unconfigurable until it is fixed.
+        */}
+        <ShortcutSettings
+          shortcuts={config?.shortcuts ?? DEFAULT_SHORTCUTS}
+          unavailable={unavailable}
+          m={m}
+          onChange={(next) => void window.tracker.setConfig({ shortcuts: next })}
+        />
+
+        {/*
           The third thing you say about an item, after what it is worth and
           whether you are watching for it: what it should sound like when it
           lands. A drop sound is for the item you are farming *for* — the one
@@ -423,12 +487,166 @@ export function Settings({
                 />
               )}
 
+
               {/*
-                The grades, before the search box, because they are the answer
-                for almost everybody: what a player reacts to is "something
-                Mythic dropped", and saying that by hand meant binding 239
-                items one at a time. The per-item list underneath is still
-                where an *item* gets an opinion — it outranks both grids.
+                The per-item list, and it leads the section now rather than
+                trailing the grids.
+
+                The grids went on top when they arrived, on the argument that
+                they are the answer for almost everybody — which is true, and is
+                also the reason they belong underneath. A grid is set once and
+                left alone; the bindings are the part somebody opens this window
+                to change, and the part that grows. Reading order should follow
+                where the hands go, not where the reasoning started.
+              */}
+              <div className="space-y-1.5 rounded-md bg-black/25 p-1.5">
+                <div className="text-[0.625rem] font-medium">{m.settings.sounds.perItem}</div>
+                <p className="text-[0.5rem] leading-snug text-muted-foreground">{m.settings.sounds.perItemHint}</p>
+
+                {/*
+                  The catalogue search, off for now.
+
+                  Commented rather than gated, deliberately. It was already off
+                  by default — `soundSearchUrl` ships empty — but a default only
+                  governs a profile that has never been written to, and any
+                  config saved while the field had a value still carries it and
+                  would still draw this. Taking the element out is the version
+                  that is true of every profile.
+
+                  A sound therefore comes from one of two places: the ones in
+                  the box, and a file on this machine. Both are offered by the
+                  menu behind every binding and every grade chip.
+
+                  To bring it back: uncomment this, and put the deployment's
+                  origin in `soundSearchUrl` (see `electron/config.ts`). Nothing
+                  else was removed — `SoundSearch` below, the IPC either side of
+                  it, and `apps/api/src/sounds/` are all still here and still
+                  tested.
+
+                <SoundSearch
+                  packs={config?.soundPacks}
+                  m={m}
+                  onPlay={preview}
+                  enabled={(config?.soundSearchUrl ?? '').trim() !== ''}
+                />
+                */}
+
+                <Input
+                  value={soundQuery}
+                  onChange={(e) => setSoundQuery(e.target.value)}
+                  placeholder={m.settings.sounds.search}
+                  className="h-7 text-xs"
+                />
+
+                {soundResults.length > 0 && (
+                  <ul className="space-y-0.5 rounded-md bg-black/25 p-1">
+                    {soundResults.map((item) => (
+                      <li key={item.id}>
+                        <button
+                          type="button"
+                          // Bound to the sound in the box, not to a file dialog:
+                          // one click gets you something audible, and the row
+                          // that appears is where you change it to your own.
+                          onClick={() => {
+                            bind(item.id, BUILTIN_JACKPOT);
+                            setSoundQuery('');
+                          }}
+                          className="flex w-full items-center gap-2 rounded px-1 py-0.5 text-left hover:bg-white/10"
+                        >
+                          <img src={iconUrl(item.icon)} alt="" className="size-5 rounded-sm object-cover" />
+                          <span className="min-w-0 flex-1 truncate" style={{ color: qualityColor(item.quality) }}>
+                            {item.name}
+                          </span>
+                          {sounds.bindings[item.id] !== undefined ? (
+                            <Check className="size-3.5 shrink-0 text-primary" />
+                          ) : (
+                            <Volume2 className="size-3.5 shrink-0 text-muted-foreground" />
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {Object.keys(sounds.bindings).length > 0 && (
+                  <ul className="space-y-0.5">
+                    {Object.entries(sounds.bindings).map(([id, ref]) => {
+                      const info = itemTable.get(id);
+                      const why = silenced(id);
+                      return (
+                        <li key={id} className="flex items-center gap-2 rounded px-1 py-0.5 odd:bg-white/[0.03]">
+                          <img src={iconUrl(info.icon)} alt="" className="size-5 shrink-0 rounded-sm object-cover" />
+                          <span
+                            className={cn('min-w-0 flex-1 truncate', why !== null && 'line-through opacity-60')}
+                            style={{ color: qualityColor(info.quality) }}
+                            title={id}
+                          >
+                            {info.name}
+                          </span>
+                          {/* Not a button: the fix is in the box below, and a
+                              control here would be a second place to undo one
+                              of two settings that already have their own. */}
+                          {why !== null && (
+                            <span
+                              className="shrink-0"
+                              title={m.settings.sounds[why === 'muted' ? 'silencedMuted' : 'silencedFloor']}
+                              aria-label={m.settings.sounds[why === 'muted' ? 'silencedMuted' : 'silencedFloor']}
+                            >
+                              <VolumeX className="size-3 text-destructive" />
+                            </span>
+                          )}
+                          {/* The file's name, with the whole path on hover: the
+                              rest of it is where you keep your sounds. It is the
+                              menu too — there are several sounds in the box now,
+                              and a folder button could only ever offer the one
+                              answer that needs a file dialog. */}
+                          <SoundMenu
+                            sound={ref}
+                            choices={soundChoices}
+                            m={m}
+                            onPick={(next) => bind(id, next)}
+                            onChoose={() => rebind(id)}
+                            onClear={() => unbind(id)}
+                            onPlay={() => preview(ref)}
+                          >
+                            <button
+                              type="button"
+                              className="w-20 shrink-0 truncate rounded text-right text-[0.5rem] text-muted-foreground hover:text-foreground"
+                              title={ref}
+                              aria-label={m.settings.sounds.pick(info.name)}
+                            >
+                              {soundLabel(ref)}
+                            </button>
+                          </SoundMenu>
+                          <button
+                            type="button"
+                            onClick={() => preview(ref)}
+                            aria-label={m.settings.sounds.play(soundLabel(ref))}
+                            title={m.settings.sounds.playHint}
+                          >
+                            <Play className="size-3 text-muted-foreground hover:text-foreground" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => unbind(id)}
+                            aria-label={m.settings.sounds.unbind(info.name)}
+                            title={m.settings.sounds.unbindHint}
+                          >
+                            <X className="size-3 text-muted-foreground hover:text-destructive" />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+
+              {/*
+                The grades. Still the answer for almost everybody — what a
+                player reacts to is "something Mythic dropped", and saying that
+                by hand meant binding 239 items one at a time — but a rule set
+                once and left alone reads below the list that is edited, not
+                above it.
               */}
               <div className="space-y-1.5 rounded-md bg-black/25 p-1.5">
                 <div className="text-[0.625rem] font-medium">{m.settings.sounds.rules}</div>
@@ -465,128 +683,43 @@ export function Settings({
               </div>
 
               {/*
-                The catalogue search, off for now.
+                The two settings that say *no*, last and together.
 
-                Commented rather than gated, deliberately. It was already off by
-                default — `soundSearchUrl` ships empty — but a default only
-                governs a profile that has never been written to, and any config
-                saved while the field had a value still carries it and would
-                still draw this. Taking the element out is the version that is
-                true of every profile.
+                They are what makes a tier rule survive an evening of farming:
+                quality 6 is 239 items and a handful of them arrive by the
+                fistful, so the grid above is either paired with something that
+                silences those or it is a feature people switch off. One number
+                covers the cheap end of every tier at once, including the items
+                a pak adds next month; the list beside it handles the expensive
+                thing that is simply too frequent to be news.
 
-                A sound therefore comes from one of two places: the ones in the
-                box, and a file on this machine. Both are offered by the menu
-                behind every binding and every grade chip.
-
-                To bring it back: uncomment this, and put the deployment's
-                origin in `soundSearchUrl` (see `electron/config.ts`). Nothing
-                else was removed — `SoundSearch` below, the IPC either side of
-                it, and `apps/api/src/sounds/` are all still here and still
-                tested.
-
-              <SoundSearch
-                packs={config?.soundPacks}
-                m={m}
-                onPlay={preview}
-                enabled={(config?.soundSearchUrl ?? '').trim() !== ''}
-              />
+                Both outrank a binding — see `resolveSound`, which is where that
+                order lives and is held to it.
               */}
+              <div className="space-y-1.5 rounded-md bg-black/25 p-1.5">
+                <CheckboxRow
+                  label={m.settings.sounds.floor}
+                  hint={m.settings.sounds.floorHint}
+                  checked={sounds.minGold !== null}
+                  onChange={(next) => setSounds({ minGold: next ? GOLD.default : null })}
+                />
+                {sounds.minGold !== null && (
+                  <GoldRow
+                    gold={sounds.minGold}
+                    label={m.settings.sounds.floorField}
+                    onCommit={(next) => setSounds({ minGold: next })}
+                  />
+                )}
 
-              <Input
-                value={soundQuery}
-                onChange={(e) => setSoundQuery(e.target.value)}
-                placeholder={m.settings.sounds.search}
-                className="h-7 text-xs"
-              />
-
-              {soundResults.length > 0 && (
-                <ul className="space-y-0.5 rounded-md bg-black/25 p-1">
-                  {soundResults.map((item) => (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        // Bound to the sound in the box, not to a file dialog:
-                        // one click gets you something audible, and the row
-                        // that appears is where you change it to your own.
-                        onClick={() => {
-                          bind(item.id, BUILTIN_JACKPOT);
-                          setSoundQuery('');
-                        }}
-                        className="flex w-full items-center gap-2 rounded px-1 py-0.5 text-left hover:bg-white/10"
-                      >
-                        <img src={iconUrl(item.icon)} alt="" className="size-5 rounded-sm object-cover" />
-                        <span className="min-w-0 flex-1 truncate" style={{ color: qualityColor(item.quality) }}>
-                          {item.name}
-                        </span>
-                        {sounds.bindings[item.id] !== undefined ? (
-                          <Check className="size-3.5 shrink-0 text-primary" />
-                        ) : (
-                          <Volume2 className="size-3.5 shrink-0 text-muted-foreground" />
-                        )}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {Object.keys(sounds.bindings).length > 0 && (
-                <ul className="space-y-0.5">
-                  {Object.entries(sounds.bindings).map(([id, ref]) => {
-                    const info = itemTable.get(id);
-                    return (
-                      <li key={id} className="flex items-center gap-2 rounded px-1 py-0.5 odd:bg-white/[0.03]">
-                        <img src={iconUrl(info.icon)} alt="" className="size-5 shrink-0 rounded-sm object-cover" />
-                        <span
-                          className="min-w-0 flex-1 truncate"
-                          style={{ color: qualityColor(info.quality) }}
-                          title={id}
-                        >
-                          {info.name}
-                        </span>
-                        {/* The file's name, with the whole path on hover: the
-                            rest of it is where you keep your sounds. It is the
-                            menu too — there are several sounds in the box now,
-                            and a folder button could only ever offer the one
-                            answer that needs a file dialog. */}
-                        <SoundMenu
-                          sound={ref}
-                          choices={soundChoices}
-                          m={m}
-                          onPick={(next) => bind(id, next)}
-                          onChoose={() => rebind(id)}
-                          onClear={() => unbind(id)}
-                          onPlay={() => preview(ref)}
-                        >
-                          <button
-                            type="button"
-                            className="w-20 shrink-0 truncate rounded text-right text-[0.5rem] text-muted-foreground hover:text-foreground"
-                            title={ref}
-                            aria-label={m.settings.sounds.pick(info.name)}
-                          >
-                            {soundLabel(ref)}
-                          </button>
-                        </SoundMenu>
-                        <button
-                          type="button"
-                          onClick={() => preview(ref)}
-                          aria-label={m.settings.sounds.play(soundLabel(ref))}
-                          title={m.settings.sounds.playHint}
-                        >
-                          <Play className="size-3 text-muted-foreground hover:text-foreground" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => unbind(id)}
-                          aria-label={m.settings.sounds.unbind(info.name)}
-                          title={m.settings.sounds.unbindHint}
-                        >
-                          <X className="size-3 text-muted-foreground hover:text-destructive" />
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+                <MutedItems
+                  items={itemTable}
+                  muted={muted}
+                  order={sounds.muted}
+                  pricing={pricing}
+                  m={m}
+                  onToggle={toggleMute}
+                />
+              </div>
             </>
           )}
         </section>
@@ -1010,6 +1143,188 @@ function PriceRow({
 }
 
 /**
+ * The keys, and the one modifier they all hang off.
+ *
+ * A capture field rather than a text box, for each of them. A text box would
+ * mean typing the word `Control` correctly and knowing that Electron spells it
+ * that way and not `Ctrl`; a capture field means pressing the key you want,
+ * which is the same gesture you will use afterwards. It is also the only input
+ * that cannot produce a chord `globalShortcut.register` refuses, because it can
+ * only ever produce a key that exists.
+ */
+function ShortcutSettings({
+  shortcuts,
+  unavailable,
+  m,
+  onChange,
+}: {
+  shortcuts: Shortcuts;
+  /** Chords another application already owns, as main last found them. */
+  unavailable: Set<string>;
+  m: Messages;
+  onChange: (next: Shortcuts) => void;
+}) {
+  const clashing = conflicts(shortcuts);
+
+  const setKey = (id: ShortcutId, binding: string) =>
+    onChange({ ...shortcuts, keys: { ...shortcuts.keys, [id]: binding } });
+
+  return (
+    <section className="space-y-1.5">
+      <Label>{m.settings.shortcuts.title}</Label>
+      <p className="text-[0.625rem] text-muted-foreground">{m.settings.shortcuts.blurb}</p>
+
+      {/*
+        The action key leads, because it is the control that decides what the
+        rows below are. The same reason the tracker style leads Appearance: one
+        of these chooses, the rest adjust.
+      */}
+      <div className="space-y-1">
+        <div className="flex gap-1">
+          {ACTION_KEYS.map((option) => (
+            <Choice
+              key={option}
+              active={shortcuts.actionKey === option}
+              onClick={() => onChange({ ...shortcuts, actionKey: option })}
+            >
+              {shortcutLabel(option)}
+            </Choice>
+          ))}
+        </div>
+        <p className="text-[0.625rem] text-muted-foreground">{m.settings.shortcuts.actionKeyHint}</p>
+      </div>
+
+      {SHORTCUT_IDS.map((id) => (
+        <ShortcutRow
+          key={id}
+          id={id}
+          binding={shortcuts.keys[id]}
+          chord={accelerator(shortcuts, id)}
+          // Two different failures, and they read differently: a clash is
+          // something the player just did and can undo, where a taken key is
+          // another application's and can only be worked around.
+          clash={clashing.has(id)}
+          taken={unavailable.has(accelerator(shortcuts, id))}
+          m={m}
+          onBind={(next) => setKey(id, next)}
+          onReset={() => setKey(id, DEFAULT_SHORTCUTS.keys[id])}
+        />
+      ))}
+    </section>
+  );
+}
+
+/** One action, the chord it answers to, and whatever is wrong with it. */
+function ShortcutRow({
+  id,
+  binding,
+  chord,
+  clash,
+  taken,
+  m,
+  onBind,
+  onReset,
+}: {
+  id: ShortcutId;
+  binding: string;
+  /** The whole accelerator, action key included — what is actually registered. */
+  chord: string;
+  clash: boolean;
+  taken: boolean;
+  m: Messages;
+  onBind: (binding: string) => void;
+  onReset: () => void;
+}) {
+  const [recording, setRecording] = useState(false);
+  const name = m.settings.shortcuts.name[id] ?? id;
+
+  /*
+   * The capture.
+   *
+   * On `keydown` and on the button itself rather than on the window, so it can
+   * only fire while this row is the one being recorded — a listener on the
+   * window would catch the Escape that closes something else.
+   *
+   * A modifier on its own is ignored rather than refused: reaching `Alt+T`
+   * means pressing Alt first, and a capture that took the first key down would
+   * be impossible to give a chord to.
+   */
+  const capture = (event: React.KeyboardEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.key === 'Escape') {
+      setRecording(false);
+      return;
+    }
+    if (['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) return;
+
+    const parts: string[] = [];
+    if (event.altKey) parts.push('Alt');
+    // The action key is added back by `accelerator`, so a player who holds it
+    // out of habit while recording would otherwise bind it twice — and
+    // `Control+Control+E` is not an accelerator.
+    if (event.ctrlKey) parts.push('Control');
+    if (event.shiftKey) parts.push('Shift');
+    if (event.metaKey) parts.push('Super');
+    parts.push(event.key);
+
+    const next = readBinding(parts.join('+'));
+    // A key with no accelerator name — dead keys, IME composition, the media
+    // keys on some boards. Nothing registers it, so nothing accepts it either,
+    // and the field stays open for another try rather than closing on a
+    // shortcut that would never fire.
+    if (next === null) return;
+    onBind(next);
+    setRecording(false);
+  };
+
+  return (
+    <div className="space-y-0.5">
+      <div className="flex items-center gap-2">
+        <span className="min-w-0 flex-1 text-xs">{name}</span>
+        <button
+          type="button"
+          onClick={() => setRecording(true)}
+          onBlur={() => setRecording(false)}
+          onKeyDown={recording ? capture : undefined}
+          aria-label={m.settings.shortcuts.rebind(name)}
+          title={m.settings.shortcuts.recordHint}
+          className={cn(
+            'h-6 w-[7.5rem] shrink-0 rounded-md border px-2 text-[0.625rem] tabular-nums transition-colors',
+            recording
+              ? 'border-primary bg-primary/10 text-primary'
+              : 'border-white/10 text-foreground hover:border-white/25',
+            // The chord is wrong in a way that will not announce itself at the
+            // moment it fails, so the field says so before it is pressed.
+            !recording && (clash || taken) && 'border-destructive/60 text-destructive',
+          )}
+        >
+          {recording ? m.settings.shortcuts.record : shortcutLabel(chord)}
+        </button>
+        <button
+          type="button"
+          onClick={onReset}
+          aria-label={m.settings.shortcuts.reset}
+          title={m.settings.shortcuts.resetHint}
+          // Hidden rather than disabled while it is already the default: a
+          // control that cannot do anything is one more thing to read past on a
+          // row that is already a label, a field and a button.
+          className={cn(
+            'shrink-0 text-muted-foreground hover:text-foreground',
+            binding === DEFAULT_SHORTCUTS.keys[id] && 'invisible',
+          )}
+        >
+          <RotateCw className="size-3" />
+        </button>
+      </div>
+      <p className="text-[0.5rem] leading-snug text-muted-foreground">{m.settings.shortcuts.hint[id]}</p>
+      {clash && <p className="text-[0.5rem] leading-snug text-destructive">{m.settings.shortcuts.clash}</p>}
+      {!clash && taken && <p className="text-[0.5rem] leading-snug text-destructive">{m.settings.shortcuts.taken}</p>}
+    </div>
+  );
+}
+
+/**
  * A labelled slider with its value beside the label.
  *
  * The readout is `tabular-nums` and fixed-width so it does not shuffle the
@@ -1214,6 +1529,354 @@ function RuleGrid({
         })}
       </div>
     </div>
+  );
+}
+
+/**
+ * The gold floor's field.
+ *
+ * A field and not a `SliderRow`, unlike every other number in this section.
+ * Item prices run 0 to 300,000 and the part anybody sets is the bottom tenth of
+ * that, so a linear track would spend nine tenths of its travel on numbers
+ * nobody wants and arrive at 5,000 by luck. A threshold is a figure you have in
+ * mind before you reach for the control; typing it is the shorter path.
+ *
+ * Committed on blur and on Enter, never per keystroke — the same shape as
+ * `PriceRow`, and for the same reason: "1" on the way to "10000" is a floor
+ * that lets everything through, and writing it to the config on the way past
+ * means a config file that briefly said something nobody meant.
+ */
+function GoldRow({ gold, label, onCommit }: { gold: number; label: string; onCommit: (next: number) => void }) {
+  const [draft, setDraft] = useState(String(gold));
+
+  // A change from anywhere else — another window, the checkbox re-ticking with
+  // the default — replaces the draft. While this field is what is doing the
+  // changing, the value it is handed is the value it just sent, so nothing
+  // moves under the cursor.
+  useEffect(() => setDraft(String(gold)), [gold]);
+
+  const commit = () => {
+    const next = Number(draft);
+    // Anything that is not a number at all is a typo rather than an
+    // instruction: put the saved figure back and say nothing.
+    if (Number.isFinite(next) && next >= GOLD.min) onCommit(Math.round(Math.min(next, GOLD.max)));
+    else setDraft(String(gold));
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="min-w-0 flex-1 text-[0.625rem] text-muted-foreground">{label}</span>
+      <Input
+        value={draft}
+        inputMode="numeric"
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur();
+          if (e.key === 'Escape') setDraft(String(gold));
+        }}
+        aria-label={label}
+        className="h-6 w-[4.75rem] shrink-0 text-right text-[0.5625rem] tabular-nums"
+      />
+      <span className="shrink-0 text-[0.5rem] text-muted-foreground">g</span>
+    </div>
+  );
+}
+
+/**
+ * How many browse rows are drawn before the list stops and says so.
+ *
+ * Legendary with no level chosen is 641 items, which is not a list anybody
+ * reads — it is a scrollbar with a haystack behind it. The cap is what turns
+ * "scroll until you give up" into "pick a level as well", and the line under
+ * the list is what makes that a suggestion rather than a mystery. Silently
+ * showing the first sixty would read as a tier with sixty items in it.
+ */
+const MUTE_PAGE = 60;
+
+/** No rarity or no level chosen: the filter is off rather than set to something. */
+const ANY = null;
+
+/**
+ * The list of items that never ring, and the two ways of finding one.
+ *
+ * Browsing is the primary one and search is the fallback, which is the reverse
+ * of every other item picker in this window. Those are all reached with a name
+ * already in mind — a thing you are farming for, a thing you want priced. This
+ * one is reached with an *experience* in mind: the tier rule is on and the last
+ * hour had three sounds too many in it. The player knows the grade, not the
+ * name, so the grade is what the controls offer first.
+ *
+ * Cheapest first inside a grade, against the house style of every other list
+ * here, because the drops that make a rule unliveable are the frequent cheap
+ * ones — see `ItemTable.grade`, which is where that order lives.
+ */
+function MutedItems({
+  items,
+  muted,
+  order,
+  pricing,
+  m,
+  onToggle,
+}: {
+  items: ItemTable;
+  /** For the row toggles: a scan per row over an array that is meant to grow. */
+  muted: Set<string>;
+  /** The config's own order, so the list below does not reshuffle as it is edited. */
+  order: string[];
+  pricing: Pricing;
+  m: Messages;
+  onToggle: (id: string) => void;
+}) {
+  const [quality, setQuality] = useState<number | null>(ANY);
+  const [level, setLevel] = useState<number | null>(ANY);
+  const [query, setQuery] = useState('');
+
+  /*
+   * A search wins over the filters rather than narrowing them.
+   *
+   * Somebody typing a name has stopped browsing, and an unnoticed rarity chip
+   * left on from a minute ago would answer with nothing and look like an item
+   * the tables do not have. The chips stay visibly set, so the way back to the
+   * tier is to clear the box.
+   */
+  const searching = query.trim() !== '';
+  const matches = useMemo(() => {
+    if (searching) return items.search(query, MUTE_PAGE + 1);
+    if (quality === ANY && level === ANY) return [];
+    return items.grade(quality, level);
+  }, [items, searching, query, quality, level]);
+
+  const shown = matches.slice(0, MUTE_PAGE);
+  const hidden = matches.length - shown.length;
+
+  return (
+    <div className="space-y-1">
+      <div className="text-[0.5rem] tracking-wide text-muted-foreground uppercase">{m.settings.sounds.muted}</div>
+      <p className="text-[0.5rem] leading-snug text-muted-foreground">{m.settings.sounds.mutedHint}</p>
+
+      {/* Two ladders of chips, the same shape as the rule grids above: this is
+          the same pair of questions about the same pair of grades, and asking
+          it in a different control would read as a different question. */}
+      <GradeChips
+        label={m.settings.sounds.byQuality}
+        grades={QUALITIES}
+        active={quality}
+        name={(grade) => m.settings.sounds.rarity[grade] ?? String(grade)}
+        tint={qualityColor}
+        anyLabel={m.settings.sounds.mutedAny}
+        onPick={setQuality}
+      />
+      <GradeChips
+        label={m.settings.sounds.byLevel}
+        grades={LEVELS}
+        active={level}
+        name={(grade) => m.settings.sounds.level(grade)}
+        anyLabel={m.settings.sounds.mutedAny}
+        onPick={setLevel}
+      />
+
+      <Input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={m.settings.sounds.mutedSearch}
+        className="h-7 text-xs"
+      />
+
+      {/* Only once something has been asked. With no chip set and no search,
+          this is 1,703 rows of nothing anybody looked for. */}
+      {(searching || quality !== ANY || level !== ANY) &&
+        (shown.length === 0 ? (
+          <p className="px-1 text-[0.5rem] text-muted-foreground">{m.settings.sounds.mutedNone}</p>
+        ) : (
+          <>
+            <ul className="max-h-48 space-y-0.5 overflow-y-auto rounded-md bg-black/25 p-1">
+              {shown.map((item) => (
+                <li key={item.id}>
+                  <MuteRow item={item} on={muted.has(item.id)} gold={pricing.unit(item.id)} m={m} onToggle={onToggle} />
+                </li>
+              ))}
+            </ul>
+            {hidden > 0 && (
+              <p className="px-1 text-[0.5rem] text-muted-foreground">{m.settings.sounds.mutedMore(hidden)}</p>
+            )}
+          </>
+        ))}
+
+      {/*
+        What is muted right now, always drawn and never behind a filter.
+
+        This is the half that answers "why did that not ring", and an answer you
+        have to go looking for under the right rarity chip is not one. In the
+        config's own order rather than sorted, so a row does not jump somewhere
+        else in the list the moment its price changes.
+      */}
+      {order.length === 0 ? (
+        <p className="px-1 text-[0.5rem] text-muted-foreground">{m.settings.sounds.mutedEmpty}</p>
+      ) : (
+        <ul className="space-y-0.5">
+          {order.map((id) => {
+            const info = items.get(id);
+            return (
+              <li key={id} className="flex items-center gap-2 rounded px-1 py-0.5 odd:bg-white/[0.03]">
+                <img src={iconUrl(info.icon)} alt="" className="size-5 shrink-0 rounded-sm object-cover" />
+                <span className="min-w-0 flex-1 truncate" style={{ color: qualityColor(info.quality) }} title={id}>
+                  {info.name}
+                </span>
+                <span className="shrink-0 text-[0.5rem] tabular-nums text-muted-foreground">
+                  {compact(pricing.unit(id))}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onToggle(id)}
+                  aria-label={m.settings.sounds.unmute(info.name)}
+                  title={m.settings.sounds.unmuteHint}
+                >
+                  <X className="size-3 text-muted-foreground hover:text-destructive" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * One browse row: the item, what it is worth, and whether it is muted.
+ *
+ * The price is on the row because the two settings in this box are about the
+ * same judgement — this is the number the floor above is compared against, and
+ * seeing it next to the name is often enough to close the list and raise the
+ * floor instead of ticking twelve items.
+ */
+function MuteRow({
+  item,
+  on,
+  gold,
+  m,
+  onToggle,
+}: {
+  item: ItemInfo;
+  on: boolean;
+  gold: number;
+  m: Messages;
+  onToggle: (id: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(item.id)}
+      aria-pressed={on}
+      aria-label={on ? m.settings.sounds.unmute(item.name) : m.settings.sounds.mute(item.name)}
+      title={on ? m.settings.sounds.unmuteHint : m.settings.sounds.muteHint}
+      className="flex w-full items-center gap-2 rounded px-1 py-0.5 text-left hover:bg-white/10"
+    >
+      <img src={iconUrl(item.icon)} alt="" className="size-5 shrink-0 rounded-sm object-cover" />
+      <span
+        className={cn('min-w-0 flex-1 truncate', on && 'line-through opacity-60')}
+        style={{ color: qualityColor(item.quality) }}
+      >
+        {item.name}
+      </span>
+      <span className="shrink-0 text-[0.5rem] tabular-nums text-muted-foreground">{compact(gold)}</span>
+      {/* A crossed-out speaker when it is muted, an outline of one when it is
+          not: the row says what it *is*, and clicking it is what changes that.
+          A checkbox would have said the same thing in a vocabulary that has
+          nothing to do with sound. */}
+      {on ? (
+        <VolumeX className="size-3.5 shrink-0 text-destructive" />
+      ) : (
+        <Volume2 className="size-3.5 shrink-0 text-muted-foreground/40" />
+      )}
+    </button>
+  );
+}
+
+/**
+ * A ladder of grades where exactly one may be chosen, or none.
+ *
+ * Deliberately not `RuleGrid`, which is the same ladder next door. That one is
+ * a set of independent bindings — every chip carries its own sound and any
+ * number of them can be set. This is a filter: one answer at a time, and an
+ * "Any" that is a real position rather than the absence of one. Sharing a
+ * component would have meant a `mode` prop and two behaviours reading through
+ * each other.
+ */
+function GradeChips({
+  label,
+  grades,
+  active,
+  name,
+  tint,
+  anyLabel,
+  onPick,
+}: {
+  label: string;
+  grades: readonly number[];
+  active: number | null;
+  name: (grade: number) => string;
+  /** The grade's colour, where it has one. Levels do not: the game gives them no palette. */
+  tint?: (grade: number) => string;
+  anyLabel: string;
+  onPick: (grade: number | null) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <span className="w-10 shrink-0 text-[0.5rem] tracking-wide text-muted-foreground uppercase">{label}</span>
+      <Chip active={active === ANY} onClick={() => onPick(ANY)}>
+        {anyLabel}
+      </Chip>
+      {grades.map((grade) => {
+        const on = active === grade;
+        const color = tint?.(grade);
+        return (
+          <Chip
+            key={grade}
+            active={on}
+            // Clicking the chosen one again clears it, so the way back to "Any"
+            // is the control you are already looking at.
+            onClick={() => onPick(on ? ANY : grade)}
+            color={color}
+          >
+            {name(grade)}
+          </Chip>
+        );
+      })}
+    </div>
+  );
+}
+
+function Chip({
+  active,
+  color,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  color?: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        'rounded border px-1 py-px text-[0.5rem] leading-tight transition-colors',
+        active ? 'bg-white/[0.06]' : 'border-white/10 text-muted-foreground hover:border-white/25 hover:text-foreground',
+        // Set, and no palette to wear: the levels and the "Any" chip. Explicit
+        // rather than left to `border`'s default of `currentColor`.
+        active && color === undefined && 'border-primary/60 text-foreground',
+      )}
+      // Inline, because the tint is a CSS variable per grade rather than a
+      // class — the same `qualityColor` the item lists colour their names with.
+      style={active && color !== undefined ? { color, borderColor: color } : undefined}
+    >
+      {children}
+    </button>
   );
 }
 

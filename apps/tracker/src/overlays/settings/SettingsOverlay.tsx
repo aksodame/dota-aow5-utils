@@ -4,7 +4,7 @@ import { UI_SCALE, type SessionSnapshot, type TrackerStatus, type UpdateState } 
 import { pricing } from '@/features/items/prices';
 import { ChromeButton } from '@/shell/ChromeButton';
 import { OverlayShell } from '@/shell/OverlayShell';
-import { useOverlay, useScaleShortcuts } from '@/shell/useOverlay';
+import { focusHotkey, useOverlay, useScaleShortcuts } from '@/shell/useOverlay';
 import { useMessages } from '@/i18n';
 import { Settings } from './Settings';
 
@@ -92,7 +92,7 @@ export function SettingsOverlay() {
       collapsed={false}
       fitsContent={false}
       interactive={interactive}
-      hotkey={config?.hotkey ?? 'Ctrl+Alt+T'}
+      hotkey={focusHotkey(config)}
       actions={
         <ChromeButton label={m.common.close} onClick={close} className="hover:text-destructive">
           <X className="size-3.5" />

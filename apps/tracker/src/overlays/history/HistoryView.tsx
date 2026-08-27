@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, RefreshCw, Trash2 } from 'lucide-react';
-import { sessionTotals, type HistoryRun, type SessionHistory } from '@core/history.ts';
+import { ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Trash2 } from 'lucide-react';
+import { pageOf, sessionTotals, type HistoryRun, type SessionHistory } from '@core/history.ts';
 import { iconUrl, qualityColor, type ItemTable } from '@core/items.ts';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -72,6 +72,15 @@ export function HistoryView({ sessions, pricing, onRefresh }: Props) {
    * throwing away one bad evening should not cost the other nineteen.
    */
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  /**
+   * Which page of sessions is drawn, 0-based.
+   *
+   * Held loosely: `pageOf` clamps it rather than this being kept in step with a
+   * list that changes under it. A refresh adds the session that just ended and a
+   * delete can take a whole page away, and neither should have to remember to
+   * fix a number stored somewhere else.
+   */
+  const [page, setPage] = useState(0);
 
   // A refresh, a scroll, anything at all — the armed state should not survive
   // being forgotten about.
@@ -83,6 +92,20 @@ export function HistoryView({ sessions, pricing, onRefresh }: Props) {
 
   const visible = useMemo(() => sessions?.filter((s) => s.source !== 'mock') ?? null, [sessions]);
 
+  /*
+   * The page, and the sessions on it.
+   *
+   * Derived every render rather than stored, so the archive shrinking under a
+   * held page number is not a state bug waiting to happen — see `pageOf`. The
+   * pager below reads `current.index`, not `page`, for the same reason: what is
+   * drawn is what the reader is on, whatever number the click left behind.
+   */
+  const current = useMemo(() => pageOf(visible ?? [], page), [visible, page]);
+  const drawn = visible === null ? null : current.items;
+
+  // The newest session is on the first page by construction, and it is what
+  // "the one you just played" means — so this stays about the archive, not the
+  // page. Turning to page 3 does not open anything on it.
   const newest = visible?.[0]?.id;
   useEffect(() => {
     if (openSessions === null && newest !== undefined) setOpenSessions(new Set([newest]));
@@ -117,153 +140,204 @@ export function HistoryView({ sessions, pricing, onRefresh }: Props) {
     });
 
   return (
-    <ScrollArea className="min-h-0 flex-1" viewportClassName="hud-fade-bottom">
-      <div className="space-y-2 pe-2 pb-4 text-xs">
-        {visible === null && <Empty>{m.history.reading}</Empty>}
-        {visible?.length === 0 && <Empty>{m.history.empty}</Empty>}
+    // A column: the list takes the height that is going, the controls under it
+    // take what they need. See the note above them.
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
+      <ScrollArea className="min-h-0 flex-1" viewportClassName="hud-fade-bottom">
+        <div className="space-y-2 pe-2 pb-4 text-xs">
+          {visible === null && <Empty>{m.history.reading}</Empty>}
+          {visible?.length === 0 && <Empty>{m.history.empty}</Empty>}
 
-        {visible?.map((session) => {
-          const totals = sessionTotals(session);
-          const open = openSessions?.has(session.id) ?? false;
-          return (
-            <section key={session.id} className="rounded-md bg-black/25">
-              {/* The tick is a sibling of the button, not inside it: a checkbox
-                  within a button is neither valid nor clickable on its own, and
-                  this row has to do both jobs. */}
-              <div className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 hover:bg-white/5">
-                <Checkbox
-                  checked={selected.has(session.id)}
-                  onCheckedChange={() => toggleSelected(session.id)}
-                  aria-label={m.history.select(stamp(session.id, locale))}
-                  className="size-3.5 shrink-0"
-                />
-                <button
-                  type="button"
-                  onClick={() => toggleSession(session.id)}
-                  className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
-                >
-                  <Caret open={open} />
-                  <span className="min-w-0 flex-1 truncate font-semibold">{stamp(session.id, locale)}</span>
-                  {/* The source is only worth saying when it is the fake one. */}
-                  {session.source === 'mock' && (
-                    <span className="shrink-0 rounded bg-white/10 px-1 text-[0.5rem] text-muted-foreground uppercase">
-                      {m.history.mock}
-                    </span>
-                  )}
-                  <span className="shrink-0 tabular-nums text-muted-foreground">{m.history.runCount(totals.runs)}</span>
-                </button>
-              </div>
-
-              {/*
-                The numbers you compare sessions by.
-
-                Wallet gold appears only when the game actually reported some —
-                the shipped addon reports none, and a column of permanent
-                zeroes reads as a broken tracker rather than as an absent
-                figure. `value` is the one that always has an answer, since it
-                is priced from the drops.
-              */}
-              <div className="flex flex-wrap gap-x-3 gap-y-0.5 px-2 pb-1.5 ps-6 text-[0.625rem] text-muted-foreground">
-                <Stat label={m.history.stats.active} value={clock(totals.activeTime)} />
-                {totals.gold > 0 && <Stat label={m.history.stats.gold} value={compact(totals.gold)} gold />}
-                <Stat label={m.history.stats.value} value={compact(itemsValue(totals.byItem, pricing))} gold />
-                <Stat label={m.history.stats.items} value={String(totals.items)} />
-              </div>
-
-              {open && (
-                <div className="space-y-1 px-2 pb-2">
-                  {session.runs.length === 0 && (
-                    <p className="ps-4 text-[0.625rem] text-muted-foreground">{m.history.noRuns}</p>
-                  )}
-                  {session.runs.map((run, index) => {
-                    const key = `${session.id}:${index}`;
-                    return (
-                      <Run
-                        key={key}
-                        run={run}
-                        pricing={pricing}
-                        items={items}
-                        m={m}
-                        open={openRuns.has(key)}
-                        onToggle={() => toggleRun(key)}
-                      />
-                    );
-                  })}
-
-                  {/*
-                    Closed by default, and the only section in here that is.
-                    Every other list is a handful of rows; this one is every
-                    distinct item of the evening, and left open it buries the
-                    runs above it — which are what you opened the session for.
-                  */}
-                  {totals.byItem.length > 0 && (
-                    <div className="space-y-0.5 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => toggleTotals(session.id)}
-                        className="flex w-full items-center gap-1.5 rounded px-1.5 py-0.5 text-left hover:bg-white/5"
-                      >
-                        <Caret open={openTotals.has(session.id)} />
-                        <span className="min-w-0 flex-1 text-[0.5rem] tracking-wide text-muted-foreground uppercase">
-                          {m.history.sessionTotal}
-                        </span>
-                        <span className="shrink-0 text-[0.5rem] tabular-nums text-muted-foreground">
-                          {m.history.itemCount(totals.byItem.length)}
-                        </span>
-                      </button>
-                      {openTotals.has(session.id) && (
-                        <Items items={totals.byItem} pricing={pricing} table={items} />
-                      )}
-                    </div>
-                  )}
+          {drawn?.map((session) => {
+            const totals = sessionTotals(session);
+            const open = openSessions?.has(session.id) ?? false;
+            return (
+              <section key={session.id} className="rounded-md bg-black/25">
+                {/* The tick is a sibling of the button, not inside it: a checkbox
+                    within a button is neither valid nor clickable on its own, and
+                    this row has to do both jobs. */}
+                <div className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 hover:bg-white/5">
+                  <Checkbox
+                    checked={selected.has(session.id)}
+                    onCheckedChange={() => toggleSelected(session.id)}
+                    aria-label={m.history.select(stamp(session.id, locale))}
+                    className="size-3.5 shrink-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleSession(session.id)}
+                    className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                  >
+                    <Caret open={open} />
+                    <span className="min-w-0 flex-1 truncate font-semibold">{stamp(session.id, locale)}</span>
+                    {/* The source is only worth saying when it is the fake one. */}
+                    {session.source === 'mock' && (
+                      <span className="shrink-0 rounded bg-white/10 px-1 text-[0.5rem] text-muted-foreground uppercase">
+                        {m.history.mock}
+                      </span>
+                    )}
+                    <span className="shrink-0 tabular-nums text-muted-foreground">{m.history.runCount(totals.runs)}</span>
+                  </button>
                 </div>
-              )}
-            </section>
-          );
-        })}
 
-        <div className="flex gap-1">
-          <Button variant="outline" className="h-7 flex-1 text-xs" onClick={onRefresh}>
-            <RefreshCw className="size-3.5" /> {m.common.refresh}
-          </Button>
-          {/* Only when there is something to clear: a destructive button beside
-              an empty list is an offer to break something that is not there.
+                {/*
+                  The numbers you compare sessions by.
 
-              One button, two jobs, and the label is which one: tick nothing and
-              it clears the archive, tick some and it takes only those. Both go
-              through the same arming click, because neither can be undone. */}
-          {visible !== null && visible.length > 0 && (
-            <Button
-              variant={arming ? 'destructive' : 'outline'}
-              className="h-7 flex-1 text-xs"
-              onClick={() => {
-                if (!arming) {
-                  setArming(true);
-                  return;
-                }
-                setArming(false);
-                const doomed = [...selected];
-                const done = doomed.length > 0 ? window.tracker.deleteSessions(doomed) : window.tracker.clearHistory();
-                void done.then(() => {
-                  setSelected(new Set());
-                  onRefresh();
-                });
-              }}
-              title={selected.size > 0 ? m.history.deleteSelectedHint : m.history.deleteAllHint}
-            >
-              <Trash2 className="size-3.5" />{' '}
-              {arming
-                ? selected.size > 0
-                  ? m.history.confirmSelected(selected.size)
-                  : m.history.confirmAll
-                : selected.size > 0
-                  ? m.history.deleteSelected(selected.size)
-                  : m.history.deleteAll}
-            </Button>
-          )}
+                  Wallet gold appears only when the game actually reported some —
+                  the shipped addon reports none, and a column of permanent
+                  zeroes reads as a broken tracker rather than as an absent
+                  figure. `value` is the one that always has an answer, since it
+                  is priced from the drops.
+                */}
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 px-2 pb-1.5 ps-6 text-[0.625rem] text-muted-foreground">
+                  <Stat label={m.history.stats.active} value={clock(totals.activeTime)} />
+                  {totals.gold > 0 && <Stat label={m.history.stats.gold} value={compact(totals.gold)} gold />}
+                  <Stat label={m.history.stats.value} value={compact(itemsValue(totals.byItem, pricing))} gold />
+                  <Stat label={m.history.stats.items} value={String(totals.items)} />
+                </div>
+
+                {open && (
+                  <div className="space-y-1 px-2 pb-2">
+                    {session.runs.length === 0 && (
+                      <p className="ps-4 text-[0.625rem] text-muted-foreground">{m.history.noRuns}</p>
+                    )}
+                    {session.runs.map((run, index) => {
+                      const key = `${session.id}:${index}`;
+                      return (
+                        <Run
+                          key={key}
+                          run={run}
+                          pricing={pricing}
+                          items={items}
+                          m={m}
+                          open={openRuns.has(key)}
+                          onToggle={() => toggleRun(key)}
+                        />
+                      );
+                    })}
+
+                    {/*
+                      Closed by default, and the only section in here that is.
+                      Every other list is a handful of rows; this one is every
+                      distinct item of the evening, and left open it buries the
+                      runs above it — which are what you opened the session for.
+                    */}
+                    {totals.byItem.length > 0 && (
+                      <div className="space-y-0.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleTotals(session.id)}
+                          className="flex w-full items-center gap-1.5 rounded px-1.5 py-0.5 text-left hover:bg-white/5"
+                        >
+                          <Caret open={openTotals.has(session.id)} />
+                          <span className="min-w-0 flex-1 text-[0.5rem] tracking-wide text-muted-foreground uppercase">
+                            {m.history.sessionTotal}
+                          </span>
+                          <span className="shrink-0 text-[0.5rem] tabular-nums text-muted-foreground">
+                            {m.history.itemCount(totals.byItem.length)}
+                          </span>
+                        </button>
+                        {openTotals.has(session.id) && (
+                          <Items items={totals.byItem} pricing={pricing} table={items} />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
+      </ScrollArea>
+
+      {/*
+        The controls, pinned to the bottom of the window rather than to the end
+        of the archive.
+
+        They used to be the last thing inside the scroll area, which is where
+        they read as belonging — until the list is longer than the window. Then
+        the pager and the delete button are at the bottom of the *list*: turning
+        to page two means scrolling back down to find the control that got you
+        there, and the only way to discover there is a page two is to read to
+        the end of page one. A pager you have to scroll to find is a pager that
+        reads as an absent feature.
+
+        The pager itself appears only once there is a second page. Over a
+        nine-session archive it is two dead buttons and a "1 / 1" — chrome
+        announcing that the list is paginated in the one case where nothing is
+        being held back.
+      */}
+      {current.count > 1 && (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            className="h-7 flex-1 text-xs"
+            // Against `current.index`, not `page`: a click after a delete
+            // should step from the page on screen, not from a number that was
+            // clamped away.
+            disabled={current.index === 0}
+            onClick={() => setPage(current.index - 1)}
+          >
+            <ChevronLeft className="size-3.5" /> {m.history.newer}
+          </Button>
+          <span
+            className="shrink-0 px-1 text-[0.625rem] tabular-nums text-muted-foreground"
+            title={m.history.pageHint(current.index + 1, current.count)}
+          >
+            {m.history.page(current.index + 1, current.count)}
+          </span>
+          <Button
+            variant="outline"
+            className="h-7 flex-1 text-xs"
+            disabled={current.index === current.count - 1}
+            onClick={() => setPage(current.index + 1)}
+          >
+            {m.history.older} <ChevronRight className="size-3.5" />
+          </Button>
+        </div>
+      )}
+
+      <div className="flex gap-1">
+        <Button variant="outline" className="h-7 flex-1 text-xs" onClick={onRefresh}>
+          <RefreshCw className="size-3.5" /> {m.common.refresh}
+        </Button>
+        {/* Only when there is something to clear: a destructive button beside
+            an empty list is an offer to break something that is not there.
+
+            One button, two jobs, and the label is which one: tick nothing and
+            it clears the archive, tick some and it takes only those. Both go
+            through the same arming click, because neither can be undone. */}
+        {visible !== null && visible.length > 0 && (
+          <Button
+            variant={arming ? 'destructive' : 'outline'}
+            className="h-7 flex-1 text-xs"
+            onClick={() => {
+              if (!arming) {
+                setArming(true);
+                return;
+              }
+              setArming(false);
+              const doomed = [...selected];
+              const done = doomed.length > 0 ? window.tracker.deleteSessions(doomed) : window.tracker.clearHistory();
+              void done.then(() => {
+                setSelected(new Set());
+                onRefresh();
+              });
+            }}
+            title={selected.size > 0 ? m.history.deleteSelectedHint : m.history.deleteAllHint}
+          >
+            <Trash2 className="size-3.5" />{' '}
+            {arming
+              ? selected.size > 0
+                ? m.history.confirmSelected(selected.size)
+                : m.history.confirmAll
+              : selected.size > 0
+                ? m.history.deleteSelected(selected.size)
+                : m.history.deleteAll}
+          </Button>
+        )}
       </div>
-    </ScrollArea>
+    </div>
   );
 }
 

@@ -103,6 +103,41 @@ export interface SoundSettings {
    * it is seeded into a fresh config rather than applied as a rule.
    */
   bindings: Record<string, SoundRef>;
+  /**
+   * Item ids that never ring, whatever else would have made them.
+   *
+   * The counterpart to the grade rules, and the reason they are usable at all.
+   * A rule on Mythic is one click and 239 items, and a handful of those drop by
+   * the fistful — the tier is worth hearing about, and the three items in it
+   * that arrive every other room are what turns hearing about it into noise.
+   * Muting those is how a player keeps the rule instead of turning it off.
+   *
+   * A list rather than a map, because there is nothing to say about a muted
+   * item except that it is one; and above everything, including a binding, so
+   * the answer to "why is this silent" is only ever in one place.
+   */
+  muted: string[];
+  /**
+   * Gold one of an item must be worth before it may ring, or null for no floor.
+   *
+   * The other half of making a tier rule liveable, and the half that scales.
+   * `muted` is a list somebody maintains item by item; this is one number that
+   * covers every cheap drop in a tier at once, including the ones a pak adds
+   * next month. A Mythic rule with a floor under it rings for the Mythics worth
+   * looking up from a fight for and stays quiet for the rest of them.
+   *
+   * Measured against what the item is worth *to this player* — their own price
+   * where they set one, the table price otherwise — because that is the number
+   * the rest of the app already reports the session in, and a floor judged
+   * against a different one would be a threshold you cannot check against
+   * anything on screen. See `features/items/prices.ts`; the gold arrives here
+   * already resolved, since this file has no opinion about prices.
+   *
+   * Per item, not per pickup: a stack of forty fragments is still forty
+   * fragments, and a floor that a big enough pile could climb over would ring
+   * for exactly the junk it was set to silence.
+   */
+  minGold: number | null;
 }
 
 /**
@@ -115,6 +150,22 @@ export interface SoundSettings {
  */
 export const VOLUME = { min: 0, max: 1, step: 0.05, default: 0.15 } as const;
 export const LIMIT = { min: 1, max: 15, step: 1, default: 5 } as const;
+
+/**
+ * The gold floor's range, and where the box starts when it is first ticked.
+ *
+ * A field rather than a slider, unlike the two above: item prices run from 0 to
+ * 300,000 and the interesting part of that is the bottom tenth, so a linear
+ * track would spend nine tenths of its travel on numbers nobody sets and land
+ * on 5,000 or 12,000 by luck. The ceiling is the dearest item in the tables
+ * rounded up — past that the floor silences everything, which is a setting that
+ * looks broken rather than one anybody wants.
+ *
+ * 5,000 to start because it is the median item price: the first tick of the box
+ * halves what rings, which is enough to show what the setting does without
+ * appearing to have switched sounds off.
+ */
+export const GOLD = { min: 0, max: 300_000, step: 100, default: 5_000 } as const;
 
 export const DEFAULT_SOUNDS: SoundSettings = {
   enabled: true,
@@ -140,6 +191,14 @@ export const DEFAULT_SOUNDS: SoundSettings = {
   // Crimson Heart. The one item the tracker has an opinion about, and only
   // until the player says otherwise.
   bindings: { item_M504: BUILTIN_JACKPOT },
+  // Nothing, and nothing is the only defensible default: which drops are noise
+  // is a fact about what somebody is farming, and the app cannot know it. It is
+  // filled in after the first evening a tier rule is on.
+  muted: [],
+  // Off. A floor is a claim about what this player considers worth hearing
+  // about, and a fresh install has not been told — the tier rules above are
+  // already the conservative version of that claim.
+  minGold: null,
 };
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
@@ -167,7 +226,7 @@ export function readSoundSettings(raw: unknown): SoundSettings {
      * which can see whether a file was there at all, is what hands a genuinely
      * new profile `DEFAULT_SOUNDS` intact.
      */
-    return { ...DEFAULT_SOUNDS, byQuality: {}, byLevel: {}, bindings: { ...DEFAULT_SOUNDS.bindings } };
+    return { ...DEFAULT_SOUNDS, byQuality: {}, byLevel: {}, bindings: { ...DEFAULT_SOUNDS.bindings }, muted: [], minGold: null };
   }
 
   const bindings: Record<string, string> = {};
@@ -191,6 +250,18 @@ export function readSoundSettings(raw: unknown): SoundSettings {
     limitSeconds = clamp(raw['limitSeconds'], LIMIT.min, LIMIT.max);
   }
 
+  /*
+   * `null` is the value that means "no floor", and it is also what an absent
+   * field should read as — so unlike `limitSeconds` above, whose default is a
+   * number, every path that is not a usable number ends in the same place. A
+   * floor nobody asked for is the one mistake this field can make that costs a
+   * player drops they were listening for.
+   */
+  const minGold =
+    typeof raw['minGold'] === 'number' && Number.isFinite(raw['minGold'])
+      ? Math.round(clamp(raw['minGold'], GOLD.min, GOLD.max))
+      : null;
+
   return {
     enabled: raw['enabled'] !== false,
     volume: clamp(volume, VOLUME.min, VOLUME.max),
@@ -202,7 +273,30 @@ export function readSoundSettings(raw: unknown): SoundSettings {
     byQuality: readRules(raw['byQuality'], QUALITIES),
     byLevel: readRules(raw['byLevel'], LEVELS),
     bindings,
+    muted: readMuted(raw['muted']),
+    minGold,
   };
+}
+
+/**
+ * The mute list, deduplicated and stripped of everything that is not an id.
+ *
+ * Looser than `readRules` and for the same reason `bindings` is: an id the
+ * tables have never heard of is still a statement about *an item*, and the
+ * tables change under a config file every time a pak ships. Keeping it costs a
+ * string in a list; dropping it would silently un-mute something the day it was
+ * renamed and leave the player with a sound they had already turned off.
+ *
+ * Deduplicated because this is read into a membership test, and a file that has
+ * been through a text editor is a file that can name the same item twice.
+ */
+function readMuted(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  for (const id of raw) {
+    if (typeof id === 'string' && id !== '') seen.add(id);
+  }
+  return [...seen];
 }
 
 /**
@@ -228,10 +322,25 @@ function readRules(raw: unknown, allowed: readonly number[]): Record<string, str
 /**
  * The sound one dropped item should ring with, or null for silence.
  *
- * Three ways to have an opinion, in the order of how specific they are: the
- * item itself, then its rarity, then its level. One sound comes out — a drop
- * that matches a Mythic rule and a level 9 rule is still one drop, and two
- * notifications about it would be two things happening when there was one.
+ * Five things have a say, and they are asked in this order:
+ *
+ *   1. the mute list — never;
+ *   2. the gold floor — not unless it is worth this much;
+ *   3. the item's own binding;
+ *   4. its rarity;
+ *   5. its level.
+ *
+ * One sound comes out. A drop that matches a Mythic rule and a level 9 rule is
+ * still one drop, and two notifications about it would be two things happening
+ * when there was one.
+ *
+ * The first two are the ones that say *no*, and they are asked first because
+ * that is what makes them worth having. Both override a binding the player set
+ * themselves, which looks like the harsher reading and is the kinder one: an
+ * item that still rang despite being muted, or despite being under the floor,
+ * is a silence-that-wasn't with no visible cause — where a bound item that has
+ * gone quiet has its reason sitting in the setting the player just changed. One
+ * place to look, and it is the last thing they touched.
  *
  * Rarity above level because rarity is what a player looks up for. The level
  * ladder is the floor under it: set it for the band you are farming and the
@@ -242,8 +351,20 @@ function readRules(raw: unknown, allowed: readonly number[]): Record<string, str
  */
 export function resolveSound(
   settings: SoundSettings,
-  item: { id: string; quality: number; level: number },
+  /**
+   * `gold` is what one of it is worth at the prices in force — the caller's
+   * job, since prices are the player's and this file has never seen them.
+   *
+   * Required rather than optional, though every caller but one already has an
+   * `ItemInfo` in hand and would happily have spread it. Optional means a
+   * caller who forgets is a caller whose every drop reads as worth nothing, and
+   * a floor of any size then silences the app — the loudest possible bug behind
+   * the quietest possible symptom.
+   */
+  item: { id: string; quality: number; level: number; gold: number },
 ): SoundRef | null {
+  if (settings.muted.includes(item.id)) return null;
+  if (settings.minGold !== null && item.gold < settings.minGold) return null;
   return (
     settings.bindings[item.id] ??
     settings.byQuality[String(item.quality)] ??

@@ -32,6 +32,7 @@
     "core/history.ts",
     "core/locale.ts",
     "core/packs.ts",
+    "core/shortcuts.ts",
     "core/sounds.ts",
     "core/style.ts",
     "core/stats.ts"

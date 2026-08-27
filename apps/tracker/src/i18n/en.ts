@@ -168,6 +168,18 @@ export const en = {
     deleteAll: 'Clear all',
     confirmAll: 'Delete all?',
     /*
+      The pager, under the sessions.
+
+      "Newer" and "Older" rather than "Previous" and "Next": the archive is in
+      time order, newest first, so a reader knows which way they want to go
+      before they know which direction that is on a list. Previous-page-of-a-
+      list-of-evenings is a question nobody is asking.
+    */
+    newer: 'Newer',
+    older: 'Older',
+    page: (current: number, total: number) => `${current} / ${total}`,
+    pageHint: (current: number, total: number) => `Page ${current} of ${total}`,
+    /*
      * The badge on a run that did not simply end. `clear` is never drawn — a
      * run that went as expected has nothing to say about itself — but it is
      * here so the map is total and an outcome added later cannot fall through.
@@ -205,6 +217,35 @@ export const en = {
       search: 'Search by name…',
       untrack: (item: string) => `Stop tracking ${item}`,
       untrackHint: 'Stop tracking it',
+    },
+    shortcuts: {
+      title: 'Shortcuts',
+      blurb:
+        'Keys the tracker answers to while the game has focus. The action key is the modifier they all hang off — change it once if its chords are spoken for, and every shortcut moves with it.',
+      actionKey: 'Action key',
+      /*
+        Said plainly, because it is the reason the action key exists: the game
+        binds bare letters, so a shortcut has to be a chord.
+      */
+      actionKeyHint: 'Held with every shortcut below, so none of them collides with a key the game already uses.',
+      name: {
+        focus: 'Focus the overlay',
+        die: 'Mark the last room as a death',
+      } as Record<string, string>,
+      hint: {
+        focus: 'Makes the panels clickable so you can drag, resize and configure them. Press it again to pin them back over the game.',
+        die: 'The same as the skull in the title bar, without having to focus the overlay first — its loot stops counting toward the session, and the minutes still do.',
+      } as Record<string, string>,
+      /** The field is a key capture, not a text box, so it says what to do. */
+      record: 'Press a key…',
+      recordHint: 'Click, then press the key you want. Esc leaves it as it is.',
+      rebind: (action: string) => `Change the key for: ${action}`,
+      reset: 'Reset',
+      resetHint: 'Back to the key this ships with',
+      /** Two actions on one chord: the second never registers, silently. */
+      clash: 'Two shortcuts on this key — only one of them will work.',
+      /** A chord another application already owns. `register` fails quietly. */
+      taken: 'Another application already has this key.',
     },
     sounds: {
       title: 'Sounds',
@@ -272,6 +313,46 @@ export const en = {
       pickHint: 'Choose a file',
       unbind: (item: string) => `Unbind ${item}`,
       unbindHint: 'Unbind',
+      /*
+        The two settings that say *no*, under the grids they exist to make
+        liveable. A tier rule is one click and 239 items; these are how it stays
+        one click instead of becoming a decision to turn the feature off.
+      */
+      floor: 'Only ring above a price',
+      floorHint:
+        'A cheap drop stays silent whatever grade it is. Judged on what one is worth at your prices — not on the pile, so a big stack of something cheap is still cheap.',
+      floorField: 'Least gold a drop must be worth',
+      muted: 'Never ring for',
+      mutedHint:
+        'Items that stay silent whatever else would have rung them, their own sound included. Pick a rarity or a level to look through a tier, or search by name.',
+      mutedAny: 'Any',
+      mutedSearch: 'Search an item to mute…',
+      mutedEmpty: 'Nothing muted yet.',
+      /** The browse list is capped: 641 rows is not a list you read. */
+      mutedMore: (n: number) => `${n} more — narrow it down`,
+      mutedNone: 'No items in that grade.',
+      mute: (item: string) => `Mute ${item}`,
+      muteHint: 'Never ring for this',
+      unmute: (item: string) => `Unmute ${item}`,
+      unmuteHint: 'Let it ring again',
+      /*
+        The per-item list, which now leads the section. It used to sit under the
+        grids on the argument that the grids answer for almost everybody — true,
+        and it is also the reason this belongs on top: the grids are set once and
+        left, and this is the part somebody comes back to.
+      */
+      perItem: 'By item',
+      perItemHint: 'A sound on an item itself outranks both grids below.',
+      /*
+        A bound item that one of the two settings below has silenced.
+
+        Worth a mark of its own, because it is the one place in this window
+        where two things the player set disagree — the row says `jackpot` and
+        the item is never going to make a sound. Without it the only way to find
+        that out is to farm for an evening and wonder.
+      */
+      silencedMuted: 'Muted below — this will not ring',
+      silencedFloor: 'Under the price floor — this will not ring',
     },
     session: {
       title: 'Session',

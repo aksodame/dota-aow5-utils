@@ -1,4 +1,6 @@
-Item art ships inside the app now, and drop sounds can be set by rarity and level.
+Item art ships inside the app now, drop sounds can be set by rarity and level —
+with a price floor and a mute list to keep a whole tier liveable — and every
+global key the tracker uses can be rebound.
 
 ## 0.1.8-beta
 
@@ -11,6 +13,28 @@ Item art ships inside the app now, and drop sounds can be set by rarity and leve
   it matches.
 - **More than one sound in the box.** Every sound the app ships is offered in
   the menu behind any grade or bound item, beside *Choose a file…* for your own.
+- **Rebindable shortcuts.** A *Shortcuts* section in settings. Every global key
+  hangs off one **action key** — Ctrl by default — so a player whose Ctrl chords
+  are already spoken for changes one setting rather than every binding. A key
+  another application already owns is marked in the field that set it, instead
+  of failing silently the way it always did. Rebinding takes effect the moment
+  it is made, not at the next launch, and an upgrade keeps whatever `hotkey` was
+  already in the config file.
+- **A key for the skull.** `Ctrl+E` marks the last room as a death without
+  focusing the overlay first. It is the one control with a deadline — a room you
+  died in reports the same loot lines as one you cleared, and the correction has
+  to land before the next room starts — and reaching it used to mean three
+  actions in the seconds after dying.
+- **A price floor under the sounds.** Under *Sounds*, *Only ring above a price*
+  keeps a cheap drop silent whatever grade it is. It is judged on what one is
+  worth at your prices — not on the pile, so a big stack of something cheap is
+  still cheap. This is what makes a rule on a whole rarity liveable: Mythic is
+  239 items and most of an evening's worth of them are not news.
+- **A list of items that never ring.** *Never ring for* is the other half of it,
+  for the drop that is expensive and simply too frequent to be worth a sound.
+  Pick a rarity or a level to look through a tier — cheapest first, since that
+  is where the noise is — or search by name. A muted item stays silent whatever
+  else would have rung it, its own bound sound included.
 - **The top two rarities ring out of the box.** A new install starts with a
   sound on Legendary and another on Mythic — the two grades worth looking up
   from a fight for. Everything below stays silent, and either can be changed or
@@ -19,6 +43,17 @@ Item art ships inside the app now, and drop sounds can be set by rarity and leve
 
 ### Changed
 
+- **The history controls stay put.** The pager and the delete button are pinned
+  to the bottom of the window instead of sitting at the end of the list, so they
+  are reachable without scrolling to the end of a page first.
+- **History is paged.** The archive draws ten sessions at a time, with *Newer*
+  and *Older* under the list — an evening from a fortnight ago is a click away
+  instead of a scroll through everything since. Nothing is deleted or hidden:
+  the pager only appears once there is a second page, and deleting a page's
+  worth lands you on the last page there is rather than on an empty one.
+- **Sounds are listed the way they are edited.** *By item* now leads the
+  section, with the rarity and level grids under it. The grids are set once and
+  left alone; the bound items are the part you come back to.
 - **Item art is part of the download.** All 1,053 icons ship inside the app
   instead of loading from the builder's site, so they draw on a machine that
   cannot reach it — a DNS server that will not answer for the art host, a VPN,
@@ -36,6 +71,11 @@ Item art ships inside the app now, and drop sounds can be set by rarity and leve
 
 ### Fixed
 
+- **The map row no longer contradicts itself between rooms.** *Current time*
+  read 00:00 the moment you stepped out of a room, while *current gold* and the
+  loot list below it went on showing what that room gave — a row claiming a
+  room had paid 12k in no time at all. The clock now follows the same room the
+  loot list does, until the next one starts.
 - **The unknown-item icon.** An id the tables have never heard of drew a broken
   image rather than the placeholder — it was the one icon that had never been
   where the app asked for it.

@@ -207,9 +207,15 @@ export function useReadout({ rates, items, sessionItems, elapsed, pricing, track
         label: m.hud.cardLabel.sessionBest,
         title: best === null ? m.hud.cardTitle.sessionBest : m.hud.bestTitle(best.name),
       },
+      /* `mapElapsed`, not `currentRunElapsed`, for exactly the reason the gold
+         beside it is summed off the rows: both cards have to be about the room
+         the list underneath is showing. The open run's own elapsed goes to zero
+         the moment you step out of a room, which put 00:00 next to a gold
+         figure and a full loot list — a row claiming a room paid 12k in no
+         time. */
       mapTime: {
         icon: <Timer className="size-3.5" />,
-        value: clock(rates.currentRunElapsed),
+        value: clock(rates.mapElapsed),
         label: m.hud.cardLabel.mapTime,
         title: m.hud.cardTitle.mapTime,
       },

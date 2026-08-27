@@ -4,6 +4,7 @@ import path from 'node:path';
 import { DEFAULT_CARDS, readCards } from '../core/cards.ts';
 import { readLanguage } from '../core/locale.ts';
 import { readPacks } from '../core/packs.ts';
+import { DEFAULT_SHORTCUTS, readShortcuts } from '../core/shortcuts.ts';
 import { DEFAULT_SOUNDS, readSoundSettings } from '../core/sounds.ts';
 import { DEFAULT_STYLE, readStyle } from '../core/style.ts';
 import {
@@ -70,14 +71,15 @@ export const DEFAULTS: TrackerConfig = {
   prices: {},
   halvePrices: true,
   trimLog: true,
-  // Copied a level down, all three maps: this constant is handed out to a first
-  // launch, and a caller that edited one of its rules would be editing the
-  // default every later read is built from.
+  // Copied a level down, every map and the list: this constant is handed out to
+  // a first launch, and a caller that edited one of its rules would be editing
+  // the default every later read is built from.
   sounds: {
     ...DEFAULT_SOUNDS,
     byQuality: { ...DEFAULT_SOUNDS.byQuality },
     byLevel: { ...DEFAULT_SOUNDS.byLevel },
     bindings: { ...DEFAULT_SOUNDS.bindings },
+    muted: [...DEFAULT_SOUNDS.muted],
   },
   // Nothing fetched out of the box. Every sound a fresh install can play ships
   // inside it, and the first thing a pack does is go to the network — which is
@@ -107,7 +109,13 @@ export const DEFAULTS: TrackerConfig = {
   uiScale: UI_SCALE.default,
   // Real time by default; `--speed=60` compresses a session for UI work.
   mockSpeed: 1,
+  // Kept only so an older profile still has the field it was written with.
+  // Nothing registers it — see `shortcuts` below and `core/shortcuts.ts`.
   hotkey: 'Control+Alt+T',
+  // Copied a level down for the same reason the sound rules are: this constant
+  // is handed to a first launch, and a caller editing one of its bindings would
+  // be editing the default every later read is built from.
+  shortcuts: { ...DEFAULT_SHORTCUTS, keys: { ...DEFAULT_SHORTCUTS.keys } },
   overlays: Object.fromEntries(OVERLAY_IDS.map((id) => [id, defaultView(id)])) as TrackerConfig['overlays'],
   recipe: [],
   recipeDone: [],
@@ -274,6 +282,16 @@ export function loadConfig(): TrackerConfig {
     transparentBackground: raw['transparentBackground'] === true,
     uiScale: clamp(number(raw['uiScale'], DEFAULTS.uiScale), UI_SCALE.min, UI_SCALE.max),
     hotkey: typeof raw['hotkey'] === 'string' && raw['hotkey'] !== '' ? raw['hotkey'] : DEFAULTS.hotkey,
+    /*
+     * The old `hotkey` is passed in as the fallback, and only as that.
+     *
+     * It is read exactly once in a profile's life: the launch after the
+     * upgrade, when there is no `shortcuts` block yet. A player who had moved
+     * off `Control+Alt+T` did so because it clashed with something on their
+     * machine, and an upgrade that quietly moved them back onto it would break
+     * the one shortcut they had already had to fix by hand.
+     */
+    shortcuts: readShortcuts(raw['shortcuts'], raw['hotkey']),
     recipe: readTargets(raw['recipe']),
     recipeDone: readIds(raw['recipeDone']),
     recipeExpand: readIds(raw['recipeExpand']),

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { OPACITY, UI_SCALE, type OverlayId, type TrackerConfig } from '@core/ipc.ts';
+import { accelerator, DEFAULT_SHORTCUTS, shortcutLabel, type Shortcuts } from '@core/shortcuts.ts';
 import { DEFAULT_STYLE, type TrackerStyle } from '@core/style.ts';
 
 /**
@@ -150,4 +151,20 @@ export function useScaleShortcuts(scale: number, setScale: (next: number) => voi
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [scale, setScale]);
+}
+
+/**
+ * What to call the focus chord in the hint at the bottom of every overlay.
+ *
+ * One place, because there are four windows drawing that line and the whole
+ * point of a rebindable key is that the hint follows it — a panel still saying
+ * `Ctrl+Alt+T` after somebody moved it to `Alt+G` is worse than no hint, since
+ * it is a wrong instruction rather than a missing one.
+ *
+ * `DEFAULT_SHORTCUTS` for the frame before the config arrives over IPC: that is
+ * what a fresh profile will turn out to have, and it is the least surprising
+ * thing to show for the one frame it is on screen.
+ */
+export function focusHotkey(config: { shortcuts?: Shortcuts } | null): string {
+  return shortcutLabel(accelerator(config?.shortcuts ?? DEFAULT_SHORTCUTS, 'focus'));
 }

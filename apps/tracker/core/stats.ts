@@ -349,6 +349,22 @@ export interface Rates {
   currentRunGold: number;
   /** Seconds the open run has been going. 0 when between rooms. */
   currentRunElapsed: number;
+  /**
+   * Seconds the room on screen took — the open one, or the last one you left.
+   *
+   * The same run `runItems` reports the loot of, and that is the entire reason
+   * it exists beside `currentRunElapsed`. The HUD's map row is two cards about
+   * one room: how long it took and what it gave. The gold half has always been
+   * summed off the loot list, which goes on showing a room's drops until the
+   * next room starts — so between rooms the time half read 00:00 beside a gold
+   * figure and a list of items, and the row said a room had produced 12k in no
+   * time at all.
+   *
+   * `currentRunElapsed` is kept as it was: "is a run open, and how long has it
+   * been" is a real question, it is the honest answer to it, and it is the one
+   * the tests hold.
+   */
+  mapElapsed: number;
   goldPerHour: number;
   itemsPerHour: number;
   valuePerHour: number;
@@ -412,6 +428,12 @@ export function rates(state: TrackerState, valueOf: ValueOf, now = state.clock):
     // second-resolution clock and a price table do not have.
     currentRunGold: Math.floor(state.current ? runGold(state.current, valueOf) : 0),
     currentRunElapsed: state.current ? runDuration(state.current, clock) : 0,
+    // Via `lastRun`, so this and the loot list can never be describing two
+    // different rooms.
+    mapElapsed: (() => {
+      const run = lastRun(state);
+      return run ? runDuration(run, clock) : 0;
+    })(),
     goldPerHour: Math.floor(perHour(gold, active)),
     itemsPerHour: perHour(items, active),
     valuePerHour: perHour(value, active),

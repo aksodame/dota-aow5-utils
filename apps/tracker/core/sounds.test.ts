@@ -5,6 +5,7 @@ import {
   BUILTIN_JACKPOT,
   BUILTIN_UNDERTAKER,
   DEFAULT_SOUNDS,
+  GOLD,
   LIMIT,
   readSoundSettings,
   resolveSound,
@@ -104,10 +105,98 @@ test('the item wins, then its rarity, then its level', () => {
     byLevel: { 9: 'nine.mp3' },
   });
 
-  const at = (id: string, quality: number, level: number) => resolveSound(settings, { id, quality, level });
+  // No floor in this settings block, so the gold is only here to satisfy the
+  // signature — the test above it is about the three rules and nothing else.
+  const at = (id: string, quality: number, level: number) =>
+    resolveSound(settings, { id, quality, level, gold: 0 });
 
   assert.equal(at('item_A', 6, 9), 'mine.mp3', 'the item itself outranks both grades');
   assert.equal(at('item_B', 6, 9), 'mythic.mp3', 'rarity outranks level');
   assert.equal(at('item_B', 3, 9), 'nine.mp3', 'and level is what is left when rarity says nothing');
   assert.equal(at('item_B', 3, 2), null, 'nothing to say is silence, not a fallback sound');
+});
+
+test('a muted item is silent whatever else it matches', () => {
+  const settings = readSoundSettings({
+    bindings: { item_A: 'mine.mp3' },
+    byQuality: { 6: 'mythic.mp3' },
+    byLevel: { 9: 'nine.mp3' },
+    muted: ['item_A', 'item_B'],
+  });
+
+  const at = (id: string, quality: number, level: number) =>
+    resolveSound(settings, { id, quality, level, gold: 0 });
+
+  // Over a binding too, and that is the point of it: one place to look when
+  // something has gone quiet, rather than two rules that disagree.
+  assert.equal(at('item_A', 6, 9), null, 'a mute outranks the item’s own sound');
+  assert.equal(at('item_B', 6, 9), null, 'and the tier rule it would otherwise ring on');
+  assert.equal(at('item_C', 6, 9), 'mythic.mp3', 'muting one item does not quiet the tier');
+});
+
+test('a mute list is read as ids, deduplicated, and never as anything else', () => {
+  assert.deepEqual(readSoundSettings({ muted: ['item_A', 'item_A', 'item_B'] }).muted, ['item_A', 'item_B']);
+  assert.deepEqual(readSoundSettings({ muted: ['item_A', '', 7, null] }).muted, ['item_A'], 'entry by entry');
+  assert.deepEqual(readSoundSettings({ muted: 'item_A' }).muted, [], 'a string is not a list of them');
+  assert.deepEqual(readSoundSettings({}).muted, [], 'absent is nothing muted');
+});
+
+test('an id the tables have never heard of stays muted', () => {
+  // Unlike the grade rules, which are checked against ladders that cannot
+  // change: an item id can be renamed by a pak, and dropping it here would
+  // un-mute something the player had already turned off.
+  const s = readSoundSettings({ muted: ['item_from_a_later_pak'] });
+  assert.deepEqual(s.muted, ['item_from_a_later_pak']);
+});
+
+test('a floor keeps the tier rule and drops what is under it', () => {
+  const settings = readSoundSettings({
+    bindings: { item_CHEAP: 'mine.mp3' },
+    byQuality: { 6: 'mythic.mp3' },
+    minGold: 10_000,
+  });
+
+  const at = (id: string, gold: number) => resolveSound(settings, { id, quality: 6, level: 1, gold });
+
+  assert.equal(at('item_A', 10_000), 'mythic.mp3', 'the floor is a floor, not a step above one');
+  assert.equal(at('item_A', 9_999), null, 'and a Mythic worth less than it stays quiet');
+  // The same argument as the mute: an item that rang despite being under a
+  // floor the player set is a silence with no visible cause.
+  assert.equal(at('item_CHEAP', 100), null, 'the floor outranks the item’s own sound');
+});
+
+test('the mute is asked before the floor, and both before the rules', () => {
+  const settings = readSoundSettings({
+    byQuality: { 6: 'mythic.mp3' },
+    muted: ['item_MUTED'],
+    minGold: 1_000,
+  });
+
+  const at = (id: string, gold: number) => resolveSound(settings, { id, quality: 6, level: 1, gold });
+
+  assert.equal(at('item_MUTED', 999_999), null, 'a mute is not something a price can argue with');
+  assert.equal(at('item_A', 999), null);
+  assert.equal(at('item_A', 1_000), 'mythic.mp3');
+});
+
+test('no floor means no floor, whatever an item is worth', () => {
+  const settings = readSoundSettings({ byQuality: { 6: 'mythic.mp3' } });
+  assert.equal(settings.minGold, null, 'absent is off, never a number');
+  assert.equal(resolveSound(settings, { id: 'item_A', quality: 6, level: 1, gold: 0 }), 'mythic.mp3');
+});
+
+test('a floor that is not a number is no floor at all', () => {
+  // The one mistake this field can make that costs a player drops they were
+  // listening for, so every unusable value lands on off rather than on a guess.
+  assert.equal(readSoundSettings({ minGold: 'lots' }).minGold, null);
+  assert.equal(readSoundSettings({ minGold: null }).minGold, null);
+  assert.equal(readSoundSettings({ minGold: Infinity }).minGold, null, 'not finite, not a price');
+  assert.equal(readSoundSettings({ minGold: -50 }).minGold, GOLD.min, 'clamped, not dropped');
+  assert.equal(readSoundSettings({ minGold: 9e9 }).minGold, GOLD.max);
+  assert.equal(readSoundSettings({ minGold: 1234.7 }).minGold, 1235, 'gold is whole');
+});
+
+test('a fresh install has no floor and nothing muted', () => {
+  assert.equal(DEFAULT_SOUNDS.minGold, null);
+  assert.deepEqual(DEFAULT_SOUNDS.muted, []);
 });

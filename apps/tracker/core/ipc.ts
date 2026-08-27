@@ -4,6 +4,7 @@ import type { SessionHistory } from './history.ts';
 import type { LanguageSetting } from './locale.ts';
 import type { SoundHit, SoundSearchResponse } from 'aow5-api-contract';
 import type { PackFail, SoundPack } from './packs.ts';
+import type { Shortcuts, ShortcutId } from './shortcuts.ts';
 import type { SoundSettings } from './sounds.ts';
 import type { TrackerStyle } from './style.ts';
 
@@ -286,7 +287,19 @@ export interface TrackerConfig {
    */
   uiScale: number;
   mockSpeed: number;
+  /**
+   * The focus accelerator, as one string.
+   *
+   * Superseded by `shortcuts` in 0.1.9 and kept because it is what an older
+   * profile has in it — `readShortcuts` reads it once, to carry a player who
+   * had moved off the default across the upgrade. Nothing registers it any
+   * more, and nothing writes it.
+   *
+   * @deprecated read `shortcuts` instead; `accelerator(config.shortcuts, 'focus')`.
+   */
   hotkey: string;
+  /** Every global key the tracker registers. See `core/shortcuts.ts`. */
+  shortcuts: Shortcuts;
   overlays: Record<OverlayId, OverlayView>;
   /**
    * What the recipe panel is counting toward.
@@ -495,6 +508,29 @@ export interface TrackerApi {
   onConfig: (handler: (config: TrackerConfig) => void) => Unsubscribe;
   onInteractive: (handler: (interactive: boolean) => void) => Unsubscribe;
   onSkipped: (handler: (skipped: SkippedLine[]) => void) => Unsubscribe;
+  /**
+   * A global shortcut was pressed that only the renderer can carry out.
+   *
+   * Main owns the keys because they have to work while the overlay is
+   * click-through and unfocused, and it owns nothing else about them: whether
+   * the last room counts as a death is a fact about the session, and the
+   * session lives in `useSession` in the farm overlay. So the key arrives here
+   * as the *action*, not as its effect.
+   *
+   * `focus` is deliberately absent — main handles that one itself, since
+   * click-through is a window property and no renderer can change it.
+   */
+  onAction: (handler: (action: ShortcutId) => void) => Unsubscribe;
+  /**
+   * Accelerators another application already owns, as main last found them.
+   *
+   * `globalShortcut.register` returns false for a chord that is taken and
+   * raises nothing, so a shortcut on one is a key that silently does nothing
+   * forever. This is the only way the settings window can say so beside the
+   * field that caused it — and it arrives after every rebinding, so the answer
+   * is about the chord just typed rather than about the one at launch.
+   */
+  onUnavailable: (handler: (chords: string[]) => void) => Unsubscribe;
 
   getConfig: () => Promise<TrackerConfig>;
   setConfig: (patch: Partial<TrackerConfig>) => Promise<TrackerConfig>;

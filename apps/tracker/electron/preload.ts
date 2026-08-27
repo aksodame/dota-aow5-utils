@@ -3,6 +3,7 @@ import type { TrackerEvent } from '../core/events.ts';
 import type { SessionHistory } from '../core/history.ts';
 import type { SoundHit, SoundSearchResponse } from 'aow5-api-contract';
 import type { PackFail } from '../core/packs.ts';
+import type { ShortcutId } from '../core/shortcuts.ts';
 import {
   OVERLAY_IDS,
   type LogTrim,
@@ -71,6 +72,8 @@ const api: TrackerApi = {
   onConfig: (handler: (config: TrackerConfig) => void) => on<TrackerConfig>('tracker:config', handler),
   onInteractive: (handler: (interactive: boolean) => void) => on<boolean>('tracker:interactive', handler),
   onSkipped: (handler: (skipped: SkippedLine[]) => void) => on<SkippedLine[]>('tracker:skipped', handler),
+  onAction: (handler: (action: ShortcutId) => void) => on<ShortcutId>('tracker:action', handler),
+  onUnavailable: (handler: (chords: string[]) => void) => on<string[]>('tracker:unavailable', handler),
   onUpdate: (handler: (state: UpdateState) => void) => on<UpdateState>('tracker:update', handler),
 
   getConfig: (): Promise<TrackerConfig> => ipcRenderer.invoke('tracker:getConfig'),
