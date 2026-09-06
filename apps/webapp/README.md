@@ -97,11 +97,15 @@ keyed by the same `Lang` and the same storage key, so a visitor picks a language
 
 ## The report, and the markdown it is allowed to use
 
-`/report` renders `src/content/report.{en,ru,zh}.md`. Those files are not written here — they are produced
-from the originals in `private/` by `scripts/prepare-report.mjs`, which drops the recipients' Discord IDs,
-replaces the closing line (as written it said the document had not left the server, which publishing it
-contradicts), and fills in the archive link. Edit the originals and re-run it; editing the copies means the
-next run overwrites you.
+`/report` renders `src/content/report.{en,ru,zh}.md`. Those files are not written here — they are copied
+from the originals in `private/` by `scripts/prepare-report.mjs`, which normalises the line endings and
+changes nothing else: the documents are now written for players and their links already point into the chat
+dump this site serves, so there is nothing left to rewrite. Edit the originals and re-run it; editing the
+copies means the next run overwrites you.
+
+The Russian document opens with a `@video` of the staff call. The English and Chinese ones do not: the
+recording is entirely in Russian, and a reader of either of those gets a five-minute video they cannot
+follow standing between them and the document.
 
 `src/lib/markdown.ts` reads them, and it reads **a subset, not CommonMark**: `#`/`##`/`###`, paragraphs,
 `**bold**`, `*italics*`, `` `code` ``, `[text](url)` with an http(s) href, `>` blockquotes, `-` and `1.`
@@ -119,6 +123,35 @@ Two rules worth knowing before editing a document:
 
 Headings carry no `id` and there is no table of contents, for the reason in "Routing" above: a stray
 `#anchor` follows a visitor to `/builder` and gets decoded as a board.
+
+## The letter to the studio's support
+
+`src/lib/mail.ts` is the report summarised as a letter to the studio's support address, written out in all
+three languages; `src/report/SupportMailBar.tsx` is the bar fixed to the bottom of **every** page that opens
+it. The report ends with a list of things the developer was asked for and no answer to any of them, and this
+is the only thing on the site a reader can do about that — so it does not wait at the foot of a 600-line
+document most people never reach.
+
+- **It is the author's letter, in his voice, and it is signed.** Copying it forwards what he wrote; it is not
+  a form the sender fills in. That is what `report.mail.lead` has to say in every language.
+- **The letter's language is picked separately from the site's.** The recipient is a Chinese studio, so
+  `PREFERRED_LETTER_LANG` is `zh` and the dialog says so — switching the whole site to Chinese to send a
+  Chinese letter would strand the reader on a page they cannot read.
+- **Nothing in it dates itself relative to now.** It sits on a public page indefinitely, so "today" and
+  "four days ago" are out and every date in it is absolute. `mail.test.ts` pins the rest: a letter per
+  language, both links substituted, no leftover placeholder, and a `mailto:` that encodes spaces as `%20`
+  rather than `+`.
+- **Copy is the primary button.** The body runs past two thousand characters, which some mail clients
+  truncate out of a `mailto:`; that link is the shortcut, not the mechanism.
+
+The bar does not close: there is no dismiss button and nothing is remembered, so every visitor meets it on
+every page. It is a solid red band with a white button, where the strip in the header is deliberately only a
+tint — that one is a permanent notice at the top of every page, which a full-bleed red would turn into a site
+error; this one is the single action the site offers and it is the last thing on the screen. It sits at
+`z-60` with `pointer-events-auto`, above the dialog layer and out of the way of what Radix
+does to the body while a modal is open, so the blocking notice cannot bury it; the letter's own dialog is
+lifted to `z-70` in turn. And it renders a measured spacer in the normal flow, so the fixed copy never covers
+the end of the page under it.
 
 ## The download button
 

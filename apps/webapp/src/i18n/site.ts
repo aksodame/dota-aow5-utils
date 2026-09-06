@@ -389,6 +389,44 @@ export interface SiteStrings {
     /** The permanent strip in the header. It truncates, so keep `text` short. */
     strip: { text: string; link: string };
 
+    /**
+     * The bar fixed to the bottom of every page, and the letter behind it.
+     *
+     * The letter itself is not here — it is `lib/mail.ts`, because the reader
+     * can send it in a language other than the one they are reading the site
+     * in, and these strings only ever come in one. What is here is the chrome
+     * around it.
+     *
+     * `lead` has one job: make clear that this is the author's own letter,
+     * signed by him. Somebody who copies it is forwarding what he wrote, and a
+     * translation that turns it into a form the sender fills in and signs
+     * themselves would be saying something untrue about what the button does.
+     */
+    mail: {
+      /** The bar's headline, set large and bold. A few words, not a sentence. */
+      barTitle: string;
+      /** The line under it. Two lines at most at the width of a phone. */
+      bar: string;
+      /** The bar's button, which opens the letter. */
+      open: string;
+
+      title: string;
+      lead: string;
+      /** Labels over the address and the subject line. */
+      to: string;
+      subject: string;
+      /** The row of language buttons over the letter. */
+      language: string;
+      /** Why one of those languages is the one worth sending. */
+      languageHint: string;
+      /** Copies the subject and the letter together. */
+      copy: string;
+      /** Opens the reader's own mail app with all of it filled in. */
+      compose: string;
+      /** Under the buttons: send it as it stands, and why. */
+      note: string;
+    };
+
     /** The blocking notice, shown once per browser session. */
     notice: {
       title: string;
@@ -710,6 +748,22 @@ const en: SiteStrings = {
       link: 'Read about the cheating',
     },
 
+    mail: {
+      barTitle: 'Let’s get through to the developer, together.',
+      bar: 'The whole report, summarised as a letter to the studio’s support — already written, in three languages. Copy it and send it. It takes a minute.',
+      open: 'Write to support',
+
+      title: 'The letter to the studio’s support',
+      lead: 'The report, summarised and ready to send. It is the site author’s own letter and it is signed by him: sending it means forwarding what he wrote, not putting your own name to anything.',
+      to: 'To',
+      subject: 'Subject',
+      language: 'Letter language',
+      languageHint: 'Chinese is the one they are most likely to read.',
+      copy: 'Copy the letter',
+      compose: 'Open in mail app',
+      note: 'Nothing in it needs filling in. Please send it as it stands: every claim in the letter is one the report backs with a dated message and a link to it — anything added to it is not.',
+    },
+
     notice: {
       title: 'Before you use this site',
       lead: 'The author of this site has published a documented complaint about members of the AOW5 Discord server’s staff. Every claim in it is quoted, dated, and linked to the original message.',
@@ -1029,6 +1083,22 @@ const ru: SiteStrings = {
     strip: {
       text: 'Команда Discord-сервера AOW5 пользуется багами игры в свою пользу. С доказательствами.',
       link: 'Читать о нечестной игре',
+    },
+
+    mail: {
+      barTitle: 'Давайте вместе достучимся до разработчика.',
+      bar: 'Весь отчёт, пересказанный в письме в поддержку студии, — уже написан, на трёх языках. Скопируйте и отправьте: это минута.',
+      open: 'Написать в поддержку',
+
+      title: 'Письмо в поддержку студии',
+      lead: 'Отчёт, пересказанный коротко и готовый к отправке. Это письмо автора сайта, и подписано оно им: отправить его — значит переслать написанное им, а не поставить под чем-то своё имя.',
+      to: 'Кому',
+      subject: 'Тема',
+      language: 'Язык письма',
+      languageHint: 'По-китайски его прочитают с наибольшей вероятностью.',
+      copy: 'Скопировать письмо',
+      compose: 'Открыть в почте',
+      note: 'Заполнять в нём ничего не нужно. Отправьте его как есть: каждое утверждение в письме подкреплено в отчёте сообщением с датой и ссылкой на него — а всё, что к письму допишут, уже нет.',
     },
 
     notice: {
@@ -1353,6 +1423,22 @@ const zh: SiteStrings = {
     strip: {
       text: 'AOW5 Discord 管理团队在利用游戏自身的漏洞为自己牟利。附有证据。',
       link: '阅读不公平游戏的真相',
+    },
+
+    mail: {
+      barTitle: '让我们一起，把这件事传到开发者那里。',
+      bar: '整份举报已经写成一封给工作室客服的信，三种语言都有。复制它，发送它——只需要一分钟。',
+      open: '写信给客服',
+
+      title: '写给工作室客服的信',
+      lead: '这是这份举报的摘要，可以直接发送。它是本站作者本人的信，并由他署名：发送它等于转发他写下的内容，而不是以你自己的名义签署什么。',
+      to: '收件人',
+      subject: '主题',
+      language: '信件语言',
+      languageHint: '中文是他们最有可能真正读懂的一版。',
+      copy: '复制整封信',
+      compose: '在邮件应用中打开',
+      note: '信里没有需要填写的地方。请照原样发送：信中的每一项说法，举报里都有带日期的原始消息和链接作为依据，而任何额外添加的内容都没有。',
     },
 
     notice: {

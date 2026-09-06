@@ -9,6 +9,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { LANGUAGES, STRINGS, detectLang, storeLang, writeLang, type Lang } from '@/i18n/strings';
 import { SITE } from '@/i18n/site';
 import { ReportNoticeDialog } from '@/report/ReportNoticeDialog';
+import { SupportMailBar } from '@/report/SupportMailBar';
 import { applyTheme, getInitialTheme, storeTheme, type Theme } from '@/lib/theme';
 import { useMatch, useScrollReset } from '@/router';
 import { BuildPage } from '@/routes/BuildPage';
@@ -152,6 +153,11 @@ export default function App() {
         </main>
 
         <SiteFooter site={site} />
+
+        {/* Inside the column rather than floating over it, so the spacer it
+            renders keeps the fixed bar off the end of whatever page is on
+            screen — the footer's attribution, or the planner's bottom row. */}
+        <SupportMailBar site={site} lang={lang} />
       </div>
 
       {/* Mounted once here, opened only by the header. */}
