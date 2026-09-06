@@ -1,6 +1,6 @@
 # dota-aow5-utils
 
-Fan-made tools for **[Age of Weapons 5](https://steamcommunity.com/sharedfiles/filedetails?id=2883951116)**,
+Fan-made tools for **[Age of Weapons 5](https://steamcommunity.com/sharedfiles/filedetails?id=3011606331)**,
 a Dota 2 custom game — built on the game's own data, extracted from its workshop VPK.
 
 Not affiliated with or endorsed by Valve. Dota 2 and its item art are property of Valve Corporation; the

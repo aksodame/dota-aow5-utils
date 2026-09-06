@@ -538,3 +538,27 @@ export function storeLang(lang: Lang): void {
     // Private mode or blocked storage; the choice just will not persist.
   }
 }
+
+/**
+ * Put a chosen language into the address bar, so the link carries it.
+ *
+ * `?lang=` is already the first thing `detectLang` looks at — it just was not
+ * being written, so a reader who switched to Russian and shared the URL sent
+ * their friend whatever that friend's browser preferred. Only an explicit
+ * choice is written: a visitor who never touched the switcher shares a plain
+ * link, and the recipient still gets their own language.
+ *
+ * `replaceState` rather than `pushState`, because a language is not a place:
+ * Back should leave the page, not undo the switch. The fragment is preserved
+ * untouched — on the planner it is the whole board.
+ */
+export function writeLang(lang: Lang): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('lang', lang);
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  } catch {
+    // A URL the browser will not let us rewrite. The choice still applies.
+  }
+}

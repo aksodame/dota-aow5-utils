@@ -363,6 +363,50 @@ export interface SiteStrings {
     source: string;
     builtWith: string;
   };
+  /**
+   * The published report, and the notice that points at it.
+   *
+   * The first checkbox is deliberately one nobody wants to tick — "I agree that
+   * administrators are allowed to act this way" — so that getting past the
+   * notice means reading it. The second is the plain disclaimer: this site is
+   * not the server's staff. Translations should keep the first one's edge; a
+   * neutral "I have read this" loses the whole point of it.
+   */
+  report: {
+    title: string;
+    lead: string;
+    updated: string;
+    loading: string;
+    loadFailed: string;
+    retry: string;
+    /** Heading of the section list beside the document. */
+    contents: string;
+    /** The badge on the sections a reader should not skip. */
+    important: string;
+    /** Accessible name for the embedded video. */
+    video: string;
+
+    /** The permanent strip in the header. It truncates, so keep `text` short. */
+    strip: { text: string; link: string };
+
+    /** The blocking notice, shown once per browser session. */
+    notice: {
+      title: string;
+      lead: string;
+      /** One paragraph each, like `tracker.setup.steps`. */
+      points: string[];
+      ackAgree: string;
+      ackUnaffiliated: string;
+      readReport: string;
+      continue: string;
+      /** Continue, while the reading delay is still running. */
+      continueIn: (seconds: number) => string;
+      /** Why Continue is disabled. Announced in an aria-live region. */
+      continueHint: string;
+      /** The same, once both boxes are ticked and only the delay is left. */
+      continueWait: string;
+    };
+  };
 }
 
 const en: SiteStrings = {
@@ -650,6 +694,40 @@ const en: SiteStrings = {
     source: 'GitHub',
     builtWith: 'Free and open source. No ads, no analytics, no accounts.',
   },
+  report: {
+    title: 'Unfair play: what the AOW5 Discord staff actually does',
+    lead: 'Bugs they report to the developer themselves and then exploit anyway, duplication done as a favour to friends, and gold sold for real money. Sent to the developer on 2 September 2026; published here because no reply came.',
+    updated: 'Published 5 September 2026',
+    loading: 'Loading the document…',
+    loadFailed: 'The document could not be loaded.',
+    retry: 'Try again',
+    contents: 'Contents',
+    important: 'Important',
+    video: 'Video: trying to explain what the actual problem is',
+
+    strip: {
+      text: 'The AOW5 Discord staff exploit the game’s own bugs for their own benefit. With evidence.',
+      link: 'Read about the cheating',
+    },
+
+    notice: {
+      title: 'Before you use this site',
+      lead: 'The author of this site has published a documented complaint about members of the AOW5 Discord server’s staff. Every claim in it is quoted, dated, and linked to the original message.',
+      points: [
+        '! The server’s administrators made heavy use of game bugs to their own advantage — even though they had reported those bugs to the developer themselves. They see no problem in it.',
+        'The item duplication bug among them has since been fixed, but nothing was rolled back — what was duplicated is still in the game’s economy.',
+        'A paid “Verified Seller” role, and real-money gold trading with the administration as guarantor, were being prepared.',
+        'After the author of this site named these actions out loud, his helper role was taken away — the stated reason being that he “was not doing his job”.',
+      ],
+      ackAgree: 'I agree that administrators are allowed to act this way.',
+      ackUnaffiliated: 'I understand that this site and its author are not part of the AOW5 Discord server’s staff and are not affiliated with them.',
+      readReport: 'Read about the cheating',
+      continue: 'Continue to the site',
+      continueIn: (seconds) => `Continue to the site (${seconds})`,
+      continueHint: 'Tick both boxes to continue.',
+      continueWait: 'A few seconds to read what you are confirming.',
+    },
+  },
 };
 
 const ru: SiteStrings = {
@@ -936,6 +1014,40 @@ const ru: SiteStrings = {
     workshop: 'Age of Weapons 5 в Steam Workshop',
     source: 'GitHub',
     builtWith: 'Бесплатно и с открытым исходным кодом. Ни рекламы, ни аналитики, ни аккаунтов.',
+  },
+  report: {
+    title: 'Нечестная игра: чем занимается команда Discord-сервера AOW5',
+    lead: 'Баги, о которых они сами сообщают разработчику и которыми сами же пользуются. Дюп в пользу друзей. Продажа золота за реальные деньги. Отправлено разработчику 2 сентября 2026 года; опубликовано здесь, потому что ответа не последовало.',
+    updated: 'Опубликовано 5 сентября 2026',
+    loading: 'Загружаем документ…',
+    loadFailed: 'Не удалось загрузить документ.',
+    retry: 'Попробовать снова',
+    contents: 'Содержание',
+    important: 'Важное',
+    video: 'Видео: попытка объяснить, в чём на самом деле проблема',
+
+    strip: {
+      text: 'Команда Discord-сервера AOW5 пользуется багами игры в свою пользу. С доказательствами.',
+      link: 'Читать о нечестной игре',
+    },
+
+    notice: {
+      title: 'Прежде чем пользоваться сайтом',
+      lead: 'Автор сайта опубликовал документированный разбор действий участников команды Discord-сервера AOW5. Каждое утверждение в нём подтверждено цитатой с датой и прямой ссылкой на исходное сообщение.',
+      points: [
+        '! Администраторы сервера чрезмерно пользовались игровыми багами в своих интересах — хотя сами же сообщили о них разработчику. Проблемы в этом они не видят.',
+        'Баг дублирования предметов с тех пор исправлен, но отката не было — задюпленное осталось в экономике игры.',
+        'Готовился запуск платной роли «Проверенный продавец» и продажи золота за реальные деньги под гарантию администрации.',
+        'После того как автор сайта назвал эти действия вслух, с него сняли роль хелпера — с формулировкой «не выполняешь свою работу».',
+      ],
+      ackAgree: 'Я согласен(на) с тем, что администраторы могут так поступать.',
+      ackUnaffiliated: 'Я понимаю, что этот сайт и его автор не входят в команду Discord-сервера AOW5 и не связаны с ней.',
+      readReport: 'Читать о нечестной игре',
+      continue: 'Перейти на сайт',
+      continueIn: (seconds) => `Перейти на сайт (${seconds})`,
+      continueHint: 'Отметьте оба пункта, чтобы продолжить.',
+      continueWait: 'Несколько секунд, чтобы прочитать то, что вы подтверждаете.',
+    },
   },
 };
 
@@ -1226,6 +1338,40 @@ const zh: SiteStrings = {
     workshop: 'Steam 创意工坊上的 Age of Weapons 5',
     source: 'GitHub',
     builtWith: '免费、开源。没有广告，没有统计追踪，不需要账号。',
+  },
+  report: {
+    title: '不公平的游戏：AOW5 Discord 管理团队究竟在做什么',
+    lead: '他们自己向开发者上报、却又照样利用的漏洞；为朋友进行的物品复制；以真实货币出售金币。已于 2026 年 9 月 2 日发送给开发者，因未收到回复，现公开发布。',
+    updated: '发布于 2026 年 9 月 5 日',
+    loading: '正在加载文件…',
+    loadFailed: '文件加载失败。',
+    retry: '重试',
+    contents: '目录',
+    important: '重点',
+    video: '视频：试图说明真正的问题是什么',
+
+    strip: {
+      text: 'AOW5 Discord 管理团队在利用游戏自身的漏洞为自己牟利。附有证据。',
+      link: '阅读不公平游戏的真相',
+    },
+
+    notice: {
+      title: '在使用本站之前',
+      lead: '本站作者发布了一份关于 AOW5 Discord 服务器管理团队成员的、有据可查的说明。其中每一项陈述都附有原文引用、日期，以及指向原始消息的直接链接。',
+      points: [
+        '! 服务器管理员大量利用游戏漏洞为自己牟利——尽管这些漏洞正是他们自己上报给开发者的。他们认为这没有任何问题。',
+        '其中的物品复制漏洞此后已被修复，但没有做回档——被复制出来的物品仍留在游戏经济中。',
+        '当时正在筹备付费的「认证卖家」身份，以及由管理方担保的真实货币金币交易。',
+        '在本站作者公开点明这些行为之后，他的 helper 身份组被撤销，给出的理由是「没有做好自己的工作」。',
+      ],
+      ackAgree: '我同意管理员可以这样做。',
+      ackUnaffiliated: '我明白本站及其作者不属于 AOW5 Discord 服务器管理团队，也与之无关。',
+      readReport: '阅读不公平游戏的真相',
+      continue: '进入网站',
+      continueIn: (seconds) => `进入网站（${seconds}）`,
+      continueHint: '勾选以上两项后即可继续。',
+      continueWait: '请稍等几秒，看清你正在确认的内容。',
+    },
   },
 };
 

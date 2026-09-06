@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildPath, carriesBuildPayload, matchRoute, pathOf, routeAt } from './routes.ts';
+import { buildPath, carriedQuery, carriesBuildPayload, matchRoute, pathOf, routeAt } from './routes.ts';
 
 /*
  * Both bases, because the site is served from a subpath on GitHub Pages and
@@ -34,7 +34,7 @@ test('an unknown path falls back to the landing page', () => {
 
 test('pathOf and routeAt are inverses', () => {
   for (const base of [ROOT, PAGES]) {
-    for (const id of ['landing', 'planner', 'tracker'] as const) {
+    for (const id of ['landing', 'planner', 'tracker', 'report'] as const) {
       assert.equal(routeAt(pathOf(id, base), base), id, `${id} at ${base}`);
     }
   }
@@ -146,8 +146,62 @@ test('none of the new routes look like they are carrying a board', () => {
   }
 });
 
+/*
+ * The language follows the visitor, and nothing else does.
+ *
+ * A shared link should still read in the language it was shared in one page
+ * later; a build list's `?sort=top` means nothing on the tracker and is not
+ * dragged along.
+ */
+
+test('a chosen language survives navigation', () => {
+  assert.equal(carriedQuery('?lang=ru'), '?lang=ru');
+  assert.equal(carriedQuery('?lang=zh&sort=top'), '?lang=zh');
+});
+
+test('nothing else survives navigation', () => {
+  assert.equal(carriedQuery(''), '');
+  assert.equal(carriedQuery('?sort=top&cursor=abc123'), '');
+  assert.equal(carriedQuery('?ref=CODE'), '');
+  // An empty value is not a choice.
+  assert.equal(carriedQuery('?lang='), '');
+});
+
+test('the carried query is never mistaken for a board', () => {
+  // The load-bearing rule again: whatever follows a visitor between pages must
+  // not read as an encoded build when it lands on the planner.
+  const carried = carriedQuery('?lang=ru&b=AQIDBA');
+  assert.equal(carried, '?lang=ru');
+  assert.equal(carriesBuildPayload(carried, ''), false);
+});
+
 test('a planner link still reads as a board, exactly as before', () => {
   assert.equal(carriesBuildPayload('', '#b=6.AAAA'), true);
   assert.equal(carriesBuildPayload('', '#6.AAAA'), true);
   assert.equal(carriesBuildPayload('?b=6.AAAA', ''), true);
+});
+
+/*
+ * The report page.
+ *
+ * Its name is also a legal slug, which is the only interesting thing about it:
+ * `report` is spelled entirely from the slug alphabet, so `/builds/report`
+ * could plausibly exist and must keep resolving to somebody's build.
+ */
+
+test('resolves the report route at both bases', () => {
+  assert.equal(routeAt('/report', ROOT), 'report');
+  assert.equal(routeAt('/report/', ROOT), 'report');
+  assert.equal(routeAt(`${PAGES}report`, PAGES), 'report');
+  assert.equal(routeAt(`${PAGES}report/`, PAGES), 'report');
+  assert.deepEqual(matchRoute('/report', ROOT), { id: 'report' });
+});
+
+test('/report does not shadow a build that happens to be called report', () => {
+  assert.deepEqual(matchRoute('/builds/report', ROOT), { id: 'build', slug: 'report' });
+});
+
+test('the report page is not carrying a board', () => {
+  const url = new URL('/report', 'https://example.test');
+  assert.equal(carriesBuildPayload(url.search, url.hash), false);
 });

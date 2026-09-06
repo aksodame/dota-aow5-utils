@@ -5,7 +5,7 @@ import {
   type ComponentProps,
   type MouseEvent,
 } from 'react';
-import { carriesBuildPayload, buildPath, matchRoute, pathOf, routeAt, type Match, type RouteId } from '@/lib/routes';
+import { carriedQuery, carriesBuildPayload, buildPath, matchRoute, pathOf, routeAt, type Match, type RouteId } from '@/lib/routes';
 
 /**
  * Three pages, no dependency.
@@ -22,7 +22,7 @@ import { carriesBuildPayload, buildPath, matchRoute, pathOf, routeAt, type Match
  * is an in-page `#anchor`.
  */
 
-export { ROUTES, buildPath, matchRoute, pathOf, routeAt, type Match, type RouteId } from '@/lib/routes';
+export { ROUTES, buildPath, carriedQuery, matchRoute, pathOf, routeAt, type Match, type RouteId } from '@/lib/routes';
 
 /*
  * `popstate` covers Back and Forward but not our own pushState, so navigations
@@ -84,7 +84,11 @@ interface NavigateOptions {
 }
 
 export function navigate(id: RouteId, { replace = false, keepUrl = false }: NavigateOptions = {}): void {
-  const url = keepUrl ? `${pathOf(id)}${window.location.search}${window.location.hash}` : pathOf(id);
+  // `carriedQuery` keeps the chosen language and nothing else: a shared link
+  // should still read in the language it was shared in, one page later.
+  const url = keepUrl
+    ? `${pathOf(id)}${window.location.search}${window.location.hash}`
+    : `${pathOf(id)}${carriedQuery(window.location.search)}`;
   if (replace) window.history.replaceState(null, '', url);
   else window.history.pushState(null, '', url);
   window.dispatchEvent(new Event(NAVIGATED));
@@ -119,7 +123,7 @@ export function Link({
     [to, onClick],
   );
 
-  return <a href={pathOf(to)} onClick={handleClick} {...rest} />;
+  return <a href={`${pathOf(to)}${carriedQuery(window.location.search)}`} onClick={handleClick} {...rest} />;
 }
 
 /**

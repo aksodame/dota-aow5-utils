@@ -1,3 +1,11 @@
 packages:
   - "apps/*"
   - "packages/*"
+  # Unpublished tools that consume aow5-shared but ship nowhere near the repo.
+  # /private/ is gitignored, so this glob matches nothing in a fresh clone —
+  # which pnpm is happy with, and which is the point.
+  - "private/*"
+  # ...except the report site: it is a standalone Next.js app deployed to
+  # Vercel with its own npm lockfile, and pulling it into the workspace only
+  # makes `pnpm install` fight with it.
+  - "!private/report-site"

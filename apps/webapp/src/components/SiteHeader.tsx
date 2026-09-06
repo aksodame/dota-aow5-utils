@@ -1,5 +1,5 @@
 import meta from 'aow5-shared/public/data/meta.json';
-import { Plus } from 'lucide-react';
+import { Plus, TriangleAlert } from 'lucide-react';
 import { AccountMenu } from '@/components/AccountMenu';
 import { GithubMark } from '@/components/GithubMark';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -69,6 +69,24 @@ export function SiteHeader({ site, route, lang, theme, onLang, onTheme, viewingO
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
+      {/* Inside the header rather than above it, so the whole thing sticks as
+          one element and nothing else on the site has to learn a new offset.
+          `text-destructive` on a tint rather than a solid red bar: the strip is
+          permanent, and a full-bleed red band on every page reads as a site
+          error rather than as something worth clicking. */}
+      <div className="border-b border-destructive/40 bg-destructive/10">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-1.5 text-xs sm:px-6">
+          <TriangleAlert className="size-3.5 shrink-0 text-destructive" />
+          <span className="min-w-0 truncate text-destructive">{site.report.strip.text}</span>
+          <Link
+            to="report"
+            className="ml-auto shrink-0 font-semibold text-destructive underline underline-offset-2"
+          >
+            {site.report.strip.link}
+          </Link>
+        </div>
+      </div>
+
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
         {/* Home is a nav link like the other two rather than a wordmark. A
             logo that is also the way back to the front page is a convention,

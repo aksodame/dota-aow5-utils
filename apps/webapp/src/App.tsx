@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
+import meta from 'aow5-shared/public/data/meta.json';
 import { AuroraBackground } from '@/components/fx/AuroraBackground';
 import { SignInDialog } from '@/auth/SignInDialog';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { STRINGS, detectLang, storeLang, type Lang } from '@/i18n/strings';
+import { LANGUAGES, STRINGS, detectLang, storeLang, writeLang, type Lang } from '@/i18n/strings';
 import { SITE } from '@/i18n/site';
+import { ReportNoticeDialog } from '@/report/ReportNoticeDialog';
 import { applyTheme, getInitialTheme, storeTheme, type Theme } from '@/lib/theme';
 import { useMatch, useScrollReset } from '@/router';
 import { BuildPage } from '@/routes/BuildPage';
@@ -14,6 +16,7 @@ import { BuildsPage } from '@/routes/BuildsPage';
 import { LandingPage } from '@/routes/LandingPage';
 import { MyBuildsPage } from '@/routes/MyBuildsPage';
 import { PlannerPage } from '@/routes/PlannerPage';
+import { ReportPage } from '@/routes/ReportPage';
 import { TrackerPage } from '@/routes/TrackerPage';
 
 /**
@@ -50,6 +53,10 @@ export default function App() {
   const strings = STRINGS[lang];
   const site = SITE[lang];
 
+  // The languages the extraction actually produced, the same filter the header
+  // applies — the notice offers a switcher too, and the two must agree.
+  const languages = LANGUAGES.filter((l) => (meta.languages as string[]).includes(l));
+
   // Keyed on the slug too, so moving between two builds scrolls to the top.
   useScrollReset(`${route}:${match.slug ?? ''}` as never);
 
@@ -66,12 +73,17 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    document.title = route === 'planner' ? strings.title : `${site.brand} — ${site.landing.title}`;
+    if (route === 'planner') document.title = strings.title;
+    else if (route === 'report') document.title = `${site.brand} — ${site.report.title}`;
+    else document.title = `${site.brand} — ${site.landing.title}`;
   }, [route, strings.title, site]);
 
   const chooseLang = useCallback((next: Lang) => {
     setLang(next);
     storeLang(next);
+    // Also into the URL, so the page can be shared in the language it is being
+    // read in. `Link` and `navigate` carry it from there.
+    writeLang(next);
   }, []);
 
   const toggleTheme = useCallback(() => {
@@ -124,6 +136,7 @@ export default function App() {
         <main id="main" className="flex-1">
           {route === 'planner' && <PlannerPage lang={lang} strings={strings} site={site} />}
           {route === 'tracker' && <TrackerPage site={site} lang={lang} />}
+          {route === 'report' && <ReportPage site={site} lang={lang} />}
           {route === 'landing' && <LandingPage site={site} lang={lang} />}
           {route === 'builds' && <BuildsPage site={site} lang={lang} />}
           {route === 'mine' && <MyBuildsPage site={site} />}
@@ -143,6 +156,15 @@ export default function App() {
 
       {/* Mounted once here, opened only by the header. */}
       <SignInDialog site={site} />
+
+      {/* Mounted once here too, and open for anybody whose last acknowledgement
+          has expired — except on the report itself, where a notice whose whole
+          purpose is to point at the report would be standing between the reader
+          and the thing they came for. It reappears on the next page they open,
+          because the store keeps its own timer either way. */}
+      {route !== 'report' && (
+        <ReportNoticeDialog site={site} lang={lang} languages={languages} onLang={chooseLang} />
+      )}
       <Toaster position="bottom-right" />
     </TooltipProvider>
   );

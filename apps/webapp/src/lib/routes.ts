@@ -23,6 +23,14 @@ export const ROUTES = {
   /** The signed-in author's own five. */
   mine: 'me',
   tracker: 'tracker',
+  /**
+   * The published report on the AOW5 Discord server's staff.
+   *
+   * Top-level rather than under a prefix, and deliberately a word that is also
+   * a legal build slug: `/report` and `/builds/report` are different pages and
+   * have to stay that way, which is what the test in `routes.test.ts` pins.
+   */
+  report: 'report',
 } as const;
 
 /**
@@ -127,6 +135,32 @@ export function matchRoute(pathname: string, base: string = BASE): Match {
  * arrives from the API, never from its URL, so `/builds/<slug>` carries no
  * fragment and nothing about it should look to this function like it does.
  */
+/**
+ * Query parameters that survive an in-app navigation.
+ *
+ * Only `lang`, and only because a chosen language is a property of the link
+ * rather than of the page: somebody who switches to Russian and sends the URL
+ * to a friend means the friend to read Russian. Everything else in a query
+ * string here belongs to the page that put it there — `?sort=top` on the build
+ * list means nothing on the tracker — and is dropped, which is what navigation
+ * has always done.
+ *
+ * The fragment is deliberately not carried; see `keepUrl` in `router.tsx`.
+ */
+export const CARRIED_PARAMS = ['lang'] as const;
+
+/** The part of `search` that should follow the visitor to the next page. */
+export function carriedQuery(search: string): string {
+  const from = new URLSearchParams(search);
+  const kept = new URLSearchParams();
+  for (const key of CARRIED_PARAMS) {
+    const value = from.get(key);
+    if (value !== null && value !== '') kept.set(key, value);
+  }
+  const query = kept.toString();
+  return query === '' ? '' : `?${query}`;
+}
+
 export function carriesBuildPayload(search: string, hash: string): boolean {
   const fragment = hash.replace(/^#/, '');
   if (fragment.startsWith('b=') && fragment.length > 2) return true;

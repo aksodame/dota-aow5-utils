@@ -95,6 +95,31 @@ the chrome, the landing page, the tracker's page. They are separate because they
 reasons: one changes when the board changes, the other when the pitch does. Both are English and Russian,
 keyed by the same `Lang` and the same storage key, so a visitor picks a language once for the site.
 
+## The report, and the markdown it is allowed to use
+
+`/report` renders `src/content/report.{en,ru,zh}.md`. Those files are not written here — they are produced
+from the originals in `private/` by `scripts/prepare-report.mjs`, which drops the recipients' Discord IDs,
+replaces the closing line (as written it said the document had not left the server, which publishing it
+contradicts), and fills in the archive link. Edit the originals and re-run it; editing the copies means the
+next run overwrites you.
+
+`src/lib/markdown.ts` reads them, and it reads **a subset, not CommonMark**: `#`/`##`/`###`, paragraphs,
+`**bold**`, `*italics*`, `` `code` ``, `[text](url)` with an http(s) href, `>` blockquotes, `-` and `1.`
+lists, and `---`. Anything else — a table, an image, a nested list, `_underscore_` emphasis — renders as the
+literal characters you typed. It fails that way on purpose: this is a document whose value is that it quotes
+verbatim, so dropping input is worse than showing it raw.
+
+Two rules worth knowing before editing a document:
+
+- **Inside a `>` block every line break is kept.** Three consecutive quoted lines are three separate Discord
+  messages, and the numbered dupe instructions and the price list in section 8 are lists of statements —
+  joining them would put words in someone's mouth. Unwrap a line if you do not want a break in it.
+- **Everywhere else lines are unwrapped** and joined with a space, except between two ideographic characters,
+  where the space would be a visible defect in the Chinese. Two trailing spaces force a break anywhere.
+
+Headings carry no `id` and there is no table of contents, for the reason in "Routing" above: a stray
+`#anchor` follows a visitor to `/builder` and gets decoded as a board.
+
 ## The download button
 
 `src/lib/release.ts` asks `api.github.com` for the tracker's latest release and renders the version, size and

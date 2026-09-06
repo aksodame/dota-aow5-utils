@@ -17,9 +17,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 import { ItemDetails } from './ItemDetails';
-import { ItemIcon, qualityColor } from './ItemIcon';
+import { ItemResultList } from './ItemResultList';
 
 /**
  * Item browser and detail view.
@@ -322,58 +321,27 @@ export function ItemPicker({
             </p>
 
             <ScrollArea className="min-h-0 flex-1" viewportRef={listRef}>
-              <ul className="space-y-0.5 px-2 pb-3">
-                {shown.map((item) => (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      data-item-id={item.id}
-                      ref={(el) => {
-                        // React hands back null on unmount; dropping the entry
-                        // then keeps the map to the rows actually on screen.
-                        if (!el) {
-                          rowsRef.current.delete(item.id);
-                          return;
-                        }
-                        rowsRef.current.set(item.id, el);
-                        // The row the dialog opened for, the instant it exists.
-                        if (owedReveal.current === item.id) {
-                          owedReveal.current = null;
-                          reveal(el);
-                        }
-                      }}
-                      // A single click only inspects, so browsing never
-                      // overwrites a slot by accident; the footer button (or a
-                      // double click) commits the choice.
-                      //
-                      // Click and keyboard focus move the selection; passing
-                      // the cursor over a row does not. Hover used to, and it
-                      // meant the stats beside the list changed under you on
-                      // the way to the scrollbar.
-                      onClick={() => setFocusId(item.id)}
-                      onDoubleClick={() => onSelect(item)}
-                      onFocus={() => setFocusId(item.id)}
-                      className={cn(
-                        'flex w-full items-center gap-2.5 rounded-md border border-transparent px-2 py-1.5 text-left transition-colors',
-                        item.id === focusId ? 'border-primary bg-accent' : 'hover:bg-accent/60',
-                      )}
-                    >
-                      <ItemIcon icon={item.icon} alt="" size={34} fit="cover" className="rounded-sm" />
-                      <span className="flex min-w-0 flex-col">
-                        <span
-                          className="truncate text-sm leading-tight"
-                          style={{ color: qualityColor(item.quality) }}
-                        >
-                          {item.name}
-                        </span>
-                        <span className="truncate text-[11px] text-muted-foreground">
-                          {item.type} · {strings.level} {item.level} · {strings.cost} {item.cost}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <ItemResultList
+                items={shown}
+                focusId={focusId}
+                onFocus={(item) => setFocusId(item.id)}
+                onCommit={onSelect}
+                rowRef={(item, el) => {
+                  // React hands back null on unmount; dropping the entry then
+                  // keeps the map to the rows actually on screen.
+                  if (!el) {
+                    rowsRef.current.delete(item.id);
+                    return;
+                  }
+                  rowsRef.current.set(item.id, el);
+                  // The row the dialog opened for, the instant it exists.
+                  if (owedReveal.current === item.id) {
+                    owedReveal.current = null;
+                    reveal(el);
+                  }
+                }}
+                strings={strings}
+              />
             </ScrollArea>
           </div>
 

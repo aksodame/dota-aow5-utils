@@ -54,3 +54,13 @@ infra/.env
 # Written by scripts/bootstrap-deploy.ts: the deploy keypair and a filled-in
 # copy of the env file, staged on their way to the server and to GitHub.
 .secrets/
+
+# Media served at /media/. See apps/webapp/media/README.md.
+#
+# The report's recording is committed rather than copied to the server by hand:
+# the deploy is a `git pull` on the box, so anything not in the repository is
+# not on the site. It is ~25 MB, which git carries badly but carries — and a
+# binary in history is the price of a deploy that needs no second channel.
+apps/webapp/media/*
+!apps/webapp/media/README.md
+!apps/webapp/media/*.mp4

@@ -45,6 +45,59 @@ function staticHostFiles(): Plugin {
   };
 }
 
+/** What `media/` is allowed to contain, and therefore what it serves. */
+const MEDIA_FILE = /\.(?:mp4|webm)$/i;
+
+/**
+ * The report's video, and anything else too big to bundle.
+ *
+ * `media/` is a plain directory next to the app rather than an import, because
+ * the file is tens of megabytes: Vite would inline or fingerprint it, and a
+ * rebuild would churn the whole asset. Copied verbatim into `dist/media/`,
+ * where Caddy serves it with range requests — which is what lets a browser
+ * seek in a video rather than downloading all of it first.
+ *
+ * Kept out of `publicDir` because that directory belongs to `aow5-shared`.
+ */
+function mediaFiles(): Plugin {
+  const dir = path.join(root, 'media');
+
+  return {
+    name: 'aow5-media',
+    // Dev has no publicDir pointing here, so the files need serving by hand.
+    configureServer(server) {
+      server.middlewares.use('/media', (req, res, next) => {
+        const name = decodeURIComponent((req.url ?? '').split('?')[0]?.slice(1) ?? '');
+        const file = path.join(dir, name);
+        // Media only, and nothing that escapes the directory. The extension
+        // check matters as much as the traversal one: the build ships only
+        // media, so serving anything else here would make dev disagree with
+        // the deployed site about what is public.
+        if (name === '' || !MEDIA_FILE.test(name) || path.relative(dir, file).startsWith('..') || !fs.existsSync(file)) {
+          next();
+          return;
+        }
+        // No Range support here, so seeking does not work in dev. Caddy serves
+        // the built site and does ranges properly; this only has to be enough
+        // to see that the player is wired up.
+        res.setHeader('content-type', name.endsWith('.webm') ? 'video/webm' : 'video/mp4');
+        fs.createReadStream(file).pipe(res);
+      });
+    },
+    closeBundle() {
+      if (!fs.existsSync(dir)) return;
+      const out = path.join(root, 'dist', 'media');
+      fs.mkdirSync(out, { recursive: true });
+      // Media only. The directory also holds a README explaining why it is not
+      // in git, and that has no business being served.
+      for (const name of fs.readdirSync(dir)) {
+        if (!MEDIA_FILE.test(name)) continue;
+        fs.copyFileSync(path.join(dir, name), path.join(out, name));
+      }
+    },
+  };
+}
+
 // `base` only needs setting if the site is served from a subpath rather than
 // a domain root — which GitHub Pages for a project repo is. The router reads
 // the same value, so the routes move with it.
@@ -65,7 +118,7 @@ export default defineConfig({
       '/api': { target: process.env.VITE_API_TARGET ?? 'http://127.0.0.1:3000', changeOrigin: false },
     },
   },
-  plugins: [react(), tailwindcss(), staticHostFiles()],
+  plugins: [react(), tailwindcss(), mediaFiles(), staticHostFiles()],
   publicDir: sharedPublicDir,
   resolve: {
     alias: { '@': path.resolve(root, 'src') },
