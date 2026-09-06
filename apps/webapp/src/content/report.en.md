@@ -19,20 +19,6 @@ Duplication done as a favour to friends. Gold sold for real money.
 
 ---
 
-## Before the document itself — a video of my attempt to make the case
-
-@video staff-chat-2026-09-03.mp4
-
-!! Watch the others rather than me. Nobody present objects, and nobody intends to
-do anything about it: the conversation stays calm, as though this were entirely
-ordinary. jolylolly openly takes Rebilion's side — he is fine with all of it.
-kykypyza says nothing of substance at all. The neutrality is itself the answer:
-if nobody on the team is troubled by this, then this is simply how things are
-done there. And that is, I think, all anyone needs to know about the staff of
-this Discord server.
-
----
-
 ## ! Summary
 
 This is not about a particular bug. The bug will be fixed, and that will be the
