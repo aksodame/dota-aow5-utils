@@ -390,8 +390,12 @@ export interface SiteStrings {
     strip: { text: string; link: string };
 
     /**
-     * The green strip that stands in the red one's place while the report is
-     * down — see `isReportEnabled` in `lib/report.ts`.
+     * The green strip that can stand in the red one's place while the report is
+     * down — behind `isPausedNoticeEnabled` in `lib/report.ts`, its own switch
+     * rather than `!isReportEnabled`. Both are off today, so this text ships
+     * and renders nowhere: the report is simply gone and the site says nothing
+     * about it. Kept written and translated so that changing the mind is one
+     * word, not an afternoon.
      *
      * Unlike `strip.text` this one wraps rather than truncating, because it is
      * the whole message and there is nowhere left to read it: the document, its

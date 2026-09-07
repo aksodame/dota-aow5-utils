@@ -9,7 +9,7 @@ import { LANGUAGES, type Lang } from '@/i18n/strings';
 import { useMe } from '@/auth/useMe';
 import type { SiteStrings } from '@/i18n/site';
 import { REPO_URL } from '@/lib/links';
-import { isReportEnabled } from '@/lib/report';
+import { isPausedNoticeEnabled, isReportEnabled } from '@/lib/report';
 import type { Theme } from '@/lib/theme';
 import { isNavCurrent } from '@/lib/nav';
 import { Link, type Match, type RouteId } from '@/router';
@@ -72,14 +72,15 @@ export function SiteHeader({ site, route, lang, theme, onLang, onTheme, viewingO
     <header className="sticky top-0 z-40 border-b bg-background">
       {/* Inside the header rather than above it, so the whole thing sticks as
           one element and nothing else on the site has to learn a new offset.
-          A tint rather than a solid band in either colour: the strip is
+          A tint rather than a solid band in either colour: a strip here is
           permanent, and a full-bleed coloured band on every page reads as a
           site-wide alarm rather than as something worth reading.
 
-          Two strips, one slot. While the report is up it is the red teaser that
-          points at it. While it is down it is the green notice saying why —
-          which is the only place that message appears, since the document, its
-          route, the arrival notice and the letter bar all go with it.
+          One slot, three states. The red teaser while the report is up; the
+          green notice while it is down *and* there is something to say about
+          that; and — the state we are actually in — nothing at all, the report
+          simply gone and the site not discussing it. Both flags off is a
+          position rather than a gap: see `lib/report.ts`.
 
           The red one truncates because it is a teaser and the link beside it is
           the point. The green one wraps and has no link, because it *is* the
@@ -99,7 +100,7 @@ export function SiteHeader({ site, route, lang, theme, onLang, onTheme, viewingO
             </Link>
           </div>
         </div>
-      ) : (
+      ) : isPausedNoticeEnabled ? (
         <div className="border-b border-success/40 bg-success/10">
           <div className="mx-auto flex max-w-6xl items-start gap-2 px-4 py-2 text-xs sm:px-6">
             <CircleCheck className="mt-0.5 size-3.5 shrink-0 text-success" aria-hidden />
@@ -114,7 +115,7 @@ export function SiteHeader({ site, route, lang, theme, onLang, onTheme, viewingO
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
         {/* Home is a nav link like the other two rather than a wordmark. A
