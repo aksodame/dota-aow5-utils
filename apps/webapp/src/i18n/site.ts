@@ -390,6 +390,30 @@ export interface SiteStrings {
     strip: { text: string; link: string };
 
     /**
+     * The green strip that stands in the red one's place while the report is
+     * down — see `isReportEnabled` in `lib/report.ts`.
+     *
+     * Unlike `strip.text` this one wraps rather than truncating, because it is
+     * the whole message and there is nowhere left to read it: the document, its
+     * route, the arrival notice and the letter bar all go with the flag.
+     *
+     * **Mostly a thank-you, and deliberately not an ultimatum.** It thanks the
+     * people who read the report and wrote in, says the report came down by
+     * agreement while the developer works through it, and leaves one line to
+     * note that the facts have not gone anywhere and that the author will
+     * return to the subject once there is an outcome. That last line is the
+     * whole of the pressure and it is meant to stay light: no deadline, no
+     * list of demands, no threat to republish. A translation that hardens it
+     * into a condition changes what the notice is — the developer is the one
+     * now doing the work, and this is not addressed against him.
+     *
+     * Short on purpose, too. It sits at the top of every page on the site, so
+     * a paragraph that runs past a phone screen costs every visitor something
+     * on every page. `title` carries the status, `text` the rest.
+     */
+    paused: { title: string; text: string };
+
+    /**
      * The bar fixed to the bottom of every page, and the letter behind it.
      *
      * The letter itself is not here — it is `lib/mail.ts`, because the reader
@@ -748,6 +772,11 @@ const en: SiteStrings = {
       link: 'Read about the cheating',
     },
 
+    paused: {
+      title: 'The report is down for a while.',
+      text: 'Huge thanks to everyone who read it and wrote to the developer off their own enthusiasm, and to everyone who discussed it in the open without fear of a ban from the abusive and dishonest staff of the AOW5 Discord server. By agreement with the developer I have taken it off the site while he works through the material. The facts have not gone anywhere, and I will come back to the subject once the outcome is clear. Stay tuned.',
+    },
+
     mail: {
       barTitle: 'Let’s get through to the developer, together.',
       bar: 'The whole report, summarised as a letter to the studio’s support — already written, in three languages. Copy it and send it. It takes a minute.',
@@ -1083,6 +1112,11 @@ const ru: SiteStrings = {
     strip: {
       text: 'Команда Discord-сервера AOW5 пользуется багами игры в свою пользу. С доказательствами.',
       link: 'Читать о нечестной игре',
+    },
+
+    paused: {
+      title: 'Репорт снят — на время.',
+      text: 'Огромное спасибо всем, кто его прочитал и по собственному энтузиазму написал разработчику на почту, и всем, кто обсуждал это открыто, не боясь бана со стороны абузивной и нечестной администрации Discord-сервера AOW5. По соглашению с разработчиком я убрал репорт с сайта, пока он разбирается с материалами. Факты никуда не делись, и к теме я ещё вернусь, когда будут понятны итоги. Будьте в курсе.',
     },
 
     mail: {
@@ -1423,6 +1457,11 @@ const zh: SiteStrings = {
     strip: {
       text: 'AOW5 Discord 管理团队在利用游戏自身的漏洞为自己牟利。附有证据。',
       link: '阅读不公平游戏的真相',
+    },
+
+    paused: {
+      title: '举报暂时下线。',
+      text: '衷心感谢每一位读过它、并凭自己的热忱写信给开发者的人，也感谢每一位不惧 AOW5 Discord 服务器那套霸道而不公的管理层封禁、依然公开讨论此事的人。经与开发者约定，在他梳理材料期间，我先把举报从站点上撤下。事实并没有消失，等结果明朗，我还会再回到这件事上。请继续关注。',
     },
 
     mail: {

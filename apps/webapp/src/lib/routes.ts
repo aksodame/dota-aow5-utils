@@ -6,6 +6,7 @@
  * What is verified here is the part that can silently break a link somebody
  * already shared.
  */
+import { isReportEnabled } from './report.ts';
 
 export const ROUTES = {
   landing: '',
@@ -29,6 +30,11 @@ export const ROUTES = {
    * Top-level rather than under a prefix, and deliberately a word that is also
    * a legal build slug: `/report` and `/builds/report` are different pages and
    * have to stay that way, which is what the test in `routes.test.ts` pins.
+   *
+   * **Stays in the table while the report is down.** `pathOf('report')` has to
+   * keep answering for the handful of places that build the URL, and taking the
+   * entry out would make every one of them a type error rather than a decision.
+   * What the flag removes is the *resolution* of it, in `ROUTE_IDS` below.
    */
   report: 'report',
 } as const;
@@ -57,7 +63,17 @@ const SLUG = /^[1-9A-HJ-NP-Za-km-z]{4,16}$/;
 
 export type RouteId = keyof typeof ROUTES;
 
-export const ROUTE_IDS = Object.keys(ROUTES) as RouteId[];
+/**
+ * The routes a URL is allowed to resolve to.
+ *
+ * The table minus whatever is switched off. With the report down, `/report` is
+ * not a 404 and not a redirect — it is simply not a path this site knows, so it
+ * lands on the front page like any other unrecognised URL, which is what the
+ * fallback in `routeAt` has always done.
+ */
+export const ROUTE_IDS = (Object.keys(ROUTES) as RouteId[]).filter(
+  (id) => id !== 'report' || isReportEnabled,
+);
 
 /**
  * Vite's `base`, which always ends in a slash — `/` at a domain root,

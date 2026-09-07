@@ -10,6 +10,7 @@ import { LANGUAGES, STRINGS, detectLang, storeLang, writeLang, type Lang } from 
 import { SITE } from '@/i18n/site';
 import { ReportNoticeDialog } from '@/report/ReportNoticeDialog';
 import { SupportMailBar } from '@/report/SupportMailBar';
+import { isReportEnabled } from '@/lib/report';
 import { applyTheme, getInitialTheme, storeTheme, type Theme } from '@/lib/theme';
 import { useMatch, useScrollReset } from '@/router';
 import { BuildPage } from '@/routes/BuildPage';
@@ -75,7 +76,7 @@ export default function App() {
 
   useEffect(() => {
     if (route === 'planner') document.title = strings.title;
-    else if (route === 'report') document.title = `${site.brand} — ${site.report.title}`;
+    else if (isReportEnabled && route === 'report') document.title = `${site.brand} — ${site.report.title}`;
     else document.title = `${site.brand} — ${site.landing.title}`;
   }, [route, strings.title, site]);
 
@@ -137,7 +138,11 @@ export default function App() {
         <main id="main" className="flex-1">
           {route === 'planner' && <PlannerPage lang={lang} strings={strings} site={site} />}
           {route === 'tracker' && <TrackerPage site={site} lang={lang} />}
-          {route === 'report' && <ReportPage site={site} lang={lang} />}
+          {/* `routeAt` never yields `report` while the flag is off, so this is
+              already unreachable — the guard is here so the page's absence is
+              stated where the pages are listed, rather than only in the route
+              table. */}
+          {isReportEnabled && route === 'report' && <ReportPage site={site} lang={lang} />}
           {route === 'landing' && <LandingPage site={site} lang={lang} />}
           {route === 'builds' && <BuildsPage site={site} lang={lang} />}
           {route === 'mine' && <MyBuildsPage site={site} />}
@@ -156,8 +161,14 @@ export default function App() {
 
         {/* Inside the column rather than floating over it, so the spacer it
             renders keeps the fixed bar off the end of whatever page is on
-            screen — the footer's attribution, or the planner's bottom row. */}
-        <SupportMailBar site={site} lang={lang} />
+            screen — the footer's attribution, or the planner's bottom row.
+
+            Down with the report. The bar's whole content is a letter that links
+            to `/report` and asks the reader to press the developer about it; the
+            developer is now working through exactly that material by agreement,
+            and the green strip in the header says so. Keeping the bar up would
+            be both a dead link and the opposite message. */}
+        {isReportEnabled && <SupportMailBar site={site} lang={lang} />}
       </div>
 
       {/* Mounted once here, opened only by the header. */}
@@ -167,8 +178,12 @@ export default function App() {
           has expired — except on the report itself, where a notice whose whole
           purpose is to point at the report would be standing between the reader
           and the thing they came for. It reappears on the next page they open,
-          because the store keeps its own timer either way. */}
-      {route !== 'report' && (
+          because the store keeps its own timer either way.
+
+          And not at all while the report is down: a blocking modal that asks a
+          visitor to tick two boxes about a document they cannot open would be a
+          toll gate on nothing. */}
+      {isReportEnabled && route !== 'report' && (
         <ReportNoticeDialog site={site} lang={lang} languages={languages} onLang={chooseLang} />
       )}
       <Toaster position="bottom-right" />

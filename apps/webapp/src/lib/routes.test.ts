@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { buildPath, carriedQuery, carriesBuildPayload, matchRoute, pathOf, routeAt } from './routes.ts';
+import { isReportEnabled } from './report.ts';
 
 /*
  * Both bases, because the site is served from a subpath on GitHub Pages and
@@ -34,7 +35,7 @@ test('an unknown path falls back to the landing page', () => {
 
 test('pathOf and routeAt are inverses', () => {
   for (const base of [ROOT, PAGES]) {
-    for (const id of ['landing', 'planner', 'tracker', 'report'] as const) {
+    for (const id of ['landing', 'planner', 'tracker'] as const) {
       assert.equal(routeAt(pathOf(id, base), base), id, `${id} at ${base}`);
     }
   }
@@ -182,19 +183,32 @@ test('a planner link still reads as a board, exactly as before', () => {
 });
 
 /*
- * The report page.
+ * The report page, and the flag that takes it away.
  *
  * Its name is also a legal slug, which is the only interesting thing about it:
  * `report` is spelled entirely from the slug alphabet, so `/builds/report`
- * could plausibly exist and must keep resolving to somebody's build.
+ * could plausibly exist and must keep resolving to somebody's build — and that
+ * has to hold whether the report is up or down, which is why the test below is
+ * outside the branch.
  */
 
-test('resolves the report route at both bases', () => {
-  assert.equal(routeAt('/report', ROOT), 'report');
-  assert.equal(routeAt('/report/', ROOT), 'report');
-  assert.equal(routeAt(`${PAGES}report`, PAGES), 'report');
-  assert.equal(routeAt(`${PAGES}report/`, PAGES), 'report');
-  assert.deepEqual(matchRoute('/report', ROOT), { id: 'report' });
+test('the report route follows its flag', () => {
+  // Both directions are asserted rather than only the one that is live, so
+  // flipping `isReportEnabled` cannot quietly leave this file passing on a
+  // rule it is no longer checking.
+  const expected = isReportEnabled ? 'report' : 'landing';
+  assert.equal(routeAt('/report', ROOT), expected);
+  assert.equal(routeAt('/report/', ROOT), expected);
+  assert.equal(routeAt(`${PAGES}report`, PAGES), expected);
+  assert.equal(routeAt(`${PAGES}report/`, PAGES), expected);
+  assert.deepEqual(matchRoute('/report', ROOT), { id: expected });
+});
+
+test('pathOf still names the report, flag or no flag', () => {
+  // The entry stays in the table while the page is hidden: the URL is what a
+  // dozen callers build, and losing it would turn a switch into a refactor.
+  assert.equal(pathOf('report', ROOT), '/report');
+  assert.equal(pathOf('report', PAGES), `${PAGES}report`);
 });
 
 test('/report does not shadow a build that happens to be called report', () => {
@@ -202,6 +216,9 @@ test('/report does not shadow a build that happens to be called report', () => {
 });
 
 test('the report page is not carrying a board', () => {
+  // It falls back to the landing page while the flag is off, and the landing
+  // page is where a board in the URL gets decoded — so this matters more with
+  // the report down, not less.
   const url = new URL('/report', 'https://example.test');
   assert.equal(carriesBuildPayload(url.search, url.hash), false);
 });

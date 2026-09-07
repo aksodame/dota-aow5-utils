@@ -1,6 +1,7 @@
 import { GithubMark } from '@/components/GithubMark';
 import type { SiteStrings } from '@/i18n/site';
 import { REPO_URL, WORKSHOP_URL } from '@/lib/links';
+import { isReportEnabled } from '@/lib/report';
 import { Link } from '@/router';
 
 const linkClass =
@@ -24,9 +25,14 @@ export function SiteFooter({ site }: { site: SiteStrings }) {
           >
             <GithubMark />
           </a>
-          <Link to="report" className={linkClass}>
-            {site.report.strip.link}
-          </Link>
+          {/* Gone with the report itself: `/report` resolves to the front page
+              while the flag is off, and a footer link that silently lands
+              somewhere else is worse than no link. */}
+          {isReportEnabled && (
+            <Link to="report" className={linkClass}>
+              {site.report.strip.link}
+            </Link>
+          )}
           <span className="text-sm text-muted-foreground">{site.footer.builtWith}</span>
         </div>
 

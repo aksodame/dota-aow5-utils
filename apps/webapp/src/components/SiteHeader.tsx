@@ -1,5 +1,5 @@
 import meta from 'aow5-shared/public/data/meta.json';
-import { Plus, TriangleAlert } from 'lucide-react';
+import { CircleCheck, Plus, TriangleAlert } from 'lucide-react';
 import { AccountMenu } from '@/components/AccountMenu';
 import { GithubMark } from '@/components/GithubMark';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -9,6 +9,7 @@ import { LANGUAGES, type Lang } from '@/i18n/strings';
 import { useMe } from '@/auth/useMe';
 import type { SiteStrings } from '@/i18n/site';
 import { REPO_URL } from '@/lib/links';
+import { isReportEnabled } from '@/lib/report';
 import type { Theme } from '@/lib/theme';
 import { isNavCurrent } from '@/lib/nav';
 import { Link, type Match, type RouteId } from '@/router';
@@ -71,21 +72,49 @@ export function SiteHeader({ site, route, lang, theme, onLang, onTheme, viewingO
     <header className="sticky top-0 z-40 border-b bg-background">
       {/* Inside the header rather than above it, so the whole thing sticks as
           one element and nothing else on the site has to learn a new offset.
-          `text-destructive` on a tint rather than a solid red bar: the strip is
-          permanent, and a full-bleed red band on every page reads as a site
-          error rather than as something worth clicking. */}
-      <div className="border-b border-destructive/40 bg-destructive/10">
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-1.5 text-xs sm:px-6">
-          <TriangleAlert className="size-3.5 shrink-0 text-destructive" />
-          <span className="min-w-0 truncate text-destructive">{site.report.strip.text}</span>
-          <Link
-            to="report"
-            className="ml-auto shrink-0 font-semibold text-destructive underline underline-offset-2"
-          >
-            {site.report.strip.link}
-          </Link>
+          A tint rather than a solid band in either colour: the strip is
+          permanent, and a full-bleed coloured band on every page reads as a
+          site-wide alarm rather than as something worth reading.
+
+          Two strips, one slot. While the report is up it is the red teaser that
+          points at it. While it is down it is the green notice saying why —
+          which is the only place that message appears, since the document, its
+          route, the arrival notice and the letter bar all go with it.
+
+          The red one truncates because it is a teaser and the link beside it is
+          the point. The green one wraps and has no link, because it *is* the
+          point — there is nowhere else left to read it. A bold status line over
+          the body, so somebody passing through gets the one fact they need
+          without reading the paragraph. */}
+      {isReportEnabled ? (
+        <div className="border-b border-destructive/40 bg-destructive/10">
+          <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-1.5 text-xs sm:px-6">
+            <TriangleAlert className="size-3.5 shrink-0 text-destructive" />
+            <span className="min-w-0 truncate text-destructive">{site.report.strip.text}</span>
+            <Link
+              to="report"
+              className="ml-auto shrink-0 font-semibold text-destructive underline underline-offset-2"
+            >
+              {site.report.strip.link}
+            </Link>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="border-b border-success/40 bg-success/10">
+          <div className="mx-auto flex max-w-6xl items-start gap-2 px-4 py-2 text-xs sm:px-6">
+            <CircleCheck className="mt-0.5 size-3.5 shrink-0 text-success" aria-hidden />
+            {/* Capped well short of the header's own width: this is a
+                paragraph, and a paragraph run across 72rem of desktop is a
+                line nobody's eye can return from. */}
+            <div className="min-w-0 max-w-3xl text-success">
+              <p className="font-semibold text-balance">{site.report.paused.title}</p>
+              <p className="mt-0.5 leading-snug text-pretty text-success/90">
+                {site.report.paused.text}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
         {/* Home is a nav link like the other two rather than a wordmark. A
