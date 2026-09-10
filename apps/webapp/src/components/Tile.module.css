@@ -1,0 +1,115 @@
+/**
+ * The square that holds an item, a spell or a hero portrait.
+ *
+ * One shape for all three, because the reference draws them the same way: a
+ * dark rounded well with the art inside it and, for items, a rarity edge.
+ */
+.tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  padding: 0;
+  overflow: hidden;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+}
+
+.tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/** Spells are round in the game's own UI, and read better that way here too. */
+.round {
+  border-radius: var(--radius-pill);
+}
+
+.round img {
+  object-fit: cover;
+}
+
+/**
+ * The rarity edge.
+ *
+ * An inset ring rather than the border, so the tile's own outline stays the
+ * same weight whether or not something is in it — a grid where the filled
+ * slots have thicker edges reads as misaligned.
+ */
+.rarity::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--tile-rarity, transparent);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/** An empty slot: no art, no ring, just the well. */
+.empty {
+  background: color-mix(in srgb, var(--surface-sunken) 70%, transparent);
+  border-style: dashed;
+}
+
+/** A slot holding an index this deployment cannot name. */
+.unknown {
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-dim);
+}
+
+/**
+ * Clickable, for the editor. Static everywhere else.
+ *
+ * **The width is not decoration.** A clickable tile is a `<button>`, and a
+ * button sizes itself to its content whatever its `display` is — unlike the
+ * `<div>` the static version renders, which fills the box it is in. So an empty
+ * slot in the editor came out as a 4px dot wherever its parent was not a grid
+ * stretching it, and a filled one came out at whatever the icon's own pixel
+ * width happened to be rather than at the size of the slot beside it. The spell
+ * row showed both at once: three circles at icon size and four dots between
+ * them, with the key letters floating where the missing tiles should have been.
+ *
+ * `aspect-ratio` supplies the height from this, so one line settles both.
+ */
+.interactive {
+  width: 100%;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    transform 80ms ease;
+}
+
+.interactive:hover {
+  border-color: var(--border-strong);
+}
+
+.interactive:active {
+  transform: translateY(1px);
+}
+
+/* --- tooltip contents ----------------------------------------------------- */
+
+.tipName {
+  font-weight: 800;
+  margin-bottom: var(--space-1);
+}
+
+.tipMeta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tipDesc {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}

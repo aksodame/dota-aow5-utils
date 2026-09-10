@@ -1,0 +1,360 @@
+/**
+ * The reference's Overview: gear down the left, panels to the right, and a
+ * title block instead of a nav bar.
+ */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5) var(--space-7);
+
+  /*
+   * Section captions sit a step below the build's own title — see
+   * `--panel-title-size` in Panel.module.css. The page has one headline, and
+   * eight panel titles at nearly its size is a page with eight of them.
+   */
+  --panel-title-size: 15px;
+}
+
+/**
+ * The header that stands in for the top bar.
+ *
+ * A back link and the build's identity — hero, title, tier, author — which is
+ * everything the removed nav was covering up.
+ */
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.back {
+  flex: none;
+  margin-top: var(--space-1);
+}
+
+/**
+ * The portraits' own shape, which is 16:9.
+ *
+ * Square before, so `object-fit: cover` cut a third off each side of a
+ * landscape image — the same crop the filter's tiles had, missed here because
+ * this one is small enough that a headless face still looks like a face.
+ * Widened rather than shortened so the header keeps its height: 128x72 is the
+ * whole picture where 72x72 was the middle of it.
+ */
+.portrait {
+  flex: none;
+  width: 128px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+.portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.identity {
+  flex: 1;
+  min-width: 0;
+}
+
+/*
+ * One line, shortened with an ellipsis rather than wrapped.
+ *
+ * Eighty characters is the cap, and this row also carries a portrait and three
+ * buttons; a two-line title pushed the meta line and the actions down the page
+ * on every narrow window. The whole thing is still in the `title` attribute.
+ */
+.title {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subtitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/**
+ * The edit date, dimmer than the publication date it follows.
+ *
+ * Both are facts about the same build, but only one of them answers "which of
+ * these came first" — and a subtitle with two equally-weighted dates in it
+ * reads as a date range.
+ */
+.revised {
+  color: var(--text-dim);
+}
+
+.author {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/** The price, in the subtitle line. Gold, like the coin next to it. */
+.price {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+}
+
+/* Square source, so the box is the coin; `em` keeps it with the figure. */
+.priceCoin {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/**
+ * The like button, which is the one thing a reader can do to a build.
+ *
+ * Doubled with `:hover` so a like you have already given keeps looking given
+ * while the pointer is on it — `.solid:hover` is a class and a pseudo-class and
+ * would otherwise repaint it as though it were off.
+ */
+.likeOn,
+.likeOn:hover:not(:disabled) {
+  background: var(--like);
+  border-color: var(--like);
+  color: var(--accent-ink);
+}
+
+/**
+ * The referral code, on its own line beneath the action row.
+ *
+ * It used to be a panel of its own at the foot of the page, which put the one
+ * thing a reader is likely to want off their screen behind the whole loadout.
+ * Then it stood in the action row, where it read as a fourth button alongside
+ * like, share and clone — and it is not an action on this build the way those
+ * three are. Its own line is near enough to be found and far enough not to be
+ * mistaken for one of them.
+ *
+ * The label sits *outside* the control, as its description, and the code itself
+ * is the button. Before, the code was inert text with a separate icon-sized
+ * target beside it — so the obvious thing to press was the one thing that did
+ * nothing, and the thing that worked was 24px wide.
+ */
+.referral {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/*
+ * The run-in prefix inside the button.
+ *
+ * Smaller and dimmer than the code it introduces, so the pair reads as one
+ * label-and-value rather than as two words of equal weight. `normal` rather
+ * than the button's own 700, which is the whole difference between a prefix
+ * and a second title.
+ */
+.referralLabel {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+/**
+ * The code, in the button's own colour.
+ *
+ * Mono and spaced out, which is what makes a string of characters transcribable
+ * — and no colour of its own. It was the accent, which on this page is the
+ * colour of the tier badge and the like count, and a code the site is offering
+ * rather than a fact about the build has no business being the loudest thing in
+ * the header.
+ */
+.referralCode {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* --- the loadout ---------------------------------------------------------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.column {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/** Gear, two to a row, as the reference draws it. */
+/* --- the loadout blocks --------------------------------------------------- */
+
+/**
+ * One tile size for all three blocks.
+ *
+ * Fixed rather than `1fr`: stretched to the column each tile came out enormous,
+ * and the three panels together were taller than the spells and runes beside
+ * them. Everything here is sized off this.
+ */
+.loadout {
+  --slot: 54px;
+}
+
+/** Consumables: three across. What you carry in, not what the build is about. */
+.consumables {
+  display: grid;
+  grid-template-columns: repeat(3, var(--slot));
+  gap: var(--space-2);
+}
+
+/**
+ * The worn six with the two carried slots beside them.
+ *
+ * Gear is the main block — two rows of three, the shape the game's own
+ * equipment panel uses — and the neutral and backpack slots stand to its right
+ * as a separate column. They are not equipment: one is whatever the creeps
+ * dropped and the other is spare room, and putting them in the grid made a 3x3
+ * that implied a ninth worn piece.
+ */
+.gearRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.gear {
+  display: grid;
+  grid-template-columns: repeat(3, var(--slot));
+  gap: var(--space-2);
+}
+
+/**
+ * The name over a block of slots: Main, Neutral, Backpack.
+ *
+ * One class for all three, because they are the same kind of label — the gear
+ * block used to be the unnamed one, which made the other two read as notes
+ * about it rather than as blocks of their own.
+ */
+/**
+ * The caption over a carried slot, on one line whatever it says.
+ *
+ * The same rule as the editor's `.carryLabel`, for the same reason: at this
+ * size `НЕЙТРАЛЬНЫЙ` is wider than the 54px slot it sits over and wrapped to
+ * two lines, while `РЮКЗАК` did not — so the neutral tile sat a line lower than
+ * the backpack tile, in Russian only. The full word is on the `title`.
+ */
+.slotLabel {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/** Neutral above, backpack below. */
+.carry {
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--border);
+}
+
+.carrySlot {
+  width: var(--slot);
+}
+
+/** Spells and runes are rows of small tiles. */
+.strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: var(--space-2);
+}
+
+.spellKey {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+/**
+ * One ability: the icon and the key it is bound to.
+ *
+ * Every cell carries the border and the padding, transparent — so marking one
+ * of them changes a colour rather than a size, and the row of seven stays on
+ * the same grid it was.
+ */
+.spellCell {
+  padding: var(--space-2) var(--space-1) var(--space-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+}
+
+/**
+ * The headline ability, the one the browse row leads with.
+ *
+ * The border goes round the *pair* — the icon and its shortcut — because the
+ * shortcut is what a reader repeats back ("it's the W build"), and a mark that
+ * enclosed only the picture would be pointing at half of the thing it names.
+ */
+.spellCellMain {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.spellKeyMain {
+  color: var(--accent);
+}
+
+.notes {
+  white-space: pre-wrap;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+@media (max-width: 880px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page {
+    padding: var(--space-3);
+  }
+
+  .title {
+    font-size: 21px;
+  }
+}

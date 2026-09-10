@@ -1,0 +1,88 @@
+/**
+ * The black card the reference builds every screen out of.
+ *
+ * Near-black rather than tinted blue, so it reads as a window cut into the
+ * background rather than a lighter patch of it.
+ */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.title {
+  /*
+   * A variable rather than a constant, so a page can put its panels a step
+   * below its own heading. The build page and the editor both do: their h1 is
+   * the caption, and eight section titles at nearly the same size make a page
+   * with eight headlines and no title.
+   */
+  font-size: var(--panel-title-size, 18px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* Sits under the header, so the body's padding does not double up on it. */
+.body {
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+/** A panel whose body is a grid of tiles, which supplies its own padding. */
+.flush .body {
+  padding: 0;
+}
+
+.padded {
+  padding: var(--space-4);
+}
+
+/* --- a panel that folds ------------------------------------------------------ */
+
+/**
+ * The heading as a button.
+ *
+ * A `<button>` wrapping the `<h2>` rather than a click handler on the heading:
+ * the heading has to stay a heading for a screen reader's outline, and the
+ * thing that toggles has to be focusable and answer the keyboard. Stripped back
+ * to look exactly like the heading it contains.
+ */
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.toggle:hover .title {
+  color: var(--accent);
+}
+
+.chevron {
+  flex: none;
+  color: var(--text-dim);
+  /* Points right when shut and down when open, which is the one affordance
+     saying the heading does something. */
+  transform: rotate(-90deg);
+  transition: transform 120ms ease;
+}
+
+.chevronOpen {
+  transform: none;
+}

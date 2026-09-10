@@ -8,17 +8,19 @@ import { openDb, runMigrations, type Db } from './open.ts';
 import { PURGE_AFTER_SECONDS, purge } from './purge.ts';
 import { builds } from './schema.ts';
 import { createSession } from './sessions.ts';
-import { createUser, type UserRow } from './users.ts';
-import { nicknameKey } from '../auth/nickname.ts';
+import { signInWithProvider } from './identities.ts';
+import type { UserRow } from './users.ts';
 
 const MIGRATIONS = fileURLToPath(new URL('../../drizzle', import.meta.url));
 const NOW = 1_800_000_000;
 
-function seedUser(db: Db, nickname: string): UserRow {
-  const created = createUser(db, { nickname, key: nicknameKey(nickname), passwordHash: 'hash' }, NOW);
-  if (created === 'taken') throw new Error(`fixture reused the nickname ${nickname}`);
-  return created;
+function seedUser(db: Db, persona: string): UserRow {
+  // A distinct SteamID per persona, derived so a fixture reads the same way
+  // twice. Personas are not unique on Steam and are not unique here either.
+  const steamId = `7656119${String(nextSteamId++).padStart(10, '0')}`;
+  return signInWithProvider(db, { provider: 'steam', providerId: steamId, nickname: persona, avatar: '' }, NOW);
 }
+let nextSteamId = 1;
 
 function fixture() {
   const { db, sqlite } = openDb({ path: ':memory:' });
@@ -38,7 +40,10 @@ function make(db: Db, userId: number) {
       fields: { title: `build ${n}`, body: '' },
       payload: '6.AAAA',
       referral: '',
-      facets: { codecVersion: 6, heroId: null, sectionCount: 1, itemCount: 1, spellCount: 0 },
+      price: 0,
+      video: null,
+      tier: null,
+      facets: { codecVersion: 7, heroId: null, mapIds: [], itemCount: 1, spellCount: 0, spellKeys: [], title: null },
       status: 'published',
     },
     NOW,
@@ -71,7 +76,7 @@ test('a live build is never touched', () => {
 test('purging a build takes its comments and its search terms with it', () => {
   const { db, sqlite, userId } = fixture();
   const build = make(db, userId);
-  addComment(db, build.id, userId, 'something searchable', NOW);
+  addComment(db, build.id, userId, 'something searchable', NOW, true);
   softDeleteBuild(db, build.id, NOW - PURGE_AFTER_SECONDS - 1);
 
   purge(db, NOW);
@@ -88,8 +93,8 @@ test('purging a build takes its comments and its search terms with it', () => {
 test('a comment deleted long ago goes, and the stored count is repaired', () => {
   const { db, sqlite, userId } = fixture();
   const build = make(db, userId);
-  const stale = addComment(db, build.id, userId, 'old', NOW);
-  addComment(db, build.id, userId, 'kept', NOW);
+  const stale = addComment(db, build.id, userId, 'old', NOW, true);
+  addComment(db, build.id, userId, 'kept', NOW, true);
 
   sqlite.prepare('update comments set deleted_at = ? where id = ?').run(NOW - PURGE_AFTER_SECONDS - 1, stale.id);
   // Deliberately wrong, to prove the purge recomputes rather than adjusts.

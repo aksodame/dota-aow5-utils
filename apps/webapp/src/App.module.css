@@ -1,0 +1,57 @@
+/**
+ * A column exactly the height of the window, with the footer pinned across the
+ * bottom of it.
+ *
+ * `height`, not `min-height`: nothing here may grow past the window, because
+ * the window is no longer what scrolls. The footer is out of the flow, so the
+ * space it covers is paid for here — `--footer-h` is what the bar measured
+ * itself to be, and the fallback is what two lines come to before the first
+ * measurement lands.
+ */
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-bottom: var(--footer-h, 84px);
+}
+
+/**
+ * The one thing on the page that scrolls.
+ *
+ * Its box starts under the top bar and ends above the footer, so the scrollbar
+ * it grows is exactly as tall as the content it moves — rather than a document
+ * bar running the full height of the window behind both of them.
+ *
+ * `min-height: 0` is what makes that work at all: a flex child's floor is its
+ * content, so without it this box would be as tall as the longest build page
+ * and push the footer off the bottom instead of scrolling.
+ */
+.main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/**
+ * The skip link, which is the only thing the shell draws for itself.
+ *
+ * Off-screen until focused, so the first Tab press on any page offers a way
+ * past the top bar rather than walking through it.
+ */
+.skip {
+  position: fixed;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 50;
+  padding: var(--space-2) var(--space-3);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: var(--radius);
+  font-weight: 800;
+  transform: translateY(-200%);
+}
+
+.skip:focus {
+  transform: none;
+}

@@ -27,8 +27,25 @@ const EXPECTED: Array<{ path: string; status: number }> = [
   // 200 with a null user, deliberately — not 401. See the auth controller.
   { path: '/api/me', status: 200 },
   { path: '/api/builds', status: 200 },
-  // The only part of the new sign-in flow a smoke test can reach anonymously.
-  { path: '/api/auth/challenge', status: 200 },
+  // The sidebar's facets, which must not 500 on an empty database.
+  { path: '/api/builds?tier=8', status: 200 },
+  { path: '/api/builds?map=M007&sort=top', status: 200 },
+  // A tier that is not a number is dropped rather than coerced, so this is a
+  // successful "no filter" rather than a 400.
+  { path: '/api/builds?tier=abc', status: 200 },
+  // Sign-in is a redirect to Steam. The one part of the flow a smoke test can
+  // reach without a browser, and it proves SITE_ORIGIN was read.
+  { path: '/api/auth/steam', status: 302 },
+  // The callback with nothing to verify: refused without ever calling Steam,
+  // and it answers with a redirect carrying the reason rather than a 500.
+  { path: '/api/auth/steam/return', status: 302 },
+  // Linking is for somebody who is already signed in, so anonymously it is a
+  // 401 rather than a redirect to Steam — the difference between "attach this
+  // to my account" and "sign me in".
+  { path: '/api/auth/steam/link', status: 401 },
+  // The moderation queue, which is admin-only. Anonymous is 401, and an
+  // ordinary account is 403 — neither is reachable from here without a cookie.
+  { path: '/api/comments/pending', status: 401 },
   // A well-formed slug that names nothing.
   { path: '/api/builds/abcd1234', status: 404 },
   { path: '/api/builds/abcd1234/comments', status: 404 },
@@ -96,7 +113,13 @@ async function waitForHealth(): Promise<void> {
 await waitForHealth();
 
 for (const { path, status } of EXPECTED) {
-  const response = await fetch(`http://127.0.0.1:${port}${path}`);
+  /*
+   * `redirect: 'manual'` is not a detail. Two of these answer 302 — one to
+   * steamcommunity.com and one to SITE_ORIGIN — and fetch follows redirects by
+   * default, so without this a smoke test of a local server would reach out to
+   * Steam and then report whatever Steam happened to say.
+   */
+  const response = await fetch(`http://127.0.0.1:${port}${path}`, { redirect: 'manual' });
   if (response.status !== status) {
     fail(`${path} answered ${response.status}, expected ${status}`);
   }

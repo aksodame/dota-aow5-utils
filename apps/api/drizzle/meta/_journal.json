@@ -36,6 +36,69 @@
       "when": 1787446630826,
       "tag": "0004_build_referral",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1787446630827,
+      "tag": "0005_steam_and_one_loadout",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1787446630828,
+      "tag": "0006_build_price",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1787446630829,
+      "tag": "0007_build_video",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1787446630830,
+      "tag": "0008_passport_identities",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1787446630831,
+      "tag": "0009_tier_key_and_map_list",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1787446630832,
+      "tag": "0010_comment_moderation",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1787446630833,
+      "tag": "0011_build_main_spell",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1787446630834,
+      "tag": "0012_more_slots_for_linked_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1787446630835,
+      "tag": "0013_build_priority",
+      "breakpoints": true
     }
   ]
 }

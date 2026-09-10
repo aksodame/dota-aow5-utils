@@ -1,0 +1,139 @@
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--topbar-h);
+  padding: 0 var(--space-5);
+  /*
+   * Opaque rather than translucent-and-blurred.
+   *
+   * A blurred bar over a scrolling list is exactly the "fixed blurred layer"
+   * CONTRIBUTING.md rules out, and this one sits above the longest scroll on
+   * the site. Solid costs nothing and, over a background that is already a
+   * dark wash, looks near enough identical.
+   */
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--border);
+}
+
+/**
+ * The mark, centred on the window.
+ *
+ * Not a flex item: the tabs on one side and the account on the other are both
+ * variable widths, so centring it *between* them would move it whenever a
+ * nickname arrived. It is behind them in the stack and takes no pointer events,
+ * so a wide mark can never swallow a click aimed at a tab.
+ */
+.logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: -1;
+  transform: translate(-50%, -50%);
+  /* A little over half the bar's height, which leaves it room to breathe
+     against the tabs on either side without competing with them. */
+  height: 36px;
+  width: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+/*
+ * Hard left, and the whole bar.
+ *
+ * The tabs used to be centred between a wordmark and an account block, which
+ * meant their position depended on how long somebody's nickname was: signing in
+ * shifted the whole navigation sideways. Both are gone — the wordmark because
+ * Builder already points home, the account block because it lives on the
+ * Settings tab — so the tabs start at the edge and stay there.
+ */
+.nav {
+  flex: 1;
+  justify-content: flex-start;
+}
+
+/**
+ * Narrow: out of the middle and back into the row, first.
+ *
+ * There stops being a middle to sit in long before the bar wraps — the tabs
+ * grow towards it and something has to give. Rather than dropping the mark, it
+ * rejoins the flow at the head of the bar, which is where a wordmark sits on
+ * every other site anyway; `order` puts it first without moving it in the DOM,
+ * where it belongs after the navigation.
+ */
+@media (max-width: 1100px) {
+  .logo {
+    position: static;
+    z-index: auto;
+    order: -1;
+    height: 28px;
+    transform: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .bar {
+    height: auto;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .nav {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    /* The tabs scroll sideways rather than wrapping into a second row. */
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* --- the account, at the right-hand end ------------------------------------ */
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/**
+ * Avatar and nickname: a label, not a control.
+ *
+ * Nothing here hovers or clicks — the Settings tab is where the account is
+ * managed, and a second route to it dressed as a name made the bar's right-hand
+ * end look like two buttons. Smaller than the settings page's copy, because
+ * that page's header can afford a 44px portrait and a 22px name and this shares
+ * a 60px bar with four tabs.
+ */
+.me {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: inherit;
+}
+
+/** A long name shortens rather than pushing Sign out off the bar. */
+.nickname {
+  max-width: 14ch;
+  overflow: hidden;
+  font-weight: 700;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 860px) {
+  /* The name goes first when the bar is tight; the avatar still identifies it. */
+  .nickname {
+    display: none;
+  }
+}

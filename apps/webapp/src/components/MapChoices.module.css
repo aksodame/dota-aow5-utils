@@ -1,0 +1,127 @@
+/**
+ * The room list, shared by the browse filter and the editor.
+ *
+ * Moved here wholesale from `Filters.module.css` when the editor stopped using
+ * a `<select>`: two copies of these rules would have been two designs for one
+ * control, which is what `HeroChoices` was extracted to prevent.
+ */
+
+/**
+ * The map list scrolls on its own.
+ *
+ * Eighteen rooms is taller than the sidebar, and letting the whole panel scroll
+ * meant the hero portraits and the tier chips — the two things you reach for
+ * most — could be pushed off the top by a list you were only skimming.
+ */
+.maps {
+  display: grid;
+  gap: var(--space-1);
+  /*
+   * Five rows tall: five heights, the four gaps between them, and this box own
+   * padding, which counts towards the height because everything here is
+   * `border-box`. Written as that arithmetic rather than as a round number, so
+   * it still means five rows if a row ever changes size.
+   */
+  --map-row-h: 42px;
+  max-height: calc(5 * var(--map-row-h) + 6 * var(--space-1));
+  overflow-y: auto;
+  padding-right: var(--space-1);
+  scrollbar-width: thin;
+  /* Its own scroll needs its own edge, or the rows look cut off mid-list. */
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding-top: var(--space-1);
+  padding-bottom: var(--space-1);
+}
+
+/**
+ * A map row: the portal's own art as the background, its name over it.
+ *
+ * The art is 512x128, which is close to this row's ratio — so it is a
+ * background rather than a thumbnail, and the row reads the way the teleport
+ * screen does.
+ */
+.map {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--map-row-h);
+  padding: var(--space-1) var(--space-2);
+  overflow: hidden;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  transition: border-color 120ms ease;
+}
+
+.mapArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.45;
+  transition: opacity 120ms ease;
+}
+
+/* A wash so the name stays readable over any part of the painting. */
+.mapScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(5 8 20 / 0.85) 30%, rgb(5 8 20 / 0.35) 100%);
+}
+
+.map:hover {
+  border-color: var(--border-strong);
+}
+
+.map:hover .mapArt {
+  opacity: 0.6;
+}
+
+.mapOn,
+.mapOn:hover {
+  border-color: var(--accent);
+}
+
+/* Brighter than the hover state, so hovering a selected room cannot dim it. */
+.mapOn .mapArt,
+.mapOn:hover .mapArt {
+  opacity: 0.75;
+}
+
+.mapBody {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.mapTier {
+  flex: none;
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.mapName {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+}
+
+/** The tick, so selection is visible without relying on the border alone. */
+.mapCheck {
+  position: relative;
+  margin-left: auto;
+  flex: none;
+  color: var(--accent);
+}

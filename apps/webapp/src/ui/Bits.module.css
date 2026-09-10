@@ -1,0 +1,250 @@
+/* --- Avatar --------------------------------------------------------------- */
+
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* --- Badge ---------------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/** The tier chip. Yellow, because tier is the thing the list is filed by. */
+.badgeTier {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+}
+
+/** Inline, for a mark that belongs inside a line of text. See `small`. */
+.badgeSm {
+  height: 17px;
+  padding: 0 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/**
+ * Not published yet.
+ *
+ * Gold rather than grey, and the same gold the warn notice uses. A draft is not
+ * a quieter kind of build — it is one nobody else can open, which is the single
+ * most important thing about a row on your own list, and in grey it read as
+ * decoration next to the tier chip.
+ */
+.badgeDraft {
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  border-color: color-mix(in srgb, var(--gold) 45%, transparent);
+  color: var(--gold);
+}
+
+/* --- Tabs ----------------------------------------------------------------- */
+
+/**
+ * The reference's pill row: the active tab is white on the background, the rest
+ * are black pills. Not underlines — this is a segmented control that happens to
+ * navigate.
+ */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  /*
+   * A tab is its label's width and never less. On a phone the row scrolls
+   * sideways — see `.nav` in TopBar — and without this the labels wrapped
+   * instead, turning "My Creations" into two lines and the bar into two rows
+   * of ragged pills.
+   */
+  flex: none;
+  white-space: nowrap;
+  height: 36px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--text-muted);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.tab:hover {
+  color: var(--text);
+  background: var(--panel-raised);
+}
+
+.tabActive,
+.tabActive:hover {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--blue-700);
+}
+
+/* --- Spinner -------------------------------------------------------------- */
+
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: var(--radius-pill);
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.centered {
+  display: grid;
+  place-items: center;
+  padding: var(--space-7);
+}
+
+/* --- Empty / error states ------------------------------------------------- */
+
+.notice {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.noticeTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/**
+ * Something to know, not something that went wrong.
+ *
+ * Warm rather than red, and it keeps the panel's ordinary border: an error is a
+ * thing the site failed to do, and a page under construction is neither a
+ * failure nor the reader's problem to solve.
+ */
+.noticeWarn {
+  border-color: color-mix(in srgb, var(--gold) 45%, transparent);
+  background: color-mix(in srgb, var(--gold) 8%, transparent);
+}
+
+.noticeWarn .noticeTitle {
+  color: var(--gold);
+}
+
+.noticeError .noticeTitle {
+  color: var(--danger);
+}
+
+/** Something that worked. Green, and otherwise the warn notice's shape. */
+.noticeOk {
+  border-color: color-mix(in srgb, var(--ok) 45%, transparent);
+  background: color-mix(in srgb, var(--ok) 8%, transparent);
+  color: var(--text);
+}
+
+/* --- Tooltip -------------------------------------------------------------- */
+
+/**
+ * The trigger, which is not a box at all.
+ *
+ * `display: contents`: the span stays in the DOM — it carries the hover and
+ * focus handlers, and events reach it by bubbling from the tile exactly as
+ * before — but it generates no box of its own, so whatever it wraps is laid out
+ * by the grid or flex container the tooltip was put inside, as though the
+ * wrapper were not there.
+ *
+ * It was `inline-flex`, which shrink-wraps, and that quietly resized everything
+ * it was supposed to be invisible around: a tile in a 54px slot came out at
+ * whatever width its icon happened to be, so a *filled* slot and an empty one
+ * were different sizes, and the tile no longer agreed with the slot it sat in.
+ * A wrapper whose only job is to listen should not have a shape.
+ *
+ * The cost is that this element cannot be measured — `Bits.tsx` measures the
+ * child instead, and says so there.
+ *
+ * The card itself is *not* in here — it is portalled to the end of `<body>`, so
+ * no ancestor's `overflow: hidden`, `transform` or stacking context can clip it.
+ * That was the previous version's bug: a CSS-only tooltip inside a Panel (which
+ * hides overflow to keep its rounded corners) was cut off at the panel edge,
+ * and raising z-index cannot fix clipping. Nothing here needs `position:
+ * relative` for that: the card is `position: fixed`, at coordinates measured on
+ * open.
+ */
+.tipHost {
+  display: contents;
+}
+
+.tip {
+  position: fixed;
+  z-index: 100;
+  width: max-content;
+  /*
+   * Wide enough for the card it actually holds.
+   *
+   * `ItemCard` — which `SpellCard` shares — sets its own width, 21rem, because
+   * it is a picture of the game's own tooltip; and it cancels the padding below
+   * with a negative margin so its header band reaches the edges. At 320px this
+   * shell was *narrower than the card inside it*, so the card hung out past the
+   * rounded border on both sides and the border no longer went round anything.
+   *
+   * 360px is that card's 21rem plus this padding, with room to spare rather
+   * than exactly enough — the cap is here to stop a long description running
+   * away, and the card's own width is what decides the shape. The viewport
+   * clamp matches the 8px `MARGIN` the placement in `Bits.tsx` keeps, so a card
+   * on a narrow window is never wider than the space it is being placed in.
+   */
+  max-width: min(360px, calc(100vw - 2 * var(--space-2)));
+  padding: var(--space-3);
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-3);
+  text-align: left;
+  /* Never eats a click meant for whatever it is describing. */
+  pointer-events: none;
+}

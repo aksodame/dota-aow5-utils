@@ -54,3 +54,18 @@ infra/.env
 # Written by scripts/bootstrap-deploy.ts: the deploy keypair and a filled-in
 # copy of the env file, staged on their way to the server and to GitHub.
 .secrets/
+
+# Where and what a deploy targets. `infra/deploy.env` is one person's server —
+# a host, a domain, an email — and `infra/.env.production` is the runtime
+# secrets that get installed as /srv/aow5/.env. Neither belongs in the repo;
+# both have a committed `.example` beside them.
+infra/deploy.env
+infra/.env.production
+
+# Development output of the API's two local tools.
+#
+# `pnpm --filter aow5-utils-api card-preview` writes sample social cards to look
+# at; `og-cache/` is where a dev server caches the ones it has rendered, since
+# there is no /data volume to put them beside outside a container.
+apps/api/card-preview/
+apps/api/og-cache/

@@ -1,0 +1,312 @@
+/**
+ * An item's hover card, drawn the way the game draws its own.
+ *
+ * The colours are literal rather than the site's tokens, and deliberately: this
+ * surface is a picture of the game's tooltip, and it has to read as one wherever
+ * it floats. The site's accent moving would repaint the game's furniture.
+ */
+.card {
+  width: 21rem;
+  max-width: calc(100vw - 2rem);
+  /* Its own margin, because the tooltip shell pads for a line of text and this
+     is a card with a header band that has to reach the edges. */
+  margin: calc(-1 * var(--space-3));
+  overflow: hidden;
+  border-radius: var(--radius);
+  color: #dbe3f0;
+}
+
+/* --- the header band -------------------------------------------------------- */
+
+.head {
+  display: flex;
+  /* Without this the art's frame stretches to whatever height the column beside
+     it happens to be, and a square icon ends up in a tall box. */
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: #1e2739;
+  border-bottom: 1px solid rgb(255 255 255 / 0.1);
+}
+
+/** The rarity frame. Its colour is set inline, from the item's own grade. */
+.art {
+  flex: none;
+  width: 54px;
+  height: 54px;
+  overflow: hidden;
+  background: rgb(0 0 0 / 0.4);
+  border: 2px solid;
+  border-radius: var(--radius-sm);
+}
+
+.art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.identity {
+  min-width: 0;
+  flex: 1;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/*
+ * Upper case, as the game sets item names. White rather than the rarity colour:
+ * the grade is already said twice beside it, by the frame and by the pill, and
+ * a third time in the title costs the name its legibility.
+ */
+.name {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+/** Level over id, right-aligned — the pair you quote when reporting something. */
+.ids {
+  flex: none;
+  font-size: 10px;
+  line-height: 1.3;
+  text-align: right;
+  color: #8fa0bb;
+  white-space: nowrap;
+}
+
+.id {
+  font-family: var(--font-mono);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: 6px;
+}
+
+/** The grade, filled with its own colour. */
+.rarity {
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+/** The kind of thing it is — potion, equip, gem — in a neutral chip. */
+.type {
+  padding: 1px 6px;
+  background: rgb(255 255 255 / 0.1);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 500;
+  color: #c3cddf;
+  text-transform: uppercase;
+}
+
+.cost {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+}
+
+.cost img {
+  width: 14px;
+  height: 14px;
+}
+
+/* --- the body --------------------------------------------------------------- */
+
+.body {
+  display: grid;
+  gap: 10px;
+  padding: var(--space-3);
+  background: #131a27;
+}
+
+/** A dim run-in label: "Skill: Active". */
+.fact {
+  font-size: 12px;
+  line-height: 1.35;
+  color: #7f96b2;
+}
+
+.fact span {
+  color: #a9bdd6;
+}
+
+.loading,
+.meta {
+  font-size: 11px;
+  color: #7f96b2;
+}
+
+/*
+ * Value first, then what it does. The order the game uses, and the one that
+ * lets the eye run down a column of numbers rather than hunting for them at the
+ * end of each line.
+ */
+.stats {
+  display: grid;
+  gap: 2px;
+}
+
+.stats li {
+  display: flex;
+  gap: var(--space-2);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.statValue {
+  flex: none;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #a68bfa;
+}
+
+.statLabel {
+  min-width: 0;
+  color: #e0e7f4;
+}
+
+/* --- the description blocks -------------------------------------------------- */
+
+.desc {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.descBox {
+  overflow: hidden;
+  background: #1a2032;
+  border: 1px solid #453d70;
+  border-radius: var(--radius-sm);
+}
+
+.descHeading {
+  padding: 6px 10px;
+  background: #39316a;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #cec2ff;
+}
+
+.descBody {
+  padding: 8px 10px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #c5d0e2;
+}
+
+/* A bare paragraph pays no padding: there is no box for it to sit inside. */
+.desc > .descBody {
+  padding: 0;
+}
+
+/* --- the sections ------------------------------------------------------------ */
+
+.block {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.blockTitle {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #6f829d;
+  text-transform: uppercase;
+}
+
+.needs {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.needs li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.needs img {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.needName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.needCount {
+  font-variant-numeric: tabular-nums;
+  color: #7f96b2;
+}
+
+.usedBy {
+  font-size: 11px;
+  color: #8fa0bb;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tags span {
+  padding: 1px 6px;
+  background: rgb(255 255 255 / 0.1);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  color: #a9bdd6;
+}
+
+.lore {
+  font-size: 11px;
+  line-height: 1.6;
+  font-style: italic;
+  color: #7f96b2;
+}
+
+/**
+ * What another copy of the same item could have rolled.
+ *
+ * Dim, monospaced and pushed to the end of the line: the value beside the label
+ * is what *this* card's item table says, and this is the span it sits in. It is
+ * the one number on the card that changes what "get this item" means, and it
+ * has to be readable without competing with the value it qualifies.
+ */
+.statSpan {
+  margin-left: auto;
+  padding-left: var(--space-2);
+  color: #7f8aa3;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}

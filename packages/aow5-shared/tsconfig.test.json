@@ -24,5 +24,11 @@
   // `node --test` runs these against the committed id tables and emitted JSON,
   // so the codec and the loaders are checked a second time under Node's
   // resolution — tsconfig.src.json checks them for the browser.
-  "include": ["src/**/*.test.ts", "src/types", "src/build", "src/data/loadData.ts"]
+  //
+  // `src/seo` and `src/format` are here for a second reason on top of that one:
+  // the API compiles them into its bundle, and the API is Node. Checking them
+  // only under tsconfig.src.json — which is configured for the browser, down to
+  // the DOM lib — would check them against the one environment neither of their
+  // two consumers runs in.
+  "include": ["src/**/*.test.ts", "src/types", "src/build", "src/data", "src/seo", "src/format"]
 }

@@ -1,0 +1,118 @@
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-5) var(--space-7);
+}
+
+/**
+ * The whole page, while the page is being rebuilt.
+ *
+ * No card and no tint. A single sentence does not need a box around it, and a
+ * warning colour is for something that went wrong rather than for something
+ * that is not finished. Centred and given room above, so it reads as the state
+ * of the page rather than as a strip that happens to be first.
+ */
+.building {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-3);
+  text-align: center;
+}
+
+.buildingTitle {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/** The line of prose, above the way out of it. */
+.buildingBody {
+  max-width: 52ch;
+  color: var(--text-muted);
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.heading {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.panels {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.download {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.releaseMeta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/** The autoexec block. Monospace, selectable in one go, with a copy button. */
+.config {
+  position: relative;
+}
+
+.configCode {
+  display: block;
+  max-height: 260px;
+  padding: var(--space-3);
+  overflow: auto;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre;
+  color: var(--text-muted);
+}
+
+.copy {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+}
+
+.steps {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.steps li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.stepNumber {
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.path {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  user-select: all;
+}

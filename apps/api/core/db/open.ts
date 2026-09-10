@@ -42,6 +42,23 @@ export function openDb({ path, verbose = false }: OpenOptions): { db: Db; sqlite
   // trade for a builds site, and the reason there is a nightly backup.
   sqlite.pragma('synchronous = NORMAL');
 
+  /*
+   * Lower-casing that knows about more than ASCII.
+   *
+   * SQLite's own `lower()` and its `LIKE` fold `A`-`Z` and nothing else, which
+   * is a footnote in most projects and a broken feature in this one: most of
+   * this site's readers write Russian, so searching an author as `свет` would
+   * not find `Свет`. JavaScript's `toLowerCase` is Unicode-aware, and
+   * registering it costs one function on the connection.
+   *
+   * `deterministic`, which is what lets SQLite use it in an index later if this
+   * ever needs one; today it is a scan over a users table with hundreds of rows
+   * inside a query that is already filtering builds.
+   */
+  sqlite.function('unicode_lower', { deterministic: true }, (value: unknown) =>
+    typeof value === 'string' ? value.toLowerCase() : value,
+  );
+
   return { db: drizzle(sqlite, { schema }), sqlite };
 }
 

@@ -33,6 +33,32 @@ const ALLOWED = new Set([
   '@nestjs/platform-express',
   '@nestjs/throttler',
   'drizzle-orm',
+  /*
+   * Passport and the two strategies that are packages.
+   *
+   * External for the same reason the Nest packages are — tsup leaves
+   * `dependencies` alone — and safe for the same reason: `pnpm deploy --prod`
+   * installs every one of them into the image. `passport` itself is pulled in
+   * by `@nestjs/passport` rather than imported here, and is a dependency in its
+   * own right so that the image does not depend on somebody else's tree.
+   *
+   * The Steam strategy is not in this list because it is not a package: it is a
+   * class in `src/auth/strategies/` over this project's own OpenID code, and it
+   * is compiled into the bundle like the rest of `src/`.
+   */
+  /*
+   * The social-card rasterizer: a Rust addon behind a napi binding, so it is a
+   * real file on disk in the image the way better-sqlite3 is, and cannot be
+   * bundled. Its platform package (`@resvg/resvg-js-linux-x64-gnu`) is an
+   * optional dependency resolved at install time — which is the other reason
+   * the runtime stage must stay on the same Debian base as the build stage.
+   */
+  '@resvg/resvg-js',
+  '@nestjs/passport',
+  'passport',
+  'passport-local',
+  'passport-oauth2',
+  'passport-strategy',
 ]);
 
 const builtins = new Set(builtinModules.flatMap((name) => [name, `node:${name}`]));

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "note": "APPEND-ONLY. Indices are baked into shared build URLs; reordering or removing an entry silently changes what every existing link points to. Removed items stay as tombstones.",
+  "ids": [
+    "G001",
+    "M001",
+    "M002",
+    "M003",
+    "M004",
+    "M005",
+    "M006",
+    "M007",
+    "M008",
+    "M009",
+    "M010",
+    "M011",
+    "M012",
+    "M013",
+    "M014",
+    "M015",
+    "M021",
+    "M022"
+  ]
+}

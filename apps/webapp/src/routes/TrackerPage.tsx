@@ -1,225 +1,152 @@
-import { TriangleAlert } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CopyBlock } from '@/components/CopyBlock';
-import { Reveal } from '@/components/fx/Reveal';
+import { useState } from 'react';
+import { Button, ButtonLink, Icon, Panel } from '@/ui';
+import { useApp } from '@/data/AppData';
 // The real file, straight off disk and into the bundle, so the page and the
 // thing it tells people to save can never drift apart.
 import autoexecCfg from '@/data/autoexec.cfg?raw';
-import type { Lang } from '@/i18n/strings';
-import type { SiteStrings } from '@/i18n/site';
-import { DownloadButton } from './tracker/DownloadButton';
-import { HudPreview } from './tracker/HudPreview';
+import { oldTrackerUrl, RELEASES_URL, WORKSHOP_URL } from '@/lib/links';
+import { formatDate, megabytes, useLatestRelease } from '@/lib/release';
+import styles from './TrackerPage.module.css';
 
 /**
- * The tracker's page, at `/tracker`.
+ * The tracker's download page — currently a single line saying it is not here
+ * yet, and where it still is.
  *
  * The tracker is a desktop app in a different workspace package, so this page
- * cannot *be* it — what it can do is show it accurately and hand over the
- * download. What it looks like, then the download, then the panels it opens,
- * how to fit it over the game, and how to point it at a real one.
+ * cannot *be* it — what it can do is hand over the download and the one piece
+ * of setup the app cannot do for itself: Dota has to be told to publish game
+ * state, which is a file the player saves by hand.
+ *
+ * **Everything but the notice is switched off, not deleted.** `REBUILDING` is
+ * the whole of it: below the early return, the download panel and the setup
+ * steps are intact and still type-checked, so finishing this page is flipping
+ * one line rather than writing it again. A notice sitting on top of a page that
+ * still worked was the worse of the two states — it told people to go
+ * elsewhere while showing them a download right underneath it.
+ *
+ * Typed `boolean` rather than left as a literal so the compiler keeps checking
+ * the code under it instead of calling it unreachable.
  */
+const REBUILDING: boolean = true;
+export function TrackerPage() {
+  const { strings, lang } = useApp();
+  const release = useLatestRelease();
+  const [copied, setCopied] = useState(false);
 
-/** The setup walkthrough on YouTube. Not a translated string — one video. */
-const GUIDE_VIDEO_ID = 'ycAzkBW0bEs';
+  const ready = release.status === 'ready' ? release.release : null;
+  const asset = ready?.asset ?? null;
+  const published = ready?.publishedAt != null ? formatDate(ready.publishedAt, lang) : null;
 
-function Panel({ title, lead, children }: { title: string; lead?: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-2xl border bg-card p-6 sm:p-8">
-      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-      {lead && <p className="mt-2 max-w-2xl text-pretty text-sm text-muted-foreground">{lead}</p>}
-      <div className="mt-5">{children}</div>
-    </section>
-  );
-}
-
-/** A part of a panel, under the panel's own heading. */
-function SubPanel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h3 className="text-base font-semibold tracking-tight">{title}</h3>
-      <div className="mt-4">{children}</div>
-    </section>
-  );
-}
-
-function Definitions({ items }: { items: { name: string; text: string }[] }) {
-  return (
-    <dl className="grid gap-4 sm:grid-cols-2">
-      {items.map((entry) => (
-        <div key={entry.name} className="rounded-lg border bg-background/60 p-4">
-          <dt className="text-sm font-medium">{entry.name}</dt>
-          <dd className="mt-1 text-sm text-pretty text-muted-foreground">{entry.text}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-/**
- * The walkthrough as a video, which is what most people would rather have —
- * so it goes first, above the written version rather than instead of it.
- */
-function VideoGuide({ site }: { site: SiteStrings }) {
-  const t = site.tracker.setup;
-
-  return (
-    <div className="flex max-w-3xl flex-col gap-3">
-      {/* nocookie, and lazy: the player is below the fold on a phone, and this
-          page should cost nothing to whoever came to read the text. */}
-      <div className="aspect-video w-full overflow-hidden rounded-xl border bg-black">
-        <iframe
-          className="size-full"
-          src={`https://www.youtube-nocookie.com/embed/${GUIDE_VIDEO_ID}`}
-          title={t.guide.video}
-          loading="lazy"
-          referrerPolicy="strict-origin-when-cross-origin"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        />
+  /*
+   * Under construction, and honest about it.
+   *
+   * No panel, no tinted box and no page heading over it: the whole page is this
+   * one message, and dressing a single sentence as a warning inside a card is
+   * three frames around one line. The way out is a button rather than small
+   * print, because "not ready" and "no use to you" are different things only if
+   * somebody can act on it.
+   */
+  if (REBUILDING) {
+    return (
+      <div className={styles.page}>
+        <section className={styles.building}>
+          <h1 className={styles.buildingTitle}>{strings.tracker.building}</h1>
+          <p className={styles.buildingBody}>{strings.tracker.buildingHint}</p>
+          {/* In the reader's own language: the old site takes the same
+              `?lang=` this one does. */}
+          <ButtonLink href={oldTrackerUrl(lang)} target="_blank" rel="noreferrer noopener" variant="primary">
+            {strings.tracker.openOldSite}
+            <Icon.External size={14} />
+          </ButtonLink>
+        </section>
       </div>
-
-      {/* Nothing in a video can be copied, and both paths have to be exact —
-          so the video always says where the copyable ones are. */}
-      <p className="text-xs text-muted-foreground">{t.guide.videoNote}</p>
-    </div>
-  );
-}
-
-/** The written walkthrough, which was this panel before the video joined it. */
-function TextGuide({ site }: { site: SiteStrings }) {
-  const t = site.tracker.setup;
+    );
+  }
 
   return (
-    <>
-      <Alert variant="success">
-        <TriangleAlert />
-        <AlertTitle className="line-clamp-none text-pretty">{t.alert.title}</AlertTitle>
-        <AlertDescription className="w-full">
-          {/*
-            Both boxes, one under the other, because the mistake this section
-            exists to prevent is the two disagreeing: a file made in one place
-            and a launch option pointing at another. Seen together they are
-            obviously the same path, and the copy button means neither has to
-            be typed twice.
-          */}
-          <p className="mt-1 text-xs font-medium">{t.labels.file}</p>
-          <CopyBlock site={site} className="mt-1 w-full">
-            {t.logPath}
-          </CopyBlock>
+    <div className={styles.page}>
+      <h1 className={styles.heading}>{strings.tracker.heading}</h1>
 
-          <p className="mt-3 text-xs font-medium">{t.labels.option}</p>
-          <CopyBlock site={site} className="mt-1 w-full">
-            {t.launchOption}
-          </CopyBlock>
+      <p className={styles.lead}>
+        An always-on-top overlay that counts what drops while you farm. It reads Dota's own game-state feed, so it needs
+        no injection and touches nothing in the game.
+      </p>
 
-          {/* Under both boxes, because it is a fact about the path in each of
-              them — and the failure it describes is silent, so it has to be
-              read before the paths are edited rather than after. */}
-          <p className="mt-3 font-medium text-warning">{t.pathWarning}</p>
+      <div className={styles.panels}>
+        <Panel title="Download">
+          <div className={styles.download}>
+            {/*
+              Every state here is a working link. Only when an asset is actually
+              found does this become a direct download — which is also the only
+              moment it can honestly claim a version and a size.
+            */}
+            {asset !== null ? (
+              <ButtonLink href={asset.url} variant="primary" size="lg">
+                <Icon.Download size={18} />
+                Windows installer
+              </ButtonLink>
+            ) : (
+              <ButtonLink href={RELEASES_URL} target="_blank" rel="noreferrer noopener" size="lg">
+                <Icon.Download size={18} />
+                All releases
+              </ButtonLink>
+            )}
 
-          <p className="mt-3">{t.alert.text}</p>
-
-          {/* Step one, in the same box as the launch option rather than in a
-              folded panel of its own below the list. It used to be optional,
-              and everything about that placement said so — its own heading,
-              its own colour, and a click before you could read it. */}
-          <p className="mt-3">{t.tuning.text}</p>
-
-          <p className="mt-3 text-xs font-medium">{t.tuning.cfgLabel}</p>
-          <CopyBlock site={site} className="mt-1 w-full">
-            {t.tuning.cfgPath}
-          </CopyBlock>
-
-          {/* The file itself. Scrolls rather than running to 178 lines down
-              the page — nobody reads it, they press the button. */}
-          <CopyBlock site={site} file className="mt-3 w-full">
-            {autoexecCfg}
-          </CopyBlock>
-
-          <p className="mt-3 text-xs">{t.tuning.caveat}</p>
-          <p className="mt-2 text-xs">{t.tuning.instead}</p>
-        </AlertDescription>
-      </Alert>
-
-      <ol className="mt-6 flex flex-col gap-3">
-        {t.steps.map((step, i) => (
-          <li key={step} className="flex gap-3 text-sm">
-            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
-              {i + 1}
+            <span className={styles.releaseMeta}>
+              {release.status === 'loading' && strings.common.loading}
+              {release.status === 'none' && 'No release published yet.'}
+              {release.status === 'error' && 'Could not reach GitHub. The link still works.'}
+              {asset !== null && (
+                <>
+                  {ready?.tag} · {megabytes(asset.sizeBytes)} MB
+                  {published !== null && ` · ${published}`}
+                </>
+              )}
             </span>
-            <span className="text-pretty">{step}</span>
-          </li>
-        ))}
-      </ol>
-      <p className="mt-4 text-xs text-muted-foreground">{t.note}</p>
-    </>
-  );
-}
+          </div>
+        </Panel>
 
-export function TrackerPage({ site, lang }: { site: SiteStrings; lang: Lang }) {
-  const t = site.tracker;
+        <Panel title="Let Dota publish its game state">
+          <ol className={styles.steps}>
+            <li>
+              <span className={styles.stepNumber}>1</span>
+              <span>
+                Save the file below as <code className={styles.path}>gamestate_integration_aow5.cfg</code> in{' '}
+                <code className={styles.path}>
+                  …\steamapps\common\dota 2 beta\game\dota\cfg\gamestate_integration\
+                </code>
+                . Create the last folder if it is not there.
+              </span>
+            </li>
+            <li>
+              <span className={styles.stepNumber}>2</span>
+              <span>Restart Dota. The tracker picks the feed up on its own.</span>
+            </li>
+            <li>
+              <span className={styles.stepNumber}>3</span>
+              <span>
+                Play <a href={WORKSHOP_URL} target="_blank" rel="noreferrer noopener">Age of Weapons 5</a>. The overlay
+                starts counting when the match does.
+              </span>
+            </li>
+          </ol>
 
-  return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-14 sm:px-6 sm:py-20">
-      <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
-        <div className="flex flex-col gap-5">
-          <Reveal>
-            <p className="text-xs font-medium tracking-widest text-primary uppercase">{t.kicker}</p>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">{t.title}</h1>
-          </Reveal>
-
-          <Reveal index={1}>
-            <p className="text-pretty text-muted-foreground">{t.lead}</p>
-          </Reveal>
-
-          <Reveal index={2}>
-            <DownloadButton site={site} lang={lang} />
-          </Reveal>
-        </div>
-
-        <Reveal index={2} className="flex justify-center lg:justify-end">
-          <HudPreview site={site} lang={lang} />
-        </Reveal>
+          <div className={styles.config}>
+            <Button
+              className={styles.copy}
+              size="sm"
+              onClick={() => {
+                void navigator.clipboard?.writeText(autoexecCfg);
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 1600);
+              }}
+            >
+              {copied ? strings.build.copied : strings.build.copyLink}
+            </Button>
+            <code className={styles.configCode}>{autoexecCfg}</code>
+          </div>
+        </Panel>
       </div>
-
-      {/*
-        Directly under the download, and ahead of everything describing what the
-        tracker does. The order used to run windows → fitting → pricing → setup,
-        which put the one step the app cannot work without four panels below the
-        button that starts it: someone who downloads, runs it and sees zeros has
-        already formed an opinion by the time they reach the explanation.
-
-        The same walkthrough twice, watched then read, both open: the video
-        answers the questions the text has to anticipate, and the text is the
-        half that can be copied from.
-      */}
-      <Panel title={t.setup.title} lead={t.setup.lead}>
-        <div className="flex flex-col gap-8">
-          <SubPanel title={t.setup.guide.video}>
-            <VideoGuide site={site} />
-          </SubPanel>
-
-          <SubPanel title={t.setup.guide.text}>
-            <TextGuide site={site} />
-          </SubPanel>
-        </div>
-      </Panel>
-
-      <Panel title={t.windows.title} lead={t.windows.lead}>
-        <Definitions items={t.windows.items} />
-      </Panel>
-
-      <Panel title={t.fitting.title} lead={t.fitting.lead}>
-        <Definitions items={t.fitting.items} />
-      </Panel>
-
-      <Panel title={t.pricing.title}>
-        <p className="max-w-2xl text-pretty text-sm text-muted-foreground">{t.pricing.text}</p>
-      </Panel>
-
-      <Panel title={t.privacy.title}>
-        <p className="max-w-2xl text-pretty text-sm text-muted-foreground">{t.privacy.text}</p>
-      </Panel>
     </div>
   );
 }

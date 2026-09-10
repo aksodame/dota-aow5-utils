@@ -11,14 +11,14 @@ information about the custom game.
 
 | | |
 |---|---|
-| **[`apps/webapp`](apps/webapp/README.md)** | The site, in one bundle and three routes. `/` says what the tools are; `/builder` is the planner — pick a hero, lay out up to nine sections of typed item slots and ability keys, share the whole board as a link, because the board *is* the link; `/tracker` is the farm tracker's page and its download. |
-| **[`apps/api`](apps/api/README.md)** | The builds API. Accounts, published builds, comments and votes, over one SQLite file. The planner does not depend on it: a `#b=` link still decodes with no account and no network, which is the point. |
+| **[`apps/webapp`](apps/webapp/README.md)** | The site, in one bundle and four routes. `/` browses published builds — filter by hero, map and tier, sort by likes; `/builds/<slug>` is one build's gear, spells and runes; `/edit` is the editor, which keeps the whole loadout in the link, because the loadout *is* the link; `/tracker` is the farm tracker's download. |
+| **[`apps/api`](apps/api/README.md)** | The builds API. Steam accounts, published builds, comments and likes, over one SQLite file. The editor does not depend on it: a `#b=` link still decodes with no account and no network, which is the point. |
 | **[`apps/tracker`](apps/tracker/README.md)** | Farm tracker. An always-on-top Electron overlay for a live run: items and gold per hour, average map clear time, per-item counts broken down per map. Collapses to one line, resizes, and scales to whatever screen the game is on. |
 
 The rule is one-way: apps depend on `packages/aow5-shared`, never on each other. The web app's `/tracker`
 page depicts the overlay rather than importing from it — that is the rule, not an oversight, and it is what
 keeps the shared package honest about what is genuinely shared. The tracker is why the data is a package
-rather than part of the planner — it needs the same item names and gold costs, and the planner has
+rather than part of the site — it needs the same item names and gold costs, and the site has
 no business knowing it exists.
 
 ## The tracker's overlays
@@ -26,7 +26,7 @@ no business knowing it exists.
 Four windows, one event feed. The **farm HUD** is the readout you leave over the game; **settings** and
 **history** are windows you open and close; and the **recipe strip** takes a target item and shows one line
 per ingredient with a live `have / needed` count that moves as loot drops, off the same recursive `needs`
-graph the planner renders. `apps/tracker/src/overlays/recipe/README.md` is that panel's design notes,
+graph the site renders. `apps/tracker/src/overlays/recipe/README.md` is that panel's design notes,
 and `apps/tracker/docs/SETUP.md` is how to get the whole thing running on a fresh machine.
 
 ## Quick start
@@ -61,18 +61,18 @@ what to provision, in what order, and which of those steps you cannot skip.
 ## Contributing
 
 Pull requests are welcome. There is no repo-wide contributing guide, because there is no repo-wide set of
-rules worth reading — a change to the planner and a change to the overlay can each break something the
+rules worth reading — a change to the site and a change to the overlay can each break something the
 other has never heard of. So the guide lives with the app:
 
 | | |
 |---|---|
-| **[`apps/webapp/CONTRIBUTING.md`](apps/webapp/CONTRIBUTING.md)** | The site and the planner. The append-only id tables, the codec versions that keep an already-shared link decoding, `pathname`-only routing because the fragment is the board, and both languages and both themes on every change. |
-| **[`apps/api/CONTRIBUTING.md`](apps/api/CONTRIBUTING.md)** | The builds API. Why `core/` may not import Nest, the four link rules restated from the server's side, and why a board is stored as a string and never re-encoded. |
+| **[`apps/webapp/CONTRIBUTING.md`](apps/webapp/CONTRIBUTING.md)** | The site. The append-only id tables, the codec that keeps an already-shared link decoding, `pathname`-only routing because the fragment is the loadout, the first-party UI kit, and all three languages and both themes on every change. |
+| **[`apps/api/CONTRIBUTING.md`](apps/api/CONTRIBUTING.md)** | The builds API. Why `core/` may not import Nest, the four link rules restated from the server's side, and why a loadout is stored as a string and never re-encoded. |
 | **[`apps/tracker/CONTRIBUTING.md`](apps/tracker/CONTRIBUTING.md)** | The overlay. `core/` free of any Electron import, a renderer that never touches the filesystem, the preload bridge as the only IPC surface, the event contract, and a config file that can never stop the app from starting. |
 
 Each one covers how to run that app on its own, what review will send a PR back for, and the pull-request
 template it expects — including a **feature description** that says what changed, what it does to the
-contract other people's data already depends on (a shared link; an existing `config.json`), and what was
+contract other people's data already depends on (a shared link; a stored build; an existing `config.json`), and what was
 knowingly left out. The overlay's guide also explains how to develop against a scripted session with no
 game installed, which is what makes contributing to it possible without owning the map.
 

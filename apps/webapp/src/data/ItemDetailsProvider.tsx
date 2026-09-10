@@ -1,11 +1,13 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
-import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
+import type { ItemFull, LocaleDetail, RollTables } from 'aow5-shared/types';
 import type { ItemSummary } from 'aow5-shared/data';
 import { useItemDetails } from './useItemDetails';
 
 export interface ItemDetailsStore {
   full: Record<string, ItemFull> | null;
   detail: Record<string, LocaleDetail> | null;
+  /** The roll tables, for anything reasoning about a particular copy of an item. */
+  rolls: RollTables | null;
   loading: boolean;
   error: string | null;
   /** Every playable item by id, for naming the parts of a recipe. */

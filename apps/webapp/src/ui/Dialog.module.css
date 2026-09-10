@@ -1,0 +1,68 @@
+/**
+ * A modal, on the native `<dialog>` element.
+ *
+ * The browser supplies the top layer, the backdrop, focus trapping and Escape —
+ * all four of which were reasons the previous site carried Radix. What is left
+ * for us is the look and the scroll lock.
+ */
+.dialog {
+  width: min(720px, calc(100vw - 32px));
+  max-height: min(80vh, 720px);
+  padding: 0;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+}
+
+/*
+ * Dimmed, not blurred. The rule against `backdrop-filter` is about fixed
+ * layers over scrolling content; a modal backdrop is neither — but it is also
+ * the one place the effect buys least, since the page behind it is already
+ * locked and dimmed.
+ */
+.dialog::backdrop {
+  background: rgb(3 6 16 / 0.72);
+}
+
+.wide {
+  width: min(1000px, calc(100vw - 32px));
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.title {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border);
+}

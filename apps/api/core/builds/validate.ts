@@ -6,7 +6,8 @@
  * read — a limit enforced here and displayed from a different constant is a
  * user typing happily into a field that is about to be rejected.
  */
-import { MAX_BODY, MAX_COMMENT, MAX_REFERRAL, MAX_TITLE } from 'aow5-api-contract';
+import { MAX_BODY, MAX_COMMENT, MAX_PRICE, MAX_REFERRAL, MAX_TIER, MAX_TITLE, MIN_TIER } from 'aow5-api-contract';
+import { isTierKey, type TierKey } from 'aow5-shared/data';
 
 export interface BuildFields {
   title: string;
@@ -61,13 +62,70 @@ export function stripControl(value: string): string {
  * Nothing is assumed about the alphabet: the game documents the format nowhere
  * beyond "a short code", so anything printable is allowed through and only the
  * length is enforced.
+ *
+ * Whitespace is *removed* rather than collapsed. A code is one eight-character
+ * token, so a space inside one is always damage — a line break from a chat
+ * client, a wrap in a screenshot's caption — and collapsing it to a single
+ * space made an eight-character code nine characters long and refused it.
  */
 export function normaliseReferral(input: unknown): { ok: true; referral: string } | { ok: false; errors: FieldErrors } {
-  const referral = typeof input === 'string' ? normaliseLine(stripControl(input)).toUpperCase() : '';
+  const referral = typeof input === 'string' ? stripControl(input).replace(/\s+/gu, '').toUpperCase() : '';
   if (textLength(referral) > MAX_REFERRAL) {
     return { ok: false, errors: { referral: `Referral codes are at most ${MAX_REFERRAL} characters.` } };
   }
   return { ok: true, referral };
+}
+
+/**
+ * What a guide is filed under: `'1'`..`'9'`, or `'event'`.
+ *
+ * Absent is `null` — a draft may not have chosen one yet — and the *publish*
+ * path is what insists on a value. Anything else is refused rather than
+ * coerced: `'10'` is not tier 1 and `'Event'` is not `'event'`, and guessing
+ * which the caller meant is how a build ends up filed somewhere nobody looks.
+ *
+ * Digits arrive as strings because a form field is text. A *number* is accepted
+ * too and normalised, since a client that has the tier as a number should not
+ * have to know the wire wants a string.
+ */
+export function normaliseTier(
+  input: unknown,
+): { ok: true; tier: TierKey | null } | { ok: false; errors: FieldErrors } {
+  if (input === undefined || input === null || input === '') return { ok: true, tier: null };
+
+  const key = typeof input === 'number' && Number.isInteger(input) ? String(input) : input;
+  if (!isTierKey(key)) {
+    return { ok: false, errors: { tier: `Pick a tier from ${MIN_TIER} to ${MAX_TIER}, or Event.` } };
+  }
+  return { ok: true, tier: key };
+}
+
+/**
+ * A price, as it gets stored.
+ *
+ * Refused rather than clamped when it is out of range. A referral code is
+ * trimmed because a paste picks up whitespace and the author meant the code;
+ * a price of nine billion is not a typo the server can silently correct into
+ * four, and quietly storing a different number than somebody typed is worse
+ * than telling them.
+ *
+ * Absent is `0`, which is also what "I would rather not say" stores as — see
+ * the column. Fractions are refused rather than rounded for the same reason:
+ * gold is an integer in this game, so a fractional one is a client bug worth
+ * hearing about.
+ */
+export function normalisePrice(input: unknown): { ok: true; price: number } | { ok: false; errors: FieldErrors } {
+  if (input === undefined || input === null || input === '') return { ok: true, price: 0 };
+  const price = typeof input === 'number' ? input : Number(input);
+
+  if (!Number.isFinite(price) || !Number.isInteger(price)) {
+    return { ok: false, errors: { price: 'A price is a whole number of gold.' } };
+  }
+  if (price < 0) return { ok: false, errors: { price: 'A price cannot be negative.' } };
+  if (price > MAX_PRICE) {
+    return { ok: false, errors: { price: `Prices are at most ${MAX_PRICE.toLocaleString('en')} gold.` } };
+  }
+  return { ok: true, price };
 }
 
 /**

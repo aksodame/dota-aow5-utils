@@ -12,25 +12,24 @@ import {
   resolveSession,
   SESSION_TTL_SECONDS,
 } from './sessions.ts';
-import { createUser, type UserRow } from './users.ts';
-import { nicknameKey } from '../auth/nickname.ts';
+import { signInWithProvider } from './identities.ts';
+import type { UserRow } from './users.ts';
 import { users } from './schema.ts';
 import { eq } from 'drizzle-orm';
 
 const MIGRATIONS = fileURLToPath(new URL('../../drizzle', import.meta.url));
 const NOW = 1_800_000_000;
-const NICKNAME = 'tester';
+const PERSONA = 'tester';
+const STEAM_ID = '76561197960287930';
 
-function seedUser(db: Db, nickname: string): UserRow {
-  const created = createUser(db, { nickname, key: nicknameKey(nickname), passwordHash: 'hash' }, NOW);
-  if (created === 'taken') throw new Error(`fixture reused the nickname ${nickname}`);
-  return created;
+function seedUser(db: Db, steamId: string, persona: string): UserRow {
+  return signInWithProvider(db, { provider: 'steam', providerId: steamId, nickname: persona, avatar: '' }, NOW);
 }
 
 function fixture(): { db: Db; userId: number } {
   const { db } = openDb({ path: ':memory:' });
   runMigrations(db, MIGRATIONS);
-  const user = seedUser(db, NICKNAME);
+  const user = seedUser(db, STEAM_ID, PERSONA);
   return { db, userId: user.id };
 }
 
@@ -136,10 +135,30 @@ test('expired sessions can be swept without touching live ones', () => {
   assert.ok(resolveSession(db, live.token, NOW));
 });
 
-test('a nickname is spoken for once it is taken', () => {
-  // The uniqueness that replaced "sign in again and we recognise your SteamID":
-  // the name is the identity now, and the database is what enforces it.
+test('signing in again is the same account, with a refreshed profile', () => {
+  // The identity is the SteamID, not the name: coming back with a new persona
+  // updates the row rather than opening a second account. Which also means two
+  // people may share a persona here, exactly as they may on Steam.
   const { db } = fixture();
-  assert.equal(createUser(db, { nickname: 'Tester', key: nicknameKey('Tester'), passwordHash: 'h' }, NOW), 'taken');
-  assert.notEqual(createUser(db, { nickname: 'someone-else', key: nicknameKey('someone-else'), passwordHash: 'h' }, NOW), 'taken');
+  const again = seedUser(db, STEAM_ID, 'renamed');
+  assert.equal(again.nickname, 'renamed');
+  assert.equal(db.select().from(users).all().length, 1);
+
+  const stranger = seedUser(db, '76561197960287999', 'renamed');
+  assert.notEqual(stranger.id, again.id, 'a shared persona is still two people');
+  assert.equal(db.select().from(users).all().length, 2);
+});
+
+test('an account keeps the date it was opened, not the date it was last seen', () => {
+  const { db } = fixture();
+  const first = db.select().from(users).get();
+  signInWithProvider(
+      db,
+      { provider: 'steam', providerId: STEAM_ID, nickname: 'later', avatar: '' },
+      NOW + 90_000,
+    );
+
+  const after = db.select().from(users).get();
+  assert.equal(after?.createdAt, first?.createdAt);
+  assert.equal(after?.updatedAt, NOW + 90_000);
 });

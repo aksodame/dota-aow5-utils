@@ -1,20 +1,22 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { MAX_BUILDS_PER_USER } from 'aow5-api-contract';
+import { MAX_BUILDS_CEILING, MAX_BUILDS_PER_USER } from 'aow5-api-contract';
 import { createBuild, countBuildsFor, findBuildBySlug, listBuildsForUser, softDeleteBuild, updateBuild } from './builds.ts';
 import { openDb, runMigrations, type Db } from './open.ts';
-import { createUser, type UserRow } from './users.ts';
-import { nicknameKey } from '../auth/nickname.ts';
+import { signInWithProvider } from './identities.ts';
+import type { UserRow } from './users.ts';
 
 const MIGRATIONS = fileURLToPath(new URL('../../drizzle', import.meta.url));
 const NOW = 1_800_000_000;
 
-function seedUser(db: Db, nickname: string): UserRow {
-  const created = createUser(db, { nickname, key: nicknameKey(nickname), passwordHash: 'hash' }, NOW);
-  if (created === 'taken') throw new Error(`fixture reused the nickname ${nickname}`);
-  return created;
+function seedUser(db: Db, persona: string): UserRow {
+  // A distinct SteamID per persona, derived so a fixture reads the same way
+  // twice. Personas are not unique on Steam and are not unique here either.
+  const steamId = `7656119${String(nextSteamId++).padStart(10, '0')}`;
+  return signInWithProvider(db, { provider: 'steam', providerId: steamId, nickname: persona, avatar: '' }, NOW);
 }
+let nextSteamId = 1;
 
 function fixture(): { db: Db; userId: number } {
   const { db } = openDb({ path: ':memory:' });
@@ -23,7 +25,14 @@ function fixture(): { db: Db; userId: number } {
   return { db, userId: user.id };
 }
 
-function make(db: Db, userId: number, slug: string, status: 'draft' | 'published' = 'published') {
+function make(
+  db: Db,
+  userId: number,
+  slug: string,
+  status: 'draft' | 'published' = 'published',
+  /** The author's own slot count. Five unless a provider is linked — see `buildLimitFor`. */
+  limit?: number,
+) {
   return createBuild(
     db,
     {
@@ -32,10 +41,14 @@ function make(db: Db, userId: number, slug: string, status: 'draft' | 'published
       fields: { title: `title ${slug}`, body: '' },
       payload: '6.AAAA',
       referral: '',
-      facets: { codecVersion: 6, heroId: 'npc_dota_hero_axe', sectionCount: 1, itemCount: 2, spellCount: 0 },
+      price: 0,
+      video: null,
+      tier: null,
+      facets: { codecVersion: 7, heroId: 'npc_dota_hero_axe', mapIds: [], itemCount: 2, spellCount: 0, spellKeys: [], title: null },
       status,
     },
     NOW,
+    limit,
   );
 }
 
@@ -99,7 +112,10 @@ test('the board is stored exactly as given, and re-stored exactly as given', () 
       fields: { title: 't', body: '' },
       payload: original,
       referral: '',
-      facets: { codecVersion: 6, heroId: null, sectionCount: 2, itemCount: 3, spellCount: 1 },
+      price: 0,
+      video: null,
+      tier: null,
+      facets: { codecVersion: 7, heroId: null, mapIds: [], itemCount: 3, spellCount: 1, spellKeys: [], title: null },
       status: 'published',
     },
     NOW,
@@ -107,15 +123,21 @@ test('the board is stored exactly as given, and re-stored exactly as given', () 
   if (build === 'limit-reached') return;
   assert.equal(build.payload, original);
 
-  const replacement = '5.zzzz';
+  /*
+   * A version this deployment does not know, on purpose. The column follows
+   * whatever the facets say rather than being re-derived here, which is the
+   * property that lets a newer codec arrive without a migration — and the
+   * check that it is not silently normalised to the version we happen to ship.
+   */
+  const replacement = '8.zzzz';
   const updated = updateBuild(
     db,
     build,
-    { payload: replacement, facets: { codecVersion: 5, heroId: null, sectionCount: 1, itemCount: 0, spellCount: 0 } },
+    { payload: replacement, facets: { codecVersion: 8, heroId: null, mapIds: [], itemCount: 0, spellCount: 0, spellKeys: [], title: null } },
     NOW + 5,
   );
   assert.equal(updated.payload, replacement);
-  assert.equal(updated.codecVersion, 5);
+  assert.equal(updated.codecVersion, 8);
 });
 
 test('publishedAt is set once and does not move on a later edit', () => {
@@ -152,7 +174,10 @@ test('a referral code survives a round trip, and only a sent one changes it', ()
       fields: { title: 't', body: '' },
       payload: '6.AAAA',
       referral: '00EJT3T3',
-      facets: { codecVersion: 6, heroId: null, sectionCount: 1, itemCount: 0, spellCount: 0 },
+      price: 0,
+      video: null,
+      tier: null,
+      facets: { codecVersion: 7, heroId: null, mapIds: [], itemCount: 0, spellCount: 0, spellKeys: [], title: null },
       status: 'published',
     },
     NOW,
@@ -180,4 +205,28 @@ test('a build stored before referral codes existed reads as having none', () => 
   // The column is NOT NULL with a default, so the migration over an existing
   // database leaves every old row saying "no code" rather than null.
   assert.equal(findBuildBySlug(db, 'legacy')?.referral, '');
+});
+
+test('a linked provider is five more slots, and the ceiling still holds', () => {
+  /*
+   * The cap is per account rather than per site: an account costs nothing to
+   * open, so five builds "per person" was really five per free account. What a
+   * linked Steam or Discord account buys is the slots that cap was collecting.
+   */
+  const { db } = fixture();
+  const author = seedUser(db, 'second-author');
+
+  // The limit is the caller's — `buildLimitFor` computes it — so this exercises
+  // the two ends of the range the schema allows.
+  for (let i = 0; i < 5; i += 1) {
+    assert.notEqual(make(db, author.id, `base${i}`, 'published', 10), 'limit-reached');
+  }
+  assert.equal(make(db, author.id, 'sixth', 'published', 5), 'limit-reached', 'five is five when nothing is linked');
+  assert.notEqual(make(db, author.id, 'sixth', 'published', 10), 'limit-reached', 'ten when one provider is');
+
+  // And the database has the last word whatever the caller passes.
+  for (let i = 6; i < MAX_BUILDS_CEILING; i += 1) {
+    assert.notEqual(make(db, author.id, `more${i}`, 'published', 99), 'limit-reached');
+  }
+  assert.equal(make(db, author.id, 'past-the-ceiling', 'published', 99), 'limit-reached');
 });

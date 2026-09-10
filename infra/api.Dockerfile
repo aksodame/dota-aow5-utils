@@ -39,9 +39,14 @@ RUN pnpm --filter aow5-utils-api build
 RUN pnpm deploy --filter aow5-utils-api --prod /out
 
 # Both workspace packages are compiled *into* dist/main.cjs, so the copies
-# pnpm deploy just made are dead weight — and aow5-shared carries ~22 MB of
-# icons the API has no use for. Dropping them is worth doing explicitly:
-# verify-bundle is what guarantees nothing still reaches for them.
+# pnpm deploy just made are dead weight. Dropping them is worth doing
+# explicitly: verify-bundle is what guarantees nothing still reaches for them.
+#
+# The icons that used to be dropped along with them are now copied back in
+# below, under ./assets. They stopped being "art the API has no use for" when
+# the social-card renderer started composing hero portraits and item tiles
+# server-side — see apps/api/core/seo/card.ts. What is copied is the picture
+# tree only, not the package.
 RUN rm -rf /out/node_modules/aow5-shared /out/node_modules/aow5-api-contract
 
 FROM node:22-bookworm-slim AS runtime
@@ -49,8 +54,37 @@ FROM node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 
+# Fonts, for the social-card renderer.
+#
+# resvg rasterizes text with whatever is in the system font database, and this
+# image would otherwise have nothing at all in it — every card would come out as
+# a row of empty boxes, in production and nowhere else, because a developer's
+# machine always has fonts.
+#
+# `fonts-noto-cjk` is the whole answer on its own and is the reason for the
+# ~55 MB: the family carries Latin, Cyrillic *and* Simplified Chinese, which is
+# all three languages the site speaks in one fallback. It has to, because a build
+# title is written by its author — a Chinese title can turn up on a card rendered
+# for an English reader at any time. DejaVu is a small insurance policy behind it
+# for anything Noto's coverage misses.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends fonts-noto-cjk fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /repo/apps/api/dist ./dist
+
+# The pictures a card is composed from, at the path `ASSETS_DIR` defaults to in
+# production. Only the icon tree: the JSON beside it in the shared package is
+# either bundled into main.cjs already or not needed here at all, and
+# items.full.json alone is 1.3 MB of text nothing on a card reads.
+COPY --from=build /repo/packages/aow5-shared/public/icons ./assets/icons
+
+# The site's wordmark, which is the webapp's rather than the shared package's —
+# it is branding, not extracted game data, and it lives with the component that
+# draws it everywhere else. Its own directory because `BRAND_DIR` is its own
+# setting, for exactly that reason. See apps/api/src/config.ts.
+COPY --from=build /repo/apps/webapp/src/assets/logotype.png ./assets-brand/logotype.png
 # Applied at boot by the migrator, and resolved relative to the working
 # directory — which is why this sits beside dist/ rather than inside it.
 COPY --from=build /repo/apps/api/drizzle ./drizzle

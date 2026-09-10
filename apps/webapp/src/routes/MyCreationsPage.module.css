@@ -1,0 +1,60 @@
+/**
+ * The browse page's layout, with a different sidebar in it.
+ *
+ * Deliberately the same grid, the same widths and the same gap: this list holds
+ * the same rows, and a page that arranged them differently would make somebody
+ * look twice to recognise their own build. See `BrowsePage.module.css`, which
+ * this mirrors.
+ */
+.page {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5) var(--space-7);
+}
+
+/*
+ * A little air over the button.
+ *
+ * The count sits in the panel header now, so the body holds one control — and
+ * a lone button pressed up against the heading's underside reads as part of
+ * it. The panel's own body padding supplies the other three sides.
+ */
+.act {
+  padding-top: var(--space-2);
+}
+
+/** Slots gone, out of five. Tabular so the number does not shift as it grows. */
+.count {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.column {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/**
+ * The rows, in the same rhythm as the browse list.
+ *
+ * Not virtualised and never will be: the cap is five, so the whole list is
+ * always on screen and a scroller would be machinery guarding nothing.
+ */
+.list {
+  display: grid;
+  gap: var(--build-row-gap);
+}
+
+@media (max-width: 1000px) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-3) var(--space-3) var(--space-6);
+  }
+}

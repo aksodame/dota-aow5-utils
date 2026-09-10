@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 
@@ -65,7 +64,7 @@ export default defineConfig({
       '/api': { target: process.env.VITE_API_TARGET ?? 'http://127.0.0.1:3000', changeOrigin: false },
     },
   },
-  plugins: [react(), tailwindcss(), staticHostFiles()],
+  plugins: [react(), staticHostFiles()],
   publicDir: sharedPublicDir,
   resolve: {
     alias: { '@': path.resolve(root, 'src') },
@@ -104,7 +103,9 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
           if (/node_modules[\/](react|react-dom|scheduler)[\/]/.test(id)) return 'react';
-          if (id.includes('radix-ui') || id.includes('@floating-ui')) return 'radix';
+          // React is the only dependency left. The UI kit, the icons and the
+          // class-name helper are all first-party now, so there is no second
+          // vendor chunk to split out.
           return undefined;
         },
       },

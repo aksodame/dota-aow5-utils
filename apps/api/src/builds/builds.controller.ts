@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { CreateBuildBody, BuildDetail, BuildSummary, Page, UpdateBuildBody } from 'aow5-api-contract';
+import type { CreateBuildBody, BuildDetail, BuildSummary, Slice, UpdateBuildBody } from 'aow5-api-contract';
 import type { UserRow } from '../../core/db/users.ts';
 import { CurrentUser } from '../auth/current-user.decorator.ts';
 import { AuthGuard } from '../auth/session.guard.ts';
@@ -15,7 +15,7 @@ export class BuildsController {
   constructor(private readonly builds: BuildsService) {}
 
   @Get('builds')
-  browse(@Query() query: Record<string, string | undefined>): Page<BuildSummary> {
+  browse(@Query() query: Record<string, string | undefined>): Slice<BuildSummary> {
     return this.builds.browse(query);
   }
 

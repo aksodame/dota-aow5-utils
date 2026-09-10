@@ -14,8 +14,10 @@
  */
 import { makeIdTable, type HeroTable, type IdTable } from 'aow5-shared/codec';
 import abilityTable from 'aow5-shared/ability-table.json' with { type: 'json' };
+import mapTable from 'aow5-shared/map-table.json' with { type: 'json' };
 import idTableJson from 'aow5-shared/id-table.json' with { type: 'json' };
 import heroes from 'aow5-shared/public/data/heroes.json' with { type: 'json' };
+import maps from 'aow5-shared/public/data/maps.json' with { type: 'json' };
 import meta from 'aow5-shared/public/data/meta.json' with { type: 'json' };
 
 /**
@@ -35,16 +37,34 @@ export const HERO_TABLE: HeroTable = {
   // A hero's byte is its position in this roster plus one, so config order is
   // load-bearing and heroes.json is the thing that preserves it.
   heroIds: heroes.heroes.map((hero) => hero.id),
+  /*
+   * The frozen table with a hole pushed onto the front, because map indices are
+   * 1-based: 0 means "no map chosen". Built from `map-table.json` rather than
+   * from `maps.json` for the same reason the item table is — the frozen file
+   * keeps the tombstone of a room the addon has retired, where the emitted one
+   * has dropped it, and a link pointing at that position must stay pointing at
+   * it rather than shift onto its neighbour.
+   */
+  mapIds: ['', ...mapTable.ids],
 };
 
 /**
- * Deliberately absent: `kinds`.
+ * Tier per map id, for the facet a browse query filters on.
  *
- * The slot-kind masks live in `items.index.json` (95 kB) and the codec needs
- * them for exactly one thing — re-homing the flat slots of a pre-v3 link into
- * typed ones. Skipping them means a v1 or v2 payload's *derived facets* (hero,
- * item count) may not match what the planner shows; the payload itself still
- * round-trips untouched, and links written since v3 are unaffected. Revisit if
- * the browse filters ever look wrong on an old build.
+ * Denormalised onto each build at write time; this is where that copy comes
+ * from. A build whose map this deployment cannot name gets a null tier rather
+ * than a guess.
  */
-export const HAS_SLOT_KINDS = false;
+/**
+ * Every room by id, for the one question the API asks of the map table: which
+ * tier is this room filed under.
+ *
+ * The *answer* comes from `categoryOfMap` in the shared package rather than
+ * from `map.tier` directly — a handful of rooms are curated onto a different
+ * tier than the game's own name claims, and three are Event content the data
+ * has no word for. Both sides read that one table, so the API cannot refuse a
+ * pair the editor offered.
+ */
+export const MAP_BY_ID: ReadonlyMap<string, { id: string; tier: number }> = new Map(
+  maps.maps.map((map) => [map.id, { id: map.id, tier: map.tier }]),
+);

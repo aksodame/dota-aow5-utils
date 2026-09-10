@@ -1,0 +1,330 @@
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5) var(--space-7);
+
+  /* The same step as the build page's — the editor is that page being
+     written, and the two should not disagree about their own hierarchy. */
+  --panel-title-size: 15px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.heading {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+/*
+ * The status line and the buttons on one baseline.
+ *
+ * Without `align-items` the flex row stretches every child, so "Link copied"
+ * sat against the top of a 36px row of buttons — a message that reads as
+ * misprinted rather than as an answer to the click that produced it.
+ */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The same two columns the build page uses, so viewing and editing line up. */
+.grid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.column {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.fields {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* --- the loadout blocks --------------------------------------------------- */
+
+/**
+ * One tile size for all three blocks.
+ *
+ * Fixed rather than `1fr`: stretched to the column each tile came out enormous,
+ * and the three panels together were taller than the spells and runes beside
+ * them. Everything here is sized off this.
+ */
+.loadout {
+  --slot: 54px;
+}
+
+/** Consumables: three across. What you carry in, not what the build is about. */
+.consumables {
+  display: grid;
+  grid-template-columns: repeat(3, var(--slot));
+  gap: var(--space-2);
+}
+
+/**
+ * The worn six with the two carried slots beside them.
+ *
+ * Gear is the main block — two rows of three, the shape the game's own
+ * equipment panel uses — and the neutral and backpack slots stand to its right
+ * as a separate column. They are not equipment: one is whatever the creeps
+ * dropped and the other is spare room, and putting them in the grid made a 3x3
+ * that implied a ninth worn piece.
+ */
+.gearRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.gear {
+  display: grid;
+  grid-template-columns: repeat(3, var(--slot));
+  gap: var(--space-2);
+}
+
+/** Neutral above, backpack below. */
+.carry {
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--border);
+}
+
+.carrySlot {
+  display: grid;
+  gap: 2px;
+  width: var(--slot);
+}
+
+/**
+ * The caption over a carried slot, on one line whatever it says.
+ *
+ * Without this the two boxes were different heights, and only in some
+ * languages: `НЕЙТРАЛЬНЫЙ` wants about 69px at this size and the box is 54, so
+ * it wrapped to two lines while `РЮКЗАК` stayed on one — which pushed the
+ * neutral tile a line lower than the backpack tile beside it and made the pair
+ * look misaligned against the gear grid. English and Chinese both fit, so the
+ * fault only ever showed up in Russian.
+ *
+ * Clipped rather than shrunk or allowed to overflow: a smaller size would be
+ * one more thing to re-check in three languages, and text spilling out of the
+ * box would be cut off by the panel's own `overflow: hidden` at an arbitrary
+ * point. The full word is on the element's `title`, and the slot beneath it
+ * says the same thing in a picture.
+ */
+/*
+ * The caption over each block of slots: Main, Neutral, Backpack.
+ *
+ * One class for all three — the same rule the build page uses under the same
+ * name — because they are one row of labels and any difference between them
+ * would read as a difference in kind.
+ */
+.slotLabel {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: var(--space-2);
+}
+
+.spellKey {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+/* --- the picker ----------------------------------------------------------- */
+
+/*
+ * The hero grid used to live here, inside a modal. It is `HeroChoices` now —
+ * the same component the browse filter draws, inline in the sidebar.
+ */
+
+.status {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.statusError {
+  color: var(--danger);
+}
+
+.statusOk {
+  color: var(--ok);
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page {
+    padding: var(--space-3);
+  }
+}
+
+/* --- tier, and the note under the price ------------------------------------ */
+
+/**
+ * The tier chips, the same shape the browse filter draws.
+ *
+ * Their own rules rather than `composes` from the filter's stylesheet: that one
+ * has a three-state chip — on, partly on, off — because it used to stand for
+ * "every room at this tier". Here a build has exactly one tier and the middle
+ * state cannot happen, so sharing them would mean importing a state this
+ * control has no way to reach.
+ */
+.tiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tier {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 var(--space-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.tier:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.tierOn,
+.tierOn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+/**
+ * The note under the price.
+ *
+ * Dimmer and smaller than a hint, because it is not instructions for filling
+ * the field in — it is a caveat about what the number will be worth to whoever
+ * reads it.
+ */
+.disclaimer {
+  margin-top: calc(-1 * var(--space-2));
+  font-size: 11px;
+  line-height: 1.5;
+  text-wrap: pretty;
+  color: var(--text-dim);
+}
+
+/**
+ * What a signed-out author needs to know, at the head of the form.
+ *
+ * Prose on the panel rather than a `Notice`: nothing has gone wrong and nothing
+ * is being refused — two of the eight fields are shut, and the rest of the page
+ * works exactly as it does for anybody else.
+ */
+.signedOut {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/**
+ * The video field: a drawn prefix and the id.
+ *
+ * The address is a label rather than something to type — see the note in the
+ * editor. It sits inside the same box as the input so the pair reads as one
+ * control, which is why the input loses its own border here.
+ */
+.videoField {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  padding-left: var(--space-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.videoField:focus-within {
+  border-color: var(--accent);
+}
+
+.videoPrefix {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.videoField input {
+  height: 36px;
+  padding-left: 2px;
+  background: transparent;
+  border: 0;
+  font-family: var(--font-mono);
+}
+
+.videoField input:focus,
+.videoField input:hover {
+  border: 0;
+  box-shadow: none;
+}
+
+/* --- the headline ability -------------------------------------------------- */
+
+.spellCell {
+  padding: var(--space-2) var(--space-1) var(--space-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+}
+
+.spellCellMain {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.spellKeyMain {
+  color: var(--accent);
+}
