@@ -62,6 +62,14 @@ infra/.env
 infra/deploy.env
 infra/.env.production
 
+# The deploy's own credentials — the DuckDNS token and anything else the script
+# has to re-send on every run. Encrypted (openssl, AES-256, PBKDF2) and so not
+# secret in the way the two files above are, but a repo is still not where a
+# passphrase-protected token belongs. `.new` is the half-written temp file
+# save_secrets renames over the real one.
+infra/deploy.secrets.enc
+infra/deploy.secrets.enc.new
+
 # Development output of the API's two local tools.
 #
 # `pnpm --filter aow5-utils-api card-preview` writes sample social cards to look

@@ -25,6 +25,15 @@
 # error naming the variable, which is the only honest thing a script can do when
 # there is nobody to ask.
 #
+# ## Credentials are the same deal, one passphrase down
+#
+# `deploy.env` holds targeting and nothing else. A secret it is asked for — the
+# DuckDNS token, a Discord client secret — goes into `infra/deploy.secrets.enc`
+# instead: the same `KEY=value` lines, AES-256 under one passphrase, via the
+# openssl that is already on the machine. So a redeploy asks for the passphrase
+# rather than for the token, and for neither when AOW5_DEPLOY_PASSPHRASE is
+# exported. Nothing is asked at all on a deploy that needs no secret.
+#
 # ## TLS is free, and this is where that is arranged
 #
 # Caddy asks Let's Encrypt for a certificate for `SITE_DOMAIN` the first time it
@@ -46,6 +55,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 CONFIG="${AOW5_DEPLOY_CONFIG:-infra/deploy.env}"
+SECRETS="${AOW5_DEPLOY_SECRETS:-infra/deploy.secrets.enc}"
 STEPS=6
 
 die() { printf '\nerror: %s\n' "$*" >&2; exit 1; }
@@ -104,17 +114,156 @@ ask() {
   CONFIG_DIRTY=1
 }
 
-# The same, for something that must not end up in a file next to the code.
+# --- the secret store ---------------------------------------------------------
+#
+# `deploy.env` is targeting — a host, a domain, an email, a path — and its own
+# header promises it holds nothing else. Credentials still have to live
+# somewhere, though: re-typing the DuckDNS token on every redeploy is how a
+# token ends up in shell history, or on a sticky note, or pasted into the wrong
+# window. So they go here instead, as the same `KEY=value` lines, encrypted
+# under one passphrase.
+#
+# openssl rather than gpg, `security`, or a hosted vault: it is already on every
+# machine that can run this script, it is the same flags on macOS and on Linux,
+# it is open source and auditable by anyone who cares to, and the file it writes
+# can be opened by hand with a command short enough to sit in this comment —
+# which matters on the day the person holding the passphrase is not the person
+# holding the laptop:
+#
+#   openssl enc -d -aes-256-cbc -pbkdf2 -in infra/deploy.secrets.enc
+#
+# `-pbkdf2` is not decoration. Without it openssl derives the key with a single
+# pass of MD5, which is not key derivation so much as an impression of one, and
+# a passphrase a person can remember would not survive it.
+SECRETS_LOADED=0
+SECRETS_DIRTY=0
+SECRETS_PASS=''
+SECRETS_KEYS=''
+
+have_openssl() {
+  command -v openssl >/dev/null 2>&1 \
+    || die "openssl is not on PATH, and $SECRETS is written with it."
+}
+
+# Every passphrase goes to openssl through the environment, never as an
+# argument: `-pass pass:hunter2` is visible in `ps` to every user on the
+# machine for as long as the command runs.
+secrets_keys_add() {
+  case " $SECRETS_KEYS " in
+    *" $1 "*) ;;
+    *) SECRETS_KEYS="${SECRETS_KEYS:+$SECRETS_KEYS }$1" ;;
+  esac
+}
+
+# Read once, and only when something actually asks for a secret — a deploy to a
+# domain you own never needs one, and is never asked for a passphrase.
+unlock_secrets() {
+  [ "$SECRETS_LOADED" = 1 ] && return 0
+  SECRETS_LOADED=1
+  [ -f "$SECRETS" ] || return 0
+  have_openssl
+
+  local plain='' attempts=0 line name
+  while :; do
+    if [ -n "${AOW5_DEPLOY_PASSPHRASE:-}" ]; then
+      SECRETS_PASS="$AOW5_DEPLOY_PASSPHRASE"
+    else
+      interactive || die "$SECRETS is encrypted. Export AOW5_DEPLOY_PASSPHRASE for this run."
+      read -r -s -p "   Passphrase for $SECRETS: " SECRETS_PASS
+      printf '\n'
+    fi
+
+    if plain="$(AOW5_PASS="$SECRETS_PASS" openssl enc -d -aes-256-cbc -pbkdf2 \
+                  -in "$SECRETS" -pass env:AOW5_PASS 2>/dev/null)"; then
+      break
+    fi
+
+    SECRETS_PASS=''
+    [ -n "${AOW5_DEPLOY_PASSPHRASE:-}" ] && die "AOW5_DEPLOY_PASSPHRASE does not open $SECRETS."
+    attempts=$((attempts + 1))
+    [ "$attempts" -ge 3 ] && die "Three wrong passphrases. Delete $SECRETS to start the store over."
+    note "that did not open it — $((3 - attempts)) more"
+  done
+
+  # Process substitution rather than a here-string: a here-string is a temp file
+  # under most shells, and the whole file of decrypted secrets is the one thing
+  # that should not touch the disk on the way past.
+  #
+  # Same precedence as deploy.env — an exported value wins, so a one-off token
+  # is a prefix on the command line and leaves the store untouched.
+  while IFS= read -r line; do
+    case "$line" in ''|\#*) continue ;; esac
+    name="${line%%=*}"
+    secrets_keys_add "$name"
+    [ -n "${!name:-}" ] || export "${line?}"
+  done < <(printf '%s\n' "$plain")
+}
+
+# Written through a temp file: `-out` truncates before openssl has encrypted
+# anything, so a failure half-way would otherwise leave an empty store where a
+# working one used to be.
+save_secrets() {
+  [ "$SECRETS_DIRTY" = 1 ] || return 0
+  have_openssl
+
+  if [ -z "$SECRETS_PASS" ]; then
+    if [ -n "${AOW5_DEPLOY_PASSPHRASE:-}" ]; then
+      SECRETS_PASS="$AOW5_DEPLOY_PASSPHRASE"
+    else
+      interactive || die "Nothing to encrypt $SECRETS with. Export AOW5_DEPLOY_PASSPHRASE."
+      note "one passphrase opens the store from now on — losing it costs the tokens, nothing else"
+      local again=''
+      while :; do
+        read -r -s -p "   New passphrase for $SECRETS: " SECRETS_PASS
+        printf '\n'
+        [ -n "$SECRETS_PASS" ] || { note "an empty passphrase is not one"; continue; }
+        read -r -s -p "   And again: " again
+        printf '\n'
+        [ "$SECRETS_PASS" = "$again" ] && break
+        note "those two do not match"
+      done
+    fi
+  fi
+
+  local key
+  (
+    umask 077
+    {
+      echo "# Written by infra/remote-deploy.sh."
+      echo "# openssl enc -d -aes-256-cbc -pbkdf2 -in $SECRETS"
+      for key in $SECRETS_KEYS; do
+        printf '%s=%s\n' "$key" "${!key:-}"
+      done
+    } | AOW5_PASS="$SECRETS_PASS" openssl enc -aes-256-cbc -pbkdf2 -salt \
+          -out "$SECRETS.new" -pass env:AOW5_PASS
+  ) || { rm -f "$SECRETS.new"; die "Could not write $SECRETS."; }
+
+  mv -f "$SECRETS.new" "$SECRETS"
+  chmod 600 "$SECRETS"
+  SECRETS_DIRTY=0
+  note "saved to $SECRETS — encrypted, and the next run will not ask"
+}
+
+# The same as `ask`, for something that must not end up in plain text next to
+# the code. The store is consulted before the question, which is the whole
+# point: a redeploy should not re-ask for a token that has not changed.
 ask_secret() {
   local var="$1" prompt="$2" answer=''
   [ -n "${!var:-}" ] && return 0
+
+  unlock_secrets
+  [ -n "${!var:-}" ] && return 0
+
   interactive || die "$var is not set. Export it for this run."
 
   read -r -s -p "   $prompt: " answer
   printf '\n'
-  # Trimmed for the same reason, and more so: a token is always pasted, and a
-  # trailing space in one is a rejection with no explanation attached.
+  # Trimmed for the same reason as the rest, and more so: a token is always
+  # pasted, and a trailing space in one is a rejection with no explanation
+  # attached.
   export "$var=$(trim "$answer")"
+  secrets_keys_add "$var"
+  SECRETS_DIRTY=1
 }
 
 yes_no() {
@@ -128,8 +277,9 @@ yes_no() {
 }
 
 # Only the targeting — a host, a domain, an email, a path. No credential is
-# written here: the DuckDNS token and the API keys go into the runtime env file
-# on the server, which is `chmod 600` and never leaves it.
+# written here: the API keys go into the runtime env file on the server, which
+# is `chmod 600` and never leaves it, and anything this machine has to keep goes
+# into the encrypted store beside it. See save_secrets above.
 save_config() {
   [ "$CONFIG_DIRTY" = 1 ] || return 0
   {
@@ -357,8 +507,10 @@ if [ "$AOW5_DNS" = duckdns ]; then
     CONFIG_DIRTY=1
   fi
 
-  # The token is a credential: read without echo, sent straight into the
-  # server's env file, and never written beside the code.
+  # The token is a credential: read without echo, and kept in the encrypted
+  # store rather than in deploy.env, because DuckDNS needs it on *every* run —
+  # the record is re-pointed each deploy — and a token retyped every time is a
+  # token that eventually gets typed somewhere it should not be.
   ask_secret DUCKDNS_TOKEN "DuckDNS token (from the top of duckdns.org — not echoed)"
 
   note "pointing $SITE_DOMAIN at $SERVER_IP"
@@ -388,6 +540,7 @@ if [ -z "${AOW5_SKIP_DNS:-}" ]; then
 fi
 
 save_config
+save_secrets
 
 # --- 3. the secrets on the server ---------------------------------------------
 
@@ -432,6 +585,10 @@ else
   ssh_to "cat > '$REMOTE_ENV'" < "$LOCAL_ENV"
   note "installed as $REMOTE_ENV"
 fi
+
+# A no-op unless the block above asked for one — the Discord client secret is
+# the only other thing here that goes through `ask_secret`.
+save_secrets
 
 # The keys this deploy is *about*, kept in step with what was just decided. A
 # server whose env still names the old host would build the right images and

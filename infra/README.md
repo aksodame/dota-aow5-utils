@@ -28,6 +28,7 @@ log. `docker build -f infra/api.Dockerfile .` locally is the cheap way to find o
 | `backup.sh` | `sqlite3 .backup` snapshot, verified and rotated |
 | `systemd/` | The nightly backup timer, and a DuckDNS refresh timer for deployments that use one |
 | `.env.example` | Copy to `/srv/aow5/.env`, fill in, `chmod 600` |
+| `deploy.env.example` | Where a deploy goes. The filled-in copy is `deploy.env`, untracked |
 
 Secrets never enter the repository or an image layer. `docker compose` reads `/srv/aow5/.env` at deploy
 time and hands each service only the variables it needs.
@@ -286,12 +287,28 @@ email, and the API keys if the server has no env file yet — saves the targetin
 so a one-off target is a prefix (`SITE_DOMAIN=staging.example.com infra/remote-deploy.sh`) rather than an
 edit to undo. With no terminal attached it never prompts: a missing value is an error naming the variable.
 
+A credential it is asked for does not go in `deploy.env`, which holds targeting and says so. It goes in
+`infra/deploy.secrets.enc` — the same `KEY=value` lines, AES-256 under one passphrase, written with the
+openssl already on the machine. That is there for the DuckDNS token above all: DuckDNS is re-pointed on
+*every* deploy, so without somewhere to keep it the token is retyped every time, and a token retyped that
+often is a token that eventually lands in shell history or the wrong window. The trade is a passphrase
+prompt in place of a token paste — shorter, and the same one for every secret the deploy learns.
+
+```sh
+openssl enc -d -aes-256-cbc -pbkdf2 -in infra/deploy.secrets.enc   # read it by hand
+rm infra/deploy.secrets.enc                                        # forgot the passphrase
+```
+
+Deleting it costs the tokens and nothing else — the next run asks for them again. In CI, export
+`AOW5_DEPLOY_PASSPHRASE`; there is nobody to prompt, and a missing one is an error rather than a hang.
+A deploy to a domain you manage needs no secret at all, and is asked for no passphrase.
+
 Six steps, in this order:
 
 | | |
 |---|---|
 | 1 | **The server.** Offers `ssh-copy-id` if key auth is not set up, and Docker's own installer if there is no Docker; then asks the box its public address and how much memory it has |
-| 2 | **The domain.** A name you manage, or a DuckDNS one — which it points at the server there and then, and offers to keep pointed with the refresh timer. Either way it checks the record resolves *here* before going further |
+| 2 | **The domain.** A name you manage, or a DuckDNS one — which it points at the server there and then, and offers to keep pointed with the refresh timer. The DuckDNS token comes from the encrypted store, or is asked for once and put there. Either way it checks the record resolves *here* before going further |
 | 3 | **The secrets.** Keeps the server's `/srv/aow5/.env` if it has one; otherwise sends `infra/.env.production`, or builds one by asking (Steam key, Discord pair, Freesound — all optional). Then sets `SITE_DOMAIN` and `ACME_EMAIL` to match this deploy |
 | 4 | **The build, here.** `check-types`, `test` and `build` before the VPS spends five minutes discovering the same thing. `AOW5_SKIP_CHECKS=1` to skip |
 | 5 | **The code.** `git archive HEAD` over SSH — no `node_modules`, no local `.env`, no stray database. Offers the two systemd timers the first time. `AOW5_ALLOW_DIRTY=1` to ship uncommitted work |
