@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MAX_BODY, MAX_COMMENT, MAX_REFERRAL, MAX_TITLE } from 'aow5-api-contract';
+import { MAX_BODY, MAX_COMMENT, MAX_PRICE, MAX_REFERRAL, MAX_TITLE } from 'aow5-api-contract';
 import {
   countLinks,
   normaliseLine,
+  normalisePrice,
   normaliseReferral,
+  normaliseTier,
   stripControl,
   textLength,
   validateCommentBody,
@@ -114,11 +116,16 @@ test('a referral code is uppercased, tidied, and capped', () => {
   const upper = normaliseReferral('  00ejt3t3 ');
   assert.equal(upper.ok && upper.referral, '00EJT3T3');
 
-  // A code pasted out of chat arrives wrapped, and a code with a control
-  // character in it is somebody's clipboard rather than their intent.
+  /*
+   * A code pasted out of chat arrives wrapped, and a code with a control
+   * character in it is somebody's clipboard rather than their intent. The
+   * break closes up rather than becoming a space: a code is one eight-character
+   * token, so a space inside one is damage — and at a cap of eight, collapsing
+   * it would have made this paste too long to accept.
+   */
   const pasted = normaliseReferral(`00EJ
 T3T3${ESC}`);
-  assert.equal(pasted.ok && pasted.referral, '00EJ T3T3');
+  assert.equal(pasted.ok && pasted.referral, '00EJT3T3');
 
   // Nothing given, and nothing that is a string, both mean "no code".
   const missing = normaliseReferral(undefined);
@@ -129,3 +136,52 @@ T3T3${ESC}`);
   assert.equal(normaliseReferral('A'.repeat(MAX_REFERRAL)).ok, true);
   assert.equal(normaliseReferral('A'.repeat(MAX_REFERRAL + 1)).ok, false);
 });
+
+test('a price is a whole, non-negative number within the cap', () => {
+  assert.deepEqual(normalisePrice(1_500_000_000), { ok: true, price: 1_500_000_000 });
+  assert.deepEqual(normalisePrice(MAX_PRICE), { ok: true, price: MAX_PRICE });
+  assert.deepEqual(normalisePrice(0), { ok: true, price: 0 });
+
+  // Absence, in each of the three shapes a client can express it.
+  for (const empty of [undefined, null, '']) {
+    assert.deepEqual(normalisePrice(empty), { ok: true, price: 0 }, String(empty));
+  }
+
+  // Refused rather than clamped or rounded: storing a different number from
+  // the one somebody typed is worse than telling them it was wrong.
+  for (const bad of [-1, 1.5, MAX_PRICE + 1, Number.NaN, Number.POSITIVE_INFINITY, 'lots', {}]) {
+    const result = normalisePrice(bad);
+    assert.equal(result.ok, false, String(bad));
+    if (!result.ok) assert.ok(result.errors['price'], `${String(bad)} says why`);
+  }
+});
+
+test('a numeric string is accepted, because a form field is text', () => {
+  assert.deepEqual(normalisePrice('250000'), { ok: true, price: 250_000 });
+});
+
+test('a tier is one of the ten keys, as a string or a number', () => {
+  for (const tier of ['1', '5', '9', 'event'] as const) {
+    assert.deepEqual(normaliseTier(tier), { ok: true, tier }, tier);
+  }
+  // A client holding the tier as a number should not have to know the wire
+  // wants a string.
+  assert.deepEqual(normaliseTier(5), { ok: true, tier: '5' });
+});
+
+test('no tier is a real answer, because a draft may not have picked one', () => {
+  for (const empty of [undefined, null, '']) {
+    assert.deepEqual(normaliseTier(empty), { ok: true, tier: null }, String(empty));
+  }
+});
+
+test('anything else is refused rather than guessed at', () => {
+  // `'10'` is not tier 1 and `'Event'` is not `'event'`; guessing which the
+  // caller meant is how a build ends up filed where nobody looks.
+  for (const bad of [0, -1, 10, 90, 1.5, '10', 'Event', 'EVENT', 'high', Number.NaN, {}]) {
+    const result = normaliseTier(bad);
+    assert.equal(result.ok, false, JSON.stringify(bad));
+    if (!result.ok) assert.ok(result.errors['tier'], `${JSON.stringify(bad)} says why`);
+  }
+});
+

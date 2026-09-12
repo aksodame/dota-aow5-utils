@@ -1,0 +1,103 @@
+/**
+ * The sign-in form, then the providers under a rule.
+ *
+ * The order is the argument: the local form is first because it is the only
+ * door that works without leaving the site, and the only one somebody with no
+ * Steam or Discord account can use at all.
+ */
+.form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.error {
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.switch {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/**
+ * A button that reads as a link, because it *is* a control: it toggles the form
+ * rather than going anywhere, so an anchor with a fake href would lie to a
+ * keyboard and to "open in new tab".
+ *
+ * Everything the UA gives a button is turned off explicitly rather than left to
+ * the global reset. The reset is what makes this correct today; stating it here
+ * is what stops the next person moving this rule into a file that has no reset
+ * and rediscovering the 3D bevel.
+ */
+.switchLink {
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  /* Sits on the sentence's own baseline; a button's default is `middle`, which
+     lifts the word above the text it belongs to. */
+  vertical-align: baseline;
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+.switchLink:hover {
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
+
+/** A rule with a word in it, which is what separates the two halves. */
+.or {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-3);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.or::before,
+.or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.providers {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/*
+ * Each provider in its own colour, because that is how people find them — a row
+ * of identical grey buttons makes somebody read three labels to pick the one
+ * they already knew they wanted.
+ */
+.provider {
+  justify-content: center;
+  color: #fff;
+  border-color: transparent;
+}
+
+.steam {
+  background: #1b2838;
+}
+
+.steam:hover {
+  background: #2a475e;
+}
+
+.discord {
+  background: #5865f2;
+}
+
+.discord:hover {
+  background: #4752c4;
+}

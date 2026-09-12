@@ -1,0 +1,212 @@
+/**
+ * The account screen.
+ *
+ * Two panels and a heading. Deliberately narrow — this is a page somebody
+ * visits once to link Steam and then never again, so it is a short list of
+ * decisions rather than a dashboard.
+ */
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5) var(--space-7);
+  display: grid;
+  gap: var(--space-4);
+}
+
+/** Avatar, then who you are, then the way out. */
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.who {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  /* A long nickname shortens rather than pushing Sign out off the row. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+/** The paragraph that explains what the grey badge costs somebody. */
+.why {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.providers {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+}
+
+.provider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.provider + .provider {
+  border-top: 1px solid var(--border);
+}
+
+/* Each provider in its own colour, for the same reason the sign-in buttons
+   are: it is how somebody finds the one they already meant to press. */
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  color: #fff;
+}
+
+.steam {
+  background: #1b2838;
+}
+
+.discord {
+  background: #5865f2;
+}
+
+.providerName {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+/* Pushed against the button, so the row reads name — state — action. */
+.state {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.stateOn {
+  color: var(--ok);
+}
+
+.unavailable {
+  font-size: 12px;
+  color: var(--text-dim);
+  max-width: 220px;
+  text-align: right;
+}
+
+/* --- the preferences ------------------------------------------------------- */
+
+/**
+ * Two rows, each a name and its control.
+ *
+ * A grid rather than two flex rows, so the language flags and the theme buttons
+ * start at the same x — the controls are different widths and different heights,
+ * and left-aligning them is what keeps the panel a list of settings rather than
+ * two unrelated widgets.
+ */
+.prefs {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-1);
+}
+
+.pref {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.prefName {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+/* Stacked on a phone, where 120px of label leaves the buttons no room. */
+@media (max-width: 520px) {
+  .pref {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+}
+
+/* --- the moderation queue -------------------------------------------------- */
+
+.empty {
+  font-size: 13px;
+  color: var(--text-dim);
+  padding: var(--space-2) 0;
+}
+
+.queue {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.held {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.heldMeta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 13px;
+}
+
+/* Held text is what is being judged, so it gets room rather than one line. */
+.heldBody {
+  font-size: 13.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.heldActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/**
+ * Where the Unlink button used to be.
+ *
+ * A tick rather than a disabled button: a greyed-out control invites the click
+ * it then refuses, and there is no action here at all. The `title` is what says
+ * why — see `bindPermanent`.
+ */
+.locked {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--ok);
+}

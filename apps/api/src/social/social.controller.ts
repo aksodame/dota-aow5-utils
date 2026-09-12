@@ -13,7 +13,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { CommentDto, CreateCommentBody, Page, VoteBody } from 'aow5-api-contract';
+import type {
+  CommentDto,
+  CreateCommentBody,
+  LikeBody,
+  LikeResponse,
+  Page,
+  PendingCommentDto,
+} from 'aow5-api-contract';
 import type { UserRow } from '../../core/db/users.ts';
 import { CurrentUser } from '../auth/current-user.decorator.ts';
 import { AuthGuard } from '../auth/session.guard.ts';
@@ -50,6 +57,26 @@ export class SocialController {
     return this.social.addComment(slug, body?.body, user);
   }
 
+  /**
+   * The moderation queue. Declared before `comments/:id` so the literal wins
+   * the route match — Express takes the first that fits, and `pending` would
+   * otherwise be parsed as an id.
+   */
+  @Get('comments/pending')
+  @UseGuards(AuthGuard)
+  pending(@CurrentUser() user: UserRow): PendingCommentDto[] {
+    return this.social.pending(user);
+  }
+
+  @Post('comments/:id/approve')
+  @UseGuards(AuthGuard)
+  // 200, not Nest's default 201: a verdict on an existing comment creates
+  // nothing, and approving an approved one is deliberately a no-op.
+  @HttpCode(200)
+  approve(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: UserRow): CommentDto {
+    return this.social.approve(id, user);
+  }
+
   @Patch('comments/:id')
   @UseGuards(AuthGuard)
   @Throttle({ default: { ttl: 3_600_000, limit: 30 } })
@@ -70,18 +97,18 @@ export class SocialController {
   }
 
   /**
-   * PUT, because a vote is a value being set rather than an event being
+   * PUT, because a like is a value being set rather than an event being
    * appended — sending the same one twice has to mean the same thing as
    * sending it once.
    */
-  @Put('builds/:slug/vote')
+  @Put('builds/:slug/like')
   @UseGuards(AuthGuard)
   @Throttle({ default: { ttl: 3_600_000, limit: 60 } })
-  vote(
+  like(
     @Param('slug') slug: string,
-    @Body() body: VoteBody,
+    @Body() body: LikeBody,
     @CurrentUser() user: UserRow,
-  ): { value: number; likeCount: number; dislikeCount: number } {
-    return this.social.vote(slug, body?.value, user);
+  ): LikeResponse {
+    return this.social.like(slug, body?.liked, user);
   }
 }

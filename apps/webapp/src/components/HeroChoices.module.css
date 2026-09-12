@@ -1,0 +1,63 @@
+/**
+ * Portraits at one fixed size, wrapping when they run out of room.
+ *
+ * Deliberately not adaptive. A tile that resized with its panel rendered at
+ * 430px when the layout dropped to one column — upscaled from a 256px source
+ * and softer for it — and a size that changes between screens makes the same
+ * four faces read differently on each one. 104px fits two across a 260px
+ * sidebar with room to spare, and simply wraps to more per row when there is
+ * more width, at the same size.
+ */
+.heroes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/**
+ * The portraits' own shape, which is 16:9.
+ *
+ * They were square once, so `object-fit: cover` cut a third off each side of a
+ * landscape image — Drow lost her bow and Lina lost most of her hair. Matching
+ * the source ratio means nothing is cropped at all.
+ */
+.hero {
+  position: relative;
+  /* Fixed at every width. `aspect-ratio` supplies the height from the
+     portraits' own 16:9, so nothing is ever cropped or stretched. */
+  flex: none;
+  width: 104px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  padding: 0;
+  background: var(--surface-sunken);
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  transition:
+    border-color 120ms ease,
+    filter 120ms ease;
+  filter: saturate(0.55) brightness(0.8);
+}
+
+.hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero:hover {
+  filter: none;
+  border-color: var(--border-strong);
+}
+
+/*
+ * Doubled with `:hover` so the selection survives the pointer. `.hero:hover` is
+ * a class plus a pseudo-class and outranks a bare `.heroOn`, so without this
+ * the chosen portrait dropped back to the plain border on hover — which reads
+ * as "not selected" at exactly the moment you are about to click it.
+ */
+.heroOn,
+.heroOn:hover {
+  filter: none;
+  border-color: var(--accent);
+}

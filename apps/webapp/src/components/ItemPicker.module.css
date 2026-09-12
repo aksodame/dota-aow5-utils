@@ -1,0 +1,166 @@
+/**
+ * The item browser: a filtered list on the left, the full record on the right.
+ *
+ * This is the shape it had before the rewrite, and it is the right one — the
+ * grid of icons that replaced it could not answer "what does this actually do",
+ * which is the question you open a picker to settle.
+ */
+.shell {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  min-height: 0;
+  height: min(62vh, 560px);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--border);
+}
+
+.search {
+  position: relative;
+  padding: 0 var(--space-3) var(--space-2) 0;
+}
+
+.searchInput {
+  padding-left: 32px;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 10px;
+  left: 9px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.count {
+  padding: 0 var(--space-3) var(--space-2) 0;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.rows {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+  scrollbar-width: thin;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  transition: background-color 100ms ease;
+}
+
+.row:hover {
+  background: var(--wash-2);
+}
+
+/**
+ * Selection follows click and keyboard focus, never hover: the stats beside the
+ * list used to change on the way to the scrollbar.
+ */
+.rowOn,
+.rowOn:hover {
+  border-color: var(--accent);
+  background: var(--wash-3);
+}
+
+.rowIcon {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rowName {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowMeta {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/**
+ * The record, centred in the space it has.
+ *
+ * The card is a fixed 21rem and most items are far shorter than this pane is
+ * tall, so top-left is a card pinned to one corner of a large empty box. It sat
+ * there because the pane is the scroll container and the card was its only
+ * child.
+ *
+ * `margin: auto` on the child rather than `place-items: center` on the pane, and
+ * that is the whole point: auto margins only absorb *positive* free space, so a
+ * record longer than the pane simply starts at the top and scrolls. Centring the
+ * container's content would push the overflow above the scroll origin, where it
+ * cannot be reached.
+ */
+.pane {
+  display: flex;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 0 0 var(--space-4);
+  scrollbar-width: thin;
+}
+
+/*
+ * The padding here is not spacing: `ItemCard` cancels the tooltip shell's
+ * padding with a negative margin of its own, and without something to spend it
+ * against the card hangs 12px out of this pane on two sides.
+ */
+.paneCard {
+  margin: auto;
+  padding: var(--space-3);
+}
+
+.empty {
+  margin: auto;
+  padding: var(--space-5);
+  color: var(--text-dim);
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    height: min(74vh, 620px);
+  }
+
+  /* The pane goes under the list rather than beside it. */
+  .list {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    max-height: 45%;
+  }
+
+  .pane {
+    padding: var(--space-3) 0 0;
+  }
+}

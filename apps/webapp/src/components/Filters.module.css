@@ -1,0 +1,160 @@
+/*
+ * Sticks to the top of the scrolling region while the list moves past it.
+ *
+ * `top: 0` and not `--topbar-h`: the bar is outside the box this scrolls in —
+ * see `.main` in App.module.css — so the region's own top edge is already under
+ * it, and clearing it twice would leave the sidebar a bar's height too low.
+ * The height available is that region's, which is the window less the bar and
+ * the footer.
+ */
+.panel {
+  position: sticky;
+  top: var(--space-4);
+  max-height: calc(100svh - var(--topbar-h) - var(--footer-h, 84px) - var(--space-6));
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * The controls, scrolling inside the panel rather than under its edge.
+ *
+ * `flex: 1` and `min-height: 0` together are the whole mechanism: the first
+ * takes the room the header leaves, the second permits being shorter than the
+ * content — which is what gives `overflow-y` something to do. The panel carries
+ * `fill` so its body allows both; see `Panel`.
+ */
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  /* The scrollbar's own width, so the last control is not under it. */
+  padding-right: var(--space-1);
+}
+
+.group {
+  display: grid;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+}
+
+/** The reference's group header: a label on a lighter bar than the panel. */
+.groupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--wash-2);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The hero portraits used to be styled here. They are `HeroChoices` now, which
+ * the editor draws too — the two were the same control with two sets of rules,
+ * and they had already drifted apart.
+ */
+
+/* --- tiers ---------------------------------------------------------------- */
+
+.tiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tier {
+  min-width: 32px;
+  height: 28px;
+  padding: 0 var(--space-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.tier:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+/** Every map at this tier is selected. */
+.tierOn,
+.tierOn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+/** Some but not all — the tier is a shortcut, not a separate filter. */
+.tierSome,
+.tierSome:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+/*
+ * The room rows moved to `MapChoices.module.css`, which the editor draws too.
+ */
+
+/* --- sort ----------------------------------------------------------------- */
+
+.sorts {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.sort {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.sort:hover {
+  background: var(--wash-2);
+  color: var(--text);
+}
+
+.sortActive,
+.sortActive:hover {
+  color: var(--accent);
+}
+
+.sort input {
+  accent-color: var(--accent);
+}
+
+.footer {
+  flex: none;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 1000px) {
+  .panel {
+    position: static;
+    max-height: none;
+  }
+}

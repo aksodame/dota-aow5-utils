@@ -1,185 +1,503 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
-
-@custom-variant dark (&:is(.dark *));
-
-/*
- * Light is the base palette and `.dark` overrides it, which is what the `dark:`
- * variants inside the shadcn components expect. The toggle adds or removes the
- * class on <html>; index.html applies the stored choice before first paint so
- * the page never flashes the wrong theme.
+/**
+ * The tokens and the reset. Everything else is a CSS module.
+ *
+ * This is the only global stylesheet on the site. It defines the palette, the
+ * type scale and the spacing rhythm as custom properties, and every component
+ * reads them rather than naming a colour.
+ *
+ * **There are two themes, and dark is the one the site is designed in.** The
+ * game is dark, the artwork is dark, and the reference this was built from is
+ * dark — so the dark palette is the plain `:root` declaration, and light is a
+ * set of overrides under `:root[data-theme='light']`. A page that has not yet
+ * been told which theme it is in is therefore the dark one, which is the right
+ * way round: the failure mode is the intended look, not a white flash.
+ *
+ * The light palette is not the dark one lightened. Every contrast decision is
+ * made again here — the rarity tints in particular, because the dark palette's
+ * pastels are unreadable on white — and the rule for adding to it is that a
+ * component names a token and never a colour, so a new surface gets both
+ * themes for free. What deliberately does *not* follow the theme is the
+ * in-game hover card: `ItemCard` and `SpellCard` are pictures of the game's own
+ * tooltip and pin their own dark palette, rarity tints included.
+ *
+ * There is no utility framework here. The previous site carried Tailwind, a
+ * shadcn component set and Radix beneath it, which is a reasonable trade when
+ * the design is being discovered; this one is a known layout with about a dozen
+ * repeated pieces, and those pieces are cheaper as modules than the machinery
+ * for generating them was.
  */
+
 :root {
-  --radius: 0.625rem;
-
-  --background: oklch(0.99 0.002 260);
-  --foreground: oklch(0.21 0.015 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.015 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.015 260);
-  --primary: oklch(0.52 0.17 258);
-  --primary-foreground: oklch(0.99 0.002 260);
-  --secondary: oklch(0.96 0.005 260);
-  --secondary-foreground: oklch(0.25 0.015 260);
-  --muted: oklch(0.96 0.005 260);
-  --muted-foreground: oklch(0.49 0.015 260);
-  --accent: oklch(0.94 0.008 260);
-  --accent-foreground: oklch(0.25 0.015 260);
-  --destructive: oklch(0.58 0.22 27);
   /*
-   * The counterpart to `--destructive`, and it earns its place for one reason:
-   * the launch option on /tracker. Without that line pasted into Steam the
-   * tracker reads an empty file forever and looks broken, so the page needs a
-   * callout nobody scrolls past — and every other accent here is either the
-   * brand blue, which the page already spends on links and buttons, or red,
-   * which says something has gone wrong. Green says "do this and it works".
+   * The blue the reference is built on, as a ramp rather than a set of names.
+   * A number means "how far from the background", so a component can ask for
+   * one step up without knowing what colour it lands on.
    */
-  --success: oklch(0.55 0.15 152);
-  --success-foreground: oklch(0.99 0.002 260);
-  /* The third note on /tracker: worth doing, not required. Amber rather than
-     red, because nothing here is broken if it is skipped. */
-  --warning: oklch(0.62 0.14 78);
-  --warning-foreground: oklch(0.99 0.002 260);
-  --border: oklch(0.9 0.005 260);
-  --input: oklch(0.9 0.005 260);
-  --ring: oklch(0.52 0.17 258);
+  --blue-900: #0e2a63;
+  --blue-800: #14357c;
+  --blue-700: #1a4499;
+  --blue-600: #2257bd;
+  --blue-500: #2f6fdd;
+  --blue-400: #4b8bf0;
+  --blue-300: #7db0f7;
+
+  --ink-900: #050a18;
+  --ink-800: #0b1020;
+  --ink-700: #141a2e;
+  --ink-600: #1e263f;
+  --ink-500: #2b3552;
+
+  --surface: var(--ink-800);
+  --surface-raised: var(--ink-700);
+  --surface-sunken: var(--ink-900);
+  /* Panels in the reference are near-black on blue, not tinted blue. */
+  --panel: #0a0d18;
+  --panel-raised: #131829;
+  /*
+   * The panel under a cursor.
+   *
+   * **Not `--panel-raised`**, which is what it used to be and which moved the
+   * wrong way. `--panel` sits on the *far* side of the page background — darker
+   * than it here, lighter than it in the light theme — so one step "up" the
+   * surface ramp walks the button across the page's own colour and out the other
+   * side. On screen that reads as the button dissolving into the page at the
+   * moment it is pointed at, which is the opposite of what a hover is for.
+   *
+   * This goes further out instead: deeper here, and in light there is nowhere
+   * past white to go, so the lift there comes from the border and the shadow the
+   * hover rule adds. More contrast than the resting state in both, which is all
+   * a hover has to be.
+   */
+  --panel-hover: #06090f;
+
+  --text: #eef3ff;
+  --text-muted: #9dadd0;
+  --text-dim: #6b7a9c;
 
   /*
-   * Item rarity tints, 0-7. Kept as variables rather than constants in TS
-   * because the dark palette's pastels wash out on a light background.
+   * The blue the site has always used, kept in oklch as it was written.
+   *
+   * The rewrite briefly took a yellow from the reference screenshots, which is
+   * that game's accent rather than this site's. These are the previous
+   * `--primary` and `--primary-foreground` from the dark theme, unchanged:
+   * roughly #4c8eef on #080d16, which is 5.8:1 on the page background and
+   * 6.0:1 for a button's own label.
+   *
+   * `--accent-strong` is the hover step, one lightness stop up the same hue
+   * rather than a separately chosen colour, so the two cannot drift apart.
    */
-  /*
-   * Edge length of one item slot. Slots used to stretch to fill the card, so
-   * their size was whatever the board columns left over; pinning it here makes
-   * the tile size intentional and lets a section shrink to its contents.
-   */
-  --slot-size: 3.375rem;
+  --accent: oklch(0.65 0.16 258);
+  --accent-strong: oklch(0.72 0.17 258);
+  --accent-ink: oklch(0.16 0.02 260);
 
-  --quality-0: #6b7280;
-  --quality-1: #64748b;
-  --quality-2: #16a34a;
-  --quality-3: #2563eb;
-  --quality-4: #7c3aed;
-  --quality-5: #db2777;
-  --quality-6: #ea580c;
-  --quality-7: #ca8a04;
+/**
+   * The colour a like is drawn in, everywhere it appears.
+   *
+   * The accent, not a warm yellow of its own. It was distinct on purpose once
+   * — a like is not an action the page is *for*, so it did not want the
+   * primary colour — but in practice the browse row's like count was the one
+   * warm thing on an otherwise blue page, and it read as a warning rather than
+   * as a count. Still a token rather than `var(--accent)` at each site, so
+   * "what colour is a like" stays one decision.
+   */
+  /**
+   * The second accent, for the one place two things must be told apart at a
+   * glance rather than read.
+   *
+   * A build's priority marks a stat as *fixed* or as *enhanced*, and an item
+   * can carry both — so drawn in one colour, a row with both looked like a row
+   * with one mark twice. Teal because it is the one hue neither the accent nor
+   * the rarity ramp uses: the ramp already spends grey-blue, green, blue,
+   * purple, orange, red and gold on roll grades, and a mark in any of those
+   * would read as a grade.
+   */
+  --accent-2: oklch(0.74 0.11 195);
+  --accent-2-ink: oklch(0.16 0.02 195);
+
+  --like: var(--accent);
+  /**
+   * Gold, for amounts of it. The game's own coin is this colour, and the price
+   * beside it should not be a different one.
+   *
+   * It is the warm note the like count used to be, which is exactly why that
+   * one moved to the accent: two unrelated warm things in a row and neither
+   * reads as meaning anything.
+   */
+  --gold: #ffc44d;
+  --danger: #ff6b6b;
+  --ok: #4ade80;
+
+  --border: #26304d;
+  --border-strong: #38446b;
+
+  /*
+   * Item rarity, which the game states as `quality` 1-7. Named by number
+   * because the game does not name them consistently across languages, and a
+   * slot only ever knows the number.
+   */
+  --q1: #9aa7c7;
+  --q2: #5bd18a;
+  --q3: #4aa3ff;
+  --q4: #b06bff;
+  --q5: #ff9a3d;
+  --q6: #ff5c7a;
+  --q7: #ffd94a;
+
+  /*
+   * The four washes, which are what a hover, a zebra stripe and a selected row
+   * are made of.
+   *
+   * They exist as tokens because they are the one family of colours that has to
+   * *invert* between the themes rather than shift: a white film lifts a surface
+   * away from a dark page and does nothing at all on a light one. Numbered by
+   * weight rather than named by use, so a component asks for "one step up" the
+   * way it asks the blue ramp for one.
+   */
+  --wash-0: rgb(255 255 255 / 0.02);
+  --wash-1: rgb(255 255 255 / 0.045);
+  --wash-2: rgb(255 255 255 / 0.07);
+  --wash-3: rgb(255 255 255 / 0.1);
+
+  /* The sweep that crosses a loading skeleton. Lighter than the bone it moves
+     over in dark, darker than it in light — the same inversion as the washes. */
+  --sheen: rgb(255 255 255 / 0.07);
+
+  /* The well an icon sits in when it is smaller than its frame: the priority
+     card's 20px art, and anywhere else a rarity ring holds a picture. */
+  --well: rgb(0 0 0 / 0.35);
+
+  /*
+   * What makes a label readable on top of the game's own artwork: the wash over
+   * a room's painting, and the shadow under the name on it.
+   *
+   * A whole gradient in a token, which is unusual and is the point — the *stops*
+   * are the theme decision, not the opacity. A dark scrim under dark text is the
+   * one combination that cannot be rescued by a component, and it is exactly
+   * what a light page gets if the scrim is a literal and the text is `--text`.
+   */
+  --art-scrim: linear-gradient(90deg, rgb(5 8 20 / 0.85) 30%, rgb(5 8 20 / 0.35) 100%);
+  --art-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+
+  /* Behind a modal. Deeper than a wash because it has to separate two layers
+     rather than lift one. */
+  --scrim: rgb(3 6 16 / 0.72);
+
+  /*
+   * The inverted pill: the active tab, and anything else that reads as the
+   * page's colours swapped. In dark that is the text colour as a fill with a
+   * deep blue label; in light it is a near-black fill with a near-white one, so
+   * the control keeps meaning "this one" rather than changing shape per theme.
+   */
+  --invert-bg: var(--text);
+  --invert-ink: var(--blue-700);
+
+  /*
+   * The lit corner behind everything. Two radial glows over `--surface`, named
+   * here because the light theme's are a different pair of blues rather than
+   * the same ones at a different opacity — see `body` below.
+   */
+  --glow-1: var(--blue-700);
+  --glow-2: var(--blue-800);
+
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-2: 0 6px 20px rgb(0 0 0 / 0.35);
+  --shadow-3: 0 18px 48px rgb(0 0 0 / 0.45);
+
+  /* The one place the topbar's height is stated. Layouts subtract it. */
+  --topbar-h: 60px;
+
+  /*
+   * A browse row, and the space between two of them.
+   *
+   * Here rather than in `BuildRow.module.css` because two files need to agree
+   * on it: the row sets its height from this, and the list sizes its scroll box
+   * as a whole number of rows. A module can scope a class name but not a custom
+   * property, so a shared number has to be shared here.
+   */
+  --build-row-h: 76px;
+  --build-row-gap: 2px;
+
+  /* The default, and what a page with no stored choice paints in. */
+  color-scheme: dark;
 }
 
-.dark {
-  --background: oklch(0.16 0.012 260);
-  --foreground: oklch(0.92 0.008 260);
-  --card: oklch(0.2 0.014 260);
-  --card-foreground: oklch(0.92 0.008 260);
-  --popover: oklch(0.19 0.014 260);
-  --popover-foreground: oklch(0.92 0.008 260);
-  --primary: oklch(0.65 0.16 258);
-  --primary-foreground: oklch(0.16 0.02 260);
-  --secondary: oklch(0.26 0.015 260);
-  --secondary-foreground: oklch(0.92 0.008 260);
-  --muted: oklch(0.26 0.015 260);
-  --muted-foreground: oklch(0.68 0.015 260);
-  --accent: oklch(0.3 0.02 260);
-  --accent-foreground: oklch(0.95 0.008 260);
-  --destructive: oklch(0.62 0.19 20);
-  /* Lifted and desaturated, like every other accent here: the light palette's
-     green goes muddy against a near-black card. */
-  --success: oklch(0.72 0.16 152);
-  --success-foreground: oklch(0.16 0.02 260);
-  --warning: oklch(0.79 0.15 78);
-  --warning-foreground: oklch(0.16 0.02 260);
-  --border: oklch(0.3 0.015 260);
-  --input: oklch(0.3 0.015 260);
-  --ring: oklch(0.65 0.16 258);
+/**
+ * Light.
+ *
+ * Only what changes: the ramps, the surfaces, the semantic colours and the four
+ * washes. Everything structural — the spacing rhythm, the radii, the type
+ * scale, the row heights — is stated once above and is not a theme decision.
+ *
+ * `[data-theme]` on the root rather than a class, set by the snippet in
+ * `index.html` before first paint and by `src/lib/theme.ts` thereafter. An
+ * attribute because the same snippet has to write the `theme-color` meta tag
+ * beside it, and reading one attribute back is simpler than reading a class
+ * list.
+ */
+:root[data-theme='light'] {
+  /*
+   * The blue ramp, re-pointed. A higher number still means "further from the
+   * background", which on a white page means darker rather than lighter — so
+   * every component that asked for one step up keeps meaning it.
+   */
+  --blue-900: #dbe6fb;
+  --blue-800: #c9d9f7;
+  --blue-700: #a9c3f0;
+  --blue-600: #6f9ae4;
+  --blue-500: #3f75d4;
+  --blue-400: #2a5cb8;
+  --blue-300: #1e4894;
 
+  --ink-900: #ffffff;
+  --ink-800: #eef2fa;
+  --ink-700: #e3e9f6;
+  --ink-600: #d6deef;
+  --ink-500: #c3cee5;
+
+  --surface: var(--ink-800);
+  --surface-raised: var(--ink-900);
+  --surface-sunken: var(--ink-700);
+  /* The panel is the *lightest* surface here, for the same reason it is the
+     darkest one in dark: it has to read as the thing you are looking at. */
+  --panel: #ffffff;
+  --panel-raised: #f4f7fd;
+  /* Already at the end of the ramp: white is as far from this page as a surface
+     gets, so hovering holds it there and lets the border and shadow do the rest.
+     Anything darker is a step back towards the page — the old bug, mirrored. */
+  --panel-hover: #ffffff;
+
+  --text: #0d1630;
+  --text-muted: #4b5b7d;
+  --text-dim: #68789c;
+
+  /*
+   * The same hue, three lightness stops down: 0.65 on near-black is 5.8:1, and
+   * the identical colour on white is 2.6:1 — a link nobody over thirty can
+   * read. `--accent-ink` flips with it, because a white label belongs on this
+   * blue and a dark one belonged on the other.
+   */
+  --accent: oklch(0.52 0.17 258);
+  --accent-strong: oklch(0.45 0.17 258);
+  --accent-ink: #ffffff;
+
+  --accent-2: oklch(0.52 0.1 195);
+  --accent-2-ink: #ffffff;
+
+  --like: var(--accent);
+  /* Gold at its dark-theme lightness is a pale yellow on white. This is the
+     same coin, taken down to where a price is legible as text. */
+  --gold: #9a6b06;
+  --danger: #c62b2b;
+  --ok: #1a7f46;
+
+  --border: #d3dcee;
+  --border-strong: #b0bfdc;
+
+  /* The rarity ramp, re-picked rather than darkened: the grades have to stay
+     as far apart from each other here as they are on black. */
+  --q1: #6b7789;
+  --q2: #15803d;
+  --q3: #1d4ed8;
+  --q4: #7c3aed;
+  --q5: #c2410c;
+  --q6: #be123c;
+  --q7: #a16207;
+
+  /* Black films, and a touch heavier than the white ones: the eye reads a dark
+     film on white as fainter than a light film on black at the same alpha. */
+  --wash-0: rgb(13 22 48 / 0.025);
+  --wash-1: rgb(13 22 48 / 0.04);
+  --wash-2: rgb(13 22 48 / 0.06);
+  --wash-3: rgb(13 22 48 / 0.1);
+
+  --sheen: rgb(255 255 255 / 0.65);
+  --well: rgb(13 22 48 / 0.08);
+  --scrim: rgb(13 22 48 / 0.45);
+
+  /* Paper over the painting rather than ink: same job, opposite direction. */
+  --art-scrim: linear-gradient(90deg, rgb(238 242 250 / 0.92) 30%, rgb(238 242 250 / 0.5) 100%);
+  --art-shadow: 0 1px 2px rgb(255 255 255 / 0.9);
+
+  --invert-bg: #16213f;
+  --invert-ink: #f2f6ff;
+
+  /* Pale enough to be a wash of light rather than a blue page. */
+  --glow-1: #cfe0ff;
+  --glow-2: #dfe9ff;
+
+  /*
+   * Softer and cooler than the dark theme's. A 0.35 black shadow under a white
+   * card reads as dirt; the depth on a light page comes from the border doing
+   * more of the work and the shadow less.
+   */
+  --shadow-1: 0 1px 2px rgb(13 22 48 / 0.08);
+  --shadow-2: 0 6px 20px rgb(13 22 48 / 0.1);
+  --shadow-3: 0 18px 48px rgb(13 22 48 / 0.18);
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 /*
- * The rarity palette for a dark surface.
+ * The window is the frame; the page does not scroll.
  *
- * `.dark` is the obvious one. `.game-card` is the in-game item and ability
- * tooltips, which stay dark on a light page — the same way an ordinary tooltip
- * stays inverted — so they need the pastels even when the page around them is
- * white. Without this they would take the light theme's deeper hues, and the
- * same item would be bordered in two different oranges depending on a setting
- * that has nothing to do with it.
+ * The top bar and the footer are fixed to the top and bottom of it, and what
+ * scrolls is the region between them — see `.main` in App.module.css. The
+ * alternative, a document scrollbar, runs the full height of the window behind
+ * both of them, which is a bar that appears to belong to the whole screen while
+ * only part of the screen moves.
+ *
+ * `#root` is in the chain because a percentage height is only a percentage of a
+ * parent that has one.
  */
-.dark,
-.game-card {
-  --quality-0: #6b7280;
-  --quality-1: #9ca3af;
-  --quality-2: #4ade80;
-  --quality-3: #60a5fa;
-  --quality-4: #a78bfa;
-  --quality-5: #f472b6;
-  --quality-6: #fb923c;
-  --quality-7: #fbbf24;
+html,
+body,
+#root {
+  height: 100%;
 }
 
-@theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+html,
+body {
+  margin: 0;
+  padding: 0;
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  html {
-    color-scheme: light;
-  }
-  html.dark {
-    color-scheme: dark;
-  }
-  body {
-    @apply bg-background text-foreground;
-    font-synthesis-weight: none;
-    text-rendering: optimizeLegibility;
-  }
+body {
+  overflow: hidden;
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  /*
+   * The wash the reference has behind everything: a lit corner top-left over a
+   * flat deep base, so panels read as sitting on something rather than floating
+   * on a gradient. Fixed, so it does not slide as the list scrolls.
+   */
+  background:
+    radial-gradient(1200px 800px at 12% -10%, var(--glow-1) 0%, transparent 62%),
+    radial-gradient(900px 700px at 110% 0%, var(--glow-2) 0%, transparent 55%),
+    var(--surface);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  /*
+   * The UA's own button face and border, removed.
+   *
+   * Chrome paints a bare `<button>` with `buttonface` and a 2px `outset`
+   * border, which under a dark `color-scheme` are a mid grey and a white 3D
+   * bevel. Any button styled only for its hover state therefore came out as a
+   * light grey slab, and any button meant to read as inline text came out
+   * inside a raised box.
+   *
+   * Both were found the same way and are the same mistake: the item picker's
+   * rows set `background` on `:hover` and on the selected row but never on the
+   * resting one, and the sign-in dialog's "create an account" toggle set a
+   * colour and a weight but no border. A reset rather than two local fixes,
+   * because every button on this site paints its own background and its own
+   * border where it wants them, and none of them wants the platform's.
+   */
+  background: none;
+  border: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 /*
- * The one keyframe left in the motion layer (src/components/fx/).
+ * One focus ring for the whole site, on the tokens.
  *
- * The aurora's three drifting blobs used to live here too. They were removed
- * rather than tuned: a blurred, animated, fixed layer is re-rasterised as the
- * page scrolls, and that was what made scrolling stutter. See AuroraBackground.
- *
- * This one runs once on mount and is paired with `motion-reduce:animate-none`
- * at every call site, so honouring the user's preference is handled there.
+ * `:focus-visible` rather than `:focus`, so a mouse click on a button does not
+ * leave a ring behind it but a Tab press does.
  */
-@keyframes reveal {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* One override, and both the rows and the box they scroll in follow it. */
+@media (max-width: 560px) {
+  :root {
+    --build-row-h: 68px;
   }
-  to {
-    opacity: 1;
-    transform: none;
+}
+
+/* Respected globally rather than per-component, so nothing can forget it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
+}
+
+/** Visually hidden, still read aloud. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

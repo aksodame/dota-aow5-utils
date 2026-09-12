@@ -1,0 +1,140 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-weight: 700;
+  white-space: nowrap;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    transform 80ms ease;
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- sizes ---------------------------------------------------------------- */
+
+.sm {
+  height: 30px;
+  padding: 0 var(--space-3);
+  font-size: 12px;
+}
+
+.md {
+  height: 38px;
+  padding: 0 var(--space-4);
+  font-size: 14px;
+}
+
+.lg {
+  height: 46px;
+  padding: 0 var(--space-5);
+  font-size: 15px;
+}
+
+/* --- variants ------------------------------------------------------------- */
+
+/**
+ * The reference's yellow. Reserved for the one action a screen is *for* —
+ * publish, sign in, search — so that a page never shows two of them.
+ */
+.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+/**
+ * A shut primary is drawn, not faded.
+ *
+ * The generic `opacity: 0.5` above works for a variant whose label sits on the
+ * page's own background, and fails for this one: the label is `--accent-ink`,
+ * which is a *dark* ink on the dark theme's pale accent and a *white* one on the
+ * light theme's deep accent — so half-fading a light-theme button leaves white
+ * lettering on pale blue, which is the sign-in dialog's Sign in button before
+ * anything has been typed into it. A flat slab with muted text says the same
+ * thing and says it in both palettes.
+ */
+.primary:disabled {
+  opacity: 1;
+  background: var(--wash-3);
+  color: var(--text-muted);
+}
+
+/** The black pill the reference's inactive tabs use. */
+.solid {
+  background: var(--panel);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/*
+ * Hover is the resting state with more contrast, not a different one.
+ *
+ * The fill moves away from the page rather than towards it (see `--panel-hover`),
+ * the border firms up, and a shadow lifts it — which is the whole of the change
+ * in the light theme, where the fill is already as far from the page as white
+ * gets.
+ */
+.solid:hover:not(:disabled) {
+  background: var(--panel-hover);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-1);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.ghost:hover:not(:disabled) {
+  background: var(--wash-2);
+  color: var(--text);
+}
+
+.danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+}
+
+/**
+ * No colours of its own, on purpose.
+ *
+ * For a button the caller paints — the two provider buttons in the sign-in
+ * dialog, which are Steam's navy and Discord's blurple and must stay so under a
+ * cursor. It has the size, the radius, the weight and the focus ring; the
+ * background, the text colour and the hover are the caller's to state, and
+ * nothing here will overrule them.
+ */
+.plain {
+  background: none;
+}
+
+/** Square, for a button whose whole content is one glyph. */
+.icon {
+  padding: 0;
+  aspect-ratio: 1;
+}
+
+.block {
+  width: 100%;
+}

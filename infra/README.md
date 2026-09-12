@@ -23,10 +23,12 @@ log. `docker build -f infra/api.Dockerfile .` locally is the cheap way to find o
 | `api.Dockerfile` | Builds `apps/api` into a single bundle beside its migrations |
 | `Caddyfile` | TLS, the cache policy, the SPA fallback |
 | `docker-compose.yml` | The services, the published ports, the certificate volume |
-| `deploy.sh` | Build, swap, smoke-test, prune. Run on the server |
+| `remote-deploy.sh` | The whole deploy from your machine, over SSH. Run here |
+| `deploy.sh` | Build, swap, smoke-test, prune. Runs on the server |
 | `backup.sh` | `sqlite3 .backup` snapshot, verified and rotated |
-| `systemd/` | The DuckDNS refresh timer and the nightly backup timer |
+| `systemd/` | The nightly backup timer, and a DuckDNS refresh timer for deployments that use one |
 | `.env.example` | Copy to `/srv/aow5/.env`, fill in, `chmod 600` |
+| `deploy.env.example` | Where a deploy goes. The filled-in copy is `deploy.env`, untracked |
 
 Secrets never enter the repository or an image layer. `docker compose` reads `/srv/aow5/.env` at deploy
 time and hands each service only the variables it needs.
@@ -40,9 +42,14 @@ in `.github/workflows/` deploys anything and a key no workflow reads is a creden
 ## Provisioning a machine
 
 Ubuntu **24.04 LTS**, **x86_64**, 2 vCPU / **4 GB** RAM / 40 GB SSD. Hetzner CX22 (~€4/mo) is the
-reference. 2 GB works if you build images elsewhere, but `deploy.sh` builds them on the box and the Vite
-+ two-pass-terser build over ~25 MB of committed icons peaks near 2 GB — the extra euro removes a whole
-class of "the deploy OOM-killed itself". Not ARM: better-sqlite3 prebuilds and local parity are both x64.
+reference, and the size at which `AOW5_BUILD=remote` — building on the box — is comfortable.
+
+**Smaller works, with `AOW5_BUILD=local`.** 1 vCPU / 1 GB / 10 GB is enough to *run* this: Caddy serving a
+`dist/`, and node running a bundle, together want under 300 MB. It is not enough to build it, and the
+failure is an OOM kill ten minutes into a deploy rather than an error. Building here and streaming the
+images over removes that entirely — see "Deploying" below.
+
+Not ARM: better-sqlite3 prebuilds and local parity are both x64.
 
 Create the server **with your SSH public key attached at creation**. Never a root password.
 
@@ -158,8 +165,16 @@ sudo chown 1000:1000 /srv/aow5/data   # the API container runs as uid 1000 (node
   repo/      this repository, checked out — the docker build context
   .env       secrets, chmod 600, never in git
   data/      aow5.db and its -wal/-shm, bind-mounted into the API
+    og/      rendered social cards, regenerated on demand — see below
   backups/   nightly snapshots
 ```
+
+`data/og/` is a **cache, not data.** The API writes a 1200×630 PNG there the first time anything scrapes
+a build's link, keyed by the build's slug, its `updated_at` and the reader's language, and deletes the
+cards for older versions of that build as it goes. Deleting the whole directory costs nothing but the
+next render of each card, which is why `backup.sh` does not touch it and neither should you. It lives on
+the data volume rather than in the image because a card outlives a deploy; it is sized by how many builds
+have actually been shared, at roughly 700 kB each.
 
 `/srv` rather than `/opt`: the FHS reserves `/srv` for "data served by this system", which is precisely
 what this is.
@@ -202,6 +217,34 @@ curl -I http://aow5.duckdns.org  # must reach this machine
 Caddy then obtains a **real Let's Encrypt certificate automatically**. `duckdns.org` is on the Public
 Suffix List, so your subdomain gets its own rate-limit budget rather than sharing one with every other
 DuckDNS user.
+
+### Forcing a re-issue
+
+Caddy applies a **preference** at issuance, not at startup. `Caddyfile` asks for the chain rooted at
+`ISRG Root X1` — the compatible one, since the ECDSA default (`ISRG Root X2`) is missing from older trust
+stores and fails there with a certificate error — but a certificate already in the `caddy_data` volume keeps
+whatever chain it was fetched under. Changing that line and redeploying therefore changes nothing visible.
+
+Throw the stored one away and let Caddy ask again:
+
+```sh
+cd /srv/aow5/repo
+docker compose exec web sh -c 'rm -rf /data/caddy/certificates/*/'"$SITE_DOMAIN"'*'
+docker compose restart web
+docker compose logs -f web | grep -i certificate     # watch one arrive
+```
+
+Then check what is actually being served — the last line is the one that matters:
+
+```sh
+echo | openssl s_client -connect "$SITE_DOMAIN:443" -servername "$SITE_DOMAIN" 2>/dev/null \
+  | grep -E '^ [0-9] s:'
+```
+
+Let's Encrypt allows **five certificates a week for the same exact set of names**, so this is a few times,
+not a loop. If the chain still comes back under `Root YE`/`ISRG Root X2`, no cross-signed alternative is
+being offered for an ECDSA leaf — put `key_type rsa2048` in the Caddyfile's global options and re-issue
+again, which moves the leaf onto the RSA hierarchy that has always chained to `ISRG Root X1`.
 
 > **Rehearse the first issuance against staging.** Uncomment the `acme_ca` line in `Caddyfile`, deploy,
 > watch a certificate get issued, then comment it back out and redeploy. Production allows five failures
@@ -260,14 +303,117 @@ CSP already lists both hosts so the release is the only blocker.
 
 ## Deploying
 
+### From here, over SSH
+
+```sh
+infra/remote-deploy.sh
+```
+
+That is the whole first deploy. The script asks for what it does not know — the VPS login, the domain, the
+email, and the API keys if the server has no env file yet — saves the targeting answers to
+`infra/deploy.env`, and asks nothing on the second run. Values already in the environment win over the file,
+so a one-off target is a prefix (`SITE_DOMAIN=staging.example.com infra/remote-deploy.sh`) rather than an
+edit to undo. With no terminal attached it never prompts: a missing value is an error naming the variable.
+
+A credential it is asked for does not go in `deploy.env`, which holds targeting and says so. It goes in
+`infra/deploy.secrets.enc` — the same `KEY=value` lines, AES-256 under one passphrase, written with the
+openssl already on the machine. That is there for the DuckDNS token above all: DuckDNS is re-pointed on
+*every* deploy, so without somewhere to keep it the token is retyped every time, and a token retyped that
+often is a token that eventually lands in shell history or the wrong window. The trade is a passphrase
+prompt in place of a token paste — shorter, and the same one for every secret the deploy learns.
+
+```sh
+openssl enc -d -aes-256-cbc -pbkdf2 -in infra/deploy.secrets.enc   # read it by hand
+rm infra/deploy.secrets.enc                                        # forgot the passphrase
+```
+
+Deleting it costs the tokens and nothing else — the next run asks for them again. In CI, export
+`AOW5_DEPLOY_PASSPHRASE`; there is nobody to prompt, and a missing one is an error rather than a hang.
+A deploy to a domain you manage needs no secret at all, and is asked for no passphrase.
+
+Six steps, in this order:
+
+| | |
+|---|---|
+| 1 | **The server.** Offers `ssh-copy-id` if key auth is not set up, and Docker's own installer if there is no Docker; then asks the box its public address and how much memory it has |
+| 2 | **The domain.** A name you manage, or a DuckDNS one — which it points at the server there and then, and offers to keep pointed with the refresh timer. The DuckDNS token comes from the encrypted store, or is asked for once and put there. Either way it checks the record resolves *here* before going further |
+| 3 | **The secrets.** Lists the keys already in the server's `/srv/aow5/.env` and asks whether to keep it or rewrite it — enter keeps it. Rewriting sends `infra/.env.production` if there is one, otherwise re-asks each key with the server's current value as the default, so adding one key does not cost the others. With no file there it builds one (Steam key, Discord pair, Freesound — all optional). Then sets `SITE_DOMAIN` and `ACME_EMAIL` to match this deploy |
+| 4 | **The build, here.** `check-types`, `test` and `build` before the VPS spends five minutes discovering the same thing. `AOW5_SKIP_CHECKS=1` to skip |
+| 5 | **The code.** `git archive HEAD` over SSH — no `node_modules`, no local `.env`, no stray database. Offers the two systemd timers the first time. `AOW5_ALLOW_DIRTY=1` to ship uncommitted work |
+| 6 | **The images.** Either builds them here and streams them over, or runs the build on the box — see below. Then `deploy.sh` swaps, health-checks and prunes, output attached to your terminal |
+
+**The env file is the one thing a deploy can destroy and not restore**, so step 3 asks about it every run
+rather than remembering an answer. Enter keeps what is on the server — which is what every deploy that is
+only shipping code wants. Answer yes when the deployment has *gained* a key: the Discord pair is the case
+that found this, where a successful deploy either side of the change left a sign-in button that never
+appeared, because a file that already existed was never touched. The prompt lists which keys are in that
+file and marks the empty ones, since an empty value and a missing one are the same thing to `docker compose`
+and only one of them looks configured.
+
+Saying yes does not mean retyping the file. Each key is then offered in turn — `Steam Web API key — now
+****9999. Change it?` — and the default on every one of them is no, so a reissued key is two keystrokes and
+the three credentials you did not come to touch are never in a position to be typed over. A key answered
+yes is prompted for its new value, where blank clears it; the Discord secret is prompted without an echo,
+and clearing the id clears the secret with it, because the API treats a half-pair as no Discord at all.
+`AOW5_REPLACE_ENV=1` gives the same answer where there is nobody to ask, and needs an
+`infra/.env.production` (or `AOW5_LOCAL_ENV`) to send — there is nothing to offer key by key in a pipeline.
+
+**Where the images get built is a question about memory, and the script asks the server.** The webapp's
+Vite + two-pass-terser run over ~25 MB of committed icons peaks near 2 GB; the images it produces need under
+300 MB to *run*. A small VPS is therefore a perfectly good host and a poor builder, and `AOW5_BUILD` is the
+seam:
+
+| | |
+|---|---|
+| `remote` | `deploy.sh` builds on the server. The default above 2 GB, and the simpler thing when it fits |
+| `local` | `docker buildx` builds both images here for `linux/amd64`, then `docker save \| docker load` streams them into the server's image store. The server runs no build stage at all |
+
+Step 1 reads the server's `MemTotal` plus swap and defaults accordingly, and warns before letting you pick
+`remote` on a machine that cannot finish — because it will not fail slowly, it will be OOM-killed ten
+minutes in with nothing in the log that says so. `local` needs Docker with buildx here; on an arm64 Mac the
+build is emulated and slow the first time. The platform is pinned either way, since an arm64 image loads
+onto an x86_64 server without complaint and fails at `docker run`.
+
+**Which key opens the server is also configuration.** `ssh` finds one unaided only when it is called
+`id_ed25519`/`id_rsa`/`id_ecdsa`, or when `~/.ssh/config` has a `Host` block matching the target. A
+per-provider key under its own name, reached by bare address, is neither — so `AOW5_SSH_KEY` names it (a
+bare name is looked up in `~/.ssh`) and it is passed with `IdentitiesOnly`, which also keeps an agent
+holding several keys from tripping `MaxAuthTries` before the right one is offered. Blank means "whatever
+`ssh` already does", which is correct wherever `~/.ssh/config` answers it.
+
+**The names that are not the site** — `www`, and any domain this deployment used to answer on — get a block
+of their own in `Caddyfile` that 301s to `{$SITE_DOMAIN}`, with its own certificate, because a redirect
+behind a certificate the browser rejects is not a redirect. `redir` carries the path and the query; the
+fragment needs no carrying, since it never reaches a server and the browser re-attaches it to the target —
+which is what keeps every shared `#b=` loadout link alive across a move. The old name has to keep resolving
+here for that to work: for a DuckDNS one, that is the `duckdns.timer` on the server, which is why
+`DUCKDNS_SUBDOMAIN` stays in `deploy.env` after a move away from it.
+
+**Moving to a new machine or a new domain is that config file and nothing else.** Everything downstream —
+the certificate, the API's `SITE_ORIGIN`, the OpenID return URL — is derived from `SITE_DOMAIN`, so there is
+one place to change and no second copy to forget. The two things outside the repo that still need doing by
+hand are the DNS record and, if Steam or Discord sign-in is configured, the redirect URL registered with
+them: Steam checks the return URL against the realm and Discord matches its redirect exactly, so both refuse
+a callback at a domain they have not been told about.
+
+**TLS is free and automatic.** Caddy asks Let's Encrypt for a certificate the first time it serves the new
+name, renews it on its own, and redirects HTTP to HTTPS — there is no certbot, no cron job and no key to
+rotate. The one thing it cannot do for itself is DNS, which is why `remote-deploy.sh` checks the A record
+before it ships anything: the ACME challenge arrives over the public name, and Let's Encrypt allows five
+failures an hour. `AOW5_SKIP_DNS=1` if you want to deploy ahead of the record and let the certificate come
+later.
+
+### On the box, by hand
+
 ```sh
 cd /srv/aow5/repo
 git pull
 infra/deploy.sh
 ```
 
-`deploy.sh` refuses to run on a dirty working tree — set `AOW5_ALLOW_DIRTY=1` if you are deliberately
-testing something uncommitted — then prints the commit it is shipping, takes a pre-deploy database
+`deploy.sh` refuses to run on a dirty checkout — set `AOW5_ALLOW_DIRTY=1` if you are deliberately testing
+something uncommitted — then prints what it is shipping (the commit, or `.deployed-version` when the tree
+arrived over SSH rather than from `git`), takes a pre-deploy database
 snapshot, builds, swaps the containers, polls the site until it answers, and prunes the images it
 replaced. If it never comes up it dumps the last hundred lines of the container log and exits non-zero.
 

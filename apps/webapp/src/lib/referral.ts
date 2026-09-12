@@ -21,8 +21,34 @@ export const REFERRAL_PARAM = 'ref';
  */
 export const MAX_REFERRAL_CODE = MAX_REFERRAL;
 
-/** Prefilled for a first-time visitor, until they enter one of their own. */
+/**
+ * The site's own code.
+ *
+ * Prefilled for a first-time visitor until they enter one of their own, and
+ * what a build page shows when its author gave none — see `referralOnBuild`.
+ */
 export const DEFAULT_REFERRAL = '00EJT3T3';
+
+/**
+ * The code a build page shows: the author's, or the site's when they left the
+ * field empty.
+ *
+ * A fallback for *display*, and nothing more. The build's own row keeps the
+ * empty string it was saved with, so the author still has no code on their
+ * build and editing it does not silently adopt this one — which is the
+ * distinction `getInitialReferral` is careful about on the other side, where
+ * writing the default into somebody's field would make it theirs.
+ *
+ * The reason it is the site's code rather than nothing: a reader who wants to
+ * enter the game with a code should always find one on the page, and on a build
+ * whose author did not supply one there is no other candidate.
+ */
+export function referralOnBuild(code: string): string {
+  // Normalised on the way out as well as on the way in, so what the page shows
+  // is what the copy button puts on the clipboard whatever the row holds.
+  const own = normalizeReferral(code);
+  return own === '' ? DEFAULT_REFERRAL : own;
+}
 
 /**
  * Trims, flattens whitespace, uppercases and caps.
@@ -38,7 +64,10 @@ export const DEFAULT_REFERRAL = '00EJT3T3';
  * rejection is unreachable from this field.
  */
 export function normalizeReferral(value: string): string {
-  return value.replace(/\s+/g, ' ').trim().toUpperCase().slice(0, MAX_REFERRAL_CODE);
+  // Whitespace removed rather than collapsed — see `normaliseReferral` on the
+  // server, which decides. A code is one eight-character token, so a space
+  // inside one is always damage rather than punctuation.
+  return value.replace(/\s+/gu, '').toUpperCase().slice(0, MAX_REFERRAL_CODE);
 }
 
 /** The code in the current URL, or null when the parameter is absent. */

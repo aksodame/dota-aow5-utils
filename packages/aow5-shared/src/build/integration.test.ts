@@ -4,10 +4,11 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { decodeBuild, encodeBuild, makeIdTable } from './buildCodec.ts';
-import { MAX_SECTIONS, SLOTS_PER_SECTION, createEmptyState, slotKindAt } from './buildState.ts';
-import { buildSummaries, rebuildAbilityTable, rebuildIdTable } from '../data/loadData.ts';
+import { SLOT_COUNT, buildReducer, createEmptyState, slotAcceptsAt } from './buildState.ts';
+import { buildSummaries, rebuildAbilityTable, rebuildIdTable, rebuildMapTable } from '../data/loadData.ts';
 import type { IndexRow, ItemsIndex, Meta } from '../types/items.ts';
-import { ABILITY_SLOTS, type HeroesData, type LocaleAbilities } from '../types/heroes.ts';
+import { ABILITY_SLOTS, SPELLS_PER_SECTION, type HeroesData, type LocaleAbilities } from '../types/heroes.ts';
+import type { LocaleMaps, MapsData } from '../types/maps.ts';
 
 /**
  * End-to-end check over the real emitted artifacts.
@@ -44,42 +45,58 @@ test('the app-side id table agrees with the committed one wherever it is populat
   );
 });
 
-test('a board built from real items round-trips through the app-side table', () => {
-  const { ids: rebuilt, kinds } = rebuildIdTable(index.rows, meta.idTableLength);
-  const table = makeIdTable(rebuilt, meta.idTableHash, kinds);
+test('a build made of real items, spells and a real map round-trips through the app-side tables', () => {
+  const { ids: rebuilt } = rebuildIdTable(index.rows, meta.idTableLength);
+  const table = makeIdTable(rebuilt, meta.idTableHash);
   const items = buildSummaries(index.rows, names);
 
-  // Fill every slot with an item that slot would actually accept, so this
-  // mirrors a real board rather than an arbitrary one.
-  const state = createEmptyState(MAX_SECTIONS);
-  for (let s = 0; s < MAX_SECTIONS; s++) {
-    for (let n = 0; n < SLOTS_PER_SECTION; n++) {
-      const kind = slotKindAt(n);
-      const eligible = items.filter((i) => (i.kinds & kind) !== 0);
-      assert.ok(eligible.length > 0, `no item is eligible for slot ${n}`);
-      const item = eligible[(s * SLOTS_PER_SECTION + n) * 13 % eligible.length]!;
-      state.sections[s]!.slots[n] = { k: 'id', id: item.id };
-    }
-  }
-  state.sections[0]!.name = 'Core';
+  const heroData = read<HeroesData>('public/data/heroes.json');
+  const mapData = read<MapsData>('public/data/maps.json');
+  const tables = {
+    abilityIds: rebuildAbilityTable(heroData.abilities, heroData.abilityTableLength),
+    heroIds: heroData.heroes.map((h) => h.id),
+    mapIds: rebuildMapTable(mapData.maps, mapData.mapTableLength),
+  };
 
-  const encoded = encodeBuild(state, table);
-  const decoded = decodeBuild(encoded, table);
+  // Fill every slot with an item that slot would actually accept, so this
+  // mirrors a real build rather than an arbitrary one.
+  let state = createEmptyState();
+  for (let n = 0; n < SLOT_COUNT; n++) {
+    const accepts = slotAcceptsAt(n);
+    const eligible = items.filter((i) => (i.kinds & accepts) !== 0);
+    assert.ok(eligible.length > 0, `no item is eligible for slot ${n}`);
+    const item = eligible[(n * 13) % eligible.length]!;
+    state = buildReducer(state, { type: 'setSlot', slot: n, value: { k: 'id', id: item.id } });
+  }
+
+  // A real hero, every key it can actually bind, and a real map.
+  const hero = heroData.heroes[0]!;
+  state = buildReducer(state, { type: 'setHero', hero: hero.id });
+  ABILITY_SLOTS.forEach((key, n) => {
+    const candidate = hero.bySlot[key]?.[0];
+    if (candidate) state = buildReducer(state, { type: 'setSpell', spell: n, value: { k: 'id', id: candidate } });
+  });
+  const map = mapData.maps.find((m) => m.type === 'forest')!;
+  state = buildReducer(state, { type: 'toggleMap', map: map.id });
+  state = buildReducer(state, { type: 'setTitle', title: 'Core' });
+
+  const encoded = encodeBuild(state, table, tables);
+  const decoded = decodeBuild(encoded, table, tables);
   assert.equal(decoded.ok, true);
   if (!decoded.ok) return;
 
   assert.deepEqual(decoded.state, state);
-  assert.equal(decoded.warnings.length, 0, 'a board of real playable items must decode without warnings');
+  assert.equal(decoded.warnings.length, 0, 'a build of real playable data must decode without warnings');
 
   // Every decoded slot must resolve to a nameable item, which is what the
-  // board actually renders.
+  // build page actually renders.
   const byId = new Map(items.map((i) => [i.id, i]));
-  for (const section of decoded.state.sections) {
-    for (const slot of section.slots) {
-      assert.ok(slot && slot.k === 'id', 'expected a resolved item');
-      if (slot?.k === 'id') assert.ok(byId.get(slot.id)?.name, `no name for ${slot.id}`);
-    }
+  for (const slot of decoded.state.slots) {
+    assert.ok(slot && slot.k === 'id', 'expected a resolved item');
+    if (slot?.k === 'id') assert.ok(byId.get(slot.id)?.name, `no name for ${slot.id}`);
   }
+  assert.deepEqual(decoded.state.maps, [map.id]);
+  assert.equal(decoded.state.spells.length, SPELLS_PER_SECTION);
 });
 
 test('every index row points at an icon file that exists', () => {
@@ -172,4 +189,40 @@ test('a hero only offers abilities that bind to the key they are offered under',
     }
   }
   assert.deepEqual(problems, []);
+});
+
+// --- maps -------------------------------------------------------------------
+
+const maps = read<MapsData>('public/data/maps.json');
+
+test('meta agrees with the emitted map data', () => {
+  assert.equal(maps.maps.length, meta.mapCount);
+  assert.equal(maps.mapTableLength, meta.mapTableLength);
+  assert.equal(maps.mapTableHash, meta.mapTableHash);
+});
+
+test('the app-side map table resolves every map by index, and reserves position 0', () => {
+  const ids = rebuildMapTable(maps.maps, maps.mapTableLength);
+  assert.equal(ids.length, maps.mapTableLength + 1, 'one longer than the table, because indices are 1-based');
+  assert.equal(ids[0], '', 'position 0 is reserved for "no map chosen"');
+  for (const map of maps.maps) {
+    assert.ok(map.idx >= 1, `${map.id} claims the reserved index 0`);
+    assert.equal(ids[map.idx], map.id, `${map.id} does not sit at index ${map.idx}`);
+  }
+});
+
+test('every map has a name and a label in every shipped language', () => {
+  for (const lang of meta.languages) {
+    const text = read<LocaleMaps>(`public/data/locale.${lang}.maps.json`).maps;
+    const missing = maps.maps.filter((m) => !text[m.id]?.name || !text[m.id]?.label).map((m) => m.id);
+    assert.deepEqual(missing, [], `${lang} is missing text for ${missing.length} map(s)`);
+  }
+});
+
+test('every map states a tier a guide could be filed under', () => {
+  for (const map of maps.maps) {
+    assert.ok(Number.isInteger(map.tier) && map.tier >= 1, `${map.id} has tier ${map.tier}`);
+    // The displayed tier may exceed the KV level, but only for DLC rooms.
+    if (map.tier !== map.roomLevel) assert.ok(map.isDlc, `${map.id} drifts from its KV level but is not DLC`);
+  }
 });

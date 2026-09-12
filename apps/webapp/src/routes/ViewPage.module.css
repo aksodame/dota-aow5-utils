@@ -1,0 +1,212 @@
+/**
+ * A shared loadout, read-only.
+ *
+ * The build page's own measurements, copied rather than imported: CSS modules
+ * have no cross-file inheritance, and the alternative — a third file both pages
+ * import — would put the layout of two screens behind one edit. The rules below
+ * are the ones that decide tile sizes and column widths, so a board looks the
+ * same whether it was published or pasted.
+ */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5) var(--space-7);
+
+  /* One tile size for every block on the page — see the build page's note. */
+  --slot: 54px;
+  /* Panel captions a step under the page's own heading, as on the build page. */
+  --panel-title-size: 15px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+/** What the link actually holds: the codec version and what is in the board. */
+.codec {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/** The one paragraph: what this page is and what to do with it. */
+.lead {
+  max-width: 70ch;
+  /* It follows the code button, which supplies the gap above it. */
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-4);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+.portrait {
+  flex: none;
+  width: 128px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+.portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.identity {
+  flex: 1;
+  min-width: 0;
+}
+
+/*
+ * One line, shortened with an ellipsis.
+ *
+ * A build's title is up to eighty characters and this row also holds a portrait
+ * and the editor button; wrapped, it pushed the codec line and the button
+ * apart on a narrow window. The full text stays reachable — it is the page's
+ * `title` attribute and its document title.
+ */
+.title {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.column {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.consumables {
+  display: grid;
+  grid-template-columns: repeat(3, var(--slot));
+  gap: var(--space-2);
+}
+
+.gearRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.gear {
+  display: grid;
+  grid-template-columns: repeat(3, var(--slot));
+  gap: var(--space-2);
+}
+
+.carry {
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--border);
+}
+
+.carrySlot {
+  width: var(--slot);
+}
+
+.slotLabel {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: var(--space-2);
+}
+
+.spellKey {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+/* --- what the link says about the board ----------------------------------- */
+
+/** Tier, rooms and price on one line under the heading. */
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.price {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+}
+
+.priceCoin {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.referral {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.referralLabel {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.referralCode {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.spellCell {
+  padding: var(--space-2) var(--space-1) var(--space-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+}
+
+.spellCellMain {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}

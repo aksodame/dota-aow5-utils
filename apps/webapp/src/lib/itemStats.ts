@@ -1,5 +1,8 @@
-import type { ItemFull, LocaleDetail, RichNode } from 'aow5-shared/types';
-import { splitDescription } from './richDesc';
+import type { ItemFull, LocaleDetail, RichNode, RollTables } from 'aow5-shared/types';
+import { statSpan } from 'aow5-shared/data';
+// Explicit extension: this module is exercised by `node --test`, which does not
+// do Vite's extensionless resolution. Every tested file in the repo does the same.
+import { splitDescription } from './richDesc.ts';
 
 /** One line of an item's stat block, already labelled and formatted. */
 export interface StatRow {
@@ -8,6 +11,15 @@ export interface StatRow {
   label: string;
   /** Signed, and suffixed with `%` where the key says so: `+25%`, `-4`. */
   value: string;
+  /**
+   * Everything the stat could be on some other copy of the item: `+96 – +145`.
+   *
+   * Present only when the roll tables were supplied and the stat actually rolls.
+   * The number beside it is the *centre* of that span rather than the value any
+   * particular copy has — which is the single most misleading thing about an
+   * item card without this, because it reads as the stat.
+   */
+  span?: string;
 }
 
 /**
@@ -23,7 +35,16 @@ export function isTuningKey(key: string): boolean {
   return key.startsWith('ability_');
 }
 
-/** Turns `bonus_attack_damage` into `Attack damage` when the game has no label. */
+/**
+ * Turns `bonus_attack_damage` into `Attack damage` when the game has no label.
+ *
+ * Which, for a passive's own numbers, is **always**: the addon ships no
+ * `AK_Attr_` token for a single `ability_value_*` key, so `ability_value_
+ * item_0102_damage` has nothing behind it but itself. Hence the three prefixes
+ * stripped below — the family name, the `c` that marks a reversed key, and the
+ * item id some of them carry, which is the id of the item you are already
+ * looking at.
+ */
 export function prettifyKey(key: string): string {
   // The `+` in front of every value already says "bonus", and `%` already says
   // "pct"; carrying both in the label is noise the game itself does not print.
@@ -31,9 +52,15 @@ export function prettifyKey(key: string): string {
   // headed "Glyph".
   const trimmed = key
     .replace(/^tag_gem_/, '')
+    .replace(/^ability_value_c_/, '')
+    .replace(/^ability_value_/, '')
+    .replace(/^item_\d+_/, '')
     .replace(/^bonus_/, '')
     .replace(/_(pct|percent)$/, '');
   const spaced = trimmed.replace(/_/g, ' ').trim();
+  // `ability_value` on its own strips to nothing, and a blank label is worse
+  // than the raw key it came from.
+  if (spaced === '') return key;
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
@@ -49,7 +76,14 @@ export function formatValue(key: string, value: number | string): string {
   return `${sign}${rounded}${isPercent(key) ? '%' : ''}`;
 }
 
-function labelFor(key: string, detail: LocaleDetail | undefined): string {
+/**
+ * The game's own name for a stat, or a readable one made from the key.
+ *
+ * Exported because the priority panel names stats one at a time — it ranks them
+ * rather than printing the block — and a second copy of this lookup there would
+ * be a second place for a stat to be called something else.
+ */
+export function statLabel(key: string, detail: LocaleDetail | undefined): string {
   const localized = detail?.values?.[key];
   // The game's own labels come as `+All Stats Bonus`; the `+` belongs to the
   // number here, so it is dropped rather than printed twice.
@@ -57,21 +91,36 @@ function labelFor(key: string, detail: LocaleDetail | undefined): string {
   return prettifyKey(key);
 }
 
+/** A stat's span, in the same shape both places that draw one use. */
+export function formatSpan(key: string, min: number, max: number): string {
+  return min === max ? formatValue(key, min) : `${formatValue(key, min)} – ${formatValue(key, max)}`;
+}
+
 /**
  * An item's stat lines.
  *
  * `which: 'tuning'` returns the mirror set — the `ability_*` numbers — so a
  * view that wants them can show them somewhere of its own.
+ *
+ * `tables` is optional and adds the span each stat can roll to. It is optional
+ * because it arrives with the heavy files: a card drawn before they land still
+ * shows its stats, and gains the ranges a moment later rather than waiting.
  */
 export function statRows(
   full: ItemFull | undefined,
   detail: LocaleDetail | undefined,
   which: 'stats' | 'tuning' = 'stats',
+  tables?: RollTables | null,
 ): StatRow[] {
   if (!full) return [];
   return Object.entries(full.values)
     .filter(([key]) => isTuningKey(key) === (which === 'tuning'))
-    .map(([key, value]) => ({ key, label: labelFor(key, detail), value: formatValue(key, value) }));
+    .map(([key, value]) => {
+      const row: StatRow = { key, label: statLabel(key, detail), value: formatValue(key, value) };
+      // A string value is one item's oddity in the data, and nothing rolls it.
+      const span = tables != null && typeof value === 'number' ? statSpan(tables, key, value) : null;
+      return span === null ? row : { ...row, span: formatSpan(key, span.min, span.max) };
+    });
 }
 
 /** The glyph an item carries, formatted like its own stats. */

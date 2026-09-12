@@ -4,6 +4,7 @@ import { DEFAULT_CARDS } from '@core/cards.ts';
 import { UI_SCALE } from '@core/ipc.ts';
 import { DEFAULT_STYLE } from '@core/style.ts';
 import { pricing } from '@/features/items/prices';
+import { usePresence } from '@/features/presence/usePresence';
 import { useSession } from '@/features/session/useSession';
 import { useDropSounds } from '@/features/sounds/useDropSounds';
 import { ChromeButton } from '@/shell/ChromeButton';
@@ -36,8 +37,9 @@ export function FarmOverlay() {
   const { config, interactive, collapsed, toggleCollapsed, setScale } = useOverlay();
   const Layout = layoutFor(config?.style ?? DEFAULT_STYLE);
   const prices = useMemo(() => pricing(config?.prices, config?.halvePrices), [config?.prices, config?.halvePrices]);
+  const session = useSession(prices.value, config?.autoResume ?? false);
   const { state, rates, items, runItems, elapsed, paused, lastRunDead, clearSession, togglePaused, toggleLastRunDied } =
-    useSession(prices.value, config?.autoResume ?? false);
+    session;
 
   const scale = config?.uiScale ?? UI_SCALE.default;
   useScaleShortcuts(scale, setScale);
@@ -45,6 +47,11 @@ export function FarmOverlay() {
   // Here rather than in the shell: this is the window that watches the feed,
   // and a second window ringing the same drop would be an echo.
   useDropSounds(config?.sounds ?? null, prices);
+
+  // The same argument as the sounds, one step further out: this window holds
+  // the session, so it is the one that can say what the session is doing. Off
+  // unless the setting says otherwise — see `usePresence`.
+  usePresence(session, config ?? null);
 
   /*
    * The skull's global key.

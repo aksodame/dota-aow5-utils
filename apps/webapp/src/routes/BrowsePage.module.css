@@ -1,0 +1,221 @@
+/**
+ * Two columns that start on the same line.
+ *
+ * `align-items: start` rather than the default stretch: the sidebar sizes
+ * itself and the list column grows, and both begin at the top of the grid — so
+ * the filter panel's first line and the search bar's are the same line.
+ */
+.page {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5) var(--space-7);
+}
+
+/**
+ * The migration banner, across the top of both columns.
+ *
+ * `grid-column: 1 / -1` rather than a wrapper around the page: the two columns
+ * start on the same line by being siblings in one grid, and putting a header
+ * element between them and the grid is what would break that.
+ *
+ * Green, and quiet with it. This is not a warning and nothing is broken — it
+ * is an errand for the few readers who have builds on the old site, so it gets
+ * the tint and the border and none of the weight: a solid green bar over the
+ * list would shout at everyone else every time they opened the front page.
+ */
+.notice {
+  grid-column: 1 / -1;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--ok) 8%, transparent);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/**
+ * The address, in the notice's own green.
+ *
+ * `inline-flex` with the icon inside it so the arrow sits on the link's
+ * baseline and wraps with it — the address is long enough to break onto its
+ * own line on a phone, and an icon left behind on the line above reads as
+ * punctuation.
+ */
+.noticeLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--ok);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.noticeLink:hover {
+  text-decoration: none;
+}
+
+/** Search bar, then the scrolling list. */
+.column {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/**
+ * The search bar, at the head of the list it searches.
+ *
+ * It used to live in a bar fixed to the bottom of the window, a long way from
+ * the thing it filtered and covering the last row of it.
+ */
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.searchIcon {
+  position: absolute;
+  left: 11px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.searchInput {
+  padding-left: 36px;
+}
+
+/**
+ * How much there is, above the list it describes.
+ *
+ * Drawn even while the number is unknown — see `.countBone`. A `min-height` of
+ * one line rather than relying on the content to supply it, so the line holds
+ * its place whichever of the two is inside it.
+ */
+.count {
+  margin-top: calc(-1 * var(--space-1));
+  min-height: 18px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+/**
+ * The count's own skeleton, while a new query is on its way.
+ *
+ * It used to be hidden outright, which is a worse lie than a shimmer: `45
+ * builds` disappearing reads as "none", and the line collapsing shifted the
+ * whole list up a few pixels and back. Now it is pending in the same way the
+ * rows below it are pending, and the layout does not move.
+ *
+ * `composes` from the row's stylesheet rather than a second copy of the sweep:
+ * one animation on one shared class is the argument that file already makes,
+ * and two would drift out of step both in timing and in colour.
+ */
+.countBone {
+  composes: bone from '../components/BuildRow.module.css';
+  display: inline-block;
+  width: 72px;
+  height: 12px;
+  vertical-align: -1px;
+}
+
+/**
+ * As tall as the whole list, however few of its rows exist.
+ *
+ * This is what the scrollbar is measured against, so the bar is the right size
+ * and in the right place before most of the rows have been fetched. Its height
+ * comes from `useVirtualRows`, which reads the row geometry back out of the
+ * custom properties below rather than repeating the numbers in JavaScript.
+ */
+.canvas {
+  position: relative;
+}
+
+/**
+ * One row's place in the canvas.
+ *
+ * Positioned with `transform` rather than `top`, so moving a row is a
+ * composited change rather than a layout one — with thirty of these being
+ * repositioned on every frame of a scroll, that is the difference between
+ * smooth and not.
+ */
+.slot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+}
+
+/**
+ * A skeleton on the first load, before there is a canvas to place it in.
+ *
+ * Stacked normally rather than positioned, because at that point nothing knows
+ * how many rows there will be — the gap is the same one the canvas uses, so the
+ * real rows land exactly where their outlines were.
+ */
+.placeholder + .placeholder {
+  margin-top: var(--build-row-gap);
+}
+
+/**
+ * The list scrolls in a box of its own rather than with the page.
+ *
+ * That is what makes loading-on-scroll workable: the sentinel at the bottom is
+ * measured against *this* element, so how near the end you are is a property of
+ * the list and not of the whole document. It also keeps the filter sidebar in
+ * place while you read, which a page that scrolls as one does not.
+ *
+ * `max-height`, not `height`: a short list leaves a short panel rather than a
+ * tall box with empty space under it.
+ */
+.scroller {
+  /*
+   * Nine rows exactly: nine heights and the eight gaps between them, so the box
+   * ends on a row boundary rather than halfway through one.
+   *
+   * Nine and not ten, though a window is ten rows. With ten visible the last
+   * one sits exactly on the window boundary, so the smallest scroll pulls row
+   * ten into view and the list asks for a second window before anybody has
+   * read the first. Nine leaves a row of slack: the opening screen fits inside
+   * the first window, which is one request.
+   *
+   * Computed from the same tokens the rows use, so changing a row height moves
+   * this with it; `useVirtualRows` reads those same two properties back off
+   * this element, which is why they have to resolve here.
+   */
+  height: calc(9 * var(--build-row-h) + 8 * var(--build-row-gap));
+  /*
+   * A fixed height, not a maximum. The canvas inside is as tall as the whole
+   * list, so a `max-height` would be reached immediately and the box would be
+   * nine rows anyway; stating it once is clearer than implying it.
+   */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+/**
+ * What the observer watches, at the end of the rows.
+ *
+ * A bare marker: the skeleton rows are what fill the space now, and they do it
+ * inside the list where the real rows will land. Given a height rather than
+ * zero so it is a real intersection target — a zero-height element at the very
+ * bottom of a scroller is unreliable to observe.
+ */
+.sentinel {
+  height: 8px;
+}
+
+@media (max-width: 1000px) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-3) var(--space-3) var(--space-6);
+  }
+}

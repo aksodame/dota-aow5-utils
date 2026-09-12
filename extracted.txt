@@ -1,0 +1,81 @@
+===== en
+  level: 'Lv'
+  quality: 'Quality'
+  loadingDetails: 'Loading details…'
+  glyph: 'Glyph'
+  recipe: 'Recipe'
+  tags: 'Tags'
+  cooldown: 'Cooldown'
+  manaCost: 'Mana cost'
+  castRange: 'Cast range'
+  craftTime: 'Craft time'
+  skill: 'Skill'
+  affects: 'Affects'
+  colon: ': '
+  usedIn: (n) => `Used in ${n} recipe${n === 1 ? '' : 's'}`
+  affectsLabel: (team, scope) =>
+    `${{ enemy: 'Enemy', friendly: 'Allied', both: 'All' }[team]} ${{ units: 'units', heroes: 'heroes', creeps: 'creeps' }[scope]}`
+  behavior: { passive: 'Passive', active: 'Active', toggle: 'Toggle' }
+  rarity: {
+    1: 'Common',
+    2: 'Uncommon',
+    3: 'Rare',
+    4: 'Epic',
+    5: 'Legendary',
+    6: 'Mythic',
+    7: 'Divine',
+  }
+===== ru
+  level: 'Ур'
+  quality: 'Качество'
+  loadingDetails: 'Загрузка характеристик…'
+  glyph: 'Руна'
+  recipe: 'Рецепт'
+  tags: 'Теги'
+  cooldown: 'Перезарядка'
+  manaCost: 'Расход маны'
+  castRange: 'Дальность'
+  craftTime: 'Время создания'
+  skill: 'Навык'
+  affects: 'Действует на'
+  colon: ': '
+  usedIn: (n) => `Используется в ${n} рецептах`
+  affectsLabel: (team, scope) =>
+    `${{ enemy: 'вражеских', friendly: 'союзных', both: 'всех' }[team]} ${{ units: 'юнитов', heroes: 'героев', creeps: 'крипов' }[scope]}`
+  behavior: { passive: 'Пассивный', active: 'Активный', toggle: 'Переключаемый' }
+  rarity: {
+    1: 'Обычное',
+    2: 'Необычное',
+    3: 'Редкое',
+    4: 'Эпическое',
+    5: 'Легендарное',
+    6: 'Мифическое',
+    7: 'Божественное',
+  }
+===== zh
+  level: 'Lv'
+  quality: '品质'
+  loadingDetails: '正在加载详情…'
+  glyph: '符印'
+  recipe: '配方'
+  tags: '标签'
+  cooldown: '冷却'
+  manaCost: '魔法消耗'
+  castRange: '施法距离'
+  craftTime: '制作时间'
+  skill: '技能'
+  affects: '作用于'
+  colon: '：'
+  usedIn: (n) => `用于 ${n} 个配方`
+  affectsLabel: (team, scope) =>
+    `${{ enemy: '敌方', friendly: '友方', both: '全体' }[team]}${{ units: '单位', heroes: '英雄', creeps: '小兵' }[scope]}`
+  behavior: { passive: '被动', active: '主动', toggle: '切换' }
+  rarity: {
+    1: '普通',
+    2: '优秀',
+    3: '稀有',
+    4: '史诗',
+    5: '传说',
+    6: '神话',
+    7: '神圣',
+  }

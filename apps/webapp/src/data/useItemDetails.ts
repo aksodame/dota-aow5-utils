@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react';
-import { loadDetails, loadFull } from 'aow5-shared/data';
-import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
+import { loadDetails, loadFull, loadRolls } from 'aow5-shared/data';
+import type { ItemFull, LocaleDetail, RollTables } from 'aow5-shared/types';
 
 export interface DetailData {
   full: Record<string, ItemFull> | null;
   detail: Record<string, LocaleDetail> | null;
+  /**
+   * How far each stat can roll, and what a reforge level does to that.
+   *
+   * Rides with the other two rather than being fetched on its own: a few
+   * kilobytes against their megabyte, and every screen that wants it — the
+   * priority panel — wants the item's own values in the same breath.
+   */
+  rolls: RollTables | null;
   loading: boolean;
   error: string | null;
 }
@@ -18,22 +26,29 @@ export interface DetailData {
  * internally so switching slots costs nothing.
  */
 export function useItemDetails(lang: string, enabled: boolean): DetailData {
-  const [state, setState] = useState<DetailData>({ full: null, detail: null, loading: false, error: null });
+  const [state, setState] = useState<DetailData>({
+    full: null,
+    detail: null,
+    rolls: null,
+    loading: false,
+    error: null,
+  });
 
   useEffect(() => {
     if (!enabled) return;
     let cancelled = false;
     setState((s) => ({ ...s, loading: true, error: null }));
 
-    Promise.all([loadFull(), loadDetails(lang)])
-      .then(([full, detail]) => {
-        if (!cancelled) setState({ full, detail, loading: false, error: null });
+    Promise.all([loadFull(), loadDetails(lang), loadRolls()])
+      .then(([full, detail, rolls]) => {
+        if (!cancelled) setState({ full, detail, rolls, loading: false, error: null });
       })
       .catch((err: unknown) => {
         if (!cancelled) {
           setState({
             full: null,
             detail: null,
+            rolls: null,
             loading: false,
             error: err instanceof Error ? err.message : String(err),
           });

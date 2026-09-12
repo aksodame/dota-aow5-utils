@@ -44,7 +44,30 @@ const GH_ENVIRONMENT = 'production';
  * script about it would silently ship an empty value, so writeEnvFile refuses
  * to write when it meets a key that is not in this list.
  */
-const ENV_KEYS = ['SITE_DOMAIN', 'ACME_EMAIL', 'DUCKDNS_SUBDOMAIN', 'DUCKDNS_TOKEN'] as const;
+const ENV_KEYS = [
+  'SITE_DOMAIN',
+  'ACME_EMAIL',
+  'DUCKDNS_SUBDOMAIN',
+  'DUCKDNS_TOKEN',
+  /*
+   * Both optional, and both asked for last.
+   *
+   * They are the two keys a deployment can genuinely do without: a missing
+   * Freesound token costs the tracker's sound search, and a missing Steam key
+   * costs signed-in players their display name until one is set. Neither stops
+   * the site from booting, so an empty answer is a real answer here rather than
+   * something to keep asking about.
+   */
+  'FREESOUND_TOKEN',
+  'STEAM_API_KEY',
+  /*
+   * The same rule, for the same reason: a deployment with no Discord
+   * application simply does not offer that button. Both halves or neither —
+   * the API treats a half-filled pair as no Discord at all.
+   */
+  'DISCORD_CLIENT_ID',
+  'DISCORD_CLIENT_SECRET',
+] as const;
 type EnvKey = (typeof ENV_KEYS)[number];
 
 type Answers = Record<EnvKey, string> & {
@@ -501,11 +524,40 @@ async function main(): Promise<void> {
   const deployUser = await ask('User on that host', 'deploy');
   const deployPort = await askUntil('SSH port', /^\d{1,5}$/, 'A port number.', { fallback: '22' });
 
+  /*
+   * The optional pair. Asked for after everything that can fail, so somebody
+   * who has neither can press Enter twice and still get a working env file.
+   */
+  section('Optional keys');
+  console.log('Both can be left blank now and filled in later by editing /srv/aow5/.env.');
+  console.log('');
+  console.log('The Steam Web API key reads a signed-in player's display name and avatar. Sign-in itself');
+  console.log('needs no key — it is OpenID, which is unauthenticated — so without this people still sign in');
+  console.log('and still own their builds, they just show as "Player <digits>" until a key is set.');
+  const steamKey = await ask('Steam Web API key from https://steamcommunity.com/dev/apikey (blank to skip)');
+  console.log('');
+  console.log('The Freesound key backs the tracker's sound search. Without it the API answers "not');
+  console.log('configured" and the picker hides its search box.');
+  const freesoundToken = await ask('Freesound API key from https://freesound.org/apiv2/apply (blank to skip)');
+
+  console.log('');
+  console.log('Discord sign-in is optional. Make an application at');
+  console.log('https://discord.com/developers/applications and add this OAuth2 redirect:');
+  console.log(`  https://${domain}/api/auth/discord/return`);
+  const discordId = await ask('Discord client id (blank to skip)');
+  const discordSecret = discordId.trim() === '' ? '' : await ask('Discord client secret');
+
   const answers: Answers = {
     SITE_DOMAIN: domain,
     ACME_EMAIL: acmeEmail,
     DUCKDNS_SUBDOMAIN: subdomain,
     DUCKDNS_TOKEN: duckToken,
+    STEAM_API_KEY: steamKey.trim(),
+    FREESOUND_TOKEN: freesoundToken.trim(),
+    // Both or neither, enforced here so a half-answered prompt cannot produce
+    // a deployment that offers a button which can only fail.
+    DISCORD_CLIENT_ID: discordSecret.trim() === '' ? '' : discordId.trim(),
+    DISCORD_CLIENT_SECRET: discordId.trim() === '' ? '' : discordSecret.trim(),
     deployHost,
     deployUser,
     deployPort,

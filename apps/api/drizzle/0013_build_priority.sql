@@ -1,0 +1,17 @@
+-- What an author wants out of each item, beyond having it.
+--
+-- Every equipment stat in this game is rolled: two copies of the same sword
+-- differ by their rolls, by which stat is permanently fixed on them, and by how
+-- far they have been reforged. So "get this sword" is a tenth of the advice, and
+-- the loadout — which is all a shared link can carry — cannot say the rest.
+--
+-- Stored as JSON in one column rather than as a pair of tables. Nothing joins to
+-- it, nothing filters on it and nothing counts it: it is a *document about* the
+-- loadout, in the same way `body` is prose about it, and it is rewritten whole
+-- every time the build is saved. Two tables and a rewrite-in-transaction would
+-- buy a shape no query ever asks for. The server refuses malformed input rather
+-- than trusting the column — see `core/builds/priority.ts`.
+--
+-- `''` rather than null for "the author wrote none", matching `referral` and
+-- `video_id`: one empty value per column, not two.
+ALTER TABLE `builds` ADD COLUMN `priority` text DEFAULT '' NOT NULL;

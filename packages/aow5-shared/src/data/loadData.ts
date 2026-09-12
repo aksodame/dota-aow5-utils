@@ -8,6 +8,8 @@ import type {
   HeroesData,
   LocaleAbilities,
 } from '../types/heroes.ts';
+import type { LocaleMaps, MapId, MapInfo, MapLocale, MapsData } from '../types/maps.ts';
+import type { RollTables } from '../types/rolls.ts';
 
 /**
  * Loads the extracted data.
@@ -20,6 +22,45 @@ import type {
 
 // Guarded so the pure helpers below can be imported by `node --test`, where
 // Vite's import.meta.env does not exist.
+/*
+ * The site's own tier curation, re-exported here because `aow5-shared/data` is
+ * the subpath both apps already import — and both need the same answer about
+ * which room sits at which tier. See `tiers.ts`.
+ */
+export {
+  affixPool,
+  canBeAffix,
+  canBeDivine,
+  clampReforge,
+  decimalsOf,
+  divinePctFor,
+  enhancedBand,
+  isAbilityValueKey,
+  isReverseKey,
+  isRolled,
+  iterationBonus,
+  randomPctOf,
+  reachableRolls,
+  rollablePool,
+  stableLevel,
+  statOutcomes,
+  statSpan,
+  valueOf,
+  type StatOutcome,
+} from './rolls.ts';
+
+export {
+  TIER_KEYS,
+  categoryOfMap,
+  isOffered,
+  isTierKey,
+  listedMaps,
+  listedTiers,
+  tierLabel,
+  tierShort,
+  type TierKey,
+} from './tiers.ts';
+
 const base = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '/';
 const dataUrl = (file: string) => `${base}data/${file}`;
 
@@ -31,6 +72,19 @@ export const abilityIconUrl = (icon: string): string =>
 
 export const heroIconUrl = (icon: string): string =>
   icon === 'placeholder.png' ? `${base}icons/placeholder.png` : `${base}icons/heroes/${icon}`;
+
+/** The portal's painted scene for a room. Only rooms that ship art have one. */
+export const mapImageUrl = (image: string): string => `${base}icons/maps/${image}`;
+
+/**
+ * The game's own gold coin, for anywhere the site shows an amount of it.
+ *
+ * A constant rather than a lookup: it is chrome the site draws, not a record in
+ * any table, so there is nothing to key it by. Lifted straight out of the
+ * addon's `resource/flash3` PNGs by the pipeline's step 05b — the same coin the
+ * game puts beside a price, so a price here reads as the same kind of number.
+ */
+export const goldIconUrl = (): string => `${base}icons/ui/gold.png`;
 
 export interface ItemSummary {
   idx: number;
@@ -53,6 +107,26 @@ export interface SpellSummary extends AbilityFull {
   text?: AbilityLocale;
 }
 
+/** One map, with its localized name already joined on. */
+export interface MapSummary extends MapInfo {
+  /** The bare name — "Temple Depths". */
+  name: string;
+  /** The game's own labelled form — "Lv. 6: Temple Depths". */
+  label: string;
+}
+
+/** The map table a guide is filed against. */
+export interface MapData {
+  maps: MapSummary[];
+  byId: Map<MapId, MapSummary>;
+  /**
+   * Frozen map table, rebuilt by index so the codec can resolve a map the same
+   * way it resolves items and spells. Position 0 is the reserved "no map"
+   * slot and is always an empty string.
+   */
+  mapIds: string[];
+}
+
 /** The roster and spell book, small enough to load with the board. */
 export interface HeroData {
   heroes: HeroInfo[];
@@ -72,6 +146,7 @@ export interface CoreData {
   items: ItemSummary[];
   byId: Map<string, ItemSummary>;
   heroes: HeroData;
+  maps: MapData;
 }
 
 async function getJson<T>(file: string): Promise<T> {
@@ -127,21 +202,41 @@ export function rebuildAbilityTable(abilities: Record<string, AbilityFull>, leng
   return ids;
 }
 
+/**
+ * Rebuilds the frozen map table by index, the same trick as the item and
+ * ability tables — except that map indices are 1-based, because 0 is reserved
+ * for "no map chosen". Slot 0 is therefore always an empty string, and so is
+ * any position belonging to a room the addon has since retired; the codec
+ * treats both as unknown and round-trips them unchanged.
+ */
+export function rebuildMapTable(maps: MapInfo[], length: number): string[] {
+  const ids = new Array<string>(length + 1).fill('');
+  for (const map of maps) {
+    if (map.idx >= 1 && map.idx <= length) ids[map.idx] = map.id;
+  }
+  return ids;
+}
+
 export async function loadCore(lang: string): Promise<CoreData> {
-  const [meta, index, heroesData] = await Promise.all([
+  const [meta, index, heroesData, mapsData] = await Promise.all([
     getJson<Meta>('meta.json'),
     getJson<ItemsIndex>('items.index.json'),
     getJson<HeroesData>('heroes.json'),
+    getJson<MapsData>('maps.json'),
   ]);
 
   const chosen = meta.languages.includes(lang) ? lang : (meta.languages[0] ?? 'en');
-  const [names, abilityText] = await Promise.all([
+  const [names, abilityText, mapText] = await Promise.all([
     getJson<{ names: Record<string, string> }>(`locale.${chosen}.names.json`).then((r) => r.names),
     // Ability text is a few dozen records, so it rides along with the board
     // rather than being lazy like item descriptions.
     getJson<LocaleAbilities>(`locale.${chosen}.abilities.json`)
       .then((r) => r.abilities)
       .catch(() => ({}) as Record<string, AbilityLocale>),
+    // Eighteen records. Cheaper to fetch than to think about deferring.
+    getJson<LocaleMaps>(`locale.${chosen}.maps.json`)
+      .then((r) => r.maps)
+      .catch(() => ({}) as Record<MapId, MapLocale>),
   ]);
 
   const items = buildSummaries(index.rows, names);
@@ -161,7 +256,18 @@ export async function loadCore(lang: string): Promise<CoreData> {
     heroIds: heroesData.heroes.map((h) => h.id),
   };
 
-  return { meta, ids, kinds, items, byId: new Map(items.map((i) => [i.id, i])), heroes };
+  const mapSummaries: MapSummary[] = mapsData.maps.map((map) => {
+    const text = mapText[map.id];
+    return { ...map, name: text?.name ?? map.id, label: text?.label ?? text?.name ?? map.id };
+  });
+
+  const maps: MapData = {
+    maps: mapSummaries,
+    byId: new Map(mapSummaries.map((m) => [m.id, m])),
+    mapIds: rebuildMapTable(mapsData.maps, mapsData.mapTableLength),
+  };
+
+  return { meta, ids, kinds, items, byId: new Map(items.map((i) => [i.id, i])), heroes, maps };
 }
 
 let detailsCache: { lang: string; data: Record<string, LocaleDetail> } | null = null;
@@ -171,6 +277,21 @@ export async function loadDetails(lang: string): Promise<Record<string, LocaleDe
   const data = await getJson<Record<string, LocaleDetail>>(`locale.${lang}.details.json`);
   detailsCache = { lang, data };
   return data;
+}
+
+/**
+ * The roll tables, fetched once and kept.
+ *
+ * A few kilobytes, and lazy anyway: only a screen reasoning about a *particular*
+ * copy of an item — the editor's priority panel, and the build page drawing one
+ * back — has any use for them. See `rolls.ts` for what they mean.
+ */
+let rollsCache: RollTables | null = null;
+
+export async function loadRolls(): Promise<RollTables> {
+  if (rollsCache) return rollsCache;
+  rollsCache = await getJson<RollTables>('rolls.json');
+  return rollsCache;
 }
 
 let fullCache: Record<string, ItemFull> | null = null;

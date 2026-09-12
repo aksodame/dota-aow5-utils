@@ -1,17 +1,43 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
-import type { Response } from 'express';
+import { Body, Controller, Get, Logger, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { AuthGuard as PassportGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
-import type { AuthResponse, MeResponse, PowChallenge, SignInBody, SignUpBody } from 'aow5-api-contract';
+import type { Request, Response } from 'express';
+import { parseCookies } from '../../core/http/cookies.ts';
+import type { AuthProvidersResponse, MeResponse, PowChallenge, SignUpBody } from 'aow5-api-contract';
+import type { ProviderProfile } from '../../core/db/identities.ts';
 import { SESSION_TTL_SECONDS } from '../../core/db/sessions.ts';
 import type { UserRow } from '../../core/db/users.ts';
-import { ApiException } from '../http/api-error.ts';
-import { AuthService, type AuthFailure, type AuthResult } from './auth.service.ts';
-import { clearCookie, SESSION_COOKIE, sessionCookieOptions } from './cookies.ts';
+import { AuthService, type Signed } from './auth.service.ts';
+import {
+  clearCookie,
+  LINK_COOKIE,
+  linkCookieOptions,
+  SESSION_COOKIE,
+  sessionCookieOptions,
+} from './cookies.ts';
 import { CurrentUser } from './current-user.decorator.ts';
+import { DiscordEnabledGuard } from './provider-enabled.guard.ts';
 import { AuthGuard, type AuthedRequest } from './session.guard.ts';
 
+/**
+ * Three doors, one session.
+ *
+ * Local is the default and the only one that takes a request body; Steam and
+ * Discord are two redirects each. Whichever door somebody comes through, they
+ * leave here with the same cookie against the same `sessions` table — Passport
+ * authenticates and then gets out of the way, which is why `session: false` is
+ * on every strategy and `passport.session()` is installed nowhere.
+ *
+ * The provider routes are guarded by Passport's own `AuthGuard`, which calls
+ * the strategy twice: once with no assertion in the query, where the strategy
+ * redirects to the provider, and once on the way back. That is why `start` and
+ * `complete` look asymmetric — only the second one ever runs a body.
+ */
 @Controller()
 export class AuthController {
+  /** For the failures that end in a redirect, which say nothing to the browser. */
+  private readonly logger = new Logger('auth');
+
   constructor(private readonly auth: AuthService) {}
 
   /**
@@ -24,41 +50,139 @@ export class AuthController {
     return { user: user === undefined ? null : this.auth.me(user) };
   }
 
+  /** Which doors this deployment actually has, so the form can draw them. */
+  @Get('auth/providers')
+  providers(): AuthProvidersResponse {
+    return { available: this.auth.providers() };
+  }
+
   /**
-   * Hands out a proof-of-work challenge.
+   * A proof-of-work challenge for the sign-up form.
    *
-   * Cheap to serve — sixteen random bytes and one HMAC — and one is needed per
-   * sign-up attempt, so the budget is generous. It exists at all so that a
-   * script cannot mint an unlimited supply to solve offline in parallel.
+   * Cheap to issue and signed rather than stored, so handing them out costs
+   * nothing — which is what lets this be unauthenticated without becoming a way
+   * to fill a table.
    */
   @Get('auth/challenge')
-  @Throttle({ default: { ttl: 600_000, limit: 30 } })
+  @Throttle({ default: { ttl: 600_000, limit: 60 } })
   challenge(): PowChallenge {
     return this.auth.challenge();
   }
 
   /**
-   * Five accounts an hour from one address.
+   * Opens a local account.
    *
-   * A person signs up once, ever. This is generous enough that a household or a
-   * cafe never notices, and tight enough that the proof of work is the second
-   * thing standing in the way of a script rather than the only one.
+   * Rate limited hard on top of the proof of work: the two defend different
+   * things, since the proof makes each attempt cost CPU and the limit stops one
+   * address spending it in a burst.
    */
-  @Post('auth/register')
-  @Throttle({ default: { ttl: 3_600_000, limit: 5 } })
-  async register(@Body() body: SignUpBody, @Res({ passthrough: true }) response: Response): Promise<AuthResponse> {
-    return this.finish(await this.auth.register(body?.nickname, body?.password, body?.pow), response);
+  @Post('auth/signup')
+  @Throttle({ default: { ttl: 3_600_000, limit: 10 } })
+  async signUp(@Body() body: SignUpBody, @Res() response: Response): Promise<void> {
+    const signed = await this.auth.signUp(body?.nickname, body?.password, body?.pow);
+    this.setCookie(response, signed);
+    response.status(201).json({ user: this.auth.me(signed.user) });
   }
 
   /**
-   * Ten attempts per ten minutes per address — room to mistype twice and still
-   * get in. The per-account lockout in `core/auth/lockout.ts` is the other half
-   * of this, and it is the half that sees an attacker spread across addresses.
+   * Signs in with a nickname and a password.
+   *
+   * The lockout curve lives in the strategy, on the account being attacked,
+   * because a rate limiter can only see addresses — and a botnet with ten
+   * thousand of them gets the per-address budget ten thousand times over
+   * against one account. This limit is the other half of the pair.
    */
   @Post('auth/login')
-  @Throttle({ default: { ttl: 600_000, limit: 10 } })
-  async login(@Body() body: SignInBody, @Res({ passthrough: true }) response: Response): Promise<AuthResponse> {
-    return this.finish(await this.auth.login(body?.nickname, body?.password), response);
+  @UseGuards(PassportGuard('local'))
+  @Throttle({ default: { ttl: 600_000, limit: 20 } })
+  login(@Req() request: Request, @Res() response: Response): void {
+    const signed = this.auth.issue(request.user as UserRow);
+    this.setCookie(response, signed);
+    response.status(200).json({ user: this.auth.me(signed.user) });
+  }
+
+  /**
+   * Starts a sign-in by bouncing the visitor to Steam.
+   *
+   * A 302 rather than JSON with a URL in it, so the site's button can be a
+   * plain link: no fetch, no CORS, and it survives being middle-clicked. The
+   * redirect itself comes from the strategy, which is why this body is empty.
+   */
+  @Get('auth/steam')
+  @UseGuards(PassportGuard('steam'))
+  @Throttle({ default: { ttl: 600_000, limit: 30 } })
+  steam(): void {
+    /* The guard redirects; nothing here ever runs. */
+  }
+
+  /**
+   * Where Steam sends people back.
+   *
+   * Ends in a redirect rather than a JSON response, because the browser arrived
+   * by navigation and there is nothing on the other end to read a body. A
+   * failure goes to the same place carrying `?auth=failed`.
+   */
+  @Get('auth/steam/return')
+  @UseGuards(PassportGuard('steam'))
+  @Throttle({ default: { ttl: 600_000, limit: 30 } })
+  steamReturn(@Req() request: Request, @Res() response: Response): void {
+    this.finishProvider(request, response);
+  }
+
+  /*
+   * The enabled guard first, so a deployment with no Discord application
+   * answers 404 rather than the 500 that asking Passport for an unregistered
+   * strategy produces. Guards run in declaration order.
+   */
+  @Get('auth/discord')
+  @UseGuards(DiscordEnabledGuard, PassportGuard('discord'))
+  @Throttle({ default: { ttl: 600_000, limit: 30 } })
+  discord(): void {
+    /* The guard redirects; nothing here ever runs. */
+  }
+
+  @Get('auth/discord/return')
+  @UseGuards(DiscordEnabledGuard, PassportGuard('discord'))
+  @Throttle({ default: { ttl: 600_000, limit: 30 } })
+  discordReturn(@Req() request: Request, @Res() response: Response): void {
+    this.finishProvider(request, response);
+  }
+
+  /**
+   * Starts a *link* rather than a sign-in.
+   *
+   * A route of its own rather than a query parameter on the two above, because
+   * Passport's guard redirects from inside `canActivate` — a handler behind it
+   * never runs, so there is nowhere left to set the cookie. This sets the
+   * intent and bounces to the ordinary start route: one extra 302, and no
+   * branch inside either strategy.
+   */
+  @Get('auth/:provider/link')
+  @UseGuards(AuthGuard)
+  @Throttle({ default: { ttl: 600_000, limit: 30 } })
+  startLink(@Param('provider') provider: string, @Req() request: AuthedRequest, @Res() response: Response): void {
+    if (provider !== 'steam' && provider !== 'discord') {
+      response.redirect(302, this.auth.settingsUrl('failed'));
+      return;
+    }
+    if (provider === 'discord' && !this.auth.providers().includes('discord')) {
+      response.redirect(302, this.auth.settingsUrl('unavailable'));
+      return;
+    }
+
+    response.cookie(
+      LINK_COOKIE,
+      this.auth.linkIntent(request.sessionToken ?? ''),
+      linkCookieOptions(this.auth.secureCookies),
+    );
+    response.redirect(302, `/api/auth/${provider}`);
+  }
+
+  /** Removes a link. POST for the same reason logout is — see below. */
+  @Post('auth/:provider/unlink')
+  @UseGuards(AuthGuard)
+  unlink(@Param('provider') provider: string, @Req() request: AuthedRequest): MeResponse {
+    return { user: this.auth.unlink(request.user as UserRow, provider) };
   }
 
   /**
@@ -73,47 +197,68 @@ export class AuthController {
     response.status(204).end();
   }
 
-  /** Sets the session cookie, or turns a failure into the code the site reads. */
-  private finish(result: AuthResult, response: Response): AuthResponse {
-    if (!result.ok) throw describe(result.failure, response);
-    const { user, token, expiresAt } = result.signed;
-    response.cookie(SESSION_COOKIE, token, sessionCookieOptions(this.auth.secureCookies, expiresAt - nowSeconds()));
-    return { user: this.auth.me(user) };
-  }
-}
+  /**
+   * The shared tail of both provider callbacks.
+   *
+   * A ban is the one failure worth naming in the URL: an account whose sign-in
+   * merely "did not work" produces a support email and a second account, which
+   * is the opposite of what banning was for.
+   */
+  private finishProvider(request: Request, response: Response): void {
+    const authed = request as AuthedRequest;
+    const intent = parseCookies(request.headers.cookie)[LINK_COOKIE];
 
-function nowSeconds(): number {
-  return Math.floor(Date.now() / 1000);
-}
-
-/**
- * One failure shape per outcome, and the messages are for a network tab.
- *
- * The site switches on the code and shows its own translated copy, so nothing
- * here needs to read well in two languages — but nothing here may say more than
- * the code does either. In particular every proof-of-work failure collapses to
- * one answer: telling somebody which check they tripped only helps whoever is
- * probing, and an honest client's response is the same in all of them.
- */
-function describe(failure: AuthFailure, response: Response): ApiException {
-  switch (failure.kind) {
-    case 'captcha':
-      return new ApiException('CAPTCHA_FAILED', 'The challenge was missing, stale or already used.');
-    case 'invalid-nickname':
-      return new ApiException('VALIDATION_FAILED', 'That nickname will not do.', { nickname: failure.reason });
-    case 'invalid-password':
-      return new ApiException('VALIDATION_FAILED', 'That password will not do.', { password: failure.reason });
-    case 'taken':
-      return new ApiException('NICKNAME_TAKEN', 'That nickname is already in use.');
-    case 'banned':
-      return new ApiException('FORBIDDEN', 'That account is banned.');
-    case 'locked': {
-      // Same header the throttler sets, so the site has one thing to read
-      // whichever limit it ran into.
-      response.setHeader('Retry-After', String(failure.retryAfter));
-      return new ApiException('RATE_LIMITED', `Too many attempts. Try again in ${failure.retryAfter} seconds.`);
+    // Spent either way: an intent left behind would turn the next ordinary
+    // sign-in through that provider into a link nobody asked for.
+    if (intent !== undefined) {
+      clearCookie(response, LINK_COOKIE, linkCookieOptions(this.auth.secureCookies));
     }
-    case 'credentials':
-      return new ApiException('INVALID_CREDENTIALS', 'Wrong nickname or password.');
+
+    /*
+     * A link, when the cookie belongs to the session presenting it. Everything
+     * else — no cookie, a stale one, a signed-out browser — is the sign-in this
+     * route has always been.
+     *
+     * **`sessionUser`, not `user`.** Passport has already assigned the provider
+     * profile to `request.user` by the time this runs, so reading `user` here
+     * handed `link` a profile in place of the account it was meant to attach it
+     * to — an object with no `id`, which meant a fresh link died on a NOT NULL
+     * constraint (a 500, and no redirect to say so) and a re-link of an account
+     * you already owned came back as "taken".
+     */
+    const session = authed.sessionUser;
+    if (this.auth.intentMatches(intent, authed.sessionToken) && session !== undefined) {
+      /*
+       * Every outcome is a redirect, including the ones nobody planned for.
+       *
+       * The browser arrived here by navigation, so an exception escaping this
+       * handler is a framework error page where the settings screen should be —
+       * which is exactly how the `user`/`sessionUser` mix-up above stayed
+       * invisible: it threw on a constraint, and all anybody saw was a link
+       * that did not happen.
+       */
+      try {
+        const result = this.auth.link(session, request.user as ProviderProfile);
+        response.redirect(302, this.auth.settingsUrl(result.ok ? 'linked' : result.reason));
+      } catch (error) {
+        this.logger.error(`link failed for user ${session.id}: ${String(error)}`);
+        response.redirect(302, this.auth.settingsUrl('failed'));
+      }
+      return;
+    }
+
+    try {
+      const signed = this.auth.issueForProvider(request.user as ProviderProfile);
+      this.setCookie(response, signed);
+      response.redirect(302, this.auth.returnUrl());
+    } catch (error) {
+      const banned = error instanceof Error && error.message.includes('banned');
+      response.redirect(302, this.auth.failureUrl(banned ? 'banned' : 'failed'));
+    }
+  }
+
+  private setCookie(response: Response, signed: Signed): void {
+    const ttl = signed.expiresAt - Math.floor(Date.now() / 1000);
+    response.cookie(SESSION_COOKIE, signed.token, sessionCookieOptions(this.auth.secureCookies, ttl));
   }
 }

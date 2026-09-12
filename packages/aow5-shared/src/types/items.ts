@@ -274,6 +274,10 @@ export interface Meta {
   /** The abilities' own frozen table; spells encode indices into it. */
   abilityTableHash: string;
   abilityTableLength: number;
+  /** Maps a guide can be filed under, and their own frozen table. */
+  mapCount: number;
+  mapTableHash: string;
+  mapTableLength: number;
   languages: string[];
   icons: Record<IconSource, number>;
 }

@@ -1,0 +1,147 @@
+/**
+ * The thread under a build: a box to write in, then the conversation.
+ *
+ * Deliberately quieter than the loadout above it. The panels beside it are
+ * grids of game art competing for attention; this one is text, and the only
+ * things given colour are the count and the author names.
+ */
+
+/** The number beside the heading, in the panel's action slot. */
+.count {
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.signedOut {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.composer {
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+/*
+ * Vertical resize only. A textarea that can be dragged wider than its column
+ * pushes the panel out of the grid, and the height is the dimension anybody
+ * actually wants more of.
+ */
+.box {
+  resize: vertical;
+  min-height: 76px;
+  line-height: 1.6;
+}
+
+.composerActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-2);
+}
+
+.empty {
+  padding: var(--space-4) 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.item {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+}
+
+.item + .item {
+  border-top: 1px solid var(--border);
+}
+
+/** A deleted comment keeps its place, so the thread still reads in order. */
+.itemGone {
+  opacity: 0.6;
+}
+
+.itemBody {
+  min-width: 0;
+  flex: 1;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.nickname {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.edited {
+  font-style: italic;
+}
+
+/*
+ * `pre-wrap` so paragraph breaks survive, `anywhere` so a pasted URL cannot
+ * push the panel wider than its column. The two together are what make an
+ * arbitrary block of somebody else's text safe to lay out.
+ */
+.text {
+  margin-top: var(--space-1);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.gone {
+  margin-top: var(--space-1);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.editor {
+  margin-top: var(--space-2);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.error {
+  margin-top: var(--space-1);
+  font-size: 12px;
+  color: var(--danger);
+}
+
+/**
+ * A comment of your own that a moderator has not let through yet.
+ *
+ * Dimmed rather than hidden, and marked down the edge, so it reads as "not up
+ * yet" instead of as posted — the whole point of showing it to its author is
+ * that they can see it exists and stop re-posting it.
+ */
+.itemPending {
+  opacity: 0.75;
+  border-left: 2px solid var(--border-strong);
+  padding-left: var(--space-3);
+}

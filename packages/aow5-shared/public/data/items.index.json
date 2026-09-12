@@ -1,7 +1,7 @@
 {
-"generatedAt":"2026-08-23T14:09:24.371Z",
-"idTableHash":"7ac3938710c5631018d8edeb50bed71ddeae5c4d622604b411a86072a528e118",
-"idTableLength":1812,
+"generatedAt":"2026-09-02T06:49:02.859Z",
+"idTableHash":"f650ed39f8ee1459e03d981f7fc3a53bc3a32c52ce2b9fb8531f501e0fa7091e",
+"idTableLength":1821,
 "schema":1,
 "rows":[
 [0,"item_0099","equip",5,2,640,"occult_bracelet.png",50],
@@ -1490,7 +1490,7 @@
 [1590,"item_pet_cat_sly","equip",5,4,10000,"pet_005.png",40],
 [1591,"item_s_0099","stone",5,9,20002,"icon_m50_03.png",32],
 [1592,"item_s_0102","stone",5,9,20001,"icon_m50_03.png",32],
-[1593,"item_s_0168","stone",5,9,20003,"icon_m50_03.png",32],
+[1593,"item_s_0168","stone",4,9,20003,"icon_m50_03.png",32],
 [1594,"item_s_0175","stone",5,9,20003,"icon_m50_03.png",32],
 [1595,"item_s_0195","stone",5,9,20006,"icon_m50_03.png",32],
 [1596,"item_s_0200","stone",6,9,20008,"icon_m50_03.png",32],
@@ -1506,7 +1506,7 @@
 [1606,"item_s_0225","stone",5,9,20003,"icon_m50_03.png",32],
 [1607,"item_s_0231","stone",5,9,20002,"icon_m50_03.png",32],
 [1608,"item_s_0238","stone",6,9,20004,"icon_m50_03.png",32],
-[1609,"item_s_0240","stone",5,9,20003,"icon_m50_03.png",32],
+[1609,"item_s_0240","stone",4,9,20003,"icon_m50_03.png",32],
 [1610,"item_s_0250","stone",5,9,20003,"icon_m50_03.png",32],
 [1611,"item_s_0255","stone",6,9,20004,"icon_m50_03.png",32],
 [1612,"item_s_0266","stone",5,9,20001,"icon_m50_03.png",32],
@@ -1577,7 +1577,7 @@
 [1677,"item_s_0444","stone",5,9,20004,"icon_m50_03.png",32],
 [1678,"item_s_0445","stone",5,9,20006,"icon_m50_03.png",32],
 [1679,"item_s_0453","stone",5,9,20005,"icon_m50_03.png",32],
-[1680,"item_s_0456","stone",5,9,20003,"icon_m50_03.png",32],
+[1680,"item_s_0456","stone",4,9,20003,"icon_m50_03.png",32],
 [1681,"item_s_0459","stone",5,9,20004,"icon_m50_03.png",32],
 [1682,"item_s_0460","stone",5,9,20004,"icon_m50_03.png",32],
 [1683,"item_s_0461","stone",5,9,20004,"icon_m50_03.png",32],
@@ -1706,6 +1706,15 @@
 [1808,"item_G316_4","gem",6,8,9600,"icon_fs_6__07.png",36],
 [1809,"item_G408","gem",3,3,600,"rune_20.png",36],
 [1810,"item_G408_2","gem",4,4,1600,"rune_20.png",36],
-[1811,"item_G408_3","gem",5,5,4000,"rune_20.png",36]
+[1811,"item_G408_3","gem",5,5,4000,"rune_20.png",36],
+[1812,"item_0323","equip",5,5,10000,"icon_eq600_06.png",34],
+[1813,"item_G409","gem",3,3,600,"rune_17.png",36],
+[1814,"item_G409_2","gem",4,4,1600,"rune_17.png",36],
+[1815,"item_G409_3","gem",5,5,4000,"rune_17.png",36],
+[1816,"item_M541","material",4,1,0,"item_magic_tower_coin.png",32],
+[1817,"item_MK001","material",1,1,0,"magic_tower_key_yellow.png",32],
+[1818,"item_MK002","material",1,1,0,"magic_tower_key_blue.png",32],
+[1819,"item_MK003","material",1,1,0,"magic_tower_key_red.png",32],
+[1820,"item_MK004","material",1,1,0,"aegis.png",32]
 ]
 }

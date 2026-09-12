@@ -182,6 +182,17 @@ export const ru: Messages = {
     } as Record<RunOutcome, string>,
   },
 
+  presence: {
+    app: 'AOW5 Tools',
+    betweenRooms: 'Между комнатами',
+    tier: (level: number) => `Т${level}`,
+    // Сокращения вместо слов: строка читается мельком и в чужом профиле.
+    room: (elapsed: string, gold: string) => `${elapsed} · ${gold} золота`,
+    session: (goldPerHour: string, elapsed: string) => `${goldPerHour} золота/ч · ${elapsed}`,
+    myBuild: 'Мой билд',
+    builder: 'Открыть билдер',
+    getTracker: 'Скачать трекер',
+  },
   settings: {
     prices: {
       title: 'Цены предметов',
@@ -307,6 +318,17 @@ export const ru: Messages = {
       autoResume: 'Запускать часы на первой комнате',
       autoResumeHint:
         'Сессия начинается на паузе, чтобы трекер мог висеть открытым, пока грузится Dota, и это не считалось фармом. С этой галочкой вход в комнату нажимает «play» за вас. Пауза, поставленная посреди сессии, всё равно держится до следующей комнаты.',
+    },
+    presence: {
+      title: 'Discord',
+      blurb:
+        'Показывает в профиле Discord, чем занята сессия: комнату и скорость, а между комнатами — число забегов и среднее время. С таймером и двумя ссылками. Список лута — никогда.',
+      enabled: 'Публиковать в Discord',
+      enabledHint:
+        'Включено по умолчанию. Нужен запущенный десктопный Discord и включённый в его настройках доступ к активности. Выключите — статус пропадёт сразу.',
+      build: 'Ваш билд',
+      buildHint: 'Станет первой кнопкой. Оставьте пустым — кнопка поведёт в билдер.',
+      buildPlaceholder: 'https://aow5tools.boardshub.io/builds/…',
     },
     cards: {
       title: 'Карточки HUD',

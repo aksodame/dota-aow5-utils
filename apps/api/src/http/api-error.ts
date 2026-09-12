@@ -18,12 +18,12 @@ const STATUS: Record<ApiErrorCode, number> = {
   BUILD_LIMIT_REACHED: 409,
   RATE_LIMITED: 429,
   DUPLICATE_COMMENT: 409,
-  SELF_VOTE: 403,
+  SELF_LIKE: 403,
   PAYLOAD_INVALID: 422,
   PAYLOAD_TOO_LARGE: 413,
-  INVALID_CREDENTIALS: 401,
-  NICKNAME_TAKEN: 409,
-  CAPTCHA_FAILED: 400,
+  // 502, not 401: this is not "your credentials were wrong" — there are no
+  // credentials — it is "the identity provider did not answer, or said no".
+  STEAM_AUTH_FAILED: 502,
   INTERNAL: 500,
 };
 
