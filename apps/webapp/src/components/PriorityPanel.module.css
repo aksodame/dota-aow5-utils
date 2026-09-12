@@ -82,7 +82,7 @@
   width: 20px;
   height: 20px;
   overflow: hidden;
-  background: rgb(0 0 0 / 0.35);
+  background: var(--well);
   border: 2px solid var(--tile-rarity, var(--border-strong));
   border-radius: var(--radius-sm);
 }
@@ -199,7 +199,7 @@
  * group boundary.
  */
 .row:nth-child(odd of .row) {
-  background: rgb(255 255 255 / 0.02);
+  background: var(--wash-0);
 }
 
 /**
@@ -318,6 +318,16 @@
 .marks {
   grid-area: marks;
   display: flex;
+  /*
+   * Wrapping, because these two carry words and the words are translated. "Fixed
+   * Enhanced" is 14 characters and "Фиксированная Усиленная" is 23 — so a card
+   * wide enough for the row in English is not wide enough for the same row in
+   * Russian, and the overflow went under the card's edge rather than out of it,
+   * where `Panel` clips. The fold below is what should normally catch this; this
+   * is what catches the language the fold was not measured in.
+   */
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 2px;
 }
 
@@ -467,6 +477,66 @@
   margin: var(--space-2) var(--space-1) 0;
   color: var(--text-dim);
   font-size: 12px;
+}
+
+/**
+ * The editor's row folds first, and at nearly half again the width.
+ *
+ * Read and write are not the same row. A reader's target is a span; an author's
+ * is a `<select>` with a word in it, and the two marks beside it are buttons
+ * rather than badges — so the same card that comfortably holds five read-mode
+ * rows pushes an editable one out from under its own border. Two cards to a row
+ * in the editor's column is about 400 CSS pixels, which is exactly where this
+ * was landing.
+ *
+ * Scoped with `:not(.statsRead)` rather than split into two files: it is one
+ * grid with two shapes, and a reader who folded at 460px would be reading two
+ * lines per stat for no reason.
+ */
+@container (max-width: 460px) {
+  .stats:not(.statsRead) {
+    grid-template-columns: 1rem minmax(0, 1fr) auto auto;
+  }
+
+  .stats:not(.statsRead) .row {
+    grid-template-areas:
+      'rank name  marks move'
+      '.    range target target';
+    row-gap: 0;
+  }
+
+  .stats:not(.statsRead) .target {
+    width: auto;
+    justify-self: end;
+  }
+
+  /*
+   * And a reader's row too, in Russian and only in Russian.
+   *
+   * Where the row stops fitting is a fact about the words in it. `Фиксированная`
+   * and `Усиленная` are about 150 pixels of badge where `Fixed`/`Enhanced` and
+   * 固定属性/强化属性 are about 90 — sixty pixels the other two languages never
+   * ask for, which is enough to push a read-mode row out of a card on a large
+   * phone. English and Chinese readers keep the single line down to 340px,
+   * below.
+   *
+   * `:lang(ru)` rather than a class from the component: the language is already
+   * on `<html>` — `AppData` writes it there so the browser hyphenates and a
+   * screen reader pronounces the Russian copy as Russian — and this is the same
+   * kind of statement, a rule about what a language's words measure.
+   *
+   * `.targetRead` needs nothing here: unlike the editor's `<select>` it is a
+   * span that already sits at its own width, hard against the right edge.
+   */
+  .statsRead:lang(ru) {
+    grid-template-columns: 1rem minmax(0, 1fr) auto;
+  }
+
+  .statsRead:lang(ru) .row {
+    grid-template-areas:
+      'rank name  marks'
+      '.    range target';
+  }
 }
 
 /*

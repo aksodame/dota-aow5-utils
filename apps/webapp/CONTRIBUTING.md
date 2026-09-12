@@ -76,9 +76,16 @@ decoding, and a PR that violates one will be sent back:
   map names are **not** in there: those come from the game's own localisation through `aow5-shared`, and a
   second copy would be a second place to be wrong.
 - **Both themes, always.** Light and dark share one set of CSS custom properties in `src/styles.css`; check
-  your change in both. Dark is the default and lives on bare `:root`, so only light carries a class — which
-  means a half-loaded page is dark rather than white. Item rarity tints are variables for exactly this
-  reason: the dark palette's pastels are unreadable on white.
+  your change in both. Dark is the default and lives on bare `:root`, so only light carries an attribute
+  (`:root[data-theme='light']`) — which means a half-loaded page is dark rather than white. Item rarity tints
+  are variables for exactly this reason: the dark palette's pastels are unreadable on white.
+- **The game's hover card has its own palette.** `ItemCard.module.css` owns `--card-*` and restates the set
+  for light; add to that block rather than reaching for the site's tokens inside it, and give anything you add
+  both themes.
+- **A hover state is a wash, not a colour.** `--wash-0` to `--wash-3` are white films in dark and black ones
+  in light; a literal `rgb(255 255 255 / 0.06)` is invisible on a white panel. The same goes for `--scrim`,
+  `--well`, `--sheen` and `--art-scrim` — anything whose job is to lift or cover a surface rather than to
+  be a colour.
 - **Colours come from a token.** If the value you want is not in `styles.css`, add it there rather than
   naming a colour inside a module.
 - **The kit knows nothing about builds.** `src/ui/` is presentational; anything that understands a loadout

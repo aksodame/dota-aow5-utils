@@ -30,6 +30,18 @@ import { SEO_STRINGS, type SeoLang } from './strings.ts';
  * ends a sentence with an ellipsis somebody else chose.
  */
 export const TITLE_BUDGET = 60;
+/**
+ * How much of the author's title an embed gets.
+ *
+ * Wider than the search budget and spent on one thing. A search result is a
+ * line of text where the brand has to survive the cut, so `TITLE_BUDGET` pays
+ * for the brand out of the same sixty characters; a Discord or Slack card draws
+ * the site name on a line of its own above the title and the facts underneath
+ * it, so both are already there and the title's whole job is to be the author's
+ * sentence. Discord wraps its title over two lines at roughly this width and
+ * cuts what does not fit — which is what "— Фант…" was.
+ */
+export const SOCIAL_TITLE_BUDGET = 90;
 export const DESCRIPTION_BUDGET = 155;
 
 /** The facts a build's own page, card and description are written from. */
@@ -80,6 +92,17 @@ export interface PageMeta {
   lang: SeoLang;
   /** The full `<title>`, brand included. */
   title: string;
+  /**
+   * The title an OpenGraph card shows, which is not the same string.
+   *
+   * `title` is written for a search result, where the brand and the hero have
+   * to ride along because nothing else on the line says them. A card says them
+   * elsewhere — `og:site_name` is drawn above the title and the facts are the
+   * first sentence of the description — so repeating them here spends the one
+   * line the reader actually reads on things already on screen, and pushes the
+   * author's own words out of it.
+   */
+  socialTitle: string;
   description: string;
   /** The site-root-relative path this page canonicalises to. Never carries a query. */
   path: string;
@@ -107,9 +130,28 @@ export interface PageMeta {
 /** The default card, drawn by the API and shared by every route but a build's. */
 export const SITE_CARD = '/api/og/site.png';
 
-/** A build's own card. */
-export function buildCardPath(slug: string): string {
-  return `/api/og/builds/${slug}.png`;
+/**
+ * A build's own card, at a URL that changes when the card does.
+ *
+ * The version is `updated_at`, and it is in the **path** rather than only in the
+ * server's cache key — which is where it used to be alone, and that was a
+ * promise the server could not keep. The response says
+ * `max-age=31536000, immutable`, every cache between here and a reader believes
+ * it, and the bytes at that address quietly became different ones the moment an
+ * author fixed a typo. The old picture then outlived the edit everywhere it had
+ * already been shared: Discord's CDN, a browser, a proxy.
+ *
+ * With the version here the two agree. An edit produces a *different* address,
+ * so anything that re-reads the page gets a picture it has never seen, and the
+ * old address keeps the old picture for as long as anybody still points at it —
+ * which is exactly what `immutable` is for.
+ *
+ * The version is optional because links already shared do not have one, and
+ * those URLs still have to answer; see the route, which drops `immutable` for
+ * them because for them it would still be a lie.
+ */
+export function buildCardPath(slug: string, version?: number): string {
+  return version === undefined ? `/api/og/builds/${slug}.png` : `/api/og/builds/${slug}.${version}.png`;
 }
 
 /**
@@ -175,6 +217,24 @@ export function buildTitle(build: BuildFacts, lang: SeoLang): string {
 }
 
 /**
+ * The same build, titled for a card rather than for a search result.
+ *
+ * The author's words and nothing else. Everything `buildTitle` appends — the
+ * hero, the tier, the brand — is drawn by the card itself: `og:site_name` is a
+ * line above this one, and `buildDescription` opens with the fact line. An
+ * embed that spends its title on them shows the reader "Фантом Ассасин ·
+ * Событие — Сборки AOW5" twice and the guide's name once, truncated.
+ *
+ * Still clamped. A title is author-written and there is no upper bound on what
+ * somebody will type; the cut simply happens later here than in a search result.
+ */
+export function buildSocialTitle(build: BuildFacts, lang: SeoLang): string {
+  const strings = SEO_STRINGS[lang];
+  const own = oneLine(build.title) === '' ? strings.untitled : oneLine(build.title);
+  return clampWidth(own, SOCIAL_TITLE_BUDGET);
+}
+
+/**
  * A build's description: the facts, then as much of the author's notes as fit.
  *
  * The facts come first deliberately. A reader scanning a search result or a
@@ -213,9 +273,10 @@ export function pageMeta(target: MetaTarget, lang: SeoLang, base = '/'): PageMet
     return {
       ...common,
       title: buildTitle(build, lang),
+      socialTitle: buildSocialTitle(build, lang),
       description: buildDescription(build, lang),
       path: at(`builds/${build.slug}`),
-      image: buildCardPath(build.slug),
+      image: buildCardPath(build.slug, build.updatedAt),
       imageAlt: `${strings.cardAlt}: ${oneLine(build.title) || strings.untitled}`,
       type: 'article',
       noindex: false,
@@ -233,6 +294,7 @@ export function pageMeta(target: MetaTarget, lang: SeoLang, base = '/'): PageMet
       return {
         ...site,
         title: `${strings.untitled}${strings.sep}${strings.brand}`,
+        socialTitle: strings.untitled,
         description: strings.routes.build.description,
         path: at(`builds/${target.slug}`),
         // A page that has nothing on it should not be in an index, and this one
@@ -243,6 +305,7 @@ export function pageMeta(target: MetaTarget, lang: SeoLang, base = '/'): PageMet
       return {
         ...site,
         title: `${strings.brand}${strings.sep}${strings.routes.browse.title}`,
+        socialTitle: strings.routes.browse.title,
         description: strings.routes.browse.description,
         path: base,
         noindex: false,
@@ -251,6 +314,7 @@ export function pageMeta(target: MetaTarget, lang: SeoLang, base = '/'): PageMet
       return {
         ...site,
         title: `${strings.routes.tracker.title}${strings.sep}${strings.brand}`,
+        socialTitle: strings.routes.tracker.title,
         description: strings.routes.tracker.description,
         path: at('tracker'),
         noindex: false,
@@ -262,6 +326,7 @@ export function pageMeta(target: MetaTarget, lang: SeoLang, base = '/'): PageMet
       return {
         ...site,
         title: `${route.title}${strings.sep}${strings.brand}`,
+        socialTitle: route.title,
         description: route.description,
         path: at(target.kind === 'mine' ? 'me' : target.kind),
         noindex: true,

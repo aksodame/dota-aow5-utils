@@ -721,22 +721,25 @@ export function EditorPage() {
                 </Fieldset>
               )}
 
-              <Field label={strings.editor.notes} hint={strings.editor.notesHint} value={body} max={MAX_BODY}>
-                {({ id }) => (
-                  <Textarea
-                    id={id}
-                    value={body}
-                    maxLength={MAX_BODY}
-                    // Disabled rather than accepting text that has nowhere to
-                    // go: a box that takes what you type and drops it on the
-                    // next navigation is worse than one that says it is shut.
-                    disabled={me == null}
-                    onChange={(e) => setBody(e.target.value)}
-                  />
-                )}
-              </Field>
-              {/* The board travels in a link; the writing about it does not. */}
-              <p className={styles.disclaimer}>{strings.editor.notShared}</p>
+              {/*
+                Left out signed out rather than shown shut.
+
+                Notes ride on a saved build and nowhere else, so without an
+                account the box has nowhere to put what you type. A disabled
+                field still reads as part of the form and still takes up the
+                room; the notice at the head of the form says where it went.
+              */}
+              {me != null && (
+                <>
+                  <Field label={strings.editor.notes} hint={strings.editor.notesHint} value={body} max={MAX_BODY}>
+                    {({ id }) => (
+                      <Textarea id={id} value={body} maxLength={MAX_BODY} onChange={(e) => setBody(e.target.value)} />
+                    )}
+                  </Field>
+                  {/* The board travels in a link; the writing about it does not. */}
+                  <p className={styles.disclaimer}>{strings.editor.notShared}</p>
+                </>
+              )}
 
               <Field label={strings.editor.referral} hint={strings.editor.referralHint} value={referral} max={MAX_REFERRAL}>
                 {({ id }) => (
@@ -825,9 +828,11 @@ export function EditorPage() {
             costs. This is about the six items on the board beside it, one card
             each, and it is the only part of the editor whose shape is decided
             by the loadout rather than by the form. It saves with the build and
-            travels in no link, which is what the notice under the notes says.
+            travels in no link, which is what the notice under the notes says —
+            so, like the notes, it is absent signed out rather than shown with
+            its controls dead.
           */}
-          <PriorityPanel slots={prioritySlots(state)} value={priority} onChange={setPriority} />
+          {me != null && <PriorityPanel slots={prioritySlots(state)} value={priority} onChange={setPriority} />}
         </div>
       </div>
 

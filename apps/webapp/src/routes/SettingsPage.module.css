@@ -116,6 +116,43 @@
   text-align: right;
 }
 
+/* --- the preferences ------------------------------------------------------- */
+
+/**
+ * Two rows, each a name and its control.
+ *
+ * A grid rather than two flex rows, so the language flags and the theme buttons
+ * start at the same x — the controls are different widths and different heights,
+ * and left-aligning them is what keeps the panel a list of settings rather than
+ * two unrelated widgets.
+ */
+.prefs {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-1);
+}
+
+.pref {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.prefName {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+/* Stacked on a phone, where 120px of label leaves the buttons no room. */
+@media (max-width: 520px) {
+  .pref {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+}
+
 /* --- the moderation queue -------------------------------------------------- */
 
 .empty {

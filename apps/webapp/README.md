@@ -17,7 +17,7 @@ VITE_BASE=/dota-aow5-utils/ pnpm --filter aow5-utils-webapp build   # for a proj
 
 | `/edit` | The editor, with the loadout in the fragment. `?slug=` opens it on a build you own. |
 | `/view` | The same fragment, read-only: a loadout somebody shared as a link, with what the codec says about it. |
-| `/settings` | The language, for anybody. Signed in: your name, which providers vouch for you, signing out, and — for an admin — the comment queue. |
+| `/settings` | The language and the theme, for anybody. Signed in: your name, which providers vouch for you, signing out, and — for an admin — the comment queue. |
 | `/tracker` | The farm tracker's download and its one piece of setup — switched off behind `REBUILDING` while the page is rebuilt, showing one line and a link to the old site. |
 
 The tracker itself is **not** here — it is an Electron app in `apps/tracker`, and this app may not
@@ -52,8 +52,15 @@ Rules for adding to it:
 - A component in `src/ui/` knows nothing about builds. Anything that does goes in `src/components/`.
 - Colours come from a token. If a value is not in `styles.css`, add it there rather than naming a colour in
   a module.
-- Dark is the default and lives on bare `:root`; only light is marked with a class. An unstyled or
-  half-loaded page is therefore dark, which is the one that matches the game.
+- Dark is the default and lives on bare `:root`; light is a block of overrides under
+  `:root[data-theme='light']`. An unstyled or half-loaded page is therefore dark, which is the one that
+  matches the game. The snippet at the top of `index.html` writes that attribute from `localStorage` before
+  the first paint — `src/lib/theme.ts` owns the key and the attribute name, and the snippet is written
+  against them — so nobody who chose light watches the dark palette paint first.
+- The in-game hover card keeps its *own* palette rather than the site's — `ItemCard` declares `--card-*`
+  tokens on `.card` and restates them for light — because it is a picture of the game's tooltip and the site's
+  accent must not repaint the game's furniture. It follows the theme all the same: a black slab floating over
+  a white page was the one thing worse than the wrong accent.
 
 ## Routing, and why it is a hundred lines
 
@@ -89,7 +96,7 @@ and back.
 account avatar used to sit at its right-hand end too, which made it half navigation and half account panel;
 both are on `/settings` now — a tab like any other, open to anybody. Signing *in* stays in the bar because it
 is not a place you go, it is what stands between a visitor and every action on the site; signing out is the
-opposite, and lives on the page about you. Signed out, `/settings` is the language and nothing else.
+opposite, and lives on the page about you. Signed out, `/settings` is the two preferences and nothing else.
 
 **Every page gets the same chrome, the build page included.** It was the one exception for a while, on the
 argument that a row of tabs over something somebody wrote to be read is an invitation to leave before

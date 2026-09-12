@@ -221,7 +221,9 @@ export function ItemPicker({ open, accepts, currentId, onSelect, onClear, onClos
           {focused === undefined ? (
             <p className={styles.empty}>{strings.editor.pickItem}</p>
           ) : (
-            <ItemCard item={focused} />
+            <div className={styles.paneCard}>
+              <ItemCard item={focused} />
+            </div>
           )}
         </div>
       </div>

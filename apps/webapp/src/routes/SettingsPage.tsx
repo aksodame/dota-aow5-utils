@@ -5,6 +5,7 @@ import { useApp } from '@/data/AppData';
 import type { PendingCommentDto } from 'aow5-api-contract';
 import { approveComment, authProviders, linkUrl, pendingComments } from '@/builds/api';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { buildPath, Link } from '@/router';
 import styles from './SettingsPage.module.css';
 
@@ -12,7 +13,7 @@ type External = 'steam' | 'discord';
 const EXTERNAL: External[] = ['steam', 'discord'];
 
 /**
- * The account: which providers vouch for you, and the language.
+ * The account: which providers vouch for you, and the two preferences.
  *
  * Linking is the whole feature. An account with no provider linked can do
  * everything else on the site — write builds, publish them, comment — and the
@@ -23,7 +24,7 @@ const EXTERNAL: External[] = ['steam', 'discord'];
  * settings for an account you do not have is a screen with nothing on it.
  */
 export function SettingsPage() {
-  const { strings, me, lang, setLang } = useApp();
+  const { strings, me, lang, setLang, theme, setTheme } = useApp();
 
   const [available, setAvailable] = useState<AuthProvider[] | null>(null);
 
@@ -84,27 +85,49 @@ export function SettingsPage() {
    * `undefined` is "not known yet", `null` is "nobody" — and nobody is a
    * perfectly good visitor here.
    *
-   * This page is where the language lives now that the top bar is tabs only,
-   * so it cannot be an account-only screen: somebody who has never signed in
-   * still has a language to set. What they do not get is an account panel for
-   * an account they do not have.
+   * This page is where the language and the theme live now that the top bar is
+   * tabs only, so it cannot be an account-only screen: somebody who has never
+   * signed in still has both to set. What they do not get is an account panel
+   * for an account they do not have.
    */
   if (me === undefined) return <Loading label={strings.common.loading} />;
 
   /*
-   * Signed out, this page is the language and nothing else.
+   * The two preferences, as one panel used by both renders below.
+   *
+   * They belong together because they are the same kind of thing — a choice
+   * about this browser rather than about an account — and because the signed-out
+   * version of this page is *only* this panel. Written once so the two cannot
+   * end up offering different settings.
+   */
+  const preferences = (
+    <Panel title={strings.common.appearance}>
+      <div className={styles.prefs}>
+        <div className={styles.pref}>
+          <span className={styles.prefName}>{strings.common.language}</span>
+          <LanguageSwitcher active={lang} onSelect={setLang} label={strings.common.language} />
+        </div>
+        <div className={styles.pref}>
+          <span className={styles.prefName}>{strings.common.theme}</span>
+          <ThemeSwitcher
+            active={theme}
+            onSelect={setTheme}
+            label={strings.common.theme}
+            labels={{ dark: strings.common.themeDark, light: strings.common.themeLight }}
+          />
+        </div>
+      </div>
+    </Panel>
+  );
+
+  /*
+   * Signed out, this page is the two preferences and nothing else.
    *
    * No sign-in panel: the top bar carries that button, and a second one here
    * would be the same decision offered twice on the same screen.
    */
   if (me === null) {
-    return (
-      <div className={styles.page}>
-        <Panel title={strings.common.language}>
-          <LanguageSwitcher active={lang} onSelect={setLang} label={strings.common.language} />
-        </Panel>
-      </div>
-    );
+    return <div className={styles.page}>{preferences}</div>;
   }
 
   const linked = new Set(me.providers);
@@ -194,11 +217,9 @@ export function SettingsPage() {
 
       {me.isAdmin && <ModerationQueue />}
 
-      <Panel title={strings.common.language}>
-        {/* The same control as the top bar's, because it is the same
-            preference — this is where somebody goes looking for it. */}
-        <LanguageSwitcher active={lang} onSelect={setLang} label={strings.common.language} />
-      </Panel>
+      {/* Last, under the account: the palette and the language are what
+          somebody changes once, and the reason they came here is linking. */}
+      {preferences}
     </div>
   );
 }

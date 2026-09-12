@@ -5,12 +5,20 @@
  * type scale and the spacing rhythm as custom properties, and every component
  * reads them rather than naming a colour.
  *
- * **There is one theme.** A light palette lived here and was reachable from a
- * toggle nobody asked for: the game is dark, the artwork is dark, the reference
- * this site is built from is dark, and a second palette was a second set of
- * contrast decisions to get right for every rarity tint and every scrim. It is
- * gone rather than hidden, so nothing here has to stay double-checked against a
- * theme that is never seen.
+ * **There are two themes, and dark is the one the site is designed in.** The
+ * game is dark, the artwork is dark, and the reference this was built from is
+ * dark — so the dark palette is the plain `:root` declaration, and light is a
+ * set of overrides under `:root[data-theme='light']`. A page that has not yet
+ * been told which theme it is in is therefore the dark one, which is the right
+ * way round: the failure mode is the intended look, not a white flash.
+ *
+ * The light palette is not the dark one lightened. Every contrast decision is
+ * made again here — the rarity tints in particular, because the dark palette's
+ * pastels are unreadable on white — and the rule for adding to it is that a
+ * component names a token and never a colour, so a new surface gets both
+ * themes for free. What deliberately does *not* follow the theme is the
+ * in-game hover card: `ItemCard` and `SpellCard` are pictures of the game's own
+ * tooltip and pin their own dark palette, rarity tints included.
  *
  * There is no utility framework here. The previous site carried Tailwind, a
  * shadcn component set and Radix beneath it, which is a reasonable trade when
@@ -45,6 +53,22 @@
   /* Panels in the reference are near-black on blue, not tinted blue. */
   --panel: #0a0d18;
   --panel-raised: #131829;
+  /*
+   * The panel under a cursor.
+   *
+   * **Not `--panel-raised`**, which is what it used to be and which moved the
+   * wrong way. `--panel` sits on the *far* side of the page background — darker
+   * than it here, lighter than it in the light theme — so one step "up" the
+   * surface ramp walks the button across the page's own colour and out the other
+   * side. On screen that reads as the button dissolving into the page at the
+   * moment it is pointed at, which is the opposite of what a hover is for.
+   *
+   * This goes further out instead: deeper here, and in light there is nowhere
+   * past white to go, so the lift there comes from the border and the shadow the
+   * hover rule adds. More contrast than the resting state in both, which is all
+   * a hover has to be.
+   */
+  --panel-hover: #06090f;
 
   --text: #eef3ff;
   --text-muted: #9dadd0;
@@ -119,6 +143,62 @@
   --q6: #ff5c7a;
   --q7: #ffd94a;
 
+  /*
+   * The four washes, which are what a hover, a zebra stripe and a selected row
+   * are made of.
+   *
+   * They exist as tokens because they are the one family of colours that has to
+   * *invert* between the themes rather than shift: a white film lifts a surface
+   * away from a dark page and does nothing at all on a light one. Numbered by
+   * weight rather than named by use, so a component asks for "one step up" the
+   * way it asks the blue ramp for one.
+   */
+  --wash-0: rgb(255 255 255 / 0.02);
+  --wash-1: rgb(255 255 255 / 0.045);
+  --wash-2: rgb(255 255 255 / 0.07);
+  --wash-3: rgb(255 255 255 / 0.1);
+
+  /* The sweep that crosses a loading skeleton. Lighter than the bone it moves
+     over in dark, darker than it in light — the same inversion as the washes. */
+  --sheen: rgb(255 255 255 / 0.07);
+
+  /* The well an icon sits in when it is smaller than its frame: the priority
+     card's 20px art, and anywhere else a rarity ring holds a picture. */
+  --well: rgb(0 0 0 / 0.35);
+
+  /*
+   * What makes a label readable on top of the game's own artwork: the wash over
+   * a room's painting, and the shadow under the name on it.
+   *
+   * A whole gradient in a token, which is unusual and is the point — the *stops*
+   * are the theme decision, not the opacity. A dark scrim under dark text is the
+   * one combination that cannot be rescued by a component, and it is exactly
+   * what a light page gets if the scrim is a literal and the text is `--text`.
+   */
+  --art-scrim: linear-gradient(90deg, rgb(5 8 20 / 0.85) 30%, rgb(5 8 20 / 0.35) 100%);
+  --art-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+
+  /* Behind a modal. Deeper than a wash because it has to separate two layers
+     rather than lift one. */
+  --scrim: rgb(3 6 16 / 0.72);
+
+  /*
+   * The inverted pill: the active tab, and anything else that reads as the
+   * page's colours swapped. In dark that is the text colour as a fill with a
+   * deep blue label; in light it is a near-black fill with a near-white one, so
+   * the control keeps meaning "this one" rather than changing shape per theme.
+   */
+  --invert-bg: var(--text);
+  --invert-ink: var(--blue-700);
+
+  /*
+   * The lit corner behind everything. Two radial glows over `--surface`, named
+   * here because the light theme's are a different pair of blues rather than
+   * the same ones at a different opacity — see `body` below.
+   */
+  --glow-1: var(--blue-700);
+  --glow-2: var(--blue-800);
+
   --radius-sm: 4px;
   --radius: 8px;
   --radius-lg: 14px;
@@ -153,8 +233,124 @@
   --build-row-h: 76px;
   --build-row-gap: 2px;
 
-  /* The only scheme. See the note at the top of this file. */
+  /* The default, and what a page with no stored choice paints in. */
   color-scheme: dark;
+}
+
+/**
+ * Light.
+ *
+ * Only what changes: the ramps, the surfaces, the semantic colours and the four
+ * washes. Everything structural — the spacing rhythm, the radii, the type
+ * scale, the row heights — is stated once above and is not a theme decision.
+ *
+ * `[data-theme]` on the root rather than a class, set by the snippet in
+ * `index.html` before first paint and by `src/lib/theme.ts` thereafter. An
+ * attribute because the same snippet has to write the `theme-color` meta tag
+ * beside it, and reading one attribute back is simpler than reading a class
+ * list.
+ */
+:root[data-theme='light'] {
+  /*
+   * The blue ramp, re-pointed. A higher number still means "further from the
+   * background", which on a white page means darker rather than lighter — so
+   * every component that asked for one step up keeps meaning it.
+   */
+  --blue-900: #dbe6fb;
+  --blue-800: #c9d9f7;
+  --blue-700: #a9c3f0;
+  --blue-600: #6f9ae4;
+  --blue-500: #3f75d4;
+  --blue-400: #2a5cb8;
+  --blue-300: #1e4894;
+
+  --ink-900: #ffffff;
+  --ink-800: #eef2fa;
+  --ink-700: #e3e9f6;
+  --ink-600: #d6deef;
+  --ink-500: #c3cee5;
+
+  --surface: var(--ink-800);
+  --surface-raised: var(--ink-900);
+  --surface-sunken: var(--ink-700);
+  /* The panel is the *lightest* surface here, for the same reason it is the
+     darkest one in dark: it has to read as the thing you are looking at. */
+  --panel: #ffffff;
+  --panel-raised: #f4f7fd;
+  /* Already at the end of the ramp: white is as far from this page as a surface
+     gets, so hovering holds it there and lets the border and shadow do the rest.
+     Anything darker is a step back towards the page — the old bug, mirrored. */
+  --panel-hover: #ffffff;
+
+  --text: #0d1630;
+  --text-muted: #4b5b7d;
+  --text-dim: #68789c;
+
+  /*
+   * The same hue, three lightness stops down: 0.65 on near-black is 5.8:1, and
+   * the identical colour on white is 2.6:1 — a link nobody over thirty can
+   * read. `--accent-ink` flips with it, because a white label belongs on this
+   * blue and a dark one belonged on the other.
+   */
+  --accent: oklch(0.52 0.17 258);
+  --accent-strong: oklch(0.45 0.17 258);
+  --accent-ink: #ffffff;
+
+  --accent-2: oklch(0.52 0.1 195);
+  --accent-2-ink: #ffffff;
+
+  --like: var(--accent);
+  /* Gold at its dark-theme lightness is a pale yellow on white. This is the
+     same coin, taken down to where a price is legible as text. */
+  --gold: #9a6b06;
+  --danger: #c62b2b;
+  --ok: #1a7f46;
+
+  --border: #d3dcee;
+  --border-strong: #b0bfdc;
+
+  /* The rarity ramp, re-picked rather than darkened: the grades have to stay
+     as far apart from each other here as they are on black. */
+  --q1: #6b7789;
+  --q2: #15803d;
+  --q3: #1d4ed8;
+  --q4: #7c3aed;
+  --q5: #c2410c;
+  --q6: #be123c;
+  --q7: #a16207;
+
+  /* Black films, and a touch heavier than the white ones: the eye reads a dark
+     film on white as fainter than a light film on black at the same alpha. */
+  --wash-0: rgb(13 22 48 / 0.025);
+  --wash-1: rgb(13 22 48 / 0.04);
+  --wash-2: rgb(13 22 48 / 0.06);
+  --wash-3: rgb(13 22 48 / 0.1);
+
+  --sheen: rgb(255 255 255 / 0.65);
+  --well: rgb(13 22 48 / 0.08);
+  --scrim: rgb(13 22 48 / 0.45);
+
+  /* Paper over the painting rather than ink: same job, opposite direction. */
+  --art-scrim: linear-gradient(90deg, rgb(238 242 250 / 0.92) 30%, rgb(238 242 250 / 0.5) 100%);
+  --art-shadow: 0 1px 2px rgb(255 255 255 / 0.9);
+
+  --invert-bg: #16213f;
+  --invert-ink: #f2f6ff;
+
+  /* Pale enough to be a wash of light rather than a blue page. */
+  --glow-1: #cfe0ff;
+  --glow-2: #dfe9ff;
+
+  /*
+   * Softer and cooler than the dark theme's. A 0.35 black shadow under a white
+   * card reads as dirt; the depth on a light page comes from the border doing
+   * more of the work and the shadow less.
+   */
+  --shadow-1: 0 1px 2px rgb(13 22 48 / 0.08);
+  --shadow-2: 0 6px 20px rgb(13 22 48 / 0.1);
+  --shadow-3: 0 18px 48px rgb(13 22 48 / 0.18);
+
+  color-scheme: light;
 }
 
 *,
@@ -199,8 +395,8 @@ body {
    * on a gradient. Fixed, so it does not slide as the list scrolls.
    */
   background:
-    radial-gradient(1200px 800px at 12% -10%, var(--blue-700) 0%, transparent 62%),
-    radial-gradient(900px 700px at 110% 0%, var(--blue-800) 0%, transparent 55%),
+    radial-gradient(1200px 800px at 12% -10%, var(--glow-1) 0%, transparent 62%),
+    radial-gradient(900px 700px at 110% 0%, var(--glow-2) 0%, transparent 55%),
     var(--surface);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;

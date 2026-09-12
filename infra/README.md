@@ -218,6 +218,34 @@ Caddy then obtains a **real Let's Encrypt certificate automatically**. `duckdns.
 Suffix List, so your subdomain gets its own rate-limit budget rather than sharing one with every other
 DuckDNS user.
 
+### Forcing a re-issue
+
+Caddy applies a **preference** at issuance, not at startup. `Caddyfile` asks for the chain rooted at
+`ISRG Root X1` — the compatible one, since the ECDSA default (`ISRG Root X2`) is missing from older trust
+stores and fails there with a certificate error — but a certificate already in the `caddy_data` volume keeps
+whatever chain it was fetched under. Changing that line and redeploying therefore changes nothing visible.
+
+Throw the stored one away and let Caddy ask again:
+
+```sh
+cd /srv/aow5/repo
+docker compose exec web sh -c 'rm -rf /data/caddy/certificates/*/'"$SITE_DOMAIN"'*'
+docker compose restart web
+docker compose logs -f web | grep -i certificate     # watch one arrive
+```
+
+Then check what is actually being served — the last line is the one that matters:
+
+```sh
+echo | openssl s_client -connect "$SITE_DOMAIN:443" -servername "$SITE_DOMAIN" 2>/dev/null \
+  | grep -E '^ [0-9] s:'
+```
+
+Let's Encrypt allows **five certificates a week for the same exact set of names**, so this is a few times,
+not a loop. If the chain still comes back under `Root YE`/`ISRG Root X2`, no cross-signed alternative is
+being offered for an ECDSA leaf — put `key_type rsa2048` in the Caddyfile's global options and re-issue
+again, which moves the leaf onto the RSA hierarchy that has always chained to `ISRG Root X1`.
+
 > **Rehearse the first issuance against staging.** Uncomment the `acme_ca` line in `Caddyfile`, deploy,
 > watch a certificate get issued, then comment it back out and redeploy. Production allows five failures
 > per hour and that is easy to burn while one firewall rule is still wrong.
@@ -309,10 +337,26 @@ Six steps, in this order:
 |---|---|
 | 1 | **The server.** Offers `ssh-copy-id` if key auth is not set up, and Docker's own installer if there is no Docker; then asks the box its public address and how much memory it has |
 | 2 | **The domain.** A name you manage, or a DuckDNS one — which it points at the server there and then, and offers to keep pointed with the refresh timer. The DuckDNS token comes from the encrypted store, or is asked for once and put there. Either way it checks the record resolves *here* before going further |
-| 3 | **The secrets.** Keeps the server's `/srv/aow5/.env` if it has one; otherwise sends `infra/.env.production`, or builds one by asking (Steam key, Discord pair, Freesound — all optional). Then sets `SITE_DOMAIN` and `ACME_EMAIL` to match this deploy |
+| 3 | **The secrets.** Lists the keys already in the server's `/srv/aow5/.env` and asks whether to keep it or rewrite it — enter keeps it. Rewriting sends `infra/.env.production` if there is one, otherwise re-asks each key with the server's current value as the default, so adding one key does not cost the others. With no file there it builds one (Steam key, Discord pair, Freesound — all optional). Then sets `SITE_DOMAIN` and `ACME_EMAIL` to match this deploy |
 | 4 | **The build, here.** `check-types`, `test` and `build` before the VPS spends five minutes discovering the same thing. `AOW5_SKIP_CHECKS=1` to skip |
 | 5 | **The code.** `git archive HEAD` over SSH — no `node_modules`, no local `.env`, no stray database. Offers the two systemd timers the first time. `AOW5_ALLOW_DIRTY=1` to ship uncommitted work |
 | 6 | **The images.** Either builds them here and streams them over, or runs the build on the box — see below. Then `deploy.sh` swaps, health-checks and prunes, output attached to your terminal |
+
+**The env file is the one thing a deploy can destroy and not restore**, so step 3 asks about it every run
+rather than remembering an answer. Enter keeps what is on the server — which is what every deploy that is
+only shipping code wants. Answer yes when the deployment has *gained* a key: the Discord pair is the case
+that found this, where a successful deploy either side of the change left a sign-in button that never
+appeared, because a file that already existed was never touched. The prompt lists which keys are in that
+file and marks the empty ones, since an empty value and a missing one are the same thing to `docker compose`
+and only one of them looks configured.
+
+Saying yes does not mean retyping the file. Each key is then offered in turn — `Steam Web API key — now
+****9999. Change it?` — and the default on every one of them is no, so a reissued key is two keystrokes and
+the three credentials you did not come to touch are never in a position to be typed over. A key answered
+yes is prompted for its new value, where blank clears it; the Discord secret is prompted without an echo,
+and clearing the id clears the secret with it, because the API treats a half-pair as no Discord at all.
+`AOW5_REPLACE_ENV=1` gives the same answer where there is nobody to ask, and needs an
+`infra/.env.production` (or `AOW5_LOCAL_ENV`) to send — there is nothing to offer key by key in a pipeline.
 
 **Where the images get built is a question about memory, and the script asks the server.** The webapp's
 Vite + two-pass-terser run over ~25 MB of committed icons peaks near 2 GB; the images it produces need under
@@ -336,6 +380,14 @@ per-provider key under its own name, reached by bare address, is neither — so 
 bare name is looked up in `~/.ssh`) and it is passed with `IdentitiesOnly`, which also keeps an agent
 holding several keys from tripping `MaxAuthTries` before the right one is offered. Blank means "whatever
 `ssh` already does", which is correct wherever `~/.ssh/config` answers it.
+
+**The names that are not the site** — `www`, and any domain this deployment used to answer on — get a block
+of their own in `Caddyfile` that 301s to `{$SITE_DOMAIN}`, with its own certificate, because a redirect
+behind a certificate the browser rejects is not a redirect. `redir` carries the path and the query; the
+fragment needs no carrying, since it never reaches a server and the browser re-attaches it to the target —
+which is what keeps every shared `#b=` loadout link alive across a move. The old name has to keep resolving
+here for that to work: for a DuckDNS one, that is the `duckdns.timer` on the server, which is why
+`DUCKDNS_SUBDOMAIN` stays in `deploy.env` after a move away from it.
 
 **Moving to a new machine or a new domain is that config file and nothing else.** Everything downstream —
 the certificate, the API's `SITE_ORIGIN`, the OpenID return URL — is derived from `SITE_DOMAIN`, so there is

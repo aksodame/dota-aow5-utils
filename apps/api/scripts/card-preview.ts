@@ -37,7 +37,26 @@ function encode(root: string, relative: string): string | null {
 
 const uri = (relative: string) => encode(assets, relative);
 const item = (name: string) => uri(`icons/items/${name}`);
+const ability = (name: string) => uri(`icons/abilities/${name}`);
 const LOGO = encode(brand, 'logotype.png');
+
+/**
+ * The wordmark's shape, measured the way `CardService.brandAspect` measures it.
+ *
+ * Read rather than assumed for the reason this script exists: a preview that
+ * draws the logo at a ratio the real card does not use is a preview that hides
+ * the one thing it is meant to show. Width and height are big-endian 32-bit
+ * integers at bytes 16 and 20 of a PNG.
+ */
+const LOGO_ASPECT = ((): number | null => {
+  try {
+    const head = readFileSync(join(brand, 'logotype.png')).subarray(0, 24);
+    if (head.toString('ascii', 12, 16) !== 'IHDR') return null;
+    return head.readUInt32BE(16) / head.readUInt32BE(20);
+  } catch {
+    return null;
+  }
+})();
 
 const SAMPLES: Array<{ name: string; model: CardModel }> = [
   {
@@ -45,9 +64,11 @@ const SAMPLES: Array<{ name: string; model: CardModel }> = [
     model: {
       lang: 'en',
       logo: LOGO,
+      logoAspect: LOGO_ASPECT,
       brand: 'AOW5 Builds',
       title: 'Frost-lock Axe, a 40k clear for the deep tiers',
       spell: "Berserker's Call",
+      spellIcon: ability('axe_berserkers_call.png'),
       tier: 'T6',
       facts: 'Axe \u00b7 Frozen Plain',
       price: '12.4k gold',
@@ -69,9 +90,11 @@ const SAMPLES: Array<{ name: string; model: CardModel }> = [
     model: {
       lang: 'zh',
       logo: LOGO,
+      logoAspect: LOGO_ASPECT,
       brand: 'AOW5 \u914d\u88c5',
       title: '\u51b0\u971c\u9501\u5b9a\u65a7\u738b\uff0c\u6df1\u5c42\u901a\u5173\u914d\u88c5\u4e0e\u88c5\u5907\u642d\u914d\u5b8c\u6574\u6307\u5357',
       spell: '\u72c2\u6218\u58eb\u4e4b\u543c',
+      spellIcon: ability('axe_berserkers_call.png'),
       tier: '\u6d3b\u52a8',
       facts: '\u65a7\u738b\u00b7\u51b0\u971c\u5e73\u539f',
       price: '12.4k \u91d1\u5e01',
@@ -86,6 +109,7 @@ const SAMPLES: Array<{ name: string; model: CardModel }> = [
     model: {
       lang: 'ru',
       logo: LOGO,
+      logoAspect: LOGO_ASPECT,
       brand: '\u0421\u0431\u043e\u0440\u043a\u0438 AOW5',
       title: '\u0421\u0431\u043e\u0440\u043a\u0430 \u0431\u0435\u0437 \u043d\u0430\u0437\u0432\u0430\u043d\u0438\u044f',
       spell: null,

@@ -6,10 +6,12 @@ import { getMe, signOut as postSignOut } from '@/builds/api';
 import { readSignedInHint, writeSignedInHint } from '@/lib/session';
 import { ItemDetailsProvider } from './ItemDetailsProvider';
 import { detectLang, storeLang, LANG_PARAM, STRINGS, type Lang, type Strings } from '@/i18n/strings';
+import { applyTheme, detectTheme, storeTheme, type Theme } from '@/lib/theme';
 
 /**
  * The three things every screen needs and none of them owns: the game data, the
- * viewer, and the language a visitor picks once for the site.
+ * viewer, and the two preferences — the language and the theme — a visitor picks
+ * once for the site.
  *
  * One context rather than three, because they are always read together and a
  * screen that has one without the others cannot render anyway. The game data is
@@ -21,6 +23,15 @@ interface AppData {
   lang: Lang;
   setLang: (lang: Lang) => void;
   strings: Strings;
+
+  /**
+   * The palette. Already applied to the document when a screen reads this —
+   * `index.html` put the stored choice on `<html>` before the first paint, and
+   * the effect below keeps the two in step — so nothing renders differently for
+   * it. It is here because the settings screen has to draw which one is on.
+   */
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 
   /** null while loading, then the extracted data for the active language. */
   core: CoreData | null;
@@ -63,6 +74,13 @@ export function useCore(): CoreData | null {
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => detectLang());
+  /*
+   * Read from storage rather than from the attribute the pre-paint snippet
+   * wrote. Both say the same thing on a normal load; the storage is the one that
+   * is still right if the snippet did not run at all, which is the case the
+   * snippet's own guard leaves open.
+   */
+  const [theme, setThemeState] = useState<Theme>(() => detectTheme());
   const [core, setCore] = useState<CoreData | null>(null);
   const [coreError, setCoreError] = useState<string | null>(null);
   const [me, setMe] = useState<MeUser | null | undefined>(undefined);
@@ -117,6 +135,19 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = lang;
   }, [lang]);
 
+  /*
+   * And the theme on the document, which is where every colour on the site
+   * actually comes from — React renders class names, and `styles.css` hangs the
+   * light palette off this attribute.
+   *
+   * An effect rather than a write inside `setTheme`, so the attribute is
+   * reconciled on mount too: that is what corrects a page whose pre-paint
+   * snippet was blocked, and it is idempotent when the snippet did run.
+   */
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
   const setLang = useCallback((next: Lang) => {
     setLangState(next);
     storeLang(next);
@@ -137,6 +168,16 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     } catch {
       // A URL this browser will not parse is not worth failing a click over.
     }
+  }, []);
+
+  /*
+   * Stored immediately, not on unload. Somebody who switches theme and closes
+   * the tab has made their choice, and a preference that only sticks if you
+   * keep browsing is a preference that looks broken.
+   */
+  const setTheme = useCallback((next: Theme) => {
+    setThemeState(next);
+    storeTheme(next);
   }, []);
 
   const refreshMe = useCallback(() => setMeNonce((n) => n + 1), []);
@@ -170,6 +211,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       lang,
       setLang,
       strings: STRINGS[lang],
+      theme,
+      setTheme,
       core,
       coreError,
       tables,
@@ -178,7 +221,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       refreshMe,
       signOut,
     }),
-    [lang, setLang, core, coreError, tables, me, signedInBefore, refreshMe, signOut],
+    [lang, setLang, theme, setTheme, core, coreError, tables, me, signedInBefore, refreshMe, signOut],
   );
 
   /*

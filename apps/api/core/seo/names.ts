@@ -78,6 +78,19 @@ const ITEM_ICONS: ReadonlyMap<string, string> = new Map(
   itemsIndex.rows.map((row) => [row[1] as string, row[6] as string]),
 );
 
+/**
+ * Ability id to icon filename, for the headline spell on a card.
+ *
+ * From `heroes.json`'s ability table, which is the same record the editor reads
+ * — so the picture beside the name on a card is the picture in the slot that
+ * named it, and neither can drift without the other.
+ */
+const ABILITY_ICONS: ReadonlyMap<string, string> = new Map(
+  Object.entries(heroes.abilities as Record<string, { icon?: string }>)
+    .filter((entry): entry is [string, { icon: string }] => typeof entry[1].icon === 'string')
+    .map(([id, ability]) => [id, ability.icon]),
+);
+
 export function heroName(heroId: string | null, lang: SeoLang): string | null {
   if (heroId === null) return null;
   const names = HERO_NAMES.get(heroId);
@@ -130,6 +143,11 @@ export function itemIconPath(itemId: string): string | null {
   return iconPath('items', ITEM_ICONS.get(itemId) ?? null);
 }
 
+/** The path to one ability's icon, or null when this deployment has no such ability. */
+export function abilityIconPath(abilityId: string): string | null {
+  return iconPath('abilities', ABILITY_ICONS.get(abilityId) ?? null);
+}
+
 /** The path to a hero's art, or null when the build names no hero. */
 export function heroIconPath(heroId: string | null): string | null {
   return iconPath('heroes', heroIcon(heroId));
@@ -177,11 +195,24 @@ export function decodeStored(payload: string): BuildState | null {
  * thinks of as the point of the build.
  */
 export function mainSpellName(state: BuildState | null, slot: string | null, lang: SeoLang): string | null {
+  const id = mainSpellId(state, slot);
+  return id === null ? null : abilityName(id, lang);
+}
+
+/**
+ * The headline ability's *id*, which is what a picture needs and a name does
+ * not.
+ *
+ * Split out rather than returning a pair, because the two callers want
+ * different halves at different moments: the description is built from facts
+ * and never loads an image, and the card wants both. The slot-to-ability join
+ * lives here either way.
+ */
+export function mainSpellId(state: BuildState | null, slot: string | null): string | null {
   if (state === null) return null;
   const key = slot ?? 'q';
   const at = ABILITY_SLOTS.indexOf(key as (typeof ABILITY_SLOTS)[number]);
   if (at < 0) return null;
   const value = state.spells[at];
-  if (value?.k !== 'id') return null;
-  return abilityName(value.id, lang);
+  return value?.k === 'id' ? value.id : null;
 }

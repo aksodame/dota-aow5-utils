@@ -24,7 +24,7 @@
  * locked and dimmed.
  */
 .dialog::backdrop {
-  background: rgb(3 6 16 / 0.72);
+  background: var(--scrim);
 }
 
 .wide {

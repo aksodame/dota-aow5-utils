@@ -131,6 +131,7 @@ export const Filters = memo(function Filters({ value, onChange }: FiltersProps) 
 
   return (
     <Panel
+      fill
       className={styles.panel}
       title={strings.filters.heading}
       action={isFiltered ? <span className={styles.count}>{value.maps.length || ''}</span> : undefined}

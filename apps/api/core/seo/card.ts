@@ -91,12 +91,35 @@ export interface CardModel {
   lang: SeoLang;
   /** The site's wordmark, small, in the corner. Null falls back to `brand` as text. */
   logo: string | null;
+  /**
+   * The wordmark's own width ÷ height, so the card can size it without knowing
+   * which file it is.
+   *
+   * It used to be a constant in the drawing code — `2392 / 420`, the dimensions
+   * of the file at the time — under a comment claiming that re-exporting the
+   * logo at a different size could not distort it. Re-exporting it at a
+   * different *shape* could, and did: the wordmark changed from 2392×420 to
+   * 2092×420 and every card would have drawn it 14% too wide. Measured from the
+   * PNG now; null falls back to the old ratio, which is only reachable when a
+   * caller supplies a logo it has not measured.
+   */
+  logoAspect?: number | null;
   /** The site's name. Only drawn when there is no wordmark to draw instead. */
   brand: string;
   /** The author's title. Wrapped to two lines here. */
   title: string;
   /** The headline ability's name, immediately under the title. */
   spell: string | null;
+  /**
+   * That ability's icon, drawn before its name.
+   *
+   * The one picture on this card that is not a thing you own — the portrait is
+   * the hero, the row is the gear, and this is what the build *does*. Worth the
+   * 38 pixels because an ability is recognised by its art long before its name
+   * is read, which is the same reason the editor draws the kit as icons with the
+   * key under them rather than as a list.
+   */
+  spellIcon?: string | null;
   /** `T6`, or the Event word. Drawn as the chip the build page uses. */
   tier: string | null;
   /** `Axe · Frozen Plain`. The tier and price are drawn in their own places. */
@@ -300,9 +323,9 @@ export function renderCard(model: CardModel): string {
    */
   if (model.logo !== null) {
     const LOGO_H = 40;
-    // The wordmark file is 2392×420. Kept as a ratio rather than a second
-    // constant so re-exporting it at a different size cannot distort it.
-    parts.push(image(model.logo, MARGIN, 48, LOGO_H * (2392 / 420), LOGO_H));
+    // Height is fixed and width follows the file's own aspect, so a wordmark
+    // re-exported at another size *or* another shape lands undistorted.
+    parts.push(image(model.logo, MARGIN, 48, LOGO_H * (model.logoAspect ?? 2392 / 420), LOGO_H));
   } else {
     parts.push(text(model.brand, { x: MARGIN, y: 78, size: 26, fill: MUTED, weight: 700, spacing: 0.8 }));
   }
@@ -346,9 +369,38 @@ export function renderCard(model: CardModel): string {
   const SPELL_SIZE = 30;
   if (model.spell !== null && model.spell !== '') {
     y += 52;
+    /*
+     * The icon, and the name shifted right to make room for it.
+     *
+     * Round, because that is how the site draws an ability everywhere else — a
+     * square one would read as a seventh item. Centred on the text's optical
+     * middle rather than on its baseline, which is where a 30px line actually
+     * looks centred.
+     *
+     * The clip path is emitted here rather than in `<defs>` at the top: it needs
+     * coordinates that are only known once the title has been wrapped, and an
+     * SVG resolves a `clipPath` by id wherever in the document it sits.
+     */
+    const ICON = 44;
+    const drawn = model.spellIcon !== null && model.spellIcon !== undefined && model.spellIcon !== '';
+    const iconY = y - 10 - ICON / 2;
+    const textX = drawn ? left + ICON + 14 : left;
+
+    if (drawn) {
+      parts.push(
+        `<clipPath id="spell"><circle cx="${left + ICON / 2}" cy="${iconY + ICON / 2}" r="${ICON / 2}" /></clipPath>`,
+        image(model.spellIcon as string, left, iconY, ICON, ICON, 'spell'),
+        // The ring the build page draws around the ability the author named as
+        // the headline. Same colour as the name beside it, so the two read as
+        // one statement rather than as a picture and a label.
+        `<circle cx="${left + ICON / 2}" cy="${iconY + ICON / 2}" r="${ICON / 2 - 1}" fill="none"` +
+          ` stroke="${ACCENT}" stroke-width="2" />`,
+      );
+    }
+
     parts.push(
-      text(clampWidth(model.spell, units(column, SPELL_SIZE)), {
-        x: left,
+      text(clampWidth(model.spell, units(column - (textX - left), SPELL_SIZE)), {
+        x: textX,
         y,
         size: SPELL_SIZE,
         fill: ACCENT,

@@ -76,7 +76,7 @@ test('every tag a scraper looks for is present on a build', () => {
 
 test('the image is absolute and carries its dimensions', () => {
   const html = buildDoc();
-  assert.ok(html.includes(`content="${ORIGIN}/api/og/builds/7kQm2.png"`), html);
+  assert.ok(html.includes(`content="${ORIGIN}/api/og/builds/7kQm2.${BUILD.updatedAt}.png"`), html);
   assert.ok(html.includes('property="og:image:width" content="1200"'));
   assert.ok(html.includes('property="og:image:height" content="630"'));
 });

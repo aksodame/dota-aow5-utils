@@ -99,12 +99,18 @@ export class SeoController {
   }
 
   /**
-   * One build's card.
+   * One build's card, at `<slug>.<updated_at>.png` or, for links shared before
+   * the version existed, at `<slug>.png`.
    *
    * The `.png` is part of the last segment rather than a route of its own,
    * because that is how it appears in `og:image` — several scrapers will not
    * fetch an image URL that does not end in an image extension, and at least
    * one refuses to cache one.
+   *
+   * **The version is not checked against the build.** It is a cache-buster, not
+   * an argument: whatever it says, this answers with the build's current card.
+   * Refusing a stale one would turn every link shared before an edit into a
+   * broken picture, which is the opposite of the point.
    */
   @Get('og/builds/:slug')
   @Throttle({ default: { ttl: 60_000, limit: 240 } })
@@ -114,7 +120,17 @@ export class SeoController {
     @Headers('accept-language') acceptLanguage: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const slug = param.endsWith('.png') ? param.slice(0, -4) : param;
+    const name = param.endsWith('.png') ? param.slice(0, -4) : param;
+    /*
+     * `<slug>.<version>` splits at the last dot, and only when what follows it
+     * is digits. A slug is `[A-Za-z0-9]` — `isSlug` is the authority — so there
+     * is no slug this can cut in half, and a name with no numeric tail is an
+     * old-style URL that is all slug.
+     */
+    const dot = name.lastIndexOf('.');
+    const tail = dot < 0 ? '' : name.slice(dot + 1);
+    const versioned = dot > 0 && tail !== '' && /^\d+$/.test(tail);
+    const slug = versioned ? name.slice(0, dot) : name;
     const chosen = pickLang(lang, acceptLanguage);
     const build = isSlug(slug) ? this.seo.findPublic(slug) : undefined;
 
@@ -131,7 +147,10 @@ export class SeoController {
       response,
       buildCardKey(build.slug, build.updatedAt, chosen),
       () => this.seo.cardFor(build, chosen),
-      true,
+      // Only a versioned URL may be called immutable. Without the version the
+      // address outlives the picture at it, which is how an edited build kept
+      // showing its old card wherever the link had already been posted.
+      versioned,
     );
   }
 
@@ -172,10 +191,11 @@ export class SeoController {
   /**
    * Renders or serves a card.
    *
-   * `immutable` is the difference between the two kinds. A build's card is
-   * keyed by `updated_at`, so that URL's bytes can never change and a year is
-   * safe; the site card is keyed by nothing and has to be allowed to go stale
-   * eventually, so it gets a day.
+   * `immutable` is the difference between the two kinds, and it is a claim about
+   * the **URL**, not about the cache key. A versioned build card can never
+   * change at its own address, so a year is safe there. Everything else — the
+   * site card, and a build card asked for without a version — has to be allowed
+   * to go stale, so it gets a day.
    */
   private async sendCard(
     response: Response,

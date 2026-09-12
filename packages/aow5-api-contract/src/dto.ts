@@ -49,8 +49,12 @@ export interface PublicUser {
   /** Full-size avatar URL from whichever provider supplied one, or `''`. */
   avatar: string;
   /**
-   * The provider profiles linked to the account, Steam first. Empty for an
-   * account with none — which is every local-only one.
+   * The provider profiles linked to the account, **oldest link first**. Empty
+   * for an account with none — which is every local-only one.
+   *
+   * The head of the list is the door the person signed up through, and it is
+   * the only one a name row draws — see `AuthorName`. The rest is here because
+   * it is true, not because a surface is obliged to render it.
    *
    * Public because the accounts themselves are: a Steam community profile and a
    * Discord user page are pages anybody can open, and "who wrote this guide"

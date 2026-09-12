@@ -14,6 +14,29 @@
  * peers, not predecessors.
  */
 
+/**
+ * What the renderer draws, as a number that changes when it changes.
+ *
+ * A card on disk is a *render*, not a fact about a build — and a cache key made
+ * only of facts cannot tell that the renderer has been fixed. That is not
+ * hypothetical: every card was once rendered with an empty font database, and
+ * the fix shipped, and every scrape kept serving the same wordless picture,
+ * because the build had not been edited and the key had not changed. Somebody
+ * had to know to delete the directory by hand.
+ *
+ * **Bump this whenever the output changes** — the layout, the palette, the font
+ * stack, the renderer's options. Old files are then a different generation and
+ * are evicted by `stale` the first time each build is scraped again.
+ *
+ * 2: fonts found by directory rather than through fontconfig, which is what put
+ * words back on the card.
+ * 3: the headline ability drawn as an icon before its name; the wordmark sized
+ * from the file rather than from a remembered ratio; and two item icons that
+ * resvg refused to decode, stripped of the two megabytes of metadata that made
+ * them undecodable — every card holding one had a black tile where the item was.
+ */
+export const CARD_VERSION = 3;
+
 export interface CardKey {
   /** The file, without its extension. Unique per build, version and language. */
   name: string;
@@ -33,7 +56,12 @@ export interface CardKey {
  * what everybody sees.
  */
 export function buildCardKey(slug: string, updatedAt: number, lang: string): CardKey {
-  return { name: `${slug}.${updatedAt}.${lang}`, family: slug, generation: `${slug}.${updatedAt}` };
+  // The version sits inside the generation rather than beside the language, so
+  // a renderer change supersedes the old files instead of accumulating beside
+  // them: `stale` evicts everything in the family that is not this generation,
+  // and the old version is exactly that.
+  const generation = `${slug}.${updatedAt}v${CARD_VERSION}`;
+  return { name: `${generation}.${lang}`, family: slug, generation };
 }
 
 /**
@@ -44,7 +72,13 @@ export function buildCardKey(slug: string, updatedAt: number, lang: string): Car
  * why its response is cached for a day rather than for a year.
  */
 export function siteCardKey(lang: string): CardKey {
-  return { name: `site.${lang}`, family: 'site', generation: 'site' };
+  // Versioned like a build's, and for the stronger reason: this card is keyed by
+  // nothing else at all, so without it a renderer fix could never reach the one
+  // picture every non-build page shares. Its generation carries the version too,
+  // which means a bump also evicts the previous version's files rather than
+  // leaving one orphan per language behind.
+  const generation = `site.v${CARD_VERSION}`;
+  return { name: `${generation}.${lang}`, family: 'site', generation };
 }
 
 /**

@@ -67,6 +67,43 @@
 
     <script>
       /*
+       * The theme, before anything paints.
+       *
+       * This has to be an inline script in the head and it has to run before the
+       * stylesheet paints, which is why it is duplicated logic rather than an
+       * import: `src/lib/theme.ts` is in the bundle, and the bundle arrives long
+       * after the first frame. Somebody who chose light would otherwise watch the
+       * dark palette paint and then get repainted on every single load.
+       *
+       * The contract with that file, which is the thing to keep in step:
+       * the key is `aow5.theme`, the values are `dark` and `light`, the attribute
+       * is `data-theme` on <html>, and the two meta tags below carry each theme's
+       * own `--surface`. Dark is written out rather than left implicit, so the
+       * document always states which theme is in force.
+       *
+       * No `prefers-color-scheme` fallback on purpose: the site is designed dark,
+       * so a visitor who has expressed no preference *here* gets the palette the
+       * artwork was made for rather than whatever their OS is set to.
+       */
+      (function () {
+        var theme = 'dark';
+        try {
+          var stored = localStorage.getItem('aow5.theme');
+          if (stored === 'light' || stored === 'dark') theme = stored;
+        } catch (e) {
+          // Storage blocked. Dark, as for a first visit.
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+        var surface = theme === 'light' ? '#eef2fa' : '#050a18';
+        var tint = document.querySelector('meta[name="theme-color"]');
+        if (tint) tint.setAttribute('content', surface);
+        var scheme = document.querySelector('meta[name="color-scheme"]');
+        if (scheme) scheme.setAttribute('content', theme);
+      })();
+    </script>
+
+    <script>
+      /*
        * Which shell the boot skeleton should draw, decided before anything paints.
        *
        * The skeleton below is static markup, but the chrome is not the same on
@@ -117,7 +154,8 @@
        * every value is `var(--token, <that token's value>)`: the token when
        * there is one, the literal for the moment in dev when there is not. If
        * you change one of these tokens in `styles.css`, change the fallback with
-       * it; they are collected in the block below so that is one edit.
+       * it; they are collected in the two blocks below — one per theme, since a
+       * literal can only be one palette's — so that is one edit each.
        */
       /*
        * The two lines of `styles.css`'s reset this cannot do without.
@@ -141,12 +179,31 @@
         --boot-line: var(--border, #26304d);
         --boot-panel: var(--panel, #0a0d18);
         --boot-sunken: var(--surface-sunken, #050a18);
+        --boot-bone: var(--wash-2, rgb(255 255 255 / 0.07));
+        --boot-sheen: var(--sheen, rgb(255 255 255 / 0.07));
         --boot-radius: var(--radius, 8px);
         --boot-radius-sm: var(--radius-sm, 4px);
         --boot-radius-lg: var(--radius-lg, 14px);
         --boot-topbar-h: var(--topbar-h, 60px);
         --boot-row-h: var(--build-row-h, 76px);
         --boot-row-gap: var(--build-row-gap, 2px);
+      }
+
+      /*
+       * The same four colours for the light theme, and only the colours.
+       *
+       * In a build these fallbacks are never used — `styles.css` is a
+       * render-blocking <link> by then and the tokens resolve — but in dev the
+       * stylesheet arrives with the module graph, and without this a visitor who
+       * chose light watched a dark skeleton for a moment. Sizes are not repeated
+       * here because they are not a theme decision.
+       */
+      html[data-theme='light'] #boot {
+        --boot-line: var(--border, #d3dcee);
+        --boot-panel: var(--panel, #ffffff);
+        --boot-sunken: var(--surface-sunken, #e3e9f6);
+        --boot-bone: var(--wash-2, rgb(13 22 48 / 0.06));
+        --boot-sheen: var(--sheen, rgb(255 255 255 / 0.65));
       }
 
       /*
@@ -189,7 +246,7 @@
       #boot .bootBone {
         position: relative;
         overflow: hidden;
-        background: rgb(255 255 255 / 0.06);
+        background: var(--boot-bone);
         border-radius: var(--boot-radius-sm);
       }
 
@@ -197,7 +254,7 @@
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.07), transparent);
+        background: linear-gradient(90deg, transparent, var(--boot-sheen), transparent);
         animation: bootSweep 1.4s ease-in-out infinite;
       }
 

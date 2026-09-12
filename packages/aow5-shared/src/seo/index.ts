@@ -15,6 +15,8 @@ export {
   buildDescription,
   buildFactLine,
   buildTitle,
+  buildSocialTitle,
+  SOCIAL_TITLE_BUDGET,
   pageMeta,
   type BuildFacts,
   type FactFields,

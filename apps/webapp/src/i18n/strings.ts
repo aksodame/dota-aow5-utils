@@ -432,7 +432,20 @@ export interface Strings {
     buildingHint: string;
     openOldSite: string;
   };
-  common: { loading: string; retry: string; cancel: string; close: string; language: string };
+  common: {
+    loading: string;
+    retry: string;
+    cancel: string;
+    close: string;
+    language: string;
+    /** The panel both preferences sit in. */
+    appearance: string;
+    /** The palette, and the two names for it. Everything else about the theme
+        is a colour rather than a word. */
+    theme: string;
+    themeDark: string;
+    themeLight: string;
+  };
 }
 
 const en: Strings = {
@@ -589,7 +602,7 @@ const en: Strings = {
     notesHint: 'How to play it, what to buy first, what to skip',
     notShared: 'A shared link does not carry this — save the build to keep it.',
     signedOutNotice:
-      'Notes are kept on a saved build, so writing them needs an account. Everything else works: build it, name a video, and share the link.',
+      'Notes and reforge priority are kept on a saved build, so they need an account. Everything else works: build it, name a video, and share the link.',
     hero: 'Hero',
     map: 'Map',
     pickMap: 'Pick a map',
@@ -727,6 +740,10 @@ const en: Strings = {
     cancel: 'Cancel',
     close: 'Close',
     language: 'Language',
+    appearance: 'Appearance',
+    theme: 'Theme',
+    themeDark: 'Dark',
+    themeLight: 'Light',
   },
 };
 
@@ -884,7 +901,7 @@ const ru: Strings = {
     notesHint: 'Как играть, что покупать первым, что пропустить',
     notShared: 'По ссылке это не передаётся — сохраните сборку, чтобы сохранить и это.',
     signedOutNotice:
-      'Заметки хранятся у сохранённой сборки, поэтому для них нужен аккаунт. Всё остальное работает: собирайте, указывайте видео и делитесь ссылкой.',
+      'Заметки и приоритет перековки хранятся у сохранённой сборки, поэтому для них нужен аккаунт. Всё остальное работает: собирайте, указывайте видео и делитесь ссылкой.',
     hero: 'Герой',
     map: 'Карта',
     pickMap: 'Выберите карту',
@@ -1023,6 +1040,10 @@ const ru: Strings = {
     cancel: 'Отмена',
     close: 'Закрыть',
     language: 'Язык',
+    appearance: 'Оформление',
+    theme: 'Тема',
+    themeDark: 'Тёмная',
+    themeLight: 'Светлая',
   },
 };
 
@@ -1179,7 +1200,7 @@ const zh: Strings = {
     notes: '说明',
     notesHint: '怎么玩、先买什么、跳过什么',
     notShared: '分享链接不会带上这部分——保存配装才能留住。',
-    signedOutNotice: '说明保存在已保存的配装上，因此撰写说明需要账号。其他一切照常：配好、填上视频，再分享链接。',
+    signedOutNotice: '说明与重铸优先级保存在已保存的配装上，因此需要账号。其他一切照常：配好、填上视频，再分享链接。',
     hero: '英雄',
     map: '地图',
     pickMap: '选择地图',
@@ -1315,6 +1336,10 @@ const zh: Strings = {
     cancel: '取消',
     close: '关闭',
     language: '语言',
+    appearance: '外观',
+    theme: '主题',
+    themeDark: '深色',
+    themeLight: '浅色',
   },
 };
 

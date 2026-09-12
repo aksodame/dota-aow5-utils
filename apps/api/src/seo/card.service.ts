@@ -69,14 +69,38 @@ export class CardService {
       fitTo: { mode: 'width', value: CARD_WIDTH },
       background: '#14120f',
       font: {
+        /*
+         * **`fontDirs` is what actually finds the fonts.** `loadSystemFonts`
+         * alone does not, and that is the bug this pair exists to fix: it asks
+         * *fontconfig* where the fonts are, and `node:22-bookworm-slim` — the
+         * runtime image — ships `fonts-noto-cjk` without shipping fontconfig. So
+         * the font files were right there on disk, the database came up empty,
+         * and every card rendered its pictures and dropped every line of text:
+         * no title, no tier, no price, in production and nowhere else. resvg
+         * said so twice per render ("No match for … font-family"), into a log
+         * level that was switched off.
+         *
+         * Naming the directory instead asks nobody: fontdb walks it and reads
+         * what is there. A path that does not exist is skipped, which is what
+         * makes the same list correct on a developer's macOS machine, where
+         * `loadSystemFonts` is the one that works and these three are absent.
+         * Both are on for that reason — neither is sufficient alone.
+         */
         loadSystemFonts: true,
+        fontDirs: ['/usr/share/fonts', '/usr/local/share/fonts', '/usr/share/fonts/opentype/noto'],
         defaultFontFamily: 'Noto Sans CJK SC',
         sansSerifFamily: 'Noto Sans CJK SC',
       },
       // Every `<image>` in the SVG is already a data: URI — see `renderCard`,
       // which takes its pictures pre-encoded — so the renderer resolves no
       // paths and needs no resources directory to resolve them against.
-      logLevel: 'off',
+      //
+      // `warn` rather than `off`. Off is what made a card with no text on it a
+      // silent success for as long as it took somebody to paste a link in
+      // Discord and look at the picture; resvg's warnings are the only thing
+      // that says a font-family matched nothing, and they cost one line on a
+      // render that is already wrong.
+      logLevel: 'warn',
     });
     return Buffer.from(resvg.render().asPng());
   }
@@ -95,6 +119,29 @@ export class CardService {
   /** The site's own artwork, from the other root. See `AppConfig.brandDir`. */
   async brand(relative: string): Promise<string | null> {
     return this.encode(this.config.brandDir, relative);
+  }
+
+  /**
+   * The wordmark's width ÷ height, read out of the file itself.
+   *
+   * A PNG says its size in the first chunk: an 8-byte signature, then `IHDR`,
+   * then width and height as big-endian 32-bit integers at bytes 16 and 20. No
+   * decoder needed, and nothing else in this file wants one.
+   *
+   * Null when the image is missing or is not a PNG — the card then falls back
+   * to the ratio it used to hardcode, which is the closest thing to a right
+   * answer available without the file.
+   */
+  async brandAspect(relative: string): Promise<number | null> {
+    const uri = await this.brand(relative);
+    if (uri === null) return null;
+    const base64 = uri.slice(uri.indexOf(',') + 1);
+    // 24 bytes is the signature plus the IHDR length, type, width and height.
+    const head = Buffer.from(base64.slice(0, 40), 'base64');
+    if (head.length < 24 || head.toString('ascii', 12, 16) !== 'IHDR') return null;
+    const width = head.readUInt32BE(16);
+    const height = head.readUInt32BE(20);
+    return height === 0 ? null : width / height;
   }
 
   private async encode(root: string, relative: string | null): Promise<string | null> {

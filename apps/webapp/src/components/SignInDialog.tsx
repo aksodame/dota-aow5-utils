@@ -185,13 +185,13 @@ export function SignInDialog({ open, onClose }: { open: boolean; onClose: () => 
           */}
           <div className={styles.providers}>
             {available.includes('steam') && (
-              <ButtonLink href="/api/auth/steam" block className={cx(styles.provider, styles.steam)}>
+              <ButtonLink href="/api/auth/steam" variant="plain" block className={cx(styles.provider, styles.steam)}>
                 <Icon.SteamMark size={18} />
                 {strings.auth.withSteam}
               </ButtonLink>
             )}
             {available.includes('discord') && (
-              <ButtonLink href="/api/auth/discord" block className={cx(styles.provider, styles.discord)}>
+              <ButtonLink href="/api/auth/discord" variant="plain" block className={cx(styles.provider, styles.discord)}>
                 <Icon.DiscordMark size={18} />
                 {strings.auth.withDiscord}
               </ButtonLink>

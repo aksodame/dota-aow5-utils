@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { BuildDetail } from 'aow5-api-contract';
 import { ApiFailure } from '@/lib/api';
 import { decodeBuild } from 'aow5-shared/codec';
+import { BUILD_VERSION_PARAM, buildShareUrl } from '@/lib/links';
 import { groupsInPanel, type SlotGroup } from 'aow5-shared/codec';
 import { goldIconUrl, heroIconUrl } from 'aow5-shared/data';
 import { Avatar, Badge, Button, Icon, Loading, Notice, Panel, cx } from '@/ui';
@@ -79,6 +80,30 @@ export function BuildPage({ slug }: { slug: string }) {
     return { kind: 'build' as const, build: factsOfBuild(build, core, decoded, lang) };
   }, [status, build, core, decoded, lang, slug]);
   useDocumentMeta(meta, lang);
+
+  /*
+   * The version, into the address bar.
+   *
+   * So that copying the URL out of the browser — which is what most people do
+   * instead of pressing the button below — carries it too. `replaceState`
+   * rather than a navigation, for the same reason `setLang` uses it: this is
+   * not a different page and Back should not have to step through it. Written
+   * directly rather than through the router, which would announce a navigation
+   * that has not happened.
+   *
+   * `?lang=` survives because the whole query is edited rather than replaced.
+   */
+  useEffect(() => {
+    if (build === null) return;
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get(BUILD_VERSION_PARAM) === String(build.updatedAt)) return;
+      url.searchParams.set(BUILD_VERSION_PARAM, String(build.updatedAt));
+      window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+    } catch {
+      // An address this browser will not parse is not worth failing a page over.
+    }
+  }, [build]);
 
   const copy = useCallback((what: 'link' | 'referral', text: string) => {
     void navigator.clipboard?.writeText(text);
@@ -239,7 +264,7 @@ export function BuildPage({ slug }: { slug: string }) {
               {build.liked ? strings.build.liked : strings.build.like} · {build.likeCount}
             </Button>
 
-            <Button onClick={() => copy('link', window.location.href)}>
+            <Button onClick={() => copy('link', buildShareUrl(window.location.href, build.updatedAt))}>
               <Icon.Copy size={16} />
               {copied === 'link' ? strings.build.copied : strings.build.share}
             </Button>

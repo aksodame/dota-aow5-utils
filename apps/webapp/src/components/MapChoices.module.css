@@ -66,11 +66,17 @@
   transition: opacity 120ms ease;
 }
 
-/* A wash so the name stays readable over any part of the painting. */
+/*
+ * A wash so the name stays readable over any part of the painting.
+ *
+ * The token, not the gradient: the name on top of this is `--text`, so a scrim
+ * that stayed dark in the light theme would be black lettering on a black band
+ * over a picture. Both directions of that pairing are decided in `styles.css`.
+ */
 .mapScrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgb(5 8 20 / 0.85) 30%, rgb(5 8 20 / 0.35) 100%);
+  background: var(--art-scrim);
 }
 
 .map:hover {
@@ -115,7 +121,7 @@
   color: var(--text);
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+  text-shadow: var(--art-shadow);
 }
 
 /** The tick, so selection is visible without relying on the border alone. */

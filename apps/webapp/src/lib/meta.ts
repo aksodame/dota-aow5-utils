@@ -118,13 +118,13 @@ export function applyMeta(meta: PageMeta): void {
   setMeta('property', 'og:site_name', meta.siteName);
   setMeta('property', 'og:type', meta.type);
   setMeta('property', 'og:url', url);
-  setMeta('property', 'og:title', meta.title);
+  setMeta('property', 'og:title', meta.socialTitle);
   setMeta('property', 'og:description', meta.description);
   setMeta('property', 'og:image', image);
   setMeta('property', 'og:image:alt', meta.imageAlt);
   setMeta('property', 'og:locale', OG_LOCALE[meta.lang]);
 
-  setMeta('name', 'twitter:title', meta.title);
+  setMeta('name', 'twitter:title', meta.socialTitle);
   setMeta('name', 'twitter:description', meta.description);
   setMeta('name', 'twitter:image', image);
   setMeta('name', 'twitter:image:alt', meta.imageAlt);

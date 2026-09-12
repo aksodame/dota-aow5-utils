@@ -150,8 +150,12 @@ step to forget. Note that drizzle-kit does not manage virtual tables or triggers
 hand-written migration, so an empty `db:generate` diff does not mean nothing changed.
 
 **A `PublicUser` carries where its owner can be read about.** `profiles` is a list of `{provider, url}` —
-`steamcommunity.com/profiles/<id>` and `discord.com/users/<id>`, Steam first — built from the same
-`identities` rows `verified` is derived from. A URL rather than the provider's id, because "open their
+`steamcommunity.com/profiles/<id>` and `discord.com/users/<id>`, **oldest link first** — built from the same
+`identities` rows `verified` is derived from. The head of that list is the door the person signed up
+through, and it is the only one a name row draws: whoever arrived through Discord and attached Steam later
+is their Discord account to everybody who knows them, and leading with Steam introduced them as somebody
+else. Ties on `created_at`, which is in seconds, fall back to a fixed provider order so that one author's
+marks never render in two different orders. A URL rather than the provider's id, because "open their
 profile" is the whole capability a reader needs and the id is the thing every other integration keys on.
 Carried on the summary like `verified`, so a browse page and a comment thread each cost one extra query for
 the whole page rather than one per name; a local-only account has an empty list and its name is plain text.

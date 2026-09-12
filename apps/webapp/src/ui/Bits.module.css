@@ -107,16 +107,18 @@
     color 120ms ease;
 }
 
+/* Same direction as the solid button's, and for the same reason. */
 .tab:hover {
   color: var(--text);
-  background: var(--panel-raised);
+  background: var(--panel-hover);
+  border-color: var(--border-strong);
 }
 
 .tabActive,
 .tabActive:hover {
-  background: var(--text);
-  border-color: var(--text);
-  color: var(--blue-700);
+  background: var(--invert-bg);
+  border-color: var(--invert-bg);
+  color: var(--invert-ink);
 }
 
 /* --- Spinner -------------------------------------------------------------- */

@@ -201,10 +201,36 @@ test('a linked account is somewhere a reader can go', () => {
 
   assert.deepEqual(profilesOf(db, user.id), [
     { provider: 'steam', url: 'https://steamcommunity.com/profiles/76561198012345678' },
-    // Steam first whatever order the rows come back in: it is the profile
-    // somebody reading a guide about a Steam game came looking for.
     { provider: 'discord', url: 'https://discord.com/users/310432161893580800' },
   ]);
+});
+
+test('the door somebody arrived through leads, whichever one it was', () => {
+  // The case the old Steam-first order got wrong. Somebody who signed up with
+  // Discord and attached Steam afterwards is their Discord account to everybody
+  // who knows them, and the name row has to introduce them as that.
+  const db = fixture();
+  const user = signInWithProvider(db, discord('310432161893580800'), NOW);
+  linkIdentity(db, user.id, steam('76561198012345678'), NOW + 3600);
+
+  assert.deepEqual(profilesOf(db, user.id), [
+    { provider: 'discord', url: 'https://discord.com/users/310432161893580800' },
+    { provider: 'steam', url: 'https://steamcommunity.com/profiles/76561198012345678' },
+  ]);
+});
+
+test('two links stamped the same second still order the same way every time', () => {
+  // `created_at` is seconds, so signing up and linking within one is a real
+  // tie — and an author whose marks moved between two renders of the same page
+  // would look like two different people.
+  const db = fixture();
+  const first = signInWithProvider(db, discord('310432161893580801'), NOW);
+  linkIdentity(db, first.id, steam('76561198000000002'), NOW);
+  const second = signInWithProvider(db, steam('76561198000000003'), NOW);
+  linkIdentity(db, second.id, discord('310432161893580802'), NOW);
+
+  assert.equal(profilesOf(db, first.id)[0]?.provider, 'steam');
+  assert.equal(profilesOf(db, second.id)[0]?.provider, 'steam');
 });
 
 test('an account with nothing linked has nowhere to point', () => {

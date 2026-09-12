@@ -17,10 +17,19 @@ import styles from './AuthorName.module.css';
  *
  * A name with a provider linked to it is a **link out to that profile**, in a
  * new tab. "Who wrote this" is the first question a reader of a guide has, and
- * a nickname here answers it only inside this site — a Steam profile is the
- * portable answer, and it is a page anybody can open anyway. Where an account
- * has both, the name goes to Steam and the second mark carries Discord, so
- * neither is unreachable.
+ * a nickname here answers it only inside this site — a provider profile is the
+ * portable answer, and it is a page anybody can open anyway.
+ *
+ * **One profile, even where an account has both.** It is the first one linked:
+ * the door somebody signed up through is the account they are known by, and it
+ * is the one they chose. Drawing the second mark beside it was an inventory of
+ * an author rather than an introduction to one — two marks read as a badge row
+ * and invited a comparison ("why has that one got both?") about a detail that
+ * says nothing about the guide. The other link is not lost, only not here: it
+ * is on their own settings screen, and a reader who wants it can find them
+ * through the profile this does point at. `profiles` still arrives whole from
+ * the API — which of it to show is this component's decision, not the shape of
+ * the data.
  */
 export function AuthorName({
   user,
@@ -45,7 +54,7 @@ export function AuthorName({
   plain?: boolean;
 }) {
   const { strings } = useApp();
-  const [primary, ...rest] = user.profiles;
+  const [primary] = user.profiles;
 
   return (
     <>
@@ -57,20 +66,6 @@ export function AuthorName({
           <Mark provider={primary.provider} />
         </ProfileAnchor>
       )}
-
-      {/*
-        Every other door, as its own mark.
-
-        Only ever the second one in practice — there are two providers — but
-        written as a list because that is what the field is, and a second `if`
-        the day a third provider appears is a second place to forget.
-      */}
-      {!plain &&
-        rest.map((profile) => (
-          <ProfileAnchor key={profile.provider} profile={profile} label={profileLabel(strings, profile)}>
-            <Mark provider={profile.provider} />
-          </ProfileAnchor>
-        ))}
 
       {!user.verified && (
         <Badge small title={strings.account.unverifiedHint}>

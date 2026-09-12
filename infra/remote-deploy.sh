@@ -25,6 +25,10 @@
 # error naming the variable, which is the only honest thing a script can do when
 # there is nobody to ask.
 #
+# **One question is asked every run and never remembered**: whether to keep the
+# env file already on the server or rewrite it. See step 3 for why that one
+# cannot be an answer on file.
+#
 # ## Credentials are the same deal, one passphrase down
 #
 # `deploy.env` holds targeting and nothing else. A secret it is asked for — the
@@ -525,12 +529,40 @@ fi
 
 ask ACME_EMAIL "Email for certificate expiry warnings"
 
+# The A records for a name, as whatever this machine has to look them up with.
+#
+# `getent ahostsv4` is the Linux answer and it is not a portable one: macOS
+# either has no `getent` at all or has one that does not know that database, and
+# what comes back is nothing — which reads here as "the domain does not resolve"
+# and stops a deploy whose DNS is perfectly correct. That is a bad failure: it
+# accuses the record, which is the one thing the operator just changed and now
+# has no reason to trust.
+#
+# So: `dig` first, because it asks DNS rather than the host's whole name
+# service; `host` second; `getent` last, for a Linux box with neither installed.
+# No tool at all is a *skip*, not a verdict — a missing `dig` is not evidence
+# about anybody's DNS.
+resolve_a() {
+  if command -v dig >/dev/null 2>&1; then
+    dig +short A "$1" 2>/dev/null | grep -E '^[0-9]+(\.[0-9]+){3}$' | sort -u
+  elif command -v host >/dev/null 2>&1; then
+    host -t A "$1" 2>/dev/null | awk '/has address/ {print $NF}' | sort -u
+  elif command -v getent >/dev/null 2>&1; then
+    getent ahostsv4 "$1" 2>/dev/null | awk '{print $1}' | sort -u
+  else
+    printf 'no-resolver\n'
+  fi
+}
+
 if [ -z "${AOW5_SKIP_DNS:-}" ]; then
   # Let's Encrypt allows five failures an hour and the challenge arrives over
   # the public name, so a wrong record is worth one lookup rather than a burnt
   # rate limit and a deploy that looks broken.
-  domain_ips="$(getent ahostsv4 "$SITE_DOMAIN" 2>/dev/null | awk '{print $1}' | sort -u || true)"
-  if [ -z "$domain_ips" ]; then
+  domain_ips="$(resolve_a "$SITE_DOMAIN" || true)"
+  if [ "$domain_ips" = 'no-resolver' ]; then
+    note "no dig, host or getent here — not checking the record"
+    domain_ips=''
+  elif [ -z "$domain_ips" ]; then
     die "$SITE_DOMAIN does not resolve yet. Add an A record for $SERVER_IP (or set AOW5_SKIP_DNS=1)."
   elif ! printf '%s\n' "$domain_ips" | grep -qx "$SERVER_IP"; then
     note "$SITE_DOMAIN resolves to $(printf '%s' "$domain_ips" | tr '\n' ' ')"
@@ -543,33 +575,172 @@ save_config
 save_secrets
 
 # --- 3. the secrets on the server ---------------------------------------------
+#
+# The one question this script asks on **every** run, and deliberately does not
+# remember.
+#
+# The env file on the server is the only state here that a deploy can destroy
+# and not restore: it holds keys that exist nowhere else once they have been
+# pasted. Keeping it is therefore the default and the safe answer, and it is
+# what every earlier version of this script did unconditionally.
+#
+# But "unconditionally" turned out to be a trap of its own: a key *added* to the
+# deployment — the Discord pair being the case that found this — never reached a
+# server that already had a file, and the symptom was a sign-in button that
+# simply never appeared, with a successful deploy either side of it. So the
+# answer is now asked for rather than assumed.
+#
+# It is not written to `deploy.env` like the rest, because a remembered
+# "replace" would quietly overwrite the server's secrets on every future
+# deploy — the one answer here that must be given deliberately each time. Enter
+# keeps what is there; `AOW5_REPLACE_ENV=1` is how a run with nobody to ask says
+# otherwise.
 
 step 3 "The server's env file"
 
+REPLACE_ENV=0
+REMOTE_ENV_EXISTS=0
 if ssh_to "test -f '$REMOTE_ENV'"; then
-  note "$REMOTE_ENV is already there — keeping it"
+  REMOTE_ENV_EXISTS=1
+  # Names only. The values are the point of the file and do not belong in a
+  # terminal scrollback, but which keys are *present* is exactly what somebody
+  # deciding this needs to see — a missing DISCORD_CLIENT_ID is the answer.
+  # A key present but empty is marked, because to `docker compose` it is the
+  # same as absent — `${DISCORD_CLIENT_ID:-}` resolves to nothing either way —
+  # and "it is in the file" is exactly the wrong conclusion to draw from a line
+  # that does nothing. `t` branches past the second expression so a blank key is
+  # printed once rather than by both.
+  note "$REMOTE_ENV is already there, holding: $(ssh_to "sed -n -e 's/^\\([A-Za-z_][A-Za-z0-9_]*\\)=[[:space:]]*\$/\\1(empty)/p' -e t -e 's/^\\([A-Za-z_][A-Za-z0-9_]*\\)=.*/\\1/p' '$REMOTE_ENV' | paste -sd' ' -")"
+
+  if [ -n "${AOW5_REPLACE_ENV:-}" ]; then
+    note "AOW5_REPLACE_ENV is set — rewriting it"
+    REPLACE_ENV=1
+  elif interactive && yes_no "Change a key in it? (enter keeps the file exactly as it is)" n; then
+    REPLACE_ENV=1
+  else
+    note "keeping it"
+  fi
 else
+  REPLACE_ENV=1
+fi
+
+if [ "$REPLACE_ENV" = 1 ]; then
+  # Where the temporary copies go, and the one place they are cleaned up. Both
+  # are whole files of secrets sitting in a temp directory for a moment, so both
+  # are 600 before anything is written into them.
+  CURRENT_ENV=''
+  BUILT_ENV=''
+  trap 'rm -f "$CURRENT_ENV" "$BUILT_ENV"' EXIT
+
   LOCAL_ENV="${AOW5_LOCAL_ENV:-infra/.env.production}"
   if [ -f "$LOCAL_ENV" ]; then
     note "sending $LOCAL_ENV"
   else
-    interactive || die "No $REMOTE_ENV on the server and no $LOCAL_ENV to send."
-    note "the server has none and there is no $LOCAL_ENV — building one now"
-    note "every key below is optional; press enter to skip one"
+    # Two different dead ends, and they need different instructions: one is a
+    # server with no secrets at all, the other is a deliberate replacement with
+    # nothing to replace it *with* — where the fix is to stop asking for one.
+    if [ "$REMOTE_ENV_EXISTS" = 1 ]; then
+      interactive || die "AOW5_REPLACE_ENV is set, there is no $LOCAL_ENV to send and nobody to ask. Unset it to keep $REMOTE_ENV."
+    else
+      interactive || die "No $REMOTE_ENV on the server and no $LOCAL_ENV to send."
+    fi
 
-    STEAM_API_KEY="${STEAM_API_KEY-}"
-    [ -n "$STEAM_API_KEY" ] || read -r -p "   Steam Web API key (names and avatars; sign-in works without it): " STEAM_API_KEY
-    DISCORD_CLIENT_ID="${DISCORD_CLIENT_ID-}"
-    [ -n "$DISCORD_CLIENT_ID" ] || read -r -p "   Discord client id (blank for no Discord sign-in): " DISCORD_CLIENT_ID
-    [ -z "$DISCORD_CLIENT_ID" ] || ask_secret DISCORD_CLIENT_SECRET "Discord client secret (not echoed)"
-    FREESOUND_TOKEN="${FREESOUND_TOKEN-}"
-    [ -n "$FREESOUND_TOKEN" ] || read -r -p "   Freesound token (the tracker's sound search): " FREESOUND_TOKEN
+    # What is on the server now, so that replacing it can mean *editing* it.
+    #
+    # Without this, "replace" is "retype every key you have ever set", and the
+    # first thing anybody does with a prompt like that is drop the token they
+    # could not find — which is the failure this whole step exists to avoid.
+    if [ "$REMOTE_ENV_EXISTS" = 1 ]; then
+      CURRENT_ENV="$(mktemp)"
+      chmod 600 "$CURRENT_ENV"
+      ssh_to "cat '$REMOTE_ENV'" > "$CURRENT_ENV"
+      note "rewriting it — each key is offered in turn; the default is to keep it"
+    else
+      note "the server has none and there is no $LOCAL_ENV — building one now"
+      note "every key below is optional; press enter to skip one"
+    fi
 
-    LOCAL_ENV="$(mktemp)"
-    # 600 before anything is written into it, and removed on the way out: this
-    # is the whole file of secrets, sitting in a temp directory for a moment.
-    chmod 600 "$LOCAL_ENV"
-    trap 'rm -f "$LOCAL_ENV"' EXIT
+    # The value a key has on the server right now, or empty. Last wins, matching
+    # what `docker compose` does with a repeated key.
+    current_env() {
+      [ -n "$CURRENT_ENV" ] || return 0
+      sed -n "s/^$1=//p" "$CURRENT_ENV" | tail -n 1
+    }
+
+    # Enough of a value to recognise it, and not enough to use it. The last four
+    # characters, the way a card number is shown: "is that the key I am
+    # replacing" is answerable from them, and nothing else is.
+    mask_tail() {
+      local value="$1"
+      [ -n "$value" ] || { printf 'not set'; return; }
+      if [ "${#value}" -le 4 ]; then printf '****'; else printf '****%s' "${value: -4}"; fi
+    }
+
+    # **Every key is offered, one at a time, and each one is a yes/no first.**
+    #
+    # Two earlier shapes were both wrong. Skipping any key that already had a
+    # value made "rewrite" mean "fill in the blanks" — and a key that is
+    # *replaced* rather than added has no blank to fill, so a reissued Steam key
+    # was silently kept under a deploy that reported success. Asking for every
+    # value with the old one as the default fixed that and introduced a worse
+    # thing: four live prompts over four working credentials, where one stray
+    # keystroke on the wrong line breaks sign-in for everybody.
+    #
+    # So the question is "change this one?" and the default is no. Nothing is
+    # typed over a key you are not there to change, and the one you came for is
+    # two keystrokes away. An exported value still wins and is not asked about at
+    # all, which is what keeps a one-off override on the command line working the
+    # way it does everywhere else in this script.
+    ask_kept() {
+      local var="$1" prompt="$2" current answer=''
+      if [ -n "${!var:-}" ]; then
+        note "$var: taken from the environment"
+        return 0
+      fi
+      current="$(current_env "$var")"
+      if ! yes_no "$prompt — now $(mask_tail "$current"). Change it?" n; then
+        export "$var=$current"
+        return 0
+      fi
+      read -r -p "   new value (blank clears it): " answer
+      export "$var=$(trim "$answer")"
+    }
+
+    # The same, with the value not echoed. Blank still clears, and here that is
+    # unambiguous rather than dangerous: it takes a deliberate yes to reach this
+    # prompt at all, so an empty line is an answer to a question that was asked,
+    # not a stray enter over a credential nobody was editing.
+    ask_kept_secret() {
+      local var="$1" prompt="$2" current answer=''
+      if [ -n "${!var:-}" ]; then
+        note "$var: taken from the environment"
+        return 0
+      fi
+      current="$(current_env "$var")"
+      if ! yes_no "$prompt — now $(mask_tail "$current"). Change it?" n; then
+        export "$var=$current"
+        return 0
+      fi
+      read -r -s -p "   new value, not echoed (blank clears it): " answer
+      printf '\n'
+      export "$var=$(trim "$answer")"
+    }
+
+    ask_kept STEAM_API_KEY "Steam Web API key (names and avatars; sign-in works without it)"
+    ask_kept DISCORD_CLIENT_ID "Discord client id (blank for no Discord sign-in)"
+    # Both or neither, which the API enforces its own way: an id with no secret
+    # is a button that always fails, so it treats the half-pair as no Discord at
+    # all. No id, no question — and no orphaned secret left in the file either.
+    if [ -n "$DISCORD_CLIENT_ID" ]; then
+      ask_kept_secret DISCORD_CLIENT_SECRET "Discord client secret (not echoed)"
+    else
+      DISCORD_CLIENT_SECRET=''
+    fi
+    ask_kept FREESOUND_TOKEN "Freesound token (the tracker's sound search)"
+
+    BUILT_ENV="$(mktemp)"
+    chmod 600 "$BUILT_ENV"
+    LOCAL_ENV="$BUILT_ENV"
     {
       echo "# Written by infra/remote-deploy.sh. See infra/.env.example for what each key is."
       echo "SITE_DOMAIN=$SITE_DOMAIN"

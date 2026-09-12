@@ -134,7 +134,7 @@ export function headTags(input: PrerenderInput): string[] {
     meta({ property: 'og:site_name', content: page.siteName }),
     meta({ property: 'og:type', content: page.type }),
     meta({ property: 'og:url', content: canonical }),
-    meta({ property: 'og:title', content: page.title }),
+    meta({ property: 'og:title', content: page.socialTitle }),
     meta({ property: 'og:description', content: page.description }),
     meta({ property: 'og:image', content: image }),
     // Spelled out because several scrapers reserve the layout box before they
@@ -161,7 +161,7 @@ export function headTags(input: PrerenderInput): string[] {
     // `summary_large_image` rather than `summary`: the card is 1200×630 and the
     // small variant crops it to a square thumbnail, which cuts the title off.
     meta({ name: 'twitter:card', content: 'summary_large_image' }),
-    meta({ name: 'twitter:title', content: page.title }),
+    meta({ name: 'twitter:title', content: page.socialTitle }),
     meta({ name: 'twitter:description', content: page.description }),
     meta({ name: 'twitter:image', content: image }),
     meta({ name: 'twitter:image:alt', content: page.imageAlt }),

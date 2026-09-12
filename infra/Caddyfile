@@ -19,7 +19,80 @@
 	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
 }
 
+# The certificate settings, as a snippet, because more than one site block needs
+# them: a redirect from the old name is useless behind a certificate the browser
+# will not accept, which is the failure the whole move is about.
+(letsencrypt) {
+	# Which chain the certificate arrives under.
+	#
+	# Caddy gets one from Let's Encrypt on its own and renews it forever; none of
+	# that needs configuring. What does need saying is the *chain*: an ECDSA leaf
+	# is offered under two of them, and the default — `ISRG Root X2` — is the
+	# newer ECDSA root. Recent machines trust it; a device whose root store
+	# predates it does not, and the symptom is "certificate error" on exactly the
+	# domain that verifies cleanly everywhere else, which is where this came from.
+	#
+	# `ISRG Root X1` is the RSA root that has been in every store for years, and
+	# Let's Encrypt cross-signs the ECDSA intermediate under it — so this asks for
+	# the compatible chain and keeps the ECDSA key and its cheaper handshake.
+	#
+	# Naming an issuer explicitly turns off Caddy's ZeroSSL fallback, so the email
+	# is restated here: the global one belongs to the default issuer this replaces.
+	#
+	# **A preference is applied at issuance, not at startup.** An existing
+	# certificate in the `caddy_data` volume keeps the chain it was fetched with,
+	# so this changes nothing until one is obtained — see infra/README.md for the
+	# two commands that throw the stored one away and make Caddy ask again. A name
+	# being served for the first time, which is what a domain move is, gets it
+	# right away.
+	tls {
+		issuer acme {
+			email {$ACME_EMAIL}
+			preferred_chains {
+				root_common_name "ISRG Root X1"
+			}
+		}
+	}
+}
+
+# --- the names that are not the site ------------------------------------------
+#
+# Everything that should end up at `{$SITE_DOMAIN}` and is not it: the two names
+# this site answered on before, and the `www` of the second one.
+#
+# **They are written out rather than configured**, because they are facts about
+# this deployment's history rather than settings — there is nothing to put in an
+# env file that would make them true somewhere else. Delete a line when its links
+# are dead. (A second deployment of this repo at another domain inherits them and
+# will fail ACME for names pointing at *this* machine: log noise on that machine,
+# nothing worse, and the fix is to delete them there.)
+#
+# `www.{$SITE_DOMAIN}` used to be here and is not any more: the site is a
+# subdomain now, `www.aow5tools.boardshub.io` is not a name anybody types, and a
+# name in this list that does not resolve is a certificate Caddy retries for
+# forever. The `www` that does exist is named explicitly below, like the rest.
+#
+# `aow5-helper.com` is a domain Valve's link filter blocks by keyword — which is
+# why the site is not on it any more — so it can redirect but must never be the
+# address anybody is sent to.
+#
+# `redir` with `{uri}` carries the path and the query. **The fragment comes
+# along on its own** — it is never sent to a server, and a browser re-attaches it
+# to the target of a redirect that has none. That is what keeps every shared
+# `#b=` loadout link working across the move, which is the reason this block
+# exists at all rather than letting the old name simply die.
+#
+# `permanent` — 301. The old name is being retired, so a cached redirect is the
+# intended outcome, and the sitemap and canonical URLs the API generates already
+# name the new origin.
+aow5-helper.com, www.aow5-helper.com, aow5-helper.duckdns.org {
+	import letsencrypt
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
+
 {$SITE_DOMAIN} {
+	import letsencrypt
+
 	encode zstd gzip
 
 	# The API first. A path prefix rather than a subdomain is the whole reason
@@ -181,12 +254,29 @@
 		# emits as a real file for exactly that reason; a `blob:` worker would
 		# need widening this and does not exist.
 		#
+		# The two hashes beside it are `index.html`'s inline scripts, and they are
+		# here because `'self'` does not cover an inline script — it is refused on
+		# the grounds of being inline, whatever origin served it. Both have to be
+		# inline: one picks the theme and one picks the boot skeleton's shape, and
+		# both have to run before the first paint, which an external file cannot do
+		# without a round trip in front of it. In order:
+		#
+		#   * `akX3…` is the boot-shape snippet
+		#   * `cpU9…` is the theme snippet
+		#
+		# **Neither is edited by hand.** The webapp's build hashes what it actually
+		# emitted, checks it against this line, and fails if a hash is missing —
+		# printing the replacement. So a snippet changed without this line changed
+		# breaks `pnpm build`, in CI and in `infra/webapp.Dockerfile`, rather than
+		# deploying a page whose theme silently never applies. Paste what it prints;
+		# do not reorder or hand-edit.
+		#
 		# `frame-src` is spelled out because without it a frame falls back to
 		# `default-src 'self'` and the player is a silent empty box. The nocookie
 		# host is the only one named: it is what both the tracker's setup video
 		# and a build's video panel embed, and the player pulls everything else
 		# from inside its own frame, where our policy does not reach.
-		Content-Security-Policy "default-src 'self'; img-src 'self' data: https://*.steamstatic.com https://cdn.discordapp.com https://i.ytimg.com; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.github.com; frame-src https://www.youtube-nocookie.com; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: https://*.steamstatic.com https://cdn.discordapp.com https://i.ytimg.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'sha256-akX3deukA1pPnoloh+y4Q0ZLgv3DaB76Kq4XbOSAf2s=' 'sha256-cpU9ZL5oWT1Lh9HR6NDFw4LhoPu3W7E1tcpQcxJ6PZc='; connect-src 'self' https://api.github.com; frame-src https://www.youtube-nocookie.com; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"

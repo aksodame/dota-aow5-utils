@@ -28,6 +28,8 @@ import {
   heroIconPath,
   heroName,
   itemIconPath,
+  abilityIconPath,
+  mainSpellId,
   mainSpellName,
   mapNames,
   mapScenePath,
@@ -159,31 +161,52 @@ export class SeoService {
       return value?.k === 'id' ? itemIconPath(value.id) : null;
     });
 
-    const [logo, portrait, background, gold, ...items] = await Promise.all([
+    // The ability the author called the headline, as a picture. The *id* rather
+    // than the name, which is why `mainSpellId` exists beside `mainSpellName`.
+    const spellId = mainSpellId(state, build.mainSpell);
+
+    const [logo, logoAspect, portrait, background, gold, spellIcon, ...items] = await Promise.all([
       this.cards.brand(LOGOTYPE),
+      this.cards.brandAspect(LOGOTYPE),
       this.cards.icon(heroIconPath(build.heroId)),
       this.cards.icon(sceneOf(mapIds)),
       this.cards.icon(build.price > 0 ? GOLD_COIN : null),
+      this.cards.icon(spellId === null ? null : abilityIconPath(spellId)),
       ...slots.map((path) => this.cards.icon(path)),
     ]);
 
     return {
       lang,
       logo,
+      logoAspect,
       brand: strings.brand,
       title: oneLine(build.title) === '' ? strings.untitled : oneLine(build.title),
       spell: facts.spell,
+      spellIcon,
       tier: build.tier === null ? null : tierLabel(build.tier, strings.event),
       /*
-       * The hero and the rooms, and nothing else.
+       * The rooms, and the hero only when there is no portrait.
        *
-       * The tier, the price and the headline ability are all drawn in their own
-       * places on the card, so including them here would print each of them
-       * twice. Rebuilt by zeroing those fields rather than by cutting the
-       * finished string apart, which would depend on how the separator is
-       * spelled and break the moment a language chose a different one.
+       * Everything else on this line is drawn somewhere else on the card — the
+       * tier is the chip beside it, the price is bottom right, the ability is
+       * the line above with its own icon — so including any of them here prints
+       * it twice. The hero is the same argument one step further: a 384-pixel
+       * portrait of Phantom Assassin is already the loudest thing on the card,
+       * and "T8 · Phantom Assassin" spends the fact line naming the picture.
+       *
+       * `portrait` rather than `heroId` is the condition, because the question
+       * is whether the reader can *see* the hero. A hero whose art is missing
+       * from this deployment draws no portrait, and then the name is the only
+       * thing that says who the build is for.
+       *
+       * Rebuilt by zeroing fields rather than by cutting the finished string
+       * apart, which would depend on how the separator is spelled and break the
+       * moment a language chose a different one.
        */
-      facts: buildFactLine({ ...facts, tier: null, price: 0, spell: null }, lang),
+      facts: buildFactLine(
+        { ...facts, hero: portrait === null ? facts.hero : null, tier: null, price: 0, spell: null },
+        lang,
+      ),
       price: build.price > 0 ? `${formatGold(build.price)} ${strings.gold}` : null,
       portrait,
       background,
@@ -195,8 +218,9 @@ export class SeoService {
   /** The site's own card, for every route that is not a build. */
   async siteCard(lang: SeoLang): Promise<CardModel> {
     const strings = SEO_STRINGS[lang];
-    const [logo, background] = await Promise.all([
+    const [logo, logoAspect, background] = await Promise.all([
       this.cards.brand(LOGOTYPE),
+      this.cards.brandAspect(LOGOTYPE),
       // A room scene as the backdrop, so the default card is not a bare
       // gradient. A fixed one: this image is cached under a single key and must
       // not change between two scrapes of the same URL.
@@ -205,6 +229,7 @@ export class SeoService {
     return {
       lang,
       logo,
+      logoAspect,
       brand: strings.brand,
       title: strings.routes.browse.title,
       spell: null,

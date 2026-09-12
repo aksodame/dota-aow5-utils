@@ -16,6 +16,19 @@ import styles from './Panel.module.css';
  * is a node. Widening it in place is what TypeScript refuses, and rightly.
  */
 interface PanelProps extends Omit<ComponentProps<'section'>, 'title'> {
+  /**
+   * The body takes what is left of a constrained panel, instead of the panel
+   * growing to fit the body.
+   *
+   * For a panel with a `max-height` whose content is meant to scroll inside it.
+   * A flex child's `min-height` is `auto`, so without this the body stays as
+   * tall as its content, the panel clips the difference — it hides its own
+   * overflow to keep its rounded corners — and the scroller inside never has
+   * anything to scroll. That is how the filter sidebar lost every control below
+   * the fold on a short window.
+   */
+  fill?: boolean;
+
   title?: ReactNode;
   /** Rendered at the far end of the header row. */
   action?: ReactNode;
@@ -39,6 +52,7 @@ export function Panel({
   title,
   action,
   flush = false,
+  fill = false,
   collapsible = false,
   open,
   defaultOpen = true,
@@ -59,7 +73,7 @@ export function Panel({
   };
 
   return (
-    <section className={cx(styles.panel, flush && styles.flush, className)} {...rest}>
+    <section className={cx(styles.panel, flush && styles.flush, fill && styles.fill, className)} {...rest}>
       {(title !== undefined || action !== undefined) && (
         <header className={styles.header}>
           {collapsible ? (
@@ -75,7 +89,7 @@ export function Panel({
           {action}
         </header>
       )}
-      {isOpen && <div className={styles.body}>{children}</div>}
+      {isOpen && <div className={cx(styles.body, fill && styles.fillBody)}>{children}</div>}
     </section>
   );
 }

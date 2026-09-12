@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SEO_LANGS, SEO_STRINGS } from './strings.ts';
-import { TITLE_BUDGET, buildFactLine, pageMeta, type BuildFacts } from './meta.ts';
+import { SOCIAL_TITLE_BUDGET, TITLE_BUDGET, buildCardPath, buildFactLine, pageMeta, type BuildFacts } from './meta.ts';
 import { formatGold } from '../format/gold.ts';
 import { textWidth } from './text.ts';
 
@@ -25,6 +25,40 @@ test('a build title leads with the author words and ends with the brand', () => 
   const meta = pageMeta({ kind: 'build', build: BUILD }, 'en');
   assert.ok(meta.title.startsWith('Frost-lock Axe'), meta.title);
   assert.ok(meta.title.endsWith('AOW5 Builds'), meta.title);
+});
+
+test('the card title is the author words and nothing else', () => {
+  // The brand is on `og:site_name` and the hero and tier open the description,
+  // so an embed that repeated them here would show each twice and truncate the
+  // one line nothing else says — which is what it did.
+  for (const lang of SEO_LANGS) {
+    const meta = pageMeta({ kind: 'build', build: BUILD }, lang);
+    assert.equal(meta.socialTitle, 'Frost-lock Axe', lang);
+    assert.ok(!meta.socialTitle.includes(SEO_STRINGS[lang].brand), lang);
+    assert.ok(!meta.socialTitle.includes('Axe ·'), lang);
+  }
+});
+
+test('a card title is still clamped, and to more than a search result gets', () => {
+  const long = { ...BUILD, title: 'Поздний яд-билд на башню, где важна только вторая половина пассивки и порядок покупки' };
+  const meta = pageMeta({ kind: 'build', build: long }, 'ru');
+  assert.ok(textWidth(meta.socialTitle) <= SOCIAL_TITLE_BUDGET, meta.socialTitle);
+  assert.ok(SOCIAL_TITLE_BUDGET > TITLE_BUDGET);
+  // And the clamp keeps more of the author than the search title does, which is
+  // the whole reason there are two budgets.
+  const searchHead = meta.title.split(' — ')[0] ?? '';
+  assert.ok(meta.socialTitle.length > searchHead.length, meta.socialTitle);
+});
+
+test('an untitled build still has a card title', () => {
+  const meta = pageMeta({ kind: 'build', build: { ...BUILD, title: '   ' } }, 'en');
+  assert.equal(meta.socialTitle, SEO_STRINGS.en.untitled);
+});
+
+test('a route that is not a build drops the brand from its card title too', () => {
+  const browse = pageMeta({ kind: 'browse' }, 'en');
+  assert.equal(browse.socialTitle, SEO_STRINGS.en.routes.browse.title);
+  assert.ok(browse.title.includes(SEO_STRINGS.en.brand), browse.title);
 });
 
 test('a title carries the hero and the tier, and leaves the rest to the description', () => {
@@ -92,7 +126,7 @@ test('newlines in the notes do not reach the description', () => {
 test('a build is an article, points at its own card, and is indexable', () => {
   const meta = pageMeta({ kind: 'build', build: BUILD }, 'en');
   assert.equal(meta.type, 'article');
-  assert.equal(meta.image, '/api/og/builds/7kQm2.png');
+  assert.equal(meta.image, `/api/og/builds/7kQm2.${BUILD.updatedAt}.png`);
   assert.equal(meta.path, '/builds/7kQm2');
   assert.equal(meta.noindex, false);
   assert.equal(meta.publishedAt, BUILD.publishedAt);
@@ -155,4 +189,23 @@ test('a price is written the compact way every other surface writes it', () => {
   assert.equal(formatGold(750), '750');
   assert.equal(formatGold(0), '0');
   assert.equal(formatGold(-5), '0');
+});
+
+
+test('an edit moves the card to a new address', () => {
+  // The whole reason the version is in the path: the response calls itself
+  // immutable, so the picture may only change by changing the URL. Keyed on
+  // `updated_at` rather than on a hash of the card, because that is the one
+  // field that already means "this build is not what it was".
+  const before = pageMeta({ kind: 'build', build: BUILD }, 'en');
+  const after = pageMeta({ kind: 'build', build: { ...BUILD, updatedAt: BUILD.updatedAt + 1 } }, 'en');
+  assert.notEqual(before.image, after.image);
+  assert.ok(after.image.startsWith('/api/og/builds/7kQm2.'));
+  assert.ok(after.image.endsWith('.png'));
+});
+
+test('a card path with no version is still a legal address', () => {
+  // Links shared before the version existed keep pointing at this shape, and
+  // the route still answers them — see `seo.controller.ts`.
+  assert.equal(buildCardPath('7kQm2'), '/api/og/builds/7kQm2.png');
 });

@@ -67,6 +67,16 @@ WORKDIR /app
 # title is written by its author — a Chinese title can turn up on a card rendered
 # for an English reader at any time. DejaVu is a small insurance policy behind it
 # for anything Noto's coverage misses.
+#
+# **Installing them is necessary and was not sufficient.** resvg's
+# `loadSystemFonts` asks fontconfig where the fonts are, and this image has no
+# fontconfig — a font package does not pull one in, because font *data* has no
+# use for it. The database therefore came up empty with the files sitting right
+# here, and every card rendered as artwork with no words on it. The renderer is
+# pointed at this directory by path instead; see the `fontDirs` note in
+# `apps/api/src/seo/card.service.ts`. Adding `fontconfig` here would also work
+# and is the worse fix: another package, a cache to build at first use, and the
+# same failure waiting for the next base image that drops it.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends fonts-noto-cjk fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*

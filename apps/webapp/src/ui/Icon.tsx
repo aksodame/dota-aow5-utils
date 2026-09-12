@@ -212,6 +212,35 @@ export function Branch(props: IconProps) {
   );
 }
 
+/**
+ * The two themes, as the shapes everybody already reads as them.
+ *
+ * A sun and a moon rather than one glyph that swaps: the switch on `/settings`
+ * shows both side by side the way the language switcher shows all three flags,
+ * so each button needs its own drawing rather than the toggle needing a state.
+ */
+export function Sun(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="4.25" />
+      {/* Eight rays, as two pairs of axes, so the star stays symmetric at 18px. */}
+      <path d="M12 2.5v2.25M12 19.25v2.25M2.5 12h2.25M19.25 12h2.25" />
+      <path d="M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6" />
+    </Svg>
+  );
+}
+
+export function Moon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      {/* One path, closed by the arc back: a crescent cut out of a disc leaves a
+          hairline seam at this stroke width, and the seam is what makes a moon
+          drawn that way look like a broken circle. */}
+      <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" />
+    </Svg>
+  );
+}
+
 /** GitHub's mark, for the footer. Solid rather than stroked, as they draw it. */
 export function GithubMark({ size = 18, ...rest }: IconProps) {
   return (

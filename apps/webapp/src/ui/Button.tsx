@@ -11,7 +11,19 @@ import styles from './Button.module.css';
  * Radix's Slot: a button that navigates is an anchor, and `ButtonLink` below is
  * that anchor wearing the same clothes.
  */
-export type ButtonVariant = 'primary' | 'solid' | 'ghost' | 'danger';
+/**
+ * `plain` is the escape hatch, and it is the reason the list is five rather than
+ * four: a button whose surface belongs to its caller.
+ *
+ * Without it the caller has to paint over `solid`, and painting over a variant
+ * is a specificity race it loses — `.solid:hover` is three selectors deep and a
+ * caller's `.steam:hover` is two, so the brand colour survived at rest and was
+ * replaced by the panel's on hover. On the light theme that made "Continue with
+ * Steam" a white button with a white label: it vanished under the cursor. This
+ * variant brings the geometry, the type and the focus ring, and no colour at
+ * all, so nothing of the kit's is left to win.
+ */
+export type ButtonVariant = 'primary' | 'solid' | 'ghost' | 'danger' | 'plain';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface Shared {

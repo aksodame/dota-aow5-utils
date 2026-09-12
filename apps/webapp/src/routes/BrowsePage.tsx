@@ -123,6 +123,31 @@ export function BrowsePage({
    */
   const pending = filterKey !== settledKey;
 
+  /**
+   * Which settled query the rows on screen were fetched for.
+   *
+   * `null` until the first window lands. Written in the same batch as the reset
+   * below, so it is never ahead of the rows it describes.
+   */
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+
+  /**
+   * The rows in hand answer a query that is no longer the one being asked.
+   *
+   * This is one render wide and it was visible: `pending` goes false the moment
+   * the debounce settles, and the effect that throws the old rows away runs
+   * *after* that render has painted — so the list flashed the previous filter's
+   * builds between the skeletons and the new ones, which read as the list
+   * loading twice. Comparing what the rows were fetched for against what is
+   * being asked for closes the gap in the render that opens it, rather than in
+   * an effect that is by definition too late.
+   *
+   * Not a `useLayoutEffect` on the reset, which would also close it: that
+   * blocks the paint to run a fetch's worth of setup, and the honest statement
+   * here is about what the rows *are*, not about when to run.
+   */
+  const stale = loadedKey !== settledKey;
+
   const baseQuery = useCallback(
     (): BrowseQuery => ({
       sort: filters.sort,
@@ -171,6 +196,7 @@ export function BrowsePage({
     setState('loading');
     setRows(new Map());
     setTotal(0);
+    setLoadedKey(settledKey);
     scrollToTop();
 
     fetchWindow(0, controller.signal)
@@ -236,12 +262,13 @@ export function BrowsePage({
 
   /*
    * The list is showing outlines rather than builds: the first load, a filter
-   * whose request has not been made yet, or the game data still arriving.
+   * whose request has not been made yet, rows belonging to the filter before
+   * it, or the game data still arriving.
    *
    * One flag for the list and the line above it, because they answer the same
    * question and reading them from two conditions is how they came apart.
    */
-  const loadingList = state === 'loading' || pending || core === null;
+  const loadingList = state === 'loading' || pending || stale || core === null;
 
   return (
     <div className={styles.page}>

@@ -54,23 +54,40 @@ export function profileUrl(provider: ExternalProvider, providerId: string): stri
 }
 
 /**
- * Steam first, because on a site about a Steam game it is the profile a reader
- * came looking for. A stable order also keeps two authors' name rows from
- * drawing their marks in different orders for no reason.
+ * Oldest link first, so the head of the list is the account somebody arrived
+ * as.
+ *
+ * It used to be Steam first on the reasoning that a reader of a guide about a
+ * Steam game wants the Steam profile. That is a claim about the reader, and it
+ * loses to a claim about the author: whoever signed up through Discord and
+ * attached Steam afterwards *is* their Discord account to everybody who knows
+ * them, and a name row that led with the Steam link introduced them as someone
+ * else. The first door they came through is the one they chose.
+ *
+ * The tie-break is the old order, and ties are real: `created_at` is seconds,
+ * and a fixture that links both in one call stamps them the same. Two authors'
+ * name rows must not draw their marks in different orders for no reason, so the
+ * fallback is a fixed list rather than whatever SQLite hands back.
  */
 const PROVIDER_ORDER: ExternalProvider[] = ['steam', 'discord'];
 
 function toProfileLinks(rows: readonly IdentityRow[]): ProfileLink[] {
   return rows
     .slice()
-    .sort((a, b) => PROVIDER_ORDER.indexOf(a.provider) - PROVIDER_ORDER.indexOf(b.provider))
+    .sort((a, b) => a.createdAt - b.createdAt || PROVIDER_ORDER.indexOf(a.provider) - PROVIDER_ORDER.indexOf(b.provider))
     .flatMap((row) => {
       const url = profileUrl(row.provider, row.providerId);
       return url === null ? [] : [{ provider: row.provider, url }];
     });
 }
 
-/** The links behind one account, for a page that shows one author. */
+/**
+ * The links behind one account, for a page that shows one author.
+ *
+ * The whole list, oldest first. Only the head of it is drawn beside a name —
+ * see `AuthorName` — but which links exist is the data, and which of them a
+ * given surface shows is that surface's decision.
+ */
 export function profilesOf(db: Db, userId: number): ProfileLink[] {
   return toProfileLinks(listIdentities(db, userId));
 }

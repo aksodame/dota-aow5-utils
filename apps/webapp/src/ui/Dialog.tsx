@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { isBackdropClick } from '@/lib/backdrop';
 import { Button } from './Button.tsx';
 import { Close } from './Icon.tsx';
 import { cx } from './cx.ts';
@@ -50,6 +51,17 @@ export function Dialog({ open, onClose, title, footer, wide = false, children }:
     };
   }, [open]);
 
+  /*
+   * Where the press that is about to become a click started.
+   *
+   * A click is only the backdrop's if both ends of it are out there. Without
+   * this, selecting the text in the picker's search box and releasing a few
+   * pixels past the input closed the whole dialog — the press was inside, the
+   * release was not, and the `click` went to their nearest common ancestor,
+   * which is the dialog itself.
+   */
+  const pressedOutside = useRef(false);
+
   return (
     <dialog
       ref={ref}
@@ -61,10 +73,27 @@ export function Dialog({ open, onClose, title, footer, wide = false, children }:
         event.preventDefault();
         onClose();
       }}
-      // A click on the backdrop lands on the dialog element itself rather than
-      // on anything inside it, which is what distinguishes the two.
+      onMouseDown={(event) => {
+        const dialog = ref.current;
+        pressedOutside.current =
+          dialog !== null && isBackdropClick(dialog, dialog.getBoundingClientRect(), event);
+      }}
+      /*
+       * Closed only by a click that both began and ended on the backdrop.
+       *
+       * `event.target === dialog` on its own is not that test — see
+       * `isBackdropClick`, which is where the two cases that broke it are
+       * written down: a drag out of an input, and the click that dismisses a
+       * native `<select>` list or a context menu drawn over the dialog. The
+       * second is the one somebody hit while editing a build: right-click
+       * inside the picker, dismiss the menu, and the picker was gone.
+       */
       onClick={(event) => {
-        if (event.target === ref.current) onClose();
+        const dialog = ref.current;
+        const started = pressedOutside.current;
+        pressedOutside.current = false;
+        if (!started || dialog === null) return;
+        if (isBackdropClick(dialog, dialog.getBoundingClientRect(), event)) onClose();
       }}
     >
       <div className={styles.shell}>
