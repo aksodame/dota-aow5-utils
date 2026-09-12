@@ -9,16 +9,25 @@
  * reading the source tells you much less than looking at the output, and where
  * "the title overflows in Russian" is not a thing a unit test will notice.
  *
- * Three samples, chosen for the three ways the layout can come apart: a full
- * English card, a Chinese one (double-width glyphs, a wrapped title, the Event
- * pill at its widest), and a card for a build whose author filled in almost
- * nothing.
+ * Three build samples, chosen for the three ways that layout can come apart: a
+ * full English card, a Chinese one (double-width glyphs, a wrapped title, the
+ * Event pill at its widest), and a card for a build whose author filled in
+ * almost nothing.
+ *
+ * Then the tracker page's card in all three languages, which is where the
+ * *labels* can come apart: the overlay's headings are laid out from width
+ * estimates into cells about eighty pixels wide, and Russian runs a third
+ * longer than English in every one of them.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Resvg } from '@resvg/resvg-js';
+import { SEO_STRINGS, type SeoLang } from 'aow5-shared/seo';
+import { PREVIEW_LOOT, PREVIEW_ROOM, previewReadout } from 'aow5-shared/overlay';
 import { CARD_WIDTH, renderCard, type CardModel } from '../core/seo/card.ts';
+import { renderTrackerCard, type TrackerCardModel } from '../core/seo/tracker-card.ts';
+import { mapName, previewItem } from '../core/seo/names.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..', '..');
@@ -124,7 +133,52 @@ const SAMPLES: Array<{ name: string; model: CardModel }> = [
   },
 ];
 
+/**
+ * The tracker card, per language.
+ *
+ * Built the way `SeoService.trackerCard` builds it — same strings, same shared
+ * session, same item lookup — so a layout that fits here fits in production.
+ * The only difference is where the pictures come from: `CardService` reads and
+ * caches them, and this reads them straight off disk.
+ */
+const TRACKER: Array<{ name: string; model: TrackerCardModel }> = (['en', 'ru', 'zh'] as SeoLang[]).map((lang) => {
+  const strings = SEO_STRINGS[lang];
+  const readout = previewReadout((id) => previewItem(id, lang));
+  const art: Record<string, string | null> = {};
+  for (const pile of PREVIEW_LOOT) {
+    const found = previewItem(pile.id, lang);
+    art[pile.id] = found === undefined ? null : item(found.icon);
+  }
+  return {
+    name: `tracker-${lang}`,
+    model: {
+      lang,
+      logo: LOGO,
+      logoAspect: LOGO_ASPECT,
+      brand: strings.brand,
+      title: strings.routes.tracker.title,
+      overlay: { ...strings.overlay, room: mapName(PREVIEW_ROOM, lang) ?? PREVIEW_ROOM },
+      readout,
+      art,
+    },
+  };
+});
+
 mkdirSync(out, { recursive: true });
+for (const { name, model } of TRACKER) {
+  const png = new Resvg(renderTrackerCard(model), {
+    fitTo: { mode: 'width', value: CARD_WIDTH },
+    background: '#14120f',
+    font: { loadSystemFonts: true, defaultFontFamily: 'Noto Sans CJK SC' },
+    logLevel: 'off',
+  })
+    .render()
+    .asPng();
+  const file = join(out, `${name}.png`);
+  writeFileSync(file, png);
+  console.log(`${file}  ${(png.length / 1024).toFixed(0)} kB`);
+}
+
 for (const { name, model } of SAMPLES) {
   const png = new Resvg(renderCard(model), {
     fitTo: { mode: 'width', value: CARD_WIDTH },

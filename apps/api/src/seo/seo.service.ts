@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { groupsInPanel } from 'aow5-shared/codec';
+import { PREVIEW_LOOT, PREVIEW_ROOM, previewReadout } from 'aow5-shared/overlay';
 import {
   SEO_STRINGS,
   buildFactLine,
@@ -31,10 +32,13 @@ import {
   abilityIconPath,
   mainSpellId,
   mainSpellName,
+  mapName,
   mapNames,
   mapScenePath,
+  previewItem,
 } from '../../core/seo/names.ts';
-import type { CardModel } from '../../core/seo/card.ts';
+import { renderCard, type CardModel } from '../../core/seo/card.ts';
+import { renderTrackerCard } from '../../core/seo/tracker-card.ts';
 import type { SitemapEntry } from '../../core/seo/sitemap.ts';
 import { DB } from '../db/tokens.ts';
 import { CardService } from './card.service.ts';
@@ -141,13 +145,18 @@ export class SeoService {
   }
 
   /**
-   * The card model for one build, with every picture already encoded.
+   * One build's card, as SVG, with every picture already encoded.
    *
    * Awaits the icons in parallel: they are nearly always memory hits, and on a
    * cold process the nine reads should not be nine round trips to the disk one
    * after another.
+   *
+   * Returns the drawn SVG rather than the model, because there are two card
+   * layouts now and `CardService` rasterizes whatever it is handed — see its
+   * `png`. Which renderer a card wants is knowledge this service has and that
+   * one should not.
    */
-  async cardFor(build: BuildRow, lang: SeoLang): Promise<CardModel> {
+  async cardFor(build: BuildRow, lang: SeoLang): Promise<string> {
     const strings = SEO_STRINGS[lang];
     const facts = this.factsFor(build, lang);
     const state = decodeStored(build.payload);
@@ -175,7 +184,7 @@ export class SeoService {
       ...slots.map((path) => this.cards.icon(path)),
     ]);
 
-    return {
+    const model: CardModel = {
       lang,
       logo,
       logoAspect,
@@ -213,10 +222,11 @@ export class SeoService {
       items,
       gold,
     };
+    return renderCard(model);
   }
 
-  /** The site's own card, for every route that is not a build. */
-  async siteCard(lang: SeoLang): Promise<CardModel> {
+  /** The site's own card, for every route that is neither a build nor the tracker. */
+  async siteCard(lang: SeoLang): Promise<string> {
     const strings = SEO_STRINGS[lang];
     const [logo, logoAspect, background] = await Promise.all([
       this.cards.brand(LOGOTYPE),
@@ -226,7 +236,7 @@ export class SeoService {
       // not change between two scrapes of the same URL.
       this.cards.icon(mapScenePath(SITE_CARD_ROOM)),
     ]);
-    return {
+    return renderCard({
       lang,
       logo,
       logoAspect,
@@ -240,7 +250,52 @@ export class SeoService {
       background,
       items: [],
       gold: null,
-    };
+    });
+  }
+
+  /**
+   * The tracker page's card: the farm overlay, in both of its states.
+   *
+   * Nothing here comes out of the database, because the page has no row —
+   * the session is the constant in `aow5-shared/overlay` that the web app's own
+   * `/tracker` preview draws from, so the card and the page quote the same gold.
+   * What this method does is the part the renderer cannot: resolve the items and
+   * the room out of the extracted tables in the reader's language, and read the
+   * art off disk.
+   */
+  async trackerCard(lang: SeoLang): Promise<string> {
+    const strings = SEO_STRINGS[lang];
+    const readout = previewReadout((id) => previewItem(id, lang));
+
+    /*
+     * The art, in one pass over the session rather than per row.
+     *
+     * Keyed by item id and handed to the renderer as a map, because the panel
+     * draws the same item twice — once as the headline's own picture and once in
+     * the loot list — and a renderer that took an array beside the rows would
+     * have to be told which one the headline is a second time.
+     */
+    const [logo, logoAspect, ...art] = await Promise.all([
+      this.cards.brand(LOGOTYPE),
+      this.cards.brandAspect(LOGOTYPE),
+      ...PREVIEW_LOOT.map((pile) => this.cards.icon(itemIconPath(pile.id))),
+    ]);
+
+    return renderTrackerCard({
+      lang,
+      logo,
+      logoAspect,
+      brand: strings.brand,
+      title: strings.routes.tracker.title,
+      overlay: {
+        ...strings.overlay,
+        // The id when this deployment cannot name the room, which is the same
+        // fallback every other name on a card takes.
+        room: mapName(PREVIEW_ROOM, lang) ?? PREVIEW_ROOM,
+      },
+      readout,
+      art: Object.fromEntries(PREVIEW_LOOT.map((pile, index) => [pile.id, art[index] ?? null])),
+    });
   }
 
   /**

@@ -9,13 +9,18 @@
  * and with the same consequence, which is that a `parser/` run that renames a
  * room needs the API image rebuilt before a card says the new name.
  *
- * Only the three tables a card and a description actually use are imported:
- * heroes, rooms and abilities. Item *names* are deliberately absent — a card
- * draws item icons, not item names, and the three name files are 210 kB of
- * bundle for text nothing renders.
+ * Only the tables a card or a description actually use are imported. That used
+ * to exclude item *names*, on the grounds that a card drew item icons and never
+ * item names, and that the three name files were 210 kB of bundle for text
+ * nothing rendered. The tracker page's card ended that: its subject is the
+ * overlay's loot list, which is five item names in their rarity colours, and
+ * the names are most of what makes the picture legible. So they are here now,
+ * and the 210 kB buys text that is drawn — which is the same test the comment
+ * it replaces was applying, answered the other way.
  */
 
 import type { SeoLang } from 'aow5-shared/seo';
+import type { PreviewItem } from 'aow5-shared/overlay';
 import { categoryOfMap, type TierKey } from 'aow5-shared/data';
 import { ABILITY_SLOTS } from 'aow5-shared/types';
 import { decodeBuild, type BuildState } from 'aow5-shared/codec';
@@ -29,6 +34,9 @@ import mapsZh from 'aow5-shared/public/data/locale.zh.maps.json' with { type: 'j
 import abilitiesEn from 'aow5-shared/public/data/locale.en.abilities.json' with { type: 'json' };
 import abilitiesRu from 'aow5-shared/public/data/locale.ru.abilities.json' with { type: 'json' };
 import abilitiesZh from 'aow5-shared/public/data/locale.zh.abilities.json' with { type: 'json' };
+import namesEn from 'aow5-shared/public/data/locale.en.names.json' with { type: 'json' };
+import namesRu from 'aow5-shared/public/data/locale.ru.names.json' with { type: 'json' };
+import namesZh from 'aow5-shared/public/data/locale.zh.names.json' with { type: 'json' };
 
 import { HERO_TABLE, ID_TABLE } from '../codec/tables.ts';
 
@@ -79,6 +87,28 @@ const ITEM_ICONS: ReadonlyMap<string, string> = new Map(
 );
 
 /**
+ * The rest of an item's row, for the one card that draws items as rows rather
+ * than as tiles.
+ *
+ * A build's gear row needs a filename and nothing else; the tracker card's loot
+ * list needs the rarity to colour a name with and the cost to price a pile at.
+ * Same positional index, read through the same named destructure.
+ */
+const ITEM_FACTS: ReadonlyMap<string, { icon: string; quality: number; cost: number }> = new Map(
+  itemsIndex.rows.map((row) => {
+    const [, id, , quality, , cost, icon] = row;
+    return [id as string, { icon: icon as string, quality: quality as number, cost: cost as number }];
+  }),
+);
+
+/** Item name per language. See the note at the top of this file for why these are imported. */
+const ITEM_NAMES: Record<SeoLang, Record<string, string>> = {
+  en: namesEn.names,
+  ru: namesRu.names,
+  zh: namesZh.names,
+};
+
+/**
  * Ability id to icon filename, for the headline spell on a card.
  *
  * From `heroes.json`'s ability table, which is the same record the editor reads
@@ -90,6 +120,22 @@ const ABILITY_ICONS: ReadonlyMap<string, string> = new Map(
     .filter((entry): entry is [string, { icon: string }] => typeof entry[1].icon === 'string')
     .map(([id, ability]) => [id, ability.icon]),
 );
+
+/**
+ * One item as the tracker card wants it, or undefined when this deployment's
+ * tables do not have it.
+ *
+ * Undefined rather than a placeholder: `previewReadout` drops an unknown id, so
+ * the card is then one row short — which is a better picture than a row with no
+ * name and a price of `NaN`.
+ */
+export function previewItem(id: string, lang: SeoLang): PreviewItem | undefined {
+  const facts = ITEM_FACTS.get(id);
+  if (facts === undefined) return undefined;
+  // English as the fallback rather than the id, the same way `heroName` does it.
+  const name = ITEM_NAMES[lang][id] ?? ITEM_NAMES.en[id] ?? id;
+  return { id, name, icon: facts.icon, quality: facts.quality, cost: facts.cost };
+}
 
 export function heroName(heroId: string | null, lang: SeoLang): string | null {
   if (heroId === null) return null;

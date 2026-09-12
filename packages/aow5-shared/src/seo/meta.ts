@@ -127,8 +127,30 @@ export interface PageMeta {
   modifiedAt?: number;
 }
 
-/** The default card, drawn by the API and shared by every route but a build's. */
+/** The default card, drawn by the API and shared by every route with no card of its own. */
 export const SITE_CARD = '/api/og/site.png';
+
+/**
+ * The tracker page's own card: the farm overlay, in both of its states.
+ *
+ * ## The language is in the path
+ *
+ * Same argument as `buildCardPath` below, and it applies here more strongly
+ * than it does to a build. The card is drawn once per language and the words on
+ * it are most of the picture — the overlay's six headings, the loot list's
+ * columns, the room. Left to `Accept-Language` this page would share one address
+ * across all three, and a scraper sends no useful `Accept-Language`: whatever it
+ * is served first is what its CDN then shows everybody, so one Russian scrape
+ * makes the English preview Russian everywhere the link has been posted.
+ *
+ * `?lang=` still works on the bare address, and the route still falls back to
+ * the header — it has to, because both are the only thing a browser hitting the
+ * image directly will send. But what `og:image` names is the path, because the
+ * path is the part a cache cannot get wrong.
+ */
+export function trackerCardPath(lang?: SeoLang): string {
+  return lang === undefined ? '/api/og/tracker.png' : `/api/og/tracker/${lang}.png`;
+}
 
 /**
  * A build's own card, at a URL that changes when the card does.
@@ -338,6 +360,10 @@ export function pageMeta(target: MetaTarget, lang: SeoLang, base = '/'): PageMet
         socialTitle: strings.routes.tracker.title,
         description: strings.routes.tracker.description,
         path: at('tracker'),
+        // The one static route with a card of its own: it is about a different
+        // application, and the default card is about the build guides.
+        image: trackerCardPath(lang),
+        imageAlt: strings.overlayAlt,
         noindex: false,
       };
     default: {

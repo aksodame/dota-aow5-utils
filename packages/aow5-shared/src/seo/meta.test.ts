@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SEO_LANGS, SEO_STRINGS } from './strings.ts';
-import { SOCIAL_TITLE_BUDGET, TITLE_BUDGET, buildCardPath, buildFactLine, pageMeta, type BuildFacts } from './meta.ts';
+import {
+  SITE_CARD,
+  SOCIAL_TITLE_BUDGET,
+  TITLE_BUDGET,
+  buildCardPath,
+  buildFactLine,
+  pageMeta,
+  trackerCardPath,
+  type BuildFacts,
+} from './meta.ts';
 import { formatGold } from '../format/gold.ts';
 import { textWidth } from './text.ts';
 
@@ -162,7 +171,33 @@ test('every static route canonicalises to the path the router actually serves', 
 test('a subpath build moves the routes but not the API', () => {
   const meta = pageMeta({ kind: 'tracker' }, 'en', '/dota-aow5-utils/');
   assert.equal(meta.path, '/dota-aow5-utils/tracker');
-  assert.equal(meta.image, '/api/og/site.png', 'the API is always at the origin root');
+  assert.equal(meta.image, '/api/og/tracker/en.png', 'the API is always at the origin root');
+});
+
+test('the tracker page has a card of its own, named by language', () => {
+  // It is about a different application; the default card is about the guides.
+  for (const lang of SEO_LANGS) {
+    const meta = pageMeta({ kind: 'tracker' }, lang);
+    assert.equal(meta.image, `/api/og/tracker/${lang}.png`);
+    assert.equal(meta.imageAlt, SEO_STRINGS[lang].overlayAlt);
+  }
+  // The language is in the path because a scraper sends no useful
+  // `Accept-Language` — see `trackerCardPath`. The bare form still has to be a
+  // legal address, for anything that asks without one.
+  assert.equal(trackerCardPath(), '/api/og/tracker.png');
+});
+
+test('every other static route still shares the site card', () => {
+  for (const kind of ['browse', 'mine', 'edit', 'view', 'settings'] as const) {
+    assert.equal(pageMeta({ kind }, 'en').image, SITE_CARD);
+  }
+});
+
+test('the tracker page is named the way its own heading names it', () => {
+  // One thing, one name: a card that called it a drop tracker while the page it
+  // opens calls it a farm tracker is a link that looks like it went elsewhere.
+  assert.match(pageMeta({ kind: 'tracker' }, 'en').title, /^Farm tracker —/);
+  assert.equal(pageMeta({ kind: 'tracker' }, 'ru').socialTitle, 'Фарм-трекер');
 });
 
 test('a build that could not be loaded keeps its own URL and is not indexed', () => {

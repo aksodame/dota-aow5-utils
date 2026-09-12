@@ -2,12 +2,12 @@ import { readFile, mkdir, readdir, rename, unlink, writeFile } from 'node:fs/pro
 import { join } from 'node:path';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Resvg } from '@resvg/resvg-js';
-import { CARD_WIDTH, renderCard, type CardModel } from '../../core/seo/card.ts';
+import { CARD_WIDTH } from '../../core/seo/card-svg.ts';
 import { stale, type CardKey } from '../../core/seo/cache-key.ts';
 import { CONFIG, type AppConfig } from '../config.ts';
 
 /**
- * Turns a card model into PNG bytes, and does it as rarely as possible.
+ * Turns a card's SVG into PNG bytes, and does it as rarely as possible.
  *
  * Two caches, for two different costs:
  *
@@ -46,19 +46,25 @@ export class CardService {
    * A PNG for the given key, rendered if it is not already on disk.
    *
    * The key says both what the file is called and what it replaces. See
-   * `buildCardKey` and `siteCardKey`.
+   * `buildCardKey`, `siteCardKey` and `trackerCardKey`.
+   *
+   * **Takes SVG rather than a model, and takes it behind a thunk.** There are
+   * two card layouts now — a build's and the tracker overlay's — with nothing in
+   * common but their frame, so which renderer to use is the caller's business
+   * and this one only rasterizes. The thunk is what makes a cache hit free: a
+   * card's model costs half a dozen file reads and an `og:image` is fetched by
+   * every client in the channel a link was pasted into.
    */
-  async png(key: CardKey, model: () => Promise<CardModel>): Promise<Buffer> {
+  async png(key: CardKey, svg: () => Promise<string>): Promise<Buffer> {
     const cached = await this.readCached(key.name);
     if (cached !== null) return cached;
 
-    const bytes = await this.rasterize(await model());
+    const bytes = this.rasterize(await svg());
     await this.writeCached(key, bytes);
     return bytes;
   }
 
-  private async rasterize(model: CardModel): Promise<Buffer> {
-    const svg = renderCard(model);
+  private rasterize(svg: string): Buffer {
     /*
      * Rendered at the card's own size rather than scaled, and with system fonts
      * loaded: the image is fonts-noto-cjk from the runtime image, which is the
@@ -91,9 +97,9 @@ export class CardService {
         defaultFontFamily: 'Noto Sans CJK SC',
         sansSerifFamily: 'Noto Sans CJK SC',
       },
-      // Every `<image>` in the SVG is already a data: URI — see `renderCard`,
-      // which takes its pictures pre-encoded — so the renderer resolves no
-      // paths and needs no resources directory to resolve them against.
+      // Every `<image>` in the SVG is already a data: URI — both renderers take
+      // their pictures pre-encoded — so resvg resolves no paths and needs no
+      // resources directory to resolve them against.
       //
       // `warn` rather than `off`. Off is what made a card with no text on it a
       // silent success for as long as it took somebody to paste a link in

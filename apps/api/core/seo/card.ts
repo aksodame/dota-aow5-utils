@@ -18,60 +18,33 @@
  * what keeps the disk reads in one place where they can be cached: a card draws
  * up to nine PNGs, and eight of them are on most other cards too.
  *
- * The text is laid out by hand because SVG has no flow layout — no wrapping, no
- * ellipsis, no "shrink to fit". Every line is its own `<text>`, positioned from
- * a width estimate. See `wrapWidth` in the shared package for what that
- * estimate is and why it cannot be exact.
+ * The frame, the palette and the primitives that put a string or a picture at a
+ * coordinate are in `card-svg.ts`, shared with the tracker page's card. What is
+ * left here is this card's layout, which is the part nothing else reuses.
  */
 
-import { clampWidth, textWidth, wrapWidth, type SeoLang } from 'aow5-shared/seo';
+import { clampWidth, wrapWidth, type SeoLang } from 'aow5-shared/seo';
+import {
+  ACCENT,
+  BORDER,
+  CARD_HEIGHT,
+  CARD_WIDTH,
+  GOLD,
+  INK_900,
+  MARGIN,
+  MUTED,
+  PANEL,
+  RADIUS,
+  RADIUS_LG,
+  RIGHT,
+  TEXT,
+  image,
+  pixels,
+  text,
+  units,
+} from './card-svg.ts';
 
-export const CARD_WIDTH = 1200;
-export const CARD_HEIGHT = 630;
-
-/**
- * The font stack, in one place because two things must agree about it: this
- * file, which names it per `<text>`, and `CardService`, which tells resvg which
- * family to fall back to.
- *
- * Noto Sans CJK leads even for English text, and that is deliberate rather than
- * backwards: the family carries Latin, Cyrillic *and* Simplified Chinese, so
- * one name covers all three languages the site speaks — and a build title is
- * author-written, which means a Chinese title can turn up on an English card at
- * any time. A Latin-only first choice renders those as a row of empty boxes.
- *
- * It is the only entry the deployed image actually has (see the apt line in
- * infra/api.Dockerfile). The rest are for `pnpm card-preview` on a developer's
- * machine, where none of the Noto packages exist — the two after DejaVu are
- * macOS's, and without them a preview falls through to a monospace default and
- * misrepresents every width on the card.
- */
-export const FONT_STACK =
-  "'Noto Sans CJK SC', 'Noto Sans', 'DejaVu Sans', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif";
-
-/**
- * The palette, lifted from `apps/webapp/src/styles.css`.
- *
- * Hex rather than the `oklch()` the stylesheet writes `--accent` in, because
- * resvg's CSS colour parsing predates it — the value is the one the token's own
- * comment quotes. Everything else is copied verbatim from the token it is named
- * after, so a card and the page it links to are the same blue.
- *
- * Not imported from anywhere: the tokens live in a stylesheet the API does not
- * and should not parse, and nine hex strings behind one comment is a cheaper
- * way to hold that line than a build step that extracts them.
- */
-const INK_900 = '#050a18'; // --ink-900, the page ground
-const PANEL = '#0a0d18'; // --panel
-const TEXT = '#eef3ff'; // --text
-const MUTED = '#9dadd0'; // --text-muted
-const BORDER = '#26304d'; // --border
-const ACCENT = '#4c8eef'; // --accent, as its own token comment quotes it
-const GOLD = '#ffc44d'; // --gold
-
-/** `--radius` and `--radius-lg`, the two the header uses. */
-const RADIUS = 8;
-const RADIUS_LG = 14;
+export { CARD_WIDTH, CARD_HEIGHT, FONT_STACK } from './card-svg.ts';
 
 /**
  * One card's content, with every image already a `data:` URI and every number
@@ -135,76 +108,6 @@ export interface CardModel {
   /** The game's gold coin, beside the price. */
   gold: string | null;
 }
-
-/** XML text escaping. Narrower than HTML's — there are no attributes here that take user text unescaped. */
-function xml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-/**
- * How wide one unit of `textWidth` is, as a fraction of the font size.
- *
- * `textWidth` measures in "one Latin lowercase letter" units, and a budget in
- * pixels divides by this to reach them. Approximate by construction — see
- * `text.ts` — and only ever used to decide where to break or how far left to
- * put a coin, never to position anything that has to line up exactly.
- *
- * **Deliberately generous.** A proportional sans averages nearer 0.5 for mixed
- * case, so this over-estimates and the text stops a little short of the space
- * it had. That is the safe direction: under-estimating does not produce a
- * slightly tight card, it produces a title running off the edge of the image —
- * and the image is a PNG somebody else's chat client has already cached. 0.6 is
- * also just above a monospace advance width, so a deployment whose font stack
- * falls through to a fixed-pitch face still fits inside the frame instead of
- * escaping it.
- */
-const UNIT = 0.6;
-
-/** A pixel budget expressed in the units `wrapWidth` and `clampWidth` want. */
-function units(pixels: number, fontSize: number): number {
-  return pixels / (fontSize * UNIT);
-}
-
-/** Roughly how many pixels a string occupies at a font size. The inverse of `units`. */
-function pixels(value: string, fontSize: number): number {
-  return textWidth(value) * fontSize * UNIT;
-}
-
-function text(
-  value: string,
-  attrs: {
-    x: number;
-    y: number;
-    size: number;
-    fill: string;
-    weight?: number;
-    anchor?: 'start' | 'middle' | 'end';
-    spacing?: number;
-  },
-): string {
-  const anchor = attrs.anchor === undefined ? '' : ` text-anchor="${attrs.anchor}"`;
-  const spacing = attrs.spacing === undefined ? '' : ` letter-spacing="${attrs.spacing}"`;
-  return (
-    `<text x="${attrs.x}" y="${attrs.y}" font-family="${xml(FONT_STACK)}" font-size="${attrs.size}"` +
-    ` font-weight="${attrs.weight ?? 400}" fill="${attrs.fill}"${anchor}${spacing}>${xml(value)}</text>`
-  );
-}
-
-function image(href: string, x: number, y: number, w: number, h: number, clip?: string): string {
-  const clipped = clip === undefined ? '' : ` clip-path="url(#${clip})"`;
-  // `xMidYMid slice` crops rather than letterboxes, which is `object-fit: cover`
-  // — the same rule `.portrait img` uses on the build page.
-  return `<image href="${xml(href)}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"${clipped} />`;
-}
-
-/* The frame. One margin, used by everything. */
-const MARGIN = 72;
-const RIGHT = CARD_WIDTH - MARGIN;
 
 /* The portrait: 16:9, as the file is and as `.portrait` renders it. */
 const PORTRAIT_X = MARGIN;

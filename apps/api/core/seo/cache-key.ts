@@ -34,8 +34,11 @@
  * from the file rather than from a remembered ratio; and two item icons that
  * resvg refused to decode, stripped of the two megabytes of metadata that made
  * them undecodable — every card holding one had a black tile where the item was.
+ * 4: the tracker page stopped sharing the site card and got one of its own, and
+ * the site card's title changed with the route's — it says Farm tracker now,
+ * because that is what the page's own heading says.
  */
-export const CARD_VERSION = 3;
+export const CARD_VERSION = 4;
 
 export interface CardKey {
   /** The file, without its extension. Unique per build, version and language. */
@@ -67,9 +70,10 @@ export function buildCardKey(slug: string, updatedAt: number, lang: string): Car
 /**
  * The key for the site's own card.
  *
- * No generation of its own: it is keyed by nothing but its language, so it has
- * no older versions to supersede. It is allowed to go stale instead, which is
- * why its response is cached for a day rather than for a year.
+ * No generation of its own beyond the renderer's: it is keyed by nothing but its
+ * language, so it has no older versions of a *build* to supersede. It is allowed
+ * to go stale instead, which is why its response is cached for a day rather than
+ * for a year.
  */
 export function siteCardKey(lang: string): CardKey {
   // Versioned like a build's, and for the stronger reason: this card is keyed by
@@ -79,6 +83,23 @@ export function siteCardKey(lang: string): CardKey {
   // leaving one orphan per language behind.
   const generation = `site.v${CARD_VERSION}`;
   return { name: `${generation}.${lang}`, family: 'site', generation };
+}
+
+/**
+ * The key for the tracker page's card.
+ *
+ * Keyed exactly like the site's, and for the same reason: language and the
+ * renderer's version, because there is no row underneath it that can change.
+ *
+ * What *can* change is the session it draws, which is a constant in
+ * `aow5-shared/overlay` — so editing that session counts as a renderer change
+ * and wants `CARD_VERSION` bumped with it. Without the bump every scrape keeps
+ * serving the evening the old constant described, and nothing on the page would
+ * say so.
+ */
+export function trackerCardKey(lang: string): CardKey {
+  const generation = `tracker.v${CARD_VERSION}`;
+  return { name: `${generation}.${lang}`, family: 'tracker', generation };
 }
 
 /**

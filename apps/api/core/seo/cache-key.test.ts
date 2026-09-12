@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CARD_VERSION, buildCardKey, siteCardKey, stale } from './cache-key.ts';
+import { CARD_VERSION, buildCardKey, siteCardKey, stale, trackerCardKey } from './cache-key.ts';
 
 test('a build card is keyed by build, version, renderer and language', () => {
   const v = CARD_VERSION;
@@ -61,4 +61,22 @@ test('the site card does not collide with a build that could never be called sit
   // `site` is outside the slug alphabet's length range at four characters only
   // by luck, so this asserts the separator is doing the work rather than luck.
   assert.deepEqual(stale(['sitex.1600.en.png'], siteCardKey('en')), []);
+});
+
+test('the tracker card is keyed like the site card, in its own family', () => {
+  const en = trackerCardKey('en');
+  const ru = trackerCardKey('ru');
+  assert.equal(en.family, 'tracker');
+  assert.notEqual(en.name, ru.name, 'two languages are two files');
+  assert.equal(en.generation, ru.generation, 'and they are peers, not predecessors');
+  // Its own family, so it never evicts the site's card or a build's and neither
+  // of them evicts it.
+  assert.deepEqual(stale([siteCardKey('en').name + '.png', buildCardKey('BG7g', 1, 'en').name + '.png'], en), []);
+  assert.deepEqual(stale([en.name + '.png', ru.name + '.png'], siteCardKey('en')), []);
+});
+
+test('a renderer bump supersedes the tracker cards of every language', () => {
+  const key = trackerCardKey('en');
+  const older = ['tracker.v1.en.png', 'tracker.v1.ru.png', 'tracker.v1.zh.png'];
+  assert.deepEqual(stale([...older, `${key.name}.png`], key).sort(), older.sort());
 });

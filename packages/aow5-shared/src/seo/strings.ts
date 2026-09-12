@@ -59,6 +59,14 @@ export interface SeoStrings {
     edit: { title: string; description: string };
     view: { title: string; description: string };
     settings: { title: string; description: string };
+    /**
+     * The overlay's page.
+     *
+     * `title` is the name the page's own heading uses — see
+     * `Strings.tracker.heading` in the web app. One thing, one name: a `<title>`
+     * and a social card that called it a drop tracker while the page it opens
+     * calls it a farm tracker is a link that looks like it went somewhere else.
+     */
     tracker: { title: string; description: string };
   };
   /** The word for the Event category, which is not a numbered tier. */
@@ -77,6 +85,30 @@ export interface SeoStrings {
   untitled: string;
   /** The alt text on a build's card image. */
   cardAlt: string;
+  /** The alt text on the tracker page's card, which is a picture of the overlay. */
+  overlayAlt: string;
+  /**
+   * The farm overlay's own words, for the card that depicts it.
+   *
+   * **Copied from `apps/tracker/src/i18n/<lang>.ts`, not translated again
+   * here.** The API's tracker card is a picture of that app, and a figure
+   * labelled one way on the card and another way in the overlay is a card
+   * mislabelling the thing it is selling. The web app's `/tracker` page keeps
+   * its own copy for the same reason and from the same source — see
+   * `Strings.tracker.preview`.
+   *
+   * Only the six cards a fresh profile has on, which is what the card draws;
+   * `DEFAULT_CARDS` in `apps/tracker/core/cards.ts` is that list.
+   */
+  overlay: {
+    /** Which window the title bar names: `AOW5 tracker`. The brand is not translated. */
+    window: string;
+    /** The room line's run-in. "In hideout" but "At Frozen Tundra". */
+    at: string;
+    cards: Record<'session' | 'sessionGold' | 'sessionBest' | 'mapTime' | 'mapGold' | 'mapGoldAverage', string>;
+    /** The loot list's three headings. Every one of them sorts, in the app. */
+    columns: { name: string; unit: string; total: string };
+  };
 }
 
 const EN: SeoStrings = {
@@ -104,7 +136,7 @@ const EN: SeoStrings = {
     },
     settings: { title: 'Settings', description: 'Your account, the providers that vouch for it, and the language.' },
     tracker: {
-      title: 'Drop tracker',
+      title: 'Farm tracker',
       description: 'The desktop tracker for Age of Weapons 5: watch your drops, get told about the ones worth keeping.',
     },
   },
@@ -116,6 +148,20 @@ const EN: SeoStrings = {
   mainSpell: 'Main',
   untitled: 'Untitled build',
   cardAlt: 'Build card',
+  overlayAlt: 'The farm overlay, with a session in progress',
+  overlay: {
+    window: 'tracker',
+    at: 'At ',
+    cards: {
+      session: 'session time',
+      sessionGold: 'session gold',
+      sessionBest: 'session best',
+      mapTime: 'current time',
+      mapGold: 'current gold',
+      mapGoldAverage: 'gold per map',
+    },
+    columns: { name: 'picked up', unit: 'val', total: 'total' },
+  },
 };
 
 const RU: SeoStrings = {
@@ -136,7 +182,7 @@ const RU: SeoStrings = {
     },
     settings: { title: 'Настройки', description: 'Аккаунт, привязанные сервисы и язык сайта.' },
     tracker: {
-      title: 'Трекер дропа',
+      title: 'Фарм-трекер',
       description:
         'Настольный трекер для Age of Weapons 5: следит за дропом и сообщает о том, что стоит оставить.',
     },
@@ -149,6 +195,20 @@ const RU: SeoStrings = {
   mainSpell: 'Основное',
   untitled: 'Сборка без названия',
   cardAlt: 'Карточка сборки',
+  overlayAlt: 'Оверлей фарм-трекера с активной сессией',
+  overlay: {
+    window: 'трекер',
+    at: 'Комната: ',
+    cards: {
+      session: 'время сессии',
+      sessionGold: 'золото сессии',
+      sessionBest: 'лучший дроп',
+      mapTime: 'время комнаты',
+      mapGold: 'золото комнаты',
+      mapGoldAverage: 'сред. золото',
+    },
+    columns: { name: 'добыча', unit: 'цена', total: 'всего' },
+  },
 };
 
 const ZH: SeoStrings = {
@@ -168,7 +228,7 @@ const ZH: SeoStrings = {
     view: { title: '分享的配装', description: '通过链接分享的一套配装：其中的装备、技能与符文。' },
     settings: { title: '设置', description: '你的账号、已绑定的服务与站点语言。' },
     tracker: {
-      title: '掉落追踪器',
+      title: '刷图追踪器',
       description: 'Age of Weapons 5 的桌面追踪器：监控掉落，并提示值得保留的物品。',
     },
   },
@@ -181,6 +241,20 @@ const ZH: SeoStrings = {
   mainSpell: '主技能',
   untitled: '未命名配装',
   cardAlt: '配装卡片',
+  overlayAlt: '刷图追踪器浮层，展示进行中的一场',
+  overlay: {
+    window: '追踪器',
+    at: '在',
+    cards: {
+      session: '本场时长',
+      sessionGold: '本场金币',
+      sessionBest: '本场最佳',
+      mapTime: '当前时长',
+      mapGold: '当前金币',
+      mapGoldAverage: '每图金币',
+    },
+    columns: { name: '掉落', unit: '单价', total: '合计' },
+  },
 };
 
 export const SEO_STRINGS: Record<SeoLang, SeoStrings> = { en: EN, ru: RU, zh: ZH };

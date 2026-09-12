@@ -1,4 +1,16 @@
-import { iconUrl, type ItemSummary } from 'aow5-shared/data';
+import { iconUrl } from 'aow5-shared/data';
+import {
+  PREVIEW_HOTKEY,
+  PREVIEW_ROOM,
+  PREVIEW_ROOM_SECONDS,
+  PREVIEW_RUNS,
+  PREVIEW_SESSION_SECONDS,
+  clock,
+  compact,
+  previewReadout,
+  type PreviewReadout,
+  type PreviewRow,
+} from 'aow5-shared/overlay';
 import { Panel, cx } from '@/ui';
 import { useApp } from '@/data/AppData';
 import type { Strings } from '@/i18n/strings';
@@ -39,76 +51,6 @@ import styles from './HudPreview.module.css';
  */
 
 /**
- * The room the session is in, and the one these materials drop in.
- *
- * A real id, so the name comes out of the same map table the rest of the site
- * reads and is the same string the overlay's own room line would print — see
- * `apps/tracker/data/rooms.json`, where `G001` is the same three names.
- */
-const ROOM_ID = 'G001';
-
-/** What the focus chord is on a fresh profile — `DEFAULT_SHORTCUTS`, spelled the way the overlay spells it. */
-const HOTKEY = 'Ctrl+Alt+T';
-
-/**
- * The evening this is a picture of.
- *
- * `finished` is what the twelve rooms behind you gave; `room` is what the one
- * you are standing in has dropped so far. Every figure on the panel is then
- * arithmetic off this table rather than a number typed in to look right: the
- * session is the two columns added, the room is the second, and the average is
- * the first divided by the rooms it came from.
- *
- * The ids and the prices are the game's — the names, the rarity tints, the art
- * and the unit costs all come out of `items.index.json` at the reader's
- * language. Only the quantities are invented, and they are what an evening in
- * Skyfall Realm looks like.
- */
-const LOOT: { id: string; finished: number; room: number }[] = [
-  { id: 'item_0588', finished: 17, room: 3 }, // Skyfall Crystal, 2,500g
-  { id: 'item_0587', finished: 41, room: 11 }, // Skyfall Fragment, 800g
-  { id: 'item_G001_2', finished: 7, room: 2 }, // Glyph: Assault II, 600g
-  { id: 'item_P001', finished: 32, room: 6 }, // Health Potion, 120g
-];
-
-/** Rooms finished, which is the trophy on the room line and the average's denominator. */
-const RUNS = 12;
-
-/** Seconds since the session started, hideout included. */
-const SESSION_SECONDS = 42 * 60 + 8;
-
-/** Seconds in the room you are standing in. */
-const ROOM_SECONDS = 72;
-
-/*
- * The overlay's two formatters, re-created for the same reason the layout is.
- *
- * Not `formatGold` from `aow5-shared/format`, which is the site's: that one
- * truncates and writes a lowercase `m`, because a price is a number somebody
- * is deciding whether they can afford and rounding it up tells them a build is
- * cheaper to reach than it is. The overlay rounds and writes `M`, because a
- * gold-per-hour readout is a rate rather than a claim about a wallet. A picture
- * of the overlay has to abbreviate the way the overlay does, or the figures in
- * it are figures the app would never print.
- */
-const compact = (n: number): string => {
-  const scaled = (by: number, suffix: string) => `${(n / by).toFixed(1).replace(/\.0$/, '')}${suffix}`;
-  if (Math.abs(n) >= 1_000_000) return scaled(1_000_000, 'M');
-  if (Math.abs(n) >= 1_000) return scaled(1_000, 'k');
-  return n.toFixed(0);
-};
-
-/** Seconds as `mm:ss`, growing to `h:mm:ss` only when there are hours to show. */
-const clock = (seconds: number): string => {
-  const s = Math.max(0, Math.floor(seconds));
-  const m = Math.floor(s / 60);
-  const h = Math.floor(m / 60);
-  return h > 0
-    ? `${h}:${String(m % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
-    : `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-};
-
-/**
  * The rarity tint, off the overlay's own ramp rather than the page's.
  *
  * `qualityVar` in `Tile.tsx` resolves `--q4` against the site, which is right
@@ -121,14 +63,6 @@ const hudQualityVar = (quality: number): string => {
   const q = Number.isInteger(quality) && quality >= 1 && quality <= 7 ? quality : 1;
   return `var(--hud-q${q})`;
 };
-
-/** One row of the loot list, priced and named. */
-interface Row {
-  item: ItemSummary;
-  qty: number;
-  unit: number;
-  total: number;
-}
 
 export function HudPreview() {
   const { strings, core } = useApp();
@@ -144,30 +78,15 @@ export function HudPreview() {
    */
   if (core === null) return null;
 
-  const room = core.maps.byId.get(ROOM_ID)?.name ?? '';
-
-  const priced = LOOT.map(({ id, finished, room: inRoom }) => {
-    const item = core.byId.get(id);
-    return item === undefined ? null : { item, finished, inRoom };
-  }).filter((entry): entry is { item: ItemSummary; finished: number; inRoom: number } => entry !== null);
-
-  // Total descending, which is the sort the readout opens on.
-  const rows: Row[] = priced
-    .map(({ item, inRoom }) => ({ item, qty: inRoom, unit: item.cost, total: item.cost * inRoom }))
-    .filter((row) => row.qty > 0)
-    .sort((a, b) => b.total - a.total);
-
-  const roomGold = rows.reduce((n, row) => n + row.total, 0);
-  const finishedGold = priced.reduce((n, { item, finished }) => n + item.cost * finished, 0);
-  const sessionGold = finishedGold + roomGold;
-
-  // The single item that carried the evening, by what the pile is worth rather
-  // than how big it is — which is the figure the headline is built around.
-  const best = priced
-    .map(({ item, finished, inRoom }) => ({ item, qty: finished + inRoom, total: item.cost * (finished + inRoom) }))
-    .reduce((top, pile) => (top === null || pile.total > top.total ? pile : top), null as
-      | { item: ItemSummary; qty: number; total: number }
-      | null);
+  const room = core.maps.byId.get(PREVIEW_ROOM)?.name ?? '';
+  /*
+   * Every figure comes off the shared session, which is also what the API draws
+   * this page's `og:image` card from — see `aow5-shared/overlay`. That is the
+   * whole reason the loot table is not a constant in this file: the card is the
+   * promise and this page is what is delivered, and the two quoting different
+   * gold would be the card lying about a screenshot.
+   */
+  const readout = previewReadout((id) => core.byId.get(id));
 
   return (
     <Panel title={t.title}>
@@ -210,15 +129,15 @@ export function HudPreview() {
               </div>
             </header>
 
-            <Readout t={t} best={best} sessionGold={sessionGold} roomGold={roomGold} average={finishedGold / RUNS} />
+            <Readout t={t} readout={readout} />
 
-            <Loot t={t} rows={rows} roomGold={roomGold} />
+            <Loot t={t} rows={readout.rows} roomGold={readout.roomGold} />
 
             {/* The one line that may end up drawn straight onto the game, so
                 it is outlined rather than trusted to the slab behind it. It
                 answers whichever question is live: the panel is clickable, and
                 nothing else on screen says how to give the mouse back. */}
-            <footer className={styles.hint}>{t.pinHint(HOTKEY)}</footer>
+            <footer className={styles.hint}>{t.pinHint(PREVIEW_HOTKEY)}</footer>
           </div>
 
           {/* Collapsed and click-through, which is the state it spends the
@@ -233,11 +152,11 @@ export function HudPreview() {
               </span>
               <span className={styles.runs}>
                 <G.Trophy className={styles.glyph} />
-                <span className={styles.runsCount}>{RUNS}</span>
+                <span className={styles.runsCount}>{PREVIEW_RUNS}</span>
               </span>
             </div>
 
-            <Readout t={t} best={best} sessionGold={sessionGold} roomGold={roomGold} average={finishedGold / RUNS} />
+            <Readout t={t} readout={readout} />
           </div>
         </div>
 
@@ -257,19 +176,8 @@ type PreviewStrings = Strings['tracker']['preview'];
  * is what makes the block read as one instrument with several dials rather than
  * as five widgets that happen to be adjacent.
  */
-function Readout({
-  t,
-  best,
-  sessionGold,
-  roomGold,
-  average,
-}: {
-  t: PreviewStrings;
-  best: { item: ItemSummary; qty: number; total: number } | null;
-  sessionGold: number;
-  roomGold: number;
-  average: number;
-}) {
+function Readout({ t, readout }: { t: PreviewStrings; readout: PreviewReadout }) {
+  const { best, sessionGold, roomGold, averageRunGold } = readout;
   return (
     <div className={styles.grid}>
       <div className={styles.top}>
@@ -309,16 +217,16 @@ function Readout({
             enough that stacking would make the block taller than the headline
             it is meant to sit quietly beside. */}
         <div className={styles.pairs}>
-          <Pair label={t.cards.session} value={clock(SESSION_SECONDS)} />
+          <Pair label={t.cards.session} value={clock(PREVIEW_SESSION_SECONDS)} />
           <Pair label={t.cards.sessionGold} value={compact(sessionGold)} />
         </div>
       </div>
 
       {/* Equal widths, because none of the three outranks the others. */}
       <div className={styles.band}>
-        <Cell label={t.cards.mapTime} value={clock(ROOM_SECONDS)} first />
+        <Cell label={t.cards.mapTime} value={clock(PREVIEW_ROOM_SECONDS)} first />
         <Cell label={t.cards.mapGold} value={compact(roomGold)} />
-        <Cell label={t.cards.mapGoldAverage} value={compact(average)} />
+        <Cell label={t.cards.mapGoldAverage} value={compact(averageRunGold)} />
       </div>
     </div>
   );
@@ -353,7 +261,7 @@ function Cell({ label, value, first = false }: { label: string; value: string; f
  * force. Total descending is where it opens, so that is the column wearing it
  * here.
  */
-function Loot({ t, rows, roomGold }: { t: PreviewStrings; rows: Row[]; roomGold: number }) {
+function Loot({ t, rows, roomGold }: { t: PreviewStrings; rows: readonly PreviewRow[]; roomGold: number }) {
   return (
     <div className={styles.loot}>
       <div className={styles.lootHead}>

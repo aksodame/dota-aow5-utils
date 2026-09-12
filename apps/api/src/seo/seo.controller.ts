@@ -8,7 +8,7 @@ import { pickLang } from '../../core/seo/lang.ts';
 import { renderPrerender } from '../../core/seo/html.ts';
 import { renderRobots, renderSitemap } from '../../core/seo/sitemap.ts';
 import { CONFIG, type AppConfig } from '../config.ts';
-import { buildCardKey, siteCardKey, type CardKey } from '../../core/seo/cache-key.ts';
+import { buildCardKey, siteCardKey, trackerCardKey, type CardKey } from '../../core/seo/cache-key.ts';
 import { CardService } from './card.service.ts';
 import { SeoService } from './seo.service.ts';
 
@@ -170,7 +170,37 @@ export class SeoController {
     );
   }
 
-  /** The default card, for every route that is not a build. */
+  /**
+   * The tracker page's card, at `tracker/<lang>.png` or bare at `tracker.png`.
+   *
+   * Two addresses for one picture, because two different things fetch it. What
+   * `og:image` names is the path form — see `trackerCardPath` — since a scraper
+   * sends no useful `Accept-Language` and a language left out of the URL is a
+   * language its CDN then picks for everybody. The bare form is for anything
+   * that asks without one, and it falls back to `?lang=` and then to the header
+   * exactly as the site card does.
+   *
+   * Not `immutable`, for the same reason the site card is not: it is keyed by
+   * nothing but its language, so its bytes are allowed to change when the
+   * renderer or the session it draws does.
+   */
+  @Get(['og/tracker.png', 'og/tracker/:name'])
+  @Throttle({ default: { ttl: 60_000, limit: 240 } })
+  async trackerCard(
+    @Param('name') param: string | undefined,
+    @Query('lang') lang: string | undefined,
+    @Headers('accept-language') acceptLanguage: string | undefined,
+    @Res() response: Response,
+  ): Promise<void> {
+    // `pickLang` is the authority on what is a language and what is not, so an
+    // unknown segment falls through to the next answer rather than 404ing: a
+    // broken `og:image` is a broken preview wherever the link was posted.
+    const fromPath = param === undefined ? undefined : param.replace(/\.png$/, '');
+    const chosen = pickLang(fromPath ?? lang, acceptLanguage);
+    await this.sendCard(response, trackerCardKey(chosen), () => this.seo.trackerCard(chosen), false);
+  }
+
+  /** The default card, for every route with no card of its own. */
   @Get('og/site.png')
   @Throttle({ default: { ttl: 60_000, limit: 240 } })
   async siteCard(
@@ -216,10 +246,10 @@ export class SeoController {
   private async sendCard(
     response: Response,
     key: CardKey,
-    model: () => Promise<Awaited<ReturnType<SeoService['siteCard']>>>,
+    svg: () => Promise<string>,
     immutable: boolean,
   ): Promise<void> {
-    const png = await this.cards.png(key, model);
+    const png = await this.cards.png(key, svg);
     response.setHeader('Content-Type', 'image/png');
     response.setHeader(
       'Cache-Control',
