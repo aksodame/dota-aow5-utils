@@ -24,6 +24,16 @@ services:
       # Optional: without it the API answers "not configured" to sound search
       # and the tracker's picker hides its search box. Nothing else notices.
       FREESOUND_TOKEN: ${FREESOUND_TOKEN:-}
+      # Optional: sign-in through Steam works without it. What it buys is the
+      # name and the avatar — OpenID hands back an id and nothing else.
+      STEAM_API_KEY: ${STEAM_API_KEY:-}
+      # Both or neither, and the API checks: with only an id every attempt
+      # reaches Discord and comes back rejected. Absent, `GET /auth/providers`
+      # omits discord and the sign-in screen draws no button for it — which is
+      # the whole reason a pair left out of this list looks like a bug in the
+      # sign-in form rather than a missing variable.
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
     volumes:
       # A bind mount, not a named volume: this is the one thing you will want to
       # open with sqlite3, copy off the box and restore by hand.

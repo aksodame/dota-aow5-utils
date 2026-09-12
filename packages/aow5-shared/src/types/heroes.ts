@@ -108,6 +108,19 @@ export interface HeroInfo {
    * why a hero has no spells rather than looking broken.
    */
   unfinished: number;
+  /**
+   * Whether this hero is finished enough to build for.
+   *
+   * True when they have at least one ability of their own. Lina and Drow both
+   * carry unfinished placeholders and are playable; Crystal Maiden's only
+   * ability is the `f` heal every hero is given, so she is a reserved roster
+   * position rather than a hero — and every list that offers a hero to pick
+   * should filter on this.
+   *
+   * She keeps her index regardless: `idx` is frozen and encoded into links, so
+   * an unfinished hero is hidden rather than removed.
+   */
+  playable: boolean;
 }
 
 export interface HeroesData {

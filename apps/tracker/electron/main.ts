@@ -19,9 +19,11 @@ import type { SoundHit, SoundSearchResponse } from 'aow5-api-contract';
 import { importedSoundId, IMPORTED_PACK, packedSound, packRef, type PackFail } from '../core/packs.ts';
 import { accelerator, shortcutLabel, SHORTCUT_IDS, type ShortcutId } from '../core/shortcuts.ts';
 import { MAX_SOUND_BYTES } from '../core/sounds.ts';
+import { DISCORD_APP_ID, type PresenceActivity } from '../core/presence.ts';
 import { compactLog, type CompactResult } from '../core/sources/logfile.ts';
 import { byRoom } from '../core/stats.ts';
 import { applyArgs, clamp, loadConfig, saveConfig } from './config.ts';
+import { DiscordPresence } from './discord.ts';
 import { History } from './history.ts';
 import { Overlay } from './overlay.ts';
 import { SoundStore } from './packs.ts';
@@ -246,6 +248,15 @@ const deliver = (channel: string, payload: unknown) => {
 };
 
 const feed = new SourceFeed(deliver);
+
+/**
+ * The Discord connection, which does nothing until the setting is on.
+ *
+ * Constructed unconditionally and cheap to hold: it opens no socket until a
+ * renderer hands it an activity, and `config.discordPresence` is what decides
+ * whether one ever arrives. See `electron/discord.ts`.
+ */
+const presence = new DiscordPresence(DISCORD_APP_ID);
 const save = () => saveConfig(config);
 
 /**
@@ -479,7 +490,17 @@ app.whenReady().then(async () => {
   // not carry yesterday's 12 MB into today.
   trimLog();
   const trimTimer = setInterval(trimLog, TRIM_INTERVAL);
-  app.on('will-quit', () => clearInterval(trimTimer));
+  app.on('will-quit', () => {
+    clearInterval(trimTimer);
+    /*
+     * Take the status down on the way out.
+     *
+     * A socket that simply dies leaves the last activity in the profile until
+     * the client notices — which is long enough for somebody who quit the
+     * tracker to be told by a friend that they are still farming.
+     */
+    presence.stop();
+  });
 
   interactive = cli.interactive;
 
@@ -584,6 +605,16 @@ app.whenReady().then(async () => {
     // Immediately, not at the next launch: a rebinding that does not take until
     // the app restarts looks exactly like one that did not work.
     if (patch.shortcuts !== undefined) bindShortcuts();
+    /*
+     * Switched off means gone now, not at the next room.
+     *
+     * `stop` clears the activity before it drops the socket, because a socket
+     * that merely closes leaves the last thing published sitting in the profile
+     * — which, to somebody who has just turned the setting off, is the setting
+     * not working. Switching it *on* needs nothing here: the next tick from the
+     * renderer opens the connection.
+     */
+    if (patch.discordPresence === false) presence.stop();
     save();
     // A different source is a different session: mock runs must never average
     // in with real ones.
@@ -612,6 +643,18 @@ app.whenReady().then(async () => {
   // question, and a round trip per resize observation would be pure noise.
   ipcMain.on('tracker:contentSize', (_e, id: OverlayId, size: { width?: number; height: number } | null) => {
     target(id)?.setContentSize(size);
+  });
+
+  /*
+   * What to publish, from whichever renderer is counting the session.
+   *
+   * The setting is enforced here rather than only in the renderer: this is the
+   * one channel that leaves the machine, and a window that had not noticed the
+   * toggle yet must not be able to publish anything through it.
+   */
+  ipcMain.on('tracker:presence', (_e, activity: PresenceActivity | null) => {
+    if (!config.discordPresence) return;
+    presence.set(activity);
   });
 
   ipcMain.handle('tracker:getHistory', () => history.read());

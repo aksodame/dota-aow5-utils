@@ -1,0 +1,109 @@
+/**
+ * The credit line, pinned to the bottom of the window on every page.
+ *
+ * Opaque, because content scrolls underneath it: `--surface-sunken` is a solid
+ * colour and the top border is what separates the bar from whatever is passing
+ * behind it. The shell pays for the space with `--footer-h`, which this
+ * element measures onto the root — see `SiteFooter.tsx`.
+ */
+.footer {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /* Above the page, below the top bar's dialogs and the skip link. */
+  z-index: 30;
+  border-top: 1px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+/*
+ * Two rows and no more: the links, then the attribution.
+ *
+ * The padding is tighter than it was in the flow. A bar that is always on
+ * screen is spending that space on every page at once, so it buys its keep in
+ * lines of text rather than in air around them.
+ */
+.inner {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-5);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
+}
+
+.link {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-underline-offset: 3px;
+}
+
+.link:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--text-muted);
+  transition: color 120ms ease;
+}
+
+.icon:hover {
+  color: var(--text);
+}
+
+.note {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/*
+ * The one paragraph on the site, and it gets the whole width.
+ *
+ * It used to be held to 72ch, which is the right measure for something somebody
+ * reads and the wrong one for this: four stacked lines of attribution in a bar
+ * that is now always on screen. Across the full width it is two, which is the
+ * shape of a footnote rather than of a page.
+ *
+ * `text-wrap: pretty` so the second line does not end up carrying three words.
+ */
+.attribution {
+  font-size: 11.5px;
+  line-height: 1.5;
+  text-wrap: pretty;
+  color: var(--text-dim);
+}
+
+@media (max-width: 1000px) {
+  .inner {
+    padding: var(--space-3);
+  }
+}
+
+/*
+ * A phone pays for this bar out of a much smaller window.
+ *
+ * At 390px the attribution alone runs to five lines, and with the "free and
+ * open source" line above it the bar was taking a quarter of the screen on
+ * every page. The line that goes is the one that is a nicety rather than a
+ * credit: the attribution is why this footer exists, and the two links are how
+ * somebody reaches the addon and the source.
+ */
+@media (max-width: 640px) {
+  .note {
+    display: none;
+  }
+
+  .attribution {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+}

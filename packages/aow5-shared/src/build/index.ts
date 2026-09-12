@@ -4,9 +4,8 @@
  * Pure and DOM-free: the app wraps it in a React hook (useUrlSync), and
  * `node --test` exercises it directly against the committed id tables.
  *
- * buildCodec re-exports MAX_SECTIONS and createSection from buildState, so the
- * codec's own surface is listed explicitly here rather than star-exported —
- * two `export *` lines would collide on those names.
+ * The codec's own surface is listed explicitly rather than star-exported, so
+ * that adding an export there is a decision made here too.
  */
 export * from './buildState.ts';
 export {

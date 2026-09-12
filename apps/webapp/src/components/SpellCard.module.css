@@ -1,0 +1,77 @@
+/**
+ * What an ability's card has that an item's does not.
+ *
+ * Everything else comes from `ItemCard.module.css` — the two are the same card
+ * with a different middle, and keeping the shared parts in one file is what
+ * stops them drifting into two designs.
+ */
+
+/** No rarity to colour the frame with: an ability has no grade. The tokens are
+    `ItemCard.module.css`'s, declared on the `.card` this shares with it. */
+.art {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  overflow: hidden;
+  background: var(--card-well);
+  border: 2px solid var(--card-frame);
+  border-radius: var(--radius-sm);
+}
+
+.art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/** The key it is bound to, in the chip the item card gives its type. */
+.slot {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 1px 6px;
+  background: var(--card-chip);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--card-ink-soft);
+  text-transform: uppercase;
+}
+
+/*
+ * Cooldown, mana and range, above a rule.
+ *
+ * Icons rather than labels: it is the same three numbers on every ability, so
+ * the shape is recognised faster than the words are read — and three words in
+ * three languages would set at three different widths. The words are on each
+ * one's `title`, for anyone who does not recognise the glyph.
+ */
+.costs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--space-4);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--card-line);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--card-ink);
+}
+
+.costs span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cooldownIcon {
+  color: var(--card-ink-muted);
+}
+
+.manaIcon {
+  color: var(--card-mana);
+}
+
+.rangeIcon {
+  color: var(--card-range);
+}

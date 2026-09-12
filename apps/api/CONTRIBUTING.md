@@ -11,7 +11,7 @@ easier and quieter.
 
 | you want to change | it lives in |
 |---|---|
-| Anything worth a test — validation, queries, the codec check, the password hash, the proof of work | `core/` |
+| Anything worth a test — validation, queries, the codec check, the Steam OpenID handling | `core/` |
 | Routing, status codes, guards, DI wiring | `src/` |
 | The schema | `core/db/schema.ts`, then `pnpm --filter aow5-utils-api db:generate` |
 | A virtual table, a trigger, a backfill | a hand-written migration — drizzle-kit cannot see them |
@@ -29,7 +29,7 @@ Restated from the site's guide, because this is the other place they can be brok
    reads them.
 2. **A codec version bump requires no change here, and must not get one.** `payload` is text; a v7 link
    stores exactly like a v6 one. Never write a migration that rewrites stored payloads.
-3. **The fragment belongs to the planner.** Nothing this API returns puts a board in a URL fragment, and no
+3. **The fragment belongs to the editor.** Nothing this API returns puts a loadout in a URL fragment, and no
    route it defines is reachable by one.
 4. **Validate by decoding, never by re-encoding.** `encodeBuild(decodeBuild(p))` legitimately differs for
    v1–v5, so a byte-equality check would reject good links. `core/codec/validatePayload.ts` stores what it
@@ -66,7 +66,7 @@ Tests run against `:memory:` databases built by applying the real committed migr
 does not apply is a test failure rather than a deploy failure.
 
 Anything touching the schema, the payload check, the slug alphabet, the FTS query builder, the password
-hash, the proof of work or the nickname rules needs a test. Wiring in `src/` does not — but if it feels
+check, the OpenID callback shaping or the claimed-id match needs a test. Wiring in `src/` does not — but if it feels
 like it does, see above.
 
 ## Schema changes

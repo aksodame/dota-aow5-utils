@@ -3,38 +3,648 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark light" />
-    <title>AOW5 utils — build planner and farm tracker for Age of Weapons 5</title>
+    <meta name="color-scheme" content="dark" />
+    <!--
+      The head as it is *shipped*, which is the head for the browse page and
+      nothing else.
+
+      Two other things rewrite it, and both matter:
+
+        * `src/lib/meta.ts` replaces every tag below as soon as React mounts,
+          per route and in the reader's language. That is what a person's tab,
+          bookmark and history entry get.
+        * The API prerenders a complete head for crawlers, which do not run
+          JavaScript and would otherwise see exactly this markup on all seven
+          routes. Caddy routes scraper user agents there; see infra/Caddyfile
+          and apps/api/core/seo/html.ts.
+
+      So what is here is the fallback: correct for `/`, and correct for anyone
+      who reaches a deeper route with neither JavaScript nor the prerenderer in
+      front of them. It is English because a static file has no reader to ask.
+    -->
+    <title>AOW5 Builds — build guides for Age of Weapons 5</title>
     <meta
       name="description"
-      content="Fan-made tools for the Dota 2 custom game Age of Weapons 5: a serverless build planner that fits a whole board in a link, and an always-on-top farm tracker overlay."
+      content="Browse build guides for the Dota 2 custom game Age of Weapons 5: one loadout per map, filed by tier, with the gear, spells and runes that clear it."
     />
+
+    <meta property="og:site_name" content="AOW5 Builds" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="AOW5 utils" />
+    <meta property="og:title" content="AOW5 Builds — build guides for Age of Weapons 5" />
     <meta
       property="og:description"
-      content="A build planner that fits in a link, and an overlay that counts your farm. Both built on the map's own extracted data."
+      content="One loadout, one map, one tier. Browse what people are clearing with, or publish your own."
     />
-    <meta name="twitter:card" content="summary" />
+    <!--
+      Root-relative, so it resolves against whatever origin this is served from
+      and a staging deployment does not advertise production's picture. Rendered
+      by the API — see apps/api/src/seo/seo.controller.ts.
+    -->
+    <meta property="og:image" content="/api/og/site.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="AOW5 Builds" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="ru_RU" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+
+    <!--
+      `summary_large_image`, not `summary`: the card is 1200×630 and the small
+      variant crops it to a square thumbnail, which cuts the title off.
+    -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AOW5 Builds — build guides for Age of Weapons 5" />
+    <meta
+      name="twitter:description"
+      content="One loadout, one map, one tier. Browse what people are clearing with, or publish your own."
+    />
+    <meta name="twitter:image" content="/api/og/site.png" />
+    <meta name="twitter:image:alt" content="AOW5 Builds" />
+
+    <!-- The page background, so a browser chrome tint matches rather than flashes white. -->
+    <meta name="theme-color" content="#050a18" />
+
     <script>
-      // Applies the saved theme before first paint, so the page never flashes
-      // the wrong one — including when this file is served as 404.html for a
-      // route. Mirrors getInitialTheme() in src/lib/theme.ts; keep them in step.
+      /*
+       * The theme, before anything paints.
+       *
+       * This has to be an inline script in the head and it has to run before the
+       * stylesheet paints, which is why it is duplicated logic rather than an
+       * import: `src/lib/theme.ts` is in the bundle, and the bundle arrives long
+       * after the first frame. Somebody who chose light would otherwise watch the
+       * dark palette paint and then get repainted on every single load.
+       *
+       * The contract with that file, which is the thing to keep in step:
+       * the key is `aow5.theme`, the values are `dark` and `light`, the attribute
+       * is `data-theme` on <html>, and the two meta tags below carry each theme's
+       * own `--surface`. Dark is written out rather than left implicit, so the
+       * document always states which theme is in force.
+       *
+       * No `prefers-color-scheme` fallback on purpose: the site is designed dark,
+       * so a visitor who has expressed no preference *here* gets the palette the
+       * artwork was made for rather than whatever their OS is set to.
+       */
       (function () {
+        var theme = 'dark';
         try {
           var stored = localStorage.getItem('aow5.theme');
-          var dark =
-            stored === 'dark' ||
-            (stored !== 'light' && !window.matchMedia('(prefers-color-scheme: light)').matches);
-          document.documentElement.classList.toggle('dark', dark);
+          if (stored === 'light' || stored === 'dark') theme = stored;
         } catch (e) {
-          document.documentElement.classList.add('dark');
+          // Storage blocked. Dark, as for a first visit.
         }
+        document.documentElement.setAttribute('data-theme', theme);
+        var surface = theme === 'light' ? '#eef2fa' : '#050a18';
+        var tint = document.querySelector('meta[name="theme-color"]');
+        if (tint) tint.setAttribute('content', surface);
+        var scheme = document.querySelector('meta[name="color-scheme"]');
+        if (scheme) scheme.setAttribute('content', theme);
       })();
     </script>
+
+    <script>
+      /*
+       * Which shell the boot skeleton should draw, decided before anything paints.
+       *
+       * The skeleton below is static markup, but the chrome is not the same on
+       * every route — so the one thing it needs from the URL is which of the
+       * three shapes to be. This mirrors `matchRoute` in `src/lib/routes.ts`
+       * closely enough for a placeholder and no further: the route table is four
+       * names, and anything unrecognised falls through to browse there, so it
+       * falls through to browse here too.
+       *
+       * The one place the two can disagree is a malformed slug — `/builds/!!` is
+       * the browse list to the router and `bare` to this. That direction is the
+       * safe one: `bare` draws nothing at all, so a mismatch costs the skeleton
+       * rather than showing the wrong one.
+       */
+      (function () {
+        var base = '%BASE_URL%';
+        var path = location.pathname;
+        var tail = (path.indexOf(base) === 0 ? path.slice(base.length) : path).replace(/^\/+|\/+$/g, '');
+        document.documentElement.dataset.boot =
+          tail.indexOf('builds/') === 0
+            ? 'bare'
+            : tail === 'me' || tail === 'edit' || tail === 'tracker'
+              ? 'chrome'
+              : 'browse';
+      })();
+    </script>
+
+    <style>
+      /*
+       * The layout, before the app that owns it exists.
+       *
+       * Everything below draws the chrome the shell and the browse page put on
+       * screen — the top bar, the filter sidebar, the search bar and the list —
+       * as flat grey blocks at exactly the sizes the real ones take. The point
+       * is not the grey: it is that the first paint happens off the HTML alone,
+       * while the bundle is still downloading and the game data behind it has
+       * not been asked for yet, and that nothing moves when the real chrome
+       * lands in its place.
+       *
+       * **This is the one stylesheet that is not a CSS module.** It has to be
+       * inline: an external file is a second request before the first paint,
+       * which is the whole thing this exists to avoid.
+       *
+       * **And the one place a colour may be written out.** `styles.css` is
+       * imported by `main.tsx`, so a production build hoists it into a
+       * render-blocking `<link>` and its tokens are here in time — but in dev it
+       * arrives with the module graph, and this has to paint without it. So
+       * every value is `var(--token, <that token's value>)`: the token when
+       * there is one, the literal for the moment in dev when there is not. If
+       * you change one of these tokens in `styles.css`, change the fallback with
+       * it; they are collected in the two blocks below — one per theme, since a
+       * literal can only be one palette's — so that is one edit each.
+       */
+      /*
+       * The two lines of `styles.css`'s reset this cannot do without.
+       *
+       * In a build they are already in force and these change nothing. In dev
+       * the reset arrives with the module graph, so without them the skeleton
+       * paints 8px in from every edge on the UA's body margin and sizes its
+       * boxes as `content-box` — and then jumps into place when the real
+       * stylesheet lands, which is the one thing a skeleton must not do.
+       */
+      body {
+        margin: 0;
+      }
+
+      #boot,
+      #boot * {
+        box-sizing: border-box;
+      }
+
+      #boot {
+        --boot-line: var(--border, #26304d);
+        --boot-panel: var(--panel, #0a0d18);
+        --boot-sunken: var(--surface-sunken, #050a18);
+        --boot-bone: var(--wash-2, rgb(255 255 255 / 0.07));
+        --boot-sheen: var(--sheen, rgb(255 255 255 / 0.07));
+        --boot-radius: var(--radius, 8px);
+        --boot-radius-sm: var(--radius-sm, 4px);
+        --boot-radius-lg: var(--radius-lg, 14px);
+        --boot-topbar-h: var(--topbar-h, 60px);
+        --boot-row-h: var(--build-row-h, 76px);
+        --boot-row-gap: var(--build-row-gap, 2px);
+      }
+
+      /*
+       * The same four colours for the light theme, and only the colours.
+       *
+       * In a build these fallbacks are never used — `styles.css` is a
+       * render-blocking <link> by then and the tokens resolve — but in dev the
+       * stylesheet arrives with the module graph, and without this a visitor who
+       * chose light watched a dark skeleton for a moment. Sizes are not repeated
+       * here because they are not a theme decision.
+       */
+      html[data-theme='light'] #boot {
+        --boot-line: var(--border, #d3dcee);
+        --boot-panel: var(--panel, #ffffff);
+        --boot-sunken: var(--surface-sunken, #e3e9f6);
+        --boot-bone: var(--wash-2, rgb(13 22 48 / 0.06));
+        --boot-sheen: var(--sheen, rgb(255 255 255 / 0.65));
+      }
+
+      /*
+       * Hidden until the script above says which shape to be, so a browser with
+       * no JavaScript gets nothing rather than the outline of an app that is
+       * never going to arrive.
+       */
+      #boot {
+        display: none;
+      }
+
+      html[data-boot='browse'] #boot,
+      html[data-boot='chrome'] #boot {
+        display: block;
+      }
+
+      /* A build page gets no chrome at all — the reason is in `App.tsx`. */
+      html:not([data-boot='browse']) #boot .bootPage {
+        display: none;
+      }
+
+      /*
+       * Gone in the same frame React commits, because `#root` is written empty
+       * and `:not(:empty)` is false exactly until there is something to replace
+       * this with. A sibling rather than a child of `#root`, so nothing here
+       * depends on React clearing the container it mounts into; two ids beat the
+       * two rules above on specificity, so it needs no `!important`.
+       */
+      #root:not(:empty) ~ #boot {
+        display: none;
+      }
+
+      /*
+       * The shimmer, the same one `BuildRow.module.css` gives its bones: a
+       * background sweep rather than an opacity pulse, so a column of these does
+       * not blink in unison. `styles.css` turns every animation on the site off
+       * under `prefers-reduced-motion`, and cannot be relied on here for the
+       * same reason its tokens cannot — so this states it itself.
+       */
+      #boot .bootBone {
+        position: relative;
+        overflow: hidden;
+        background: var(--boot-bone);
+        border-radius: var(--boot-radius-sm);
+      }
+
+      #boot .bootBone::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent, var(--boot-sheen), transparent);
+        animation: bootSweep 1.4s ease-in-out infinite;
+      }
+
+      @keyframes bootSweep {
+        from {
+          transform: translateX(-100%);
+        }
+        to {
+          transform: translateX(100%);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #boot .bootBone::after {
+          animation: none;
+        }
+      }
+
+      /* --- the top bar ------------------------------------------------------ */
+
+      /* `TopBar.module.css`'s `.bar`, less the sticky it has no scroll to need. */
+      #boot .bootBar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        height: var(--boot-topbar-h);
+        padding: 0 24px;
+        background: var(--boot-sunken);
+        border-bottom: 1px solid var(--boot-line);
+      }
+
+      /*
+       * The wordmark as a block rather than as text.
+       *
+       * It is the one thing here that could have been real — except that the
+       * brand is translated (`strings.brand`), and which language this visitor
+       * reads is a stored preference nothing has looked up yet. A wordmark in
+       * the wrong language for a moment is worse than no wordmark.
+       */
+      #boot .bootBrand {
+        width: 132px;
+        height: 20px;
+      }
+
+      #boot .bootTabs {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      /*
+       * Two tabs, not three. "My Creations" is drawn from `hasAccount`, which is
+       * precisely the flag saying whether the app already knows who this is —
+       * and here it does not. Browse and Tracker are on the bar for everybody.
+       */
+      #boot .bootTab {
+        width: 96px;
+        height: 36px;
+        border-radius: var(--boot-radius);
+      }
+
+      #boot .bootEnd {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Three 30px flags and the two gaps between them. */
+      #boot .bootLang {
+        width: 98px;
+        height: 30px;
+      }
+
+      /* The Steam button, which is what a visitor with no session gets. */
+      #boot .bootAccount {
+        width: 112px;
+        height: 30px;
+        border-radius: var(--boot-radius);
+      }
+
+      /* --- the browse page -------------------------------------------------- */
+
+      /*
+       * `BrowsePage.module.css`'s `.page`, to the pixel: the sidebar's first
+       * line and the search bar's have to be the same line here too, or the two
+       * columns visibly settle against each other when the real page arrives.
+       */
+      #boot .bootPage {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        align-items: start;
+        gap: 16px;
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 16px 24px 48px;
+      }
+
+      #boot .bootPanel {
+        background: var(--boot-panel);
+        border: 1px solid var(--boot-line);
+        border-radius: var(--boot-radius-lg);
+        overflow: hidden;
+      }
+
+      /*
+       * The filter sidebar, capped the way the real panel is — so on any window
+       * shorter than the filters themselves, which is most of them, this ends
+       * exactly where that one will.
+       */
+      #boot .bootFilters {
+        max-height: calc(100svh - var(--boot-topbar-h) - 32px);
+        padding: 12px 16px 16px;
+      }
+
+      /* The panel heading, in the place `Panel`'s header row leaves for it. */
+      #boot .bootTitle {
+        width: 132px;
+        height: 22px;
+        margin: 3px 0 14px;
+      }
+
+      #boot .bootGroup {
+        padding-bottom: 16px;
+      }
+
+      /*
+       * The lighter bar a group label sits on. Real rather than a bone: it is a
+       * background, and a background is not waiting for anything.
+       */
+      #boot .bootGroupHead {
+        height: 28px;
+        border-radius: var(--boot-radius);
+        background: rgb(255 255 255 / 0.07);
+      }
+
+      /*
+       * One block per group, each the height its controls come to: two rows of
+       * 104px portraits, two rows of tier chips, the map list's own five-row
+       * scroll box, and five sort rows.
+       */
+      #boot .bootGroupBody {
+        margin-top: 8px;
+      }
+
+      #boot .bootHeroes {
+        height: 125px;
+      }
+
+      #boot .bootTiers {
+        height: 60px;
+      }
+
+      #boot .bootMaps {
+        height: 236px;
+      }
+
+      #boot .bootSorts {
+        height: 156px;
+      }
+
+      /* --- the search bar and the list -------------------------------------- */
+
+      #boot .bootColumn {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      #boot .bootSearch {
+        display: flex;
+        gap: 8px;
+      }
+
+      #boot .bootInput {
+        flex: 1;
+        height: 38px;
+        border-radius: var(--boot-radius);
+      }
+
+      #boot .bootSubmit {
+        width: 96px;
+        height: 38px;
+        border-radius: var(--boot-radius);
+      }
+
+      /*
+       * Nine rows and the eight gaps between them, which is the box the list
+       * opens at — the same arithmetic off the same two tokens, so a row that
+       * changes height moves this with it.
+       *
+       * The count line above the list is deliberately not drawn: it appears only
+       * once the first window has landed, and holding space for it would mean
+       * the list stepped up when it turned out there was nothing to count.
+       */
+      #boot .bootList {
+        display: grid;
+        grid-auto-rows: var(--boot-row-h);
+        gap: var(--boot-row-gap);
+        height: calc(9 * var(--boot-row-h) + 8 * var(--boot-row-gap));
+      }
+
+      /*
+       * `BuildRowSkeleton`, flattened: the portrait bleeding off the left edge,
+       * the title, the meta line. The preview tiles and the like count are left
+       * out — they are small, they sit against the right edge, and three blocks
+       * a row is enough to read as a list rather than as a wall.
+       */
+      #boot .bootRow {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: var(--boot-row-h);
+        /* No vertical padding, and the left side clears the portrait — the same
+           reasons `.row` has none. */
+        padding: 0 16px 0 150px;
+        overflow: hidden;
+      }
+
+      #boot .bootRow:nth-child(even) {
+        background: rgb(255 255 255 / 0.045);
+      }
+
+      #boot .bootPortrait {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 168px;
+        border-radius: 0;
+        mask-image: linear-gradient(90deg, #000 0px, #000 88px, transparent 168px);
+      }
+
+      #boot .bootRowTitle {
+        width: min(280px, 55%);
+        height: 15px;
+      }
+
+      #boot .bootRowMeta {
+        width: min(200px, 40%);
+        height: 11px;
+        margin-top: 8px;
+      }
+
+      /* --- the same breakpoints the real chrome has -------------------------- */
+
+      @media (max-width: 1000px) {
+        #boot .bootPage {
+          grid-template-columns: minmax(0, 1fr);
+          padding: 12px 12px 32px;
+        }
+
+        #boot .bootFilters {
+          max-height: none;
+        }
+      }
+
+      @media (max-width: 860px) {
+        #boot .bootBar {
+          height: auto;
+          flex-wrap: wrap;
+          gap: 8px;
+          padding: 8px 12px;
+        }
+
+        #boot .bootTabs {
+          order: 3;
+          flex-basis: 100%;
+          justify-content: flex-start;
+        }
+      }
+
+      /*
+       * Rows are shorter here. In a build the token already says so and this
+       * inherits it; the fallback is the same override, for dev.
+       */
+      @media (max-width: 560px) {
+        #boot {
+          --boot-row-h: var(--build-row-h, 68px);
+        }
+
+        #boot .bootPortrait {
+          width: 116px;
+          mask-image: linear-gradient(90deg, #000 0px, #000 58px, transparent 116px);
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+
+    <!--
+      The layout, drawn from the HTML while the bundle is still on its way.
+
+      `aria-hidden`, and there is nothing in here to tab to: a screen reader
+      should find an empty document and then the real one, rather than a page of
+      blank landmarks it can walk around inside.
+    -->
+    <div id="boot" aria-hidden="true">
+      <div class="bootBar">
+        <span class="bootBone bootBrand"></span>
+        <div class="bootTabs">
+          <span class="bootBone bootTab"></span>
+          <span class="bootBone bootTab"></span>
+        </div>
+        <div class="bootEnd">
+          <span class="bootBone bootLang"></span>
+          <span class="bootBone bootAccount"></span>
+        </div>
+      </div>
+
+      <div class="bootPage">
+        <div class="bootPanel bootFilters">
+          <div class="bootBone bootTitle"></div>
+          <div class="bootGroup">
+            <div class="bootGroupHead"></div>
+            <div class="bootBone bootGroupBody bootHeroes"></div>
+          </div>
+          <div class="bootGroup">
+            <div class="bootGroupHead"></div>
+            <div class="bootBone bootGroupBody bootTiers"></div>
+          </div>
+          <div class="bootGroup">
+            <div class="bootGroupHead"></div>
+            <div class="bootBone bootGroupBody bootMaps"></div>
+          </div>
+          <div class="bootGroup">
+            <div class="bootGroupHead"></div>
+            <div class="bootBone bootGroupBody bootSorts"></div>
+          </div>
+        </div>
+
+        <div class="bootColumn">
+          <div class="bootSearch">
+            <span class="bootBone bootInput"></span>
+            <span class="bootBone bootSubmit"></span>
+          </div>
+
+          <div class="bootPanel bootList">
+            <div class="bootRow">
+              <span class="bootBone bootPortrait"></span>
+              <span class="bootBone bootRowTitle"></span>
+              <span class="bootBone bootRowMeta"></span>
+            </div>
+            <div class="bootRow">
+              <span class="bootBone bootPortrait"></span>
+              <span class="bootBone bootRowTitle"></span>
+              <span class="bootBone bootRowMeta"></span>
+            </div>
+            <div class="bootRow">
+              <span class="bootBone bootPortrait"></span>
+              <span class="bootBone bootRowTitle"></span>
+              <span class="bootBone bootRowMeta"></span>
+            </div>
+            <div class="bootRow">
+              <span class="bootBone bootPortrait"></span>
+              <span class="bootBone bootRowTitle"></span>
+              <span class="bootBone bootRowMeta"></span>
+            </div>
+            <div class="bootRow">
+              <span class="bootBone bootPortrait"></span>
+              <span class="bootBone bootRowTitle"></span>
+              <span class="bootBone bootRowMeta"></span>
+            </div>
+            <div class="bootRow">
+              <span class="bootBone bootPortrait"></span>
+              <span class="bootBone bootRowTitle"></span>
+              <span class="bootBone bootRowMeta"></span>
+            </div>
+            <div class="bootRow">
+              <span class="bootBone bootPortrait"></span>
+              <span class="bootBone bootRowTitle"></span>
+              <span class="bootBone bootRowMeta"></span>
+            </div>
+            <div class="bootRow">
+              <span class="bootBone bootPortrait"></span>
+              <span class="bootBone bootRowTitle"></span>
+              <span class="bootBone bootRowMeta"></span>
+            </div>
+            <div class="bootRow">
+              <span class="bootBone bootPortrait"></span>
+              <span class="bootBone bootRowTitle"></span>
+              <span class="bootBone bootRowMeta"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

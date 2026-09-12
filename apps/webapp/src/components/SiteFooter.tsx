@@ -1,37 +1,70 @@
-import { GithubMark } from '@/components/GithubMark';
-import type { SiteStrings } from '@/i18n/site';
+import { useEffect, useRef } from 'react';
+import { Icon } from '@/ui';
+import { useApp } from '@/data/AppData';
 import { REPO_URL, WORKSHOP_URL } from '@/lib/links';
+import styles from './SiteFooter.module.css';
 
-const linkClass =
-  'inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline';
+/**
+ * The attribution, and the two links that belong with it.
+ *
+ * This is the point of the footer rather than small print under it: these tools
+ * render somebody else's art and somebody else's data, and say so on every page
+ * that shows any of it — which the build page does more than any other.
+ *
+ * **Pinned to the bottom of the window**, on every page. The reason a fixed bar
+ * is usually a mistake is that it covers the end of whatever is being read —
+ * which is exactly what this one did before. It does not now: the shell keeps
+ * `--footer-h` of padding under the content, so the last row of the browse list
+ * ends above the bar rather than behind it.
+ *
+ * That variable is measured rather than declared. The bar is two lines wide on
+ * a desktop and taller as the window narrows and the attribution wraps, so a
+ * hard-coded height would be a gap under short pages at one width and a covered
+ * row at another.
+ */
+export function SiteFooter() {
+  const { strings } = useApp();
+  const ref = useRef<HTMLElement>(null);
 
-export function SiteFooter({ site }: { site: SiteStrings }) {
+  useEffect(() => {
+    const element = ref.current;
+    if (element === null) return;
+
+    const root = document.documentElement;
+    const measure = () => root.style.setProperty('--footer-h', `${Math.ceil(element.offsetHeight)}px`);
+    measure();
+
+    // Language changes, a resize, a font arriving late: all of them change how
+    // the attribution wraps, and all of them reach this the same way.
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--footer-h');
+    };
+  }, []);
+
   return (
-    <footer className="border-t bg-background">
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 sm:px-6">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <a href={WORKSHOP_URL} target="_blank" rel="noreferrer noopener" className={linkClass}>
-            {site.footer.workshop}
+    <footer className={styles.footer} ref={ref}>
+      <div className={styles.inner}>
+        <div className={styles.row}>
+          <a className={styles.link} href={WORKSHOP_URL} target="_blank" rel="noreferrer noopener">
+            {strings.footer.workshop}
           </a>
           <a
+            className={styles.icon}
             href={REPO_URL}
             target="_blank"
             rel="noreferrer noopener"
-            aria-label={site.footer.source}
-            title={site.footer.source}
-            className="text-muted-foreground transition-colors hover:text-foreground"
+            aria-label={strings.footer.source}
+            title={strings.footer.source}
           >
-            <GithubMark />
+            <Icon.GithubMark size={18} />
           </a>
-          <span className="text-sm text-muted-foreground">{site.footer.builtWith}</span>
+          <span className={styles.note}>{strings.footer.builtWith}</span>
         </div>
 
-        {/* The attribution is the point of the footer, not small print under
-            it: these tools render someone else's art and someone else's data,
-            and say so on every page that shows any of it — which, now that the
-            planner and the landing are one site, means the footer rather than
-            the planner. */}
-        <p className="max-w-3xl text-xs text-pretty text-muted-foreground">{site.footer.attribution}</p>
+        <p className={styles.attribution}>{strings.footer.attribution}</p>
       </div>
     </footer>
   );

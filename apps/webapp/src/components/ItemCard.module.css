@@ -1,0 +1,402 @@
+/**
+ * An item's hover card, drawn the way the game draws its own.
+ *
+ * The colours are the card's own, not the site's: this surface is a picture of
+ * the game's tooltip — its own header band, its own purple passive box, its own
+ * dim run-in labels — and the site's accent moving must not repaint the game's
+ * furniture. But they are *tokens* rather than literals, declared on `.card`
+ * below and re-declared for the light theme, because a card that stayed dark on
+ * a white page was a black slab floating over the one surface it is supposed to
+ * belong to. Same furniture, two palettes.
+ *
+ * `SpellCard` shares this stylesheet's shell and these tokens.
+ */
+.card {
+  /*
+   * The card's own palette, which is the dark one.
+   *
+   * Every value below is used two or three times across this file and
+   * `SpellCard.module.css`, and the light theme has to restate the lot — so
+   * they are named here rather than written out at each site.
+   *
+   * The rarity ramp is deliberately *not* in here: the grade's colour comes
+   * from `qualityVar()`, which resolves `--q4` against the page, and now that
+   * the card takes the page's background it should take the page's tints with
+   * it. That is what keeps a mythic pill legible on both cards.
+   */
+  --card-head: #1e2739;
+  --card-body: #131a27;
+  --card-line: rgb(255 255 255 / 0.1);
+  --card-chip: rgb(255 255 255 / 0.1);
+  --card-well: rgb(0 0 0 / 0.4);
+  --card-frame: #4d5b7a;
+
+  --card-ink: #dbe3f0;
+  --card-ink-strong: #ffffff;
+  --card-ink-soft: #a9bdd6;
+  --card-ink-muted: #8fa0bb;
+  --card-ink-dim: #7f96b2;
+  --card-ink-faint: #6f829d;
+
+  --card-stat: #a68bfa;
+  --card-stat-label: #e0e7f4;
+  --card-span: #7f8aa3;
+
+  /* The passive box, which is purple in the game and purple here. */
+  --card-box: #1a2032;
+  --card-box-line: #453d70;
+  --card-box-head: #39316a;
+  --card-box-head-ink: #cec2ff;
+  --card-box-ink: #c5d0e2;
+
+  /* An ability's three numbers, each with the colour the game gives it. */
+  --card-mana: #4aa8e0;
+  --card-range: #6cc24a;
+
+  width: 21rem;
+  max-width: calc(100vw - 2rem);
+  /* Its own margin, because the tooltip shell pads for a line of text and this
+     is a card with a header band that has to reach the edges. */
+  margin: calc(-1 * var(--space-3));
+  overflow: hidden;
+  border-radius: var(--radius);
+  color: var(--card-ink);
+}
+
+/* --- the header band -------------------------------------------------------- */
+
+.head {
+  display: flex;
+  /* Without this the art's frame stretches to whatever height the column beside
+     it happens to be, and a square icon ends up in a tall box. */
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--card-head);
+  border-bottom: 1px solid var(--card-line);
+}
+
+/** The rarity frame. Its colour is set inline, from the item's own grade. */
+.art {
+  flex: none;
+  width: 54px;
+  height: 54px;
+  overflow: hidden;
+  background: var(--card-well);
+  border: 2px solid;
+  border-radius: var(--radius-sm);
+}
+
+.art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.identity {
+  min-width: 0;
+  flex: 1;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/*
+ * Upper case, as the game sets item names. White rather than the rarity colour:
+ * the grade is already said twice beside it, by the frame and by the pill, and
+ * a third time in the title costs the name its legibility.
+ */
+.name {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: var(--card-ink-strong);
+  text-transform: uppercase;
+}
+
+/** Level over id, right-aligned — the pair you quote when reporting something. */
+.ids {
+  flex: none;
+  font-size: 10px;
+  line-height: 1.3;
+  text-align: right;
+  color: var(--card-ink-muted);
+  white-space: nowrap;
+}
+
+.id {
+  font-family: var(--font-mono);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: 6px;
+}
+
+/** The grade, filled with its own colour. */
+.rarity {
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+  /* White in both themes: this pill is *filled* with the rarity colour, and
+     every grade in both ramps is dark enough to carry a white label. */
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+/** The kind of thing it is — potion, equip, gem — in a neutral chip. */
+.type {
+  padding: 1px 6px;
+  background: var(--card-chip);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--card-ink-soft);
+  text-transform: uppercase;
+}
+
+.cost {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+}
+
+.cost img {
+  width: 14px;
+  height: 14px;
+}
+
+/* --- the body --------------------------------------------------------------- */
+
+.body {
+  display: grid;
+  gap: 10px;
+  padding: var(--space-3);
+  background: var(--card-body);
+}
+
+/** A dim run-in label: "Skill: Active". */
+.fact {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--card-ink-dim);
+}
+
+.fact span {
+  color: var(--card-ink-soft);
+}
+
+.loading,
+.meta {
+  font-size: 11px;
+  color: var(--card-ink-dim);
+}
+
+/*
+ * Value first, then what it does. The order the game uses, and the one that
+ * lets the eye run down a column of numbers rather than hunting for them at the
+ * end of each line.
+ */
+.stats {
+  display: grid;
+  gap: 2px;
+}
+
+.stats li {
+  display: flex;
+  gap: var(--space-2);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.statValue {
+  flex: none;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--card-stat);
+}
+
+.statLabel {
+  min-width: 0;
+  color: var(--card-stat-label);
+}
+
+/* --- the description blocks -------------------------------------------------- */
+
+.desc {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.descBox {
+  overflow: hidden;
+  background: var(--card-box);
+  border: 1px solid var(--card-box-line);
+  border-radius: var(--radius-sm);
+}
+
+.descHeading {
+  padding: 6px 10px;
+  background: var(--card-box-head);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--card-box-head-ink);
+}
+
+.descBody {
+  padding: 8px 10px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--card-box-ink);
+}
+
+/* A bare paragraph pays no padding: there is no box for it to sit inside. */
+.desc > .descBody {
+  padding: 0;
+}
+
+/* --- the sections ------------------------------------------------------------ */
+
+.block {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.blockTitle {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--card-ink-faint);
+  text-transform: uppercase;
+}
+
+.needs {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.needs li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.needs img {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.needName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.needCount {
+  font-variant-numeric: tabular-nums;
+  color: var(--card-ink-dim);
+}
+
+.usedBy {
+  font-size: 11px;
+  color: var(--card-ink-muted);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tags span {
+  padding: 1px 6px;
+  background: var(--card-chip);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  color: var(--card-ink-soft);
+}
+
+.lore {
+  font-size: 11px;
+  line-height: 1.6;
+  font-style: italic;
+  color: var(--card-ink-dim);
+}
+
+/**
+ * What another copy of the same item could have rolled.
+ *
+ * Dim, monospaced and pushed to the end of the line: the value beside the label
+ * is what *this* card's item table says, and this is the span it sits in. It is
+ * the one number on the card that changes what "get this item" means, and it
+ * has to be readable without competing with the value it qualifies.
+ */
+.statSpan {
+  margin-left: auto;
+  padding-left: var(--space-2);
+  color: var(--card-span);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/**
+ * The same card, on paper.
+ *
+ * Re-picked rather than inverted: the band is a tint of the page's own blue
+ * instead of a lightened slate, the passive box keeps its purple but at the
+ * weight a white surface can carry, and the stat value moves down the same hue
+ * until it is readable — `#a68bfa` on white is 2.1:1.
+ *
+ * On `:root` rather than on a `.light` ancestor because the card is portalled
+ * to the end of `<body>`; the only ancestor it is guaranteed to have is the
+ * document element.
+ */
+:root[data-theme='light'] .card {
+  --card-head: #e9eefa;
+  --card-body: #ffffff;
+  --card-line: rgb(13 22 48 / 0.1);
+  --card-chip: rgb(13 22 48 / 0.07);
+  --card-well: rgb(13 22 48 / 0.07);
+  --card-frame: #b6c3db;
+
+  --card-ink: #26324c;
+  --card-ink-strong: #0d1630;
+  --card-ink-soft: #3b4a68;
+  --card-ink-muted: #5b6a88;
+  --card-ink-dim: #6b7b99;
+  --card-ink-faint: #77869f;
+
+  --card-stat: #6b3fd0;
+  --card-stat-label: #1d2740;
+  --card-span: #7484a1;
+
+  --card-box: #f5f2ff;
+  --card-box-line: #d8ccfa;
+  --card-box-head: #e5dcfb;
+  --card-box-head-ink: #43269f;
+  --card-box-ink: #33405c;
+
+  --card-mana: #1f6ea8;
+  --card-range: #2f7d2a;
+}

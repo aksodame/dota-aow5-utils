@@ -17,6 +17,17 @@ import { SESSION_COOKIE } from './cookies.ts';
 
 export interface AuthedRequest extends Request {
   user?: UserRow;
+  /**
+   * The same user, under a name Passport does not use.
+   *
+   * `request.user` is Passport's property as well as ours, and on a provider
+   * callback its strategy assigns the *provider profile* to it — so by the time
+   * the handler runs, `user` is no longer the person whose cookie arrived. Any
+   * route that runs behind a Passport guard and still needs to know who was
+   * signed in has to read this one. See `finishProvider`, where reading the
+   * wrong one meant a link tried to attach a provider to a user with no id.
+   */
+  sessionUser?: UserRow;
   sessionToken?: string;
 }
 
@@ -30,6 +41,7 @@ export class SessionGuard implements CanActivate {
     const user = resolveSession(this.db, token, Math.floor(Date.now() / 1000));
     if (user !== null) {
       request.user = user;
+      request.sessionUser = user;
       request.sessionToken = token;
     }
     return true;

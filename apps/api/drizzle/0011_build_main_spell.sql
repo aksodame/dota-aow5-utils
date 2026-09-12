@@ -1,0 +1,15 @@
+-- The ability a build is about, chosen by its author.
+--
+-- The browse row has always led with a spell, picked by reading the kit: `q`
+-- first, then the rest in order. That is a decent guess and it is still the
+-- fallback — but it is a guess about somebody else's build, and the author is
+-- the one who knows which ability the guide is actually for.
+--
+-- A *slot* rather than an ability id. The payload already says what is in each
+-- slot, so storing `q` keeps naming the build's Q after the author swaps what
+-- sits in it; storing the id would leave the headline pointing at an ability
+-- the loadout no longer holds. It also needs no id-table lookup to render.
+--
+-- Null for every build that already exists, which is exactly "no choice made"
+-- — those rows keep the derived headline they have always had.
+ALTER TABLE `builds` ADD COLUMN `main_spell` text CHECK (`main_spell` is null or `main_spell` in ('passive', 'q', 'w', 'e', 'd', 'f', 'r'));

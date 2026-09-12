@@ -286,6 +286,34 @@ export interface TrackerConfig {
    * screen the default is small, on a laptop it is large.
    */
   uiScale: number;
+  /**
+   * Publish what this session is doing to Discord.
+   *
+   * **On by default**, and it is the one setting here that sends anything
+   * anywhere — so what goes out is worth stating exactly: two lines and a timer.
+   * In a room, its name and tier, the time it has taken and the gold it has
+   * paid; between rooms, the session's rate and how long it has been going.
+   * Plus two links: the player's own build, and this app. Never the loot list,
+   * never an item, never a number that is not on those two lines.
+   *
+   * On rather than off because it is invisible until somebody opens a profile,
+   * it says nothing a friend watching them play would not see, and a feature
+   * nobody finds is a feature nobody has. The settings screen says all of the
+   * above beside the switch, and one click ends it — `stop` clears the activity
+   * before it drops the socket, so "off" is off now rather than at the next
+   * room.
+   */
+  discordPresence: boolean;
+  /**
+   * The player's own published build, shown as the first button on it.
+   *
+   * Empty means the button leads to the builder instead, which is the honest
+   * second best: a profile that says "here is what I am farming" beats one that
+   * says "here is a website", and with nothing to point at the website is what
+   * is left. Validated where it is used — see `usableUrl` — because a link
+   * pasted wrong would otherwise cost the whole activity rather than one button.
+   */
+  buildUrl: string;
   mockSpeed: number;
   /**
    * The focus accelerator, as one string.
@@ -488,6 +516,39 @@ export interface SessionSnapshot {
 /** Subscriptions return their own unsubscribe, so React effects clean up. */
 export type Unsubscribe = () => void;
 
+/**
+ * One button under a Rich Presence activity. Discord allows two.
+ *
+ * Here rather than in `core/presence.ts` for one reason: this crosses the
+ * bridge, and the preload is compiled as its own project that may see the
+ * contract and nothing else. The file that *builds* one of these reaches for
+ * the session and the room table, which that project has no business
+ * compiling.
+ */
+export interface PresenceButton {
+  label: string;
+  url: string;
+}
+
+/**
+ * What Discord shows about a session. Built by `core/presence.ts`, sent over
+ * `setPresence`, written to the socket by `electron/discord.ts`.
+ *
+ * `startTimestamp` is milliseconds since the epoch — Discord's own unit, and
+ * the one place a factor of a thousand produces a timer counting from 1970
+ * rather than an error.
+ */
+export interface PresenceActivity {
+  details: string;
+  state: string;
+  startTimestamp: number;
+  largeImageKey: string;
+  largeImageText: string;
+  smallImageKey?: string;
+  smallImageText?: string;
+  buttons: PresenceButton[];
+}
+
 export interface TrackerApi {
   /** Which overlay this renderer is. Set by the preload from the window's query string. */
   readonly overlay: OverlayId;
@@ -561,6 +622,20 @@ export interface TrackerApi {
    * any constant in main would drift the moment `uiScale` moved.
    */
   setContentSize: (size: { width?: number; height: number } | null) => void;
+
+  /**
+   * What to show in the player's Discord profile, or null to show nothing.
+   *
+   * Built in the renderer because that is where the session, the room table and
+   * the player's language are — `buildPresence` in `core/presence.ts` — and sent
+   * rather than invoked because there is no answer worth waiting for. Main owns
+   * the socket, the fifteen-second rate limit and the reconnecting, none of
+   * which a renderer can do.
+   *
+   * Safe to call on every tick: main drops an activity identical to the one it
+   * last sent, so the cost of calling too often is a comparison.
+   */
+  setPresence: (activity: PresenceActivity | null) => void;
 
   /**
    * Open a window, or focus the one already open.

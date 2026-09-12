@@ -8,12 +8,14 @@
  * so what the author sent is what gets stored, and `encodeBuild` is never
  * called on the way in.
  *
- * A v1-v5 payload legitimately re-encodes to something different — those
- * versions migrate on decode — which is exactly why a byte-equality check here
- * would reject perfectly good links. It is not performed at all.
+ * There is no longer any version that migrates on decode, so a byte-equality
+ * check would now pass — and it is still not performed, because the moment a
+ * v8 arrives that does migrate, the check would start rejecting perfectly good
+ * links and the reason would have been forgotten.
  */
 import { MAX_PAYLOAD_CHARS } from 'aow5-api-contract';
 import { decodeBuild, type HeroTable, type IdTable } from 'aow5-shared/codec';
+import { ABILITY_SLOTS } from 'aow5-shared/types';
 
 export type PayloadRejection =
   | { reason: 'empty' }
@@ -26,10 +28,28 @@ export interface PayloadFacets {
   codecVersion: number;
   /** null when the author has not picked one, or picked one this build cannot name. */
   heroId: string | null;
-  sectionCount: number;
-  /** Filled slots, across every section. Unknown indices count — they are still choices. */
+  /** Likewise null for a room this deployment cannot resolve. */
+  /**
+   * The rooms the payload names. Empty when it names none.
+   *
+   * A list since codec v8. The *tier* is no longer derived from these: it is
+   * the author's own field on the build, because a guide may cover a tier
+   * without naming a room at all.
+   */
+  mapIds: string[];
+  /** Filled slots. Unknown indices count — they are still choices the author made. */
   itemCount: number;
   spellCount: number;
+  /**
+   * Which of the seven keys hold a spell, as the game's own slot names.
+   *
+   * Here so the service can refuse a `mainSpell` naming an empty slot without
+   * decoding the payload a second time — a headline pointing at a spell the
+   * build does not have would draw a hole in every row it appears in.
+   */
+  spellKeys: string[];
+  /** The title the payload carries, if any. The stored build's own title wins. */
+  title: string | null;
 }
 
 export type PayloadCheck =
@@ -56,7 +76,15 @@ function declaredVersion(payload: string): number {
   return Number.isInteger(version) ? version : 0;
 }
 
-export function validatePayload(raw: string, table: IdTable, heroes?: HeroTable): PayloadCheck {
+export function validatePayload(
+  raw: string,
+  table: IdTable,
+  heroes?: HeroTable,
+  /**
+   * Tier per map id. Passed in rather than imported so this stays testable
+   * against a made-up table, exactly as `table` and `heroes` are.
+   */
+): PayloadCheck {
   const payload = normalisePayload(raw);
 
   if (payload === '') return { ok: false, rejection: { reason: 'empty' } };
@@ -74,14 +102,11 @@ export function validatePayload(raw: string, table: IdTable, heroes?: HeroTable)
   }
 
   const { state } = result;
-  let itemCount = 0;
-  let spellCount = 0;
-  for (const section of state.sections) {
-    for (const slot of section.slots) if (slot !== null) itemCount += 1;
-    for (const spell of section.spells) if (spell !== null) spellCount += 1;
-  }
+  const itemCount = state.slots.filter((slot) => slot !== null).length;
+  const spellCount = state.spells.filter((spell) => spell !== null).length;
+  const spellKeys = ABILITY_SLOTS.filter((_, index) => state.spells[index] != null);
 
-  // An empty board is a well-formed payload and a pointless build. Publishing
+  // An empty loadout is a well-formed payload and a pointless build. Publishing
   // one is a UI decision, not a codec one, so it is reported rather than
   // refused: the caller can require `itemCount > 0` for a *published* build and
   // still let a draft be saved.
@@ -91,9 +116,11 @@ export function validatePayload(raw: string, table: IdTable, heroes?: HeroTable)
     facets: {
       codecVersion: declaredVersion(payload),
       heroId: state.hero,
-      sectionCount: state.sections.length,
+      mapIds: [...state.maps],
       itemCount,
       spellCount,
+      spellKeys: [...spellKeys],
+      title: state.title,
     },
   };
 }

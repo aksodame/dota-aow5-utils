@@ -1,0 +1,94 @@
+/**
+ * A 16:9 well, holding either the still or the player.
+ *
+ * `aspect-ratio` rather than the padding-top trick: the box is the right shape
+ * before the thumbnail loads, so the panel does not jump when it does, and the
+ * `iframe` that replaces the still lands in exactly the same rectangle.
+ */
+.frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  /* Black, not the panel colour: it is what letterboxing should look like, and
+     it is what the player paints while it starts. */
+  background: #000;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.player,
+.poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  padding: 0;
+}
+
+.poster {
+  display: block;
+  cursor: pointer;
+}
+
+/*
+ * `cover`, because YouTube pads `hqdefault` to 4:3 with black bars. Cropping
+ * those away is what makes the still fill a 16:9 box instead of sitting in a
+ * letterbox inside a letterbox.
+ */
+.still {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition:
+    transform 200ms ease,
+    filter 200ms ease;
+  filter: brightness(0.85);
+}
+
+.poster:hover .still {
+  transform: scale(1.03);
+  filter: brightness(1);
+}
+
+/** The play button, drawn rather than borrowed, so it matches the site. */
+.play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 32px;
+  transform: translate(-50%, -50%);
+  background: rgb(0 0 0 / 0.55);
+  border: 1px solid rgb(255 255 255 / 0.25);
+  border-radius: var(--radius);
+  color: #fff;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.poster:hover .play {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+/** In the panel header, opposite the title. */
+.watch {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+  white-space: nowrap;
+  transition: color 120ms ease;
+}
+
+.watch:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

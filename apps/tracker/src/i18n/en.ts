@@ -194,6 +194,24 @@ export const en = {
     } as Record<RunOutcome, string>,
   },
 
+  /**
+   * What the Discord profile says, for the player whose profile it is.
+   *
+   * In their language rather than in English, even though the readers are their
+   * friends and may speak anything: it is their status, they are the one who
+   * decides whether it is right, and a line they cannot read is one they cannot
+   * check. See `core/presence.ts` for which of these lands where.
+   */
+  presence: {
+    app: 'AOW5 Tools',
+    betweenRooms: 'Between rooms',
+    tier: (level: number) => `T${level}`,
+    room: (elapsed: string, gold: string) => `${elapsed} · ${gold} gold`,
+    session: (goldPerHour: string, elapsed: string) => `${goldPerHour} gold/h · ${elapsed}`,
+    myBuild: 'My build',
+    builder: 'Open the builder',
+    getTracker: 'Get the tracker',
+  },
   settings: {
     prices: {
       title: 'Item prices',
@@ -359,6 +377,17 @@ export const en = {
       autoResume: 'Start the clock on the first room',
       autoResumeHint:
         'A session begins paused, so the tracker can sit open while Dota loads without counting that as farming. With this on, walking into a room presses play for you. A pause you press mid-session still holds until the next room.',
+    },
+    presence: {
+      title: 'Discord',
+      blurb:
+        'Shows what this session is doing in your Discord profile: the room and the rates, or the run count and the average between rooms, with a timer and two links. Never the loot list.',
+      enabled: 'Publish to Discord',
+      enabledHint:
+        'On by default. Needs the Discord desktop app running and Activity Privacy switched on in its settings. Switch it off and the status is gone at once.',
+      build: 'Your build',
+      buildHint: 'Shown as the first button. Leave it empty and the button leads to the builder instead.',
+      buildPlaceholder: 'https://aow5tools.boardshub.io/builds/…',
     },
     cards: {
       title: 'HUD cards',

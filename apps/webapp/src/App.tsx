@@ -1,149 +1,159 @@
-import { useCallback, useEffect, useState } from 'react';
-import { AuroraBackground } from '@/components/fx/AuroraBackground';
-import { SignInDialog } from '@/auth/SignInDialog';
+import { useCallback, useMemo } from 'react';
+import { Notice } from '@/ui';
+import { AppDataProvider, useApp } from '@/data/AppData';
 import { SiteFooter } from '@/components/SiteFooter';
-import { SiteHeader } from '@/components/SiteHeader';
-import { Toaster } from '@/components/ui/sonner';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { STRINGS, detectLang, storeLang, type Lang } from '@/i18n/strings';
-import { SITE } from '@/i18n/site';
-import { applyTheme, getInitialTheme, storeTheme, type Theme } from '@/lib/theme';
-import { useMatch, useScrollReset } from '@/router';
+import { TopBar } from '@/components/TopBar';
+import type { FilterState } from '@/components/Filters';
+import { BrowsePage } from '@/routes/BrowsePage';
 import { BuildPage } from '@/routes/BuildPage';
-import { BuildsPage } from '@/routes/BuildsPage';
-import { LandingPage } from '@/routes/LandingPage';
-import { MyBuildsPage } from '@/routes/MyBuildsPage';
-import { PlannerPage } from '@/routes/PlannerPage';
+import { EditorPage } from '@/routes/EditorPage';
+import { MyCreationsPage } from '@/routes/MyCreationsPage';
+import { SettingsPage } from '@/routes/SettingsPage';
+import { ViewPage } from '@/routes/ViewPage';
 import { TrackerPage } from '@/routes/TrackerPage';
+import { navigateTo, pathOf, useMatch, useScrollReset, useSearch } from '@/router';
+import { browseSearch, readBrowseParams, type BrowseQueryState } from '@/lib/browseParams';
+import { LANG_PARAM } from '@/i18n/strings';
+import { useDocumentMeta } from '@/lib/meta';
+import type { MetaTarget } from 'aow5-shared/seo';
+import styles from './App.module.css';
 
 /**
- * The shell the three pages draw inside.
+ * The shell the pages draw inside.
  *
- * It owns exactly what is true of every page and belongs to none of them: the
- * colour wash, the header and footer, the tooltip and toast layers, and the
- * two preferences — language and theme — that a visitor sets once for the
- * site rather than per page.
+ * It owns exactly what is true of more than one page and belongs to none of
+ * them: the top bar, the footer, and the browse query — filters and search
+ * text — which survives navigating to a build and back.
  *
- * The planner is imported directly rather than lazily. It is the page most
- * visitors are here for, its own data arrives over the network anyway, and a
- * split would trade a fast first click for a smaller bundle on a site that is
- * already one small bundle.
+ * Every page gets the same chrome, the build page included. It was the one
+ * exception for a while, on the argument that a row of tabs over something
+ * somebody wrote to be read is an invitation to leave before reading it. In
+ * practice the cost landed elsewhere: arriving on a shared build link put you
+ * on a page with no way to reach the rest of the site, no language switcher and
+ * nowhere to sign in — and the back link only helps if you got there from the
+ * list in the first place.
  */
 export default function App() {
+  return (
+    <AppDataProvider>
+      <Shell />
+    </AppDataProvider>
+  );
+}
+
+function Shell() {
   const match = useMatch();
-  const route = match.id;
+  const search = useSearch();
+  const { strings, coreError, lang } = useApp();
 
   /*
-   * Whose build is on screen, so the header can light the list it came from.
+   * The browse query lives in the URL, not in state here.
    *
-   * Owned here rather than read from a store, because App already renders both
-   * halves and the answer arrives with the fetch. Cleared on every navigation
-   * so the previous build's answer never colours the next page.
+   * It used to be `useState`, which survived navigating to a build and back and
+   * nothing else: a reload dropped it, the address bar never said what was on
+   * screen, and a filtered list could not be sent to anybody. Reading it from
+   * `location.search` gets all three for free, and `useSearch` re-renders on
+   * every navigation — including the ones this component causes.
    */
-  const [viewingOwnBuild, setViewingOwnBuild] = useState<boolean | null>(null);
-  useEffect(() => {
-    if (route !== 'build') setViewingOwnBuild(null);
-  }, [route, match.slug]);
-  const [lang, setLang] = useState<Lang>(() => detectLang());
-  const [theme, setTheme] = useState<Theme>(() => getInitialTheme());
+  const browse = useMemo(() => readBrowseParams(search), [search]);
 
-  const strings = STRINGS[lang];
-  const site = SITE[lang];
+  /*
+   * `replace`, not push.
+   *
+   * Every keystroke in the search box and every map ticked is a change of
+   * query, and pushing each one would make Back walk letter by letter out of
+   * a search instead of leaving the page. Replacing means the browse entry is
+   * rewritten in place — so Back from a build still returns to the list *with*
+   * its filters, which is the case that matters.
+   */
+  const setBrowse = useCallback(
+    (next: BrowseQueryState) => {
+      /*
+       * `browseSearch` writes the whole query string, so anything it does not
+       * own would be dropped by a filter change. `?lang=` is carried across
+       * deliberately: it is a preference somebody may have put in the link, and
+       * losing it the moment they tick a room would be a link that stops
+       * meaning what it said.
+       *
+       * `?auth=` is *not* carried, and that is the same decision read the other
+       * way — it is a one-shot from the Steam callback, and a URL that keeps
+       * saying "sign-in failed" long after it did is worse than one that
+       * forgets.
+       */
+      const search = new URLSearchParams(browseSearch(next));
+      const language = new URLSearchParams(window.location.search).get(LANG_PARAM);
+      if (language !== null) search.set(LANG_PARAM, language);
 
-  // Keyed on the slug too, so moving between two builds scrolls to the top.
-  useScrollReset(`${route}:${match.slug ?? ''}` as never);
+      const encoded = search.toString();
+      navigateTo(`${pathOf('browse')}${encoded === '' ? '' : `?${encoded}`}`, { replace: true });
+    },
+    [],
+  );
 
-  // `lang` on the document as well as in React, so the browser hyphenates and
-  // a screen reader pronounces the Russian copy as Russian.
-  useEffect(() => {
-    document.documentElement.lang = lang;
-  }, [lang]);
+  const onFilters = useCallback(
+    (next: FilterState) => setBrowse({ ...next, q: browse.q }),
+    [setBrowse, browse.q],
+  );
+  const onSearch = useCallback((next: string) => setBrowse({ ...browse, q: next }), [setBrowse, browse]);
 
-  // index.html already applied the stored theme before first paint; this keeps
-  // the class in step with the toggle afterwards.
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+  useScrollReset(`${match.id}:${match.slug ?? ''}`);
 
-  useEffect(() => {
-    document.title = route === 'planner' ? strings.title : `${site.brand} — ${site.landing.title}`;
-  }, [route, strings.title, site]);
+  /*
+   * Steam sends people back to `/` with `?auth=failed` or `?auth=banned` when
+   * it declined, because the callback is a redirect and has no page of its own
+   * to say so on.
+   */
+  const authProblem = useMemo(() => {
+    const value = new URLSearchParams(search).get('auth');
+    if (value === 'failed') return strings.auth.failed;
+    if (value === 'banned') return strings.auth.banned;
+    return null;
+  }, [search, strings]);
 
-  const chooseLang = useCallback((next: Lang) => {
-    setLang(next);
-    storeLang(next);
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => {
-      const next: Theme = prev === 'dark' ? 'light' : 'dark';
-      storeTheme(next);
-      return next;
-    });
-  }, []);
+  /*
+   * The title, the description and the social tags, per route.
+   *
+   * This used to be `document.title = strings.brand`, which made every tab,
+   * bookmark and history entry on the site read the same three words. A build's
+   * own meta is not set here: it needs the build, which `BuildPage` has and this
+   * does not, so that route passes `null` and the page owns its own head. See
+   * `lib/meta.ts`.
+   */
+  const meta = useMemo<MetaTarget | null>(
+    () => (match.id === 'build' ? null : { kind: match.id }),
+    [match.id],
+  );
+  useDocumentMeta(meta, lang);
 
   return (
-    // 300ms, the planner's delay: its board is a grid of tiles that all have
-    // tooltips, and a zero delay there fires one on every pass of the cursor.
-    <TooltipProvider delayDuration={300}>
-      <AuroraBackground />
-
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:text-primary-foreground"
-      >
-        {site.skipToContent}
+    <div className={styles.shell}>
+      <a href="#main" className={styles.skip}>
+        {strings.nav.browse}
       </a>
 
-      {/*
-        A column at least as tall as the viewport, with the main region taking
-        up the slack.
+      <TopBar match={match} />
 
-        Without it the footer simply follows the content, so anything that
-        changes how much content there is — switching a sort, a search that
-        matches three builds instead of twenty — drags the footer up into the
-        middle of the screen and back down again. Pinning it to the bottom of a
-        full-height column means it either sits at the bottom edge or below the
-        fold, and never anywhere in between.
+      <main id="main" className={styles.main}>
+        {coreError !== null && (
+          <Notice tone="error" title={strings.browse.failed}>
+            {coreError}
+          </Notice>
+        )}
 
-        `svh` rather than `dvh` or `vh`: the small viewport height is the one
-        that does not change as a mobile browser hides and shows its own chrome,
-        so the layout does not reflow while somebody is scrolling.
-      */}
-      <div className="flex min-h-svh flex-col">
-        <SiteHeader
-          site={site}
-          route={route}
-          lang={lang}
-          theme={theme}
-          onLang={chooseLang}
-          onTheme={toggleTheme}
-          viewingOwnBuild={viewingOwnBuild}
-        />
+        {authProblem !== null && <Notice tone="error" title={authProblem} />}
 
-        <main id="main" className="flex-1">
-          {route === 'planner' && <PlannerPage lang={lang} strings={strings} site={site} />}
-          {route === 'tracker' && <TrackerPage site={site} lang={lang} />}
-          {route === 'landing' && <LandingPage site={site} lang={lang} />}
-          {route === 'builds' && <BuildsPage site={site} lang={lang} />}
-          {route === 'mine' && <MyBuildsPage site={site} />}
-          {route === 'build' && match.slug !== undefined && (
-            <BuildPage
-              slug={match.slug}
-              site={site}
-              strings={strings}
-              lang={lang}
-              onOwnershipKnown={setViewingOwnBuild}
-            />
-          )}
-        </main>
+        {match.id === 'browse' && (
+          <BrowsePage filters={browse} query={browse.q} onFilters={onFilters} onSearch={onSearch} />
+        )}
+        {match.id === 'mine' && <MyCreationsPage />}
+        {match.id === 'edit' && <EditorPage />}
+        {match.id === 'view' && <ViewPage />}
+        {match.id === 'settings' && <SettingsPage />}
+        {match.id === 'tracker' && <TrackerPage />}
+        {match.id === 'build' && match.slug !== undefined && <BuildPage slug={match.slug} />}
+      </main>
 
-        <SiteFooter site={site} />
-      </div>
-
-      {/* Mounted once here, opened only by the header. */}
-      <SignInDialog site={site} />
-      <Toaster position="bottom-right" />
-    </TooltipProvider>
+      <SiteFooter />
+    </div>
   );
 }

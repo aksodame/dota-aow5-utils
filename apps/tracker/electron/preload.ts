@@ -13,6 +13,7 @@ import {
   type SearchFail,
   type SessionSnapshot,
   type SkippedLine,
+  type PresenceActivity,
   type TrackerApi,
   type TrackerConfig,
   type TrackerStatus,
@@ -85,6 +86,7 @@ const api: TrackerApi = {
     ipcRenderer.invoke('tracker:setSize', overlay, size),
   setContentSize: (size: { width?: number; height: number } | null): void =>
     ipcRenderer.send('tracker:contentSize', overlay, size),
+  setPresence: (activity: PresenceActivity | null): void => ipcRenderer.send('tracker:presence', activity),
 
   open: (id: OverlayId): Promise<void> => ipcRenderer.invoke('tracker:open', id),
   close: (): Promise<void> => ipcRenderer.invoke('tracker:close', overlay),

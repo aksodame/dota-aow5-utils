@@ -1,0 +1,448 @@
+/**
+ * One row in the browse list: the hero, the title, a preview, the like count.
+ *
+ * The hero bleeds off the left edge at full height with its right side faded
+ * away, so it reads as art the row is built on rather than a thumbnail in a
+ * column — which is why it is absolutely placed and the row is padded to clear
+ * it, rather than being a flex item that would be boxed in and shrunk to fit.
+ *
+ * The room's own art is deliberately *not* here. It ran behind the whole row
+ * cross-fading with the hero, then became a slab at the right edge of the
+ * description block; both put a second picture in a row whose job is to be
+ * scanned past. The map is named in the meta line and pictured in the filter
+ * sidebar, which is where choosing one actually happens.
+ */
+.row {
+  position: relative;
+  display: flex;
+  /* Stretch, so the description block is the row's full height and the two
+     fixed blocks beside it centre themselves in it. */
+  align-items: stretch;
+  gap: var(--space-4);
+  width: 100%;
+  /* `box-sizing` is border-box globally, so the padding is inside the 100%. */
+  max-width: 100%;
+  /*
+   * Fixed, not a minimum. Every row is the same height whatever it holds — a
+   * long title or a wordy map name is clipped rather than allowed to push the
+   * row taller, because a list whose rows are different heights stops being
+   * something you can scan down.
+   */
+  height: var(--build-row-h);
+  /*
+   * No vertical padding. The hero is the row's full height, and padding here
+   * would leave a strip of background above and below it. The text block
+   * supplies its own instead.
+   */
+  padding: 0 var(--space-4) 0 150px;
+  border: 1px solid transparent;
+  /*
+   * The panel's own radius, not the smaller default.
+   *
+   * The rows sit in a flush panel with nothing between them and its edge, and
+   * a nested corner with no padding around it has to be the corner it is
+   * nested in — an 8px row inside a 14px card left a wedge of card showing at
+   * the top and bottom of the list, which reads as the row being cut rather
+   * than fitted. Both lists that draw these rows are flush panels, so this is
+   * right for each of them.
+   */
+  border-radius: var(--radius-lg);
+  text-align: left;
+  overflow: hidden;
+  transition: background-color 120ms ease;
+}
+
+.row:nth-child(even) {
+  background: var(--wash-1);
+}
+
+.row:hover {
+  background: var(--wash-3);
+  border-color: var(--border);
+}
+
+/**
+ * The hero, floor to ceiling and cropped to the row rather than fitted into it.
+ *
+ * `object-position` favours the top because these are portraits: cropping a
+ * head off to centre a torso is the one thing that must not happen.
+ *
+ * The right edge is masked away so it dissolves into the row instead of ending
+ * at a line. The ramp is in pixels rather than percentages so it lands where
+ * the padding does, whatever the row's width.
+ */
+.portrait {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 168px;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 15%;
+  pointer-events: none;
+  mask-image: linear-gradient(90deg, #000 0px, #000 88px, transparent 168px);
+}
+
+/** The description block: the title and the line under it, and nothing else. */
+.main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* The row has none, so the text keeps clear of the edges on its own. */
+  padding: var(--space-2) var(--space-3) var(--space-2) 0;
+  /* Nothing inside may make this taller than the row it is in. */
+  overflow: hidden;
+}
+
+.title {
+  display: block;
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/**
+ * One line, never two.
+ *
+ * `flex-wrap: wrap` let this spill onto a second row and take the row's height
+ * with it, which is what made the list ragged. It clips instead, and the map
+ * name — the only part with no bound on its length — gets the ellipsis.
+ */
+.meta {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/*
+ * Everything in the line holds its size, and the two rules below take that back
+ * for the two parts that are allowed to give ground.
+ *
+ * The order they give it in is the line's order of worth, read right to left:
+ * who wrote this, then what it is filed under, then which room it is for. The
+ * author block is the one thing here that never shrinks — a nickname cut to a
+ * letter and a badge cut mid-word are damage rather than abbreviation — so
+ * everything else in the line pays first.
+ */
+.meta > * {
+  flex: none;
+}
+
+/*
+ * First to give, and it gives alone until there is nothing left of it.
+ *
+ * A room's name is the one part of the line with no bound on its length, and
+ * the part a reader can also get from the filter sidebar and usually from the
+ * title above. It ellipsises rather than clips, so what is left of it still
+ * reads as a name that was cut.
+ */
+.meta > .metaMap {
+  flex: 0 100 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * Then the tier, once the map name has nothing left to give.
+ *
+ * A hundred to one is not really a ratio — it is an order. The map name is
+ * down to an ellipsis before the chip loses its first pixel, and the chip only
+ * starts losing pixels on a row narrow enough that the alternative is taking
+ * them off the name of the person who wrote the build.
+ */
+.meta > .metaTier {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/**
+ * The author block, whole or not at all.
+ *
+ * `flex: none`, inherited from the rule at the top of this group: the avatar,
+ * the name and the "unverified" badge are one thing that is read as one thing,
+ * and the line is arranged so that the two before it run out first.
+ */
+.author {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* And nothing inside it gives either, so the three pieces keep their spacing
+   whatever the row does around them. */
+.author > * {
+  flex: none;
+}
+
+/*
+ * Sixteen characters, and no floor under it.
+ *
+ * The floor that used to be here — six characters — was a minimum on the box
+ * rather than on the squeeze, so a short nickname was drawn in a box sized for
+ * a longer one and the "unverified" badge beside it sat adrift of the name it
+ * belongs to. Nothing shrinks the block any more, so the name is its own width
+ * up to the cap and the badge sits where it reads as attached.
+ */
+.authorName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 16ch;
+}
+
+/**
+ * The price, between the description and the loadout.
+ *
+ * Gold, and the only gold thing on the page — the like count went blue with
+ * the rest of the accent, which is what leaves this colour free to mean one
+ * thing. Fixed width and tabular figures so the coins line up down the list
+ * rather than stepping in and out as the digits change.
+ *
+ * `1.5b` is nine characters at most, and `min-width` is set for the widest of
+ * those rather than the current one, so a row with no price leaves a gap
+ * exactly where the priced rows have theirs.
+ */
+.price {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  flex: none;
+  align-self: center;
+  min-width: 76px;
+  /* Here rather than on `.priceValue`, so the coin's `em` resolves against the
+     same size as the figure it sits beside. */
+  font-size: 13px;
+  color: var(--gold);
+}
+
+/*
+ * Sized to the text beside it rather than to a round number.
+ *
+ * The source is a square 64x64 with the coin filling it edge to edge, so the
+ * rendered box *is* the coin — there is no letterboxing to allow for. It used
+ * to be an 88x64 image whose 18px box therefore drew a 13px coin, inside a
+ * black rectangle it had baked in; both are gone with the source.
+ *
+ * `1.25em` ties it to the price's own font size, so the two stay in proportion
+ * at the smaller size the phone breakpoint uses.
+ */
+.priceCoin {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  /* The glow is on the coin now that the coin is all there is, rather than on
+     a rectangle around it. */
+  filter: drop-shadow(0 0 3px rgb(255 190 60 / 0.35));
+}
+
+.priceValue {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/**
+ * The preview: the main spell, then the whole gear block.
+ *
+ * One spell, per the reference — a row showing seven of them is a build page,
+ * not a row in a list — but all six worn slots, holes included, so the tiles
+ * line up between rows and a build missing its boots reads as missing them.
+ */
+.preview {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  /*
+   * `flex: 0 1 auto` rather than `none`: a fixed-width block that refuses to
+   * shrink is what pushes a flex row past its container, and this one is the
+   * widest thing in the row. It gives way before the row overflows; the
+   * breakpoints below take it out entirely before it gets that far.
+   */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  align-self: center;
+}
+
+.previewSpell {
+  width: 42px;
+}
+
+/** Six in a line, so the block reads left to right like the row it is in. */
+.previewItems {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.previewItem {
+  width: 34px;
+}
+
+.likes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: none;
+  align-self: center;
+  min-width: 46px;
+  color: var(--like);
+}
+
+.likeCount {
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Things leave in order of how much they earn their width. */
+@media (max-width: 1240px) {
+  .previewItems {
+    display: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .preview {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  /* Last of the three to go, because "can I afford it" survives the loss of
+     the picture of what you are affording. The coin needs no rule of its own:
+     it is sized in `em`, so it follows the figure down. */
+  .price {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .row {
+    gap: var(--space-2);
+    padding-left: 104px;
+    padding-right: var(--space-2);
+  }
+
+
+  .portrait {
+    width: 116px;
+    mask-image: linear-gradient(90deg, #000 0px, #000 58px, transparent 116px);
+  }
+
+  .title {
+    font-size: 15px;
+  }
+}
+
+/* --- the skeleton --------------------------------------------------------- */
+
+/**
+ * A row that is not there yet.
+ *
+ * It reuses `.row`'s own geometry — the same height token, the same padding
+ * that clears the portrait — so the placeholders land where the real content
+ * will. That is the whole point of a skeleton: if it does not line up, the list
+ * jumps as each page arrives, which is worse than the spinner it replaced.
+ */
+.skeleton {
+  composes: row;
+  pointer-events: none;
+}
+
+/**
+ * The shimmer.
+ *
+ * One animation on a shared class rather than one per block, and it is a
+ * background sweep rather than an opacity pulse so a column of them does not
+ * blink in unison. `styles.css` disables it wholesale under
+ * `prefers-reduced-motion`, leaving the flat grey — which still reads as
+ * "pending" without anything moving.
+ */
+.bone {
+  position: relative;
+  overflow: hidden;
+  background: var(--wash-2);
+  border-radius: var(--radius-sm);
+}
+
+.bone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--sheen), transparent);
+  animation: boneSweep 1.4s ease-in-out infinite;
+}
+
+@keyframes boneSweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/** Where the portrait will be, under the same absolute placement. */
+.bonePortrait {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 168px;
+  border-radius: 0;
+  mask-image: linear-gradient(90deg, #000 0px, #000 88px, transparent 168px);
+}
+
+.boneTitle {
+  width: min(280px, 55%);
+  height: 15px;
+}
+
+.boneMeta {
+  width: min(200px, 40%);
+  height: 11px;
+  margin-top: var(--space-2);
+}
+
+.bonePreviewSpell {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-pill);
+}
+
+.bonePreviewItem {
+  width: 34px;
+  height: 34px;
+}
+
+.boneLikes {
+  width: 24px;
+  height: 30px;
+}
+
+@media (max-width: 560px) {
+  .bonePortrait {
+    width: 116px;
+    mask-image: linear-gradient(90deg, #000 0px, #000 58px, transparent 116px);
+  }
+}

@@ -1,0 +1,40 @@
+.group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  opacity: 0.55;
+  transition:
+    opacity 120ms ease,
+    border-color 120ms ease;
+}
+
+.button:hover {
+  opacity: 1;
+  border-color: var(--border);
+}
+
+.active,
+.active:hover {
+  opacity: 1;
+  border-color: var(--accent);
+}
+
+.flag {
+  width: 20px;
+  height: 14px;
+  border-radius: 2px;
+  object-fit: cover;
+  /* A hairline, so a mostly-white flag still has an edge on a dark bar. */
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+}
