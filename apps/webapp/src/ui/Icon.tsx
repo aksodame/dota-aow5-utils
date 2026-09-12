@@ -103,6 +103,17 @@ export function Plus(props: IconProps) {
   );
 }
 
+/** A circled exclamation, for a state that wants a word of explanation. */
+export function Warning(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v4" />
+      <path d="M12 16h.01" />
+    </Svg>
+  );
+}
+
 export function Trash(props: IconProps) {
   return (
     <Svg {...props}>

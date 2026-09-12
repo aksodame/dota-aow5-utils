@@ -125,6 +125,9 @@
    */
   --gold: #ffc44d;
   --danger: #ff6b6b;
+  /* The middle of the three status colours, between --ok and --danger. Amber
+     rather than the gold above, which is a price and would read as one. */
+  --warn: #f5b83d;
   --ok: #4ade80;
 
   --border: #26304d;
@@ -304,6 +307,9 @@
      same coin, taken down to where a price is legible as text. */
   --gold: #9a6b06;
   --danger: #c62b2b;
+  /* Amber taken down to where it is legible as text on white, like the two
+     around it. */
+  --warn: #b06f00;
   --ok: #1a7f46;
 
   --border: #d3dcee;

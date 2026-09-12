@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { BuildSummary } from 'aow5-api-contract';
-import { Button, Icon, Loading, Notice, Panel } from '@/ui';
+import { Button, Icon, Loading, Notice, Panel, cx } from '@/ui';
 import { useApp } from '@/data/AppData';
 import { myBuilds } from '@/builds/api';
 import { BuildRow } from '@/components/BuildRow';
@@ -71,6 +71,37 @@ export function MyCreationsPage() {
   const atLimit = me.buildCount >= me.buildLimit;
   const loading = builds === null || core === null;
 
+  /*
+   * How full the slots are, as a colour.
+   *
+   * Red when there are more builds than slots, which the migration made real:
+   * an account with no provider linked has five slots, and several were brought
+   * across holding six or eight. Amber from 80% full — 4/5, 8/10 — because that
+   * is the point where "make the next one count" starts to matter, and green
+   * below it while there is still room. The threshold is a ratio rather than a
+   * fixed gap so it means the same thing at every limit, 5 through 15.
+   */
+  const over = me.buildCount > me.buildLimit;
+  const near = !over && me.buildLimit > 0 && me.buildCount / me.buildLimit >= 0.8;
+  const tone = over ? styles.over : near ? styles.near : styles.ok;
+
+  /*
+   * The hint only helps if linking would actually raise the cap, and it names
+   * the door still to open: with Steam already attached it asks for Discord and
+   * vice versa, and with neither it offers both. Both attached is the ceiling —
+   * no advice to give, so the alert is gone and only the counter's colour
+   * remains.
+   */
+  const hasSteam = me.providers.includes('steam');
+  const hasDiscord = me.providers.includes('discord');
+  const canLinkMore = !(hasSteam && hasDiscord);
+  const showHint = (over || near) && canLinkMore;
+  const hintText = hasSteam
+    ? strings.mine.slotsHintDiscord
+    : hasDiscord
+      ? strings.mine.slotsHintSteam
+      : strings.mine.slotsHint;
+
   return (
     <div className={styles.page}>
       {/*
@@ -82,11 +113,24 @@ export function MyCreationsPage() {
       <Panel
         title={strings.mine.heading}
         action={
-          <span className={styles.count} title={strings.mine.slotsUsed}>
+          <span className={cx(styles.count, tone)} title={strings.mine.slotsUsed}>
             {me.buildCount}/{me.buildLimit}
           </span>
         }
       >
+        {/*
+          The alert takes the same tone class as the count above it, so its
+          border, tint, text and icon are all one `currentColor` — red when the
+          account is over its slots, amber when it is near — matching the number
+          in the header. It sits between the heading and the create button
+          because that is the path: you read why the cap is what it is, then act.
+        */}
+        {showHint && (
+          <div className={cx(styles.alert, tone)}>
+            <Icon.Warning size={16} aria-hidden />
+            <span>{hintText}</span>
+          </div>
+        )}
         <div className={styles.act}>
           <Button
             variant="primary"

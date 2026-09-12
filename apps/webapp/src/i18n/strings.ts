@@ -231,6 +231,10 @@ export interface Strings {
     remove: string;
     removeConfirm: string;
     slotsUsed: string;
+    /** The over/near-limit alert, by which providers are still unlinked. */
+    slotsHint: string;
+    slotsHintSteam: string;
+    slotsHintDiscord: string;
   };
   editor: {
     heading: string;
@@ -433,6 +437,45 @@ export interface Strings {
       allReleases: string;
       none: string;
       failed: string;
+    };
+    /**
+     * The overlay's own words, for the picture of it on this page.
+     *
+     * **Copied from the tracker's catalogs, not translated from the English
+     * here.** `HudPreview` draws what the farm panel draws, and a card labelled
+     * one way on the page and another way in the app is a page that mislabels
+     * the thing it is selling — so every label below is the string
+     * `apps/tracker/src/i18n/<lang>.ts` puts in that exact place. The rest of
+     * this block — the heading and the caption — is the site's own voice, and
+     * is written per language like everything else here.
+     *
+     * The numbers are not here. They are arithmetic off a table of real item
+     * ids in `HudPreview`, and the names, prices and art come out of the
+     * extracted data at the reader's language.
+     */
+    preview: {
+      /** The panel's heading. */
+      title: string;
+      /** Under the picture: what the two panels are, and what is real about them. */
+      caption: string;
+      /** The overlay's title bar: the brand, then which of its windows this is. */
+      brand: string;
+      window: string;
+      /** The room line's run-in. "In hideout" but "At Frozen Tundra". */
+      at: string;
+      /** The terse label over each figure, for the six cards a fresh profile has on. */
+      cards: Record<'session' | 'sessionGold' | 'sessionBest' | 'mapTime' | 'mapGold' | 'mapGoldAverage', string>;
+      /** The loot list's three headings. Every one of them sorts, in the app. */
+      columns: { name: string; unit: string; total: string };
+      /**
+       * The line along the bottom of the panel.
+       *
+       * Takes the chord rather than spelling it, because the tracker's own hint
+       * is composed the same way — the key is rebindable, and a panel still
+       * saying `Ctrl+Alt+T` after somebody moved it is a wrong instruction
+       * rather than a missing one.
+       */
+      pinHint: (hotkey: string) => string;
     };
     /**
      * The five things somebody would install it for, as bullets.
@@ -641,6 +684,9 @@ const en: Strings = {
     remove: 'Delete',
     removeConfirm: 'Delete this build? Its link will stop working.',
     slotsUsed: 'builds used',
+    slotsHint: 'Link a Steam or Discord account to raise this — each one adds 5 more slots.',
+    slotsHintSteam: 'Link a Steam account to raise this — it adds 5 more slots.',
+    slotsHintDiscord: 'Link a Discord account to raise this — it adds 5 more slots.',
   },
   editor: {
     heading: 'Editor',
@@ -790,6 +836,24 @@ const en: Strings = {
       allReleases: 'All releases',
       none: 'No release published yet.',
       failed: 'Could not reach GitHub. The link still works.',
+    },
+    preview: {
+      title: 'What it looks like',
+      caption:
+        "Both of the overlay's states: opened up with the hotkey pressed, and collapsed to the summary it sits at all evening. The items, their prices and their art are the game's — only the quantities are invented, and they are what an evening in Skyfall Realm looks like.",
+      brand: 'AOW5',
+      window: 'tracker',
+      at: 'At ',
+      cards: {
+        session: 'session time',
+        sessionGold: 'session gold',
+        sessionBest: 'session best',
+        mapTime: 'current time',
+        mapGold: 'current gold',
+        mapGoldAverage: 'gold per map',
+      },
+      columns: { name: 'picked up', unit: 'val', total: 'total' },
+      pinHint: (hotkey) => `${hotkey} to unfocus and pin it over the game`,
     },
     features: {
       title: 'Highlights',
@@ -1011,6 +1075,9 @@ const ru: Strings = {
     remove: 'Удалить',
     removeConfirm: 'Удалить эту сборку? Её ссылка перестанет работать.',
     slotsUsed: 'сборок занято',
+    slotsHint: 'Привяжите Steam или Discord, чтобы поднять лимит — каждый добавляет по 5 слотов.',
+    slotsHintSteam: 'Привяжите Steam, чтобы поднять лимит — это добавит 5 слотов.',
+    slotsHintDiscord: 'Привяжите Discord, чтобы поднять лимит — это добавит 5 слотов.',
   },
   editor: {
     heading: 'Редактор',
@@ -1160,6 +1227,26 @@ const ru: Strings = {
       allReleases: 'Все релизы',
       none: 'Релизов пока нет.',
       failed: 'Не достучались до GitHub. Ссылка всё равно работает.',
+    },
+    preview: {
+      title: 'Как это выглядит',
+      caption:
+        'Оба состояния оверлея: развёрнутый, с нажатой горячей клавишей, и свёрнутый до сводки, в которой он и стоит весь вечер. Предметы, их цены и иконки — игровые; выдуманы только количества, и это один вечер в Царстве Небопада.',
+      brand: 'AOW5',
+      window: 'трекер',
+      /* Русский требует предложного падежа, а названия приходят из игры в
+         именительном, поэтому здесь двоеточие вместо предлога — как и в трекере. */
+      at: 'Комната: ',
+      cards: {
+        session: 'время сессии',
+        sessionGold: 'золото сессии',
+        sessionBest: 'лучший дроп',
+        mapTime: 'время комнаты',
+        mapGold: 'золото комнаты',
+        mapGoldAverage: 'сред. золото',
+      },
+      columns: { name: 'добыча', unit: 'цена', total: 'всего' },
+      pinHint: (hotkey) => `${hotkey} — снять фокус и закрепить поверх игры`,
     },
     features: {
       title: 'Главное',
@@ -1378,6 +1465,9 @@ const zh: Strings = {
     remove: '删除',
     removeConfirm: '删除这个配装？它的链接将失效。',
     slotsUsed: '个配装已使用',
+    slotsHint: '绑定 Steam 或 Discord 账号可提升上限——每个增加 5 个名额。',
+    slotsHintSteam: '绑定 Steam 账号可提升上限——增加 5 个名额。',
+    slotsHintDiscord: '绑定 Discord 账号可提升上限——增加 5 个名额。',
   },
   editor: {
     heading: '编辑器',
@@ -1524,6 +1614,25 @@ const zh: Strings = {
       allReleases: '全部版本',
       none: '尚未发布版本。',
       failed: '无法连接 GitHub。链接仍然可用。',
+    },
+    preview: {
+      title: '浮层预览',
+      caption:
+        '浮层的两种状态：按下热键后展开，以及整晚停在上面的收起摘要。物品、单价和图标都是游戏里的 —— 只有数量是编的，那是在倾天秘境里的一晚。',
+      brand: 'AOW5',
+      window: '追踪器',
+      /* 中文里“在”既能带处所名词也能带地名，追踪器里也是这么写的。 */
+      at: '在',
+      cards: {
+        session: '本场时长',
+        sessionGold: '本场金币',
+        sessionBest: '本场最佳',
+        mapTime: '当前时长',
+        mapGold: '当前金币',
+        mapGoldAverage: '每图金币',
+      },
+      columns: { name: '掉落', unit: '单价', total: '合计' },
+      pinHint: (hotkey) => `按 ${hotkey} 取消聚焦，固定在游戏上方`,
     },
     features: {
       title: '亮点',

@@ -29,10 +29,56 @@
 
 /** Slots gone, out of five. Tabular so the number does not shift as it grows. */
 .count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
   font-size: 13px;
   font-weight: 800;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The three fill states. Green while there is room, amber from 80% full, red
+ * when the migration left an account holding more than its slots. The colour is
+ * on the whole group, so the warning icon beside the number inherits it.
+ */
+.ok {
+  color: var(--ok);
+}
+.near {
+  color: var(--warn);
+}
+.over {
+  color: var(--danger);
+}
+
+/*
+ * The alert between the heading and the create button.
+ *
+ * It carries the same tone class as the count in the header — `.over` or
+ * `.near` — which sets nothing but `color`. Everything visible here is drawn
+ * from that one `currentColor`: the border, the tint behind it, the text and
+ * the icon. So the whole alert is exactly the colour of the number it explains,
+ * red or amber, without a second place to keep in step.
+ */
+.alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* The icon keeps its size when the sentence wraps to a second line. */
+.alert svg {
+  flex: none;
 }
 
 .column {

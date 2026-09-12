@@ -4,40 +4,15 @@ export const REPO = 'aksodame/dota-aow5-utils';
 export const REPO_URL = `https://github.com/${REPO}`;
 export const RELEASES_URL = `${REPO_URL}/releases`;
 
-/**
- * The site this one replaces, still running.
- *
- * One page of it is still linked. The tracker's page here is being rebuilt,
- * and until it is, the old one is where the download and the setup
- * instructions actually are — a "coming soon" with no way through is worse
- * than no page at all.
- *
- * The old *build list* used to be linked too, from a banner over the browse
- * page asking authors to bring their builds across by hand. That banner is
- * gone because the builds have moved: they were imported wholesale, one new
- * guide per section of each old one, so there is nothing left over there for a
- * reader to go and fetch.
- *
- * Delete this and the notice that uses it together, once the tracker page
- * stands on its own.
+/*
+ * The old site — dota-aow5-utils.duckdns.org — is no longer linked from
+ * anywhere here, so it has no constant. Both things that pointed at it are
+ * gone: the browse banner that asked authors to move their builds (the builds
+ * were imported wholesale instead), and the tracker page's link to the old
+ * download (this app's `/tracker` now serves the installer itself). The old
+ * host now 301s every path here, so even a link saved before this still lands
+ * on the new site.
  */
-const OLD_SITE = 'https://dota-aow5-utils.duckdns.org';
-export const OLD_SITE_TRACKER = `${OLD_SITE}/tracker`;
-
-/**
- * The same page, in the language the reader is already reading.
- *
- * The old site is the previous version of this one and reads `?lang=` exactly
- * as this one does, so carrying it across is the difference between handing
- * somebody the page they were on and handing them the English one.
- */
-export function oldTrackerUrl(lang: string): string {
-  return withLang(OLD_SITE_TRACKER, lang);
-}
-
-function withLang(url: string, lang: string): string {
-  return `${url}?lang=${encodeURIComponent(lang)}`;
-}
 
 /** The addon both tools read their data from. */
 export const WORKSHOP_URL = 'https://steamcommunity.com/sharedfiles/filedetails?id=2883951116';

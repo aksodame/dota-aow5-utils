@@ -1,0 +1,713 @@
+/**
+ * The farm overlay's Torchlight skin, transcribed.
+ *
+ * Every value below has a counterpart in `apps/tracker` — the token block at
+ * `:root[data-style='torchlight']` in its `styles.css`, and the `hud-tl-*`
+ * component classes under it. This file is where the fidelity lives, so it is
+ * written to be diffed against those two rather than to be short.
+ *
+ * **Two conventions, both load-bearing.**
+ *
+ * The palette is *pinned*, not themed. The overlay has no light mode: it sits
+ * over Dota, not over a page, and a version of it that went pale on a white
+ * background would be a picture of something that does not exist. `ItemCard`
+ * makes the opposite call for the in-game tooltip and says why — the card is a
+ * surface the page owns and the rarity ramp there should follow the page. This
+ * is a picture of another application, ramp included.
+ *
+ * Every length is `calc(var(--u) * k)`, where `--u` is the overlay's root font
+ * size and `k` is the rem figure the tracker writes. `html { font-size: 24px }`
+ * over there, so the whole HUD scales from that one number and every size in it
+ * is a multiple of it; here `--u` is smaller, because a 600-pixel panel would
+ * own the column it is meant to illustrate. Written as a multiplication rather
+ * than in `em` on purpose: `em` compounds through a nested font-size, and this
+ * layout nests a 0.25-unit dot inside a 0.5-unit heading — which in `em` would
+ * come out a quarter of the size it should be.
+ */
+
+.figure {
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+/**
+ * A stand-in for the game, not a screenshot of it.
+ *
+ * The point this backdrop has to make is that the panel is translucent and
+ * floats over something. An abstract wash makes it; borrowing Valve's art to
+ * make it would be taking more than this page needs.
+ *
+ * The panels are stacked and centred rather than pushed into a corner. The
+ * overlay really does live in one, but a figure is looked at head-on: off to
+ * one side, the two panels read as two things placed where there was room,
+ * where centred they read as one subject photographed twice. Never both at once
+ * in real life — the caption says so.
+ */
+.stage {
+  /* The overlay's root font size, and with it the scale of everything below. */
+  --u: 22px;
+
+  /* --- `:root[data-style='torchlight']`, verbatim ------------------------- */
+
+  /* Barely lit. The slab is a ground for the orange, not a colour of its own. */
+  --hud-card: oklch(0.185 0.015 258);
+  --hud-fg: oklch(0.97 0.003 260);
+  --hud-muted: oklch(0.63 0.014 258);
+  /* Hairlines *inside* the panel stay dark and cool; only the outer frame is
+     orange, which is why the tracker keeps the two as separate tokens. */
+  --hud-line: oklch(0.33 0.018 258);
+  /* The one saturated colour in the skin: headings, the frame, the focus ring. */
+  --hud-primary: oklch(0.72 0.19 47);
+  --hud-frame: oklch(0.68 0.2 47);
+  /* Warm off-white rather than gold: this skin spends its orange on headings,
+     and a third accent on the figures would leave it nothing to point at. */
+  --hud-gold: oklch(0.93 0.045 78);
+  /* All but square. The idiom builds its panels out of straight edges, and a
+     10px radius reads as a web card however it is coloured. */
+  --hud-radius: calc(var(--u) * 0.1875);
+
+  /*
+   * Item rarity, the tracker's own eight values.
+   *
+   * The one group a skin may not touch over there, and the one group this
+   * figure may not take from the page: a player learns what a purple name
+   * means once and reads it for a thousand hours.
+   */
+  --hud-q1: #9ca3af;
+  --hud-q2: #4ade80;
+  --hud-q3: #60a5fa;
+  --hud-q4: #a78bfa;
+  --hud-q5: #f472b6;
+  --hud-q6: #fb923c;
+  --hud-q7: #fbbf24;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: radial-gradient(
+    120% 120% at 20% 0%,
+    oklch(0.32 0.06 255),
+    oklch(0.14 0.02 265) 60%,
+    oklch(0.1 0.015 270)
+  );
+  color: var(--hud-fg);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  /* The overlay is click-through; text selection would only ever be a bug, and
+     a figure nobody can smear is closer to the thing it depicts. */
+  user-select: none;
+}
+
+/* --- the slab --------------------------------------------------------------- */
+
+/**
+ * `.hud-panel`, with the frosting left off.
+ *
+ * The real one blurs what is behind it. This one does not: there is no game
+ * back there to reveal, and a `backdrop-filter` recomposites on every scroll
+ * frame for a gradient that is already static. The 92% alpha is kept, so the
+ * wash still shows through and the slab still reads as something laid over
+ * something else.
+ */
+.panel {
+  /*
+   * 25 units, which is the farm window's default 600 pixels at the overlay's
+   * own 24-pixel root — so the panel here is the same *shape* as the one a
+   * fresh install puts on screen, at two thirds the size. Stated in units
+   * rather than in pixels for exactly that reason: the width and everything
+   * inside it have to scale together, or the figure becomes a picture of a
+   * window somebody dragged narrow.
+   */
+  width: min(100%, calc(var(--u) * 25));
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.5);
+  padding: calc(var(--u) * 0.5);
+  border: 1px solid var(--hud-frame);
+  border-radius: var(--hud-radius);
+  background: color-mix(in oklab, var(--hud-card) 92%, transparent);
+  /* A cast shadow, then a dim orange bloom just outside the frame. The bloom is
+     what stops a 1px line from disappearing against a bright game. */
+  box-shadow:
+    0 8px 24px oklch(0 0 0 / 60%),
+    0 0 10px -2px oklch(0.68 0.2 47 / 35%);
+}
+
+/** The panel with the mouse: `ring-2 ring-primary/60`, which is how it says so. */
+.focused {
+  outline: 2px solid color-mix(in oklab, var(--hud-primary) 60%, transparent);
+}
+
+/** Collapsed is meant to be the smallest thing that answers the question. */
+.collapsedPanel {
+  gap: 0;
+  padding-block: calc(var(--u) * 0.25);
+}
+
+/* --- the chrome ------------------------------------------------------------- */
+
+.chrome {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.25);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.25);
+  min-width: 0;
+}
+
+/**
+ * Every glyph in the figure is the shell's 3.5-unit icon.
+ *
+ * Sized here rather than by a prop so the one number that decides the scale
+ * stays `--u` — see the note at the top of this file.
+ */
+.glyph {
+  width: calc(var(--u) * 0.875);
+  height: calc(var(--u) * 0.875);
+  flex: none;
+  color: var(--hud-muted);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: calc(var(--u) * 0.6875);
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/** Which window it is, quieter than the brand it follows. */
+.titleDim {
+  color: var(--hud-muted);
+}
+
+/**
+ * The seven buttons, right-aligned.
+ *
+ * A row of their own, which is a real cost — pressing the hotkey moves the
+ * readout down by a row — and the shell pays it because seven icons and a
+ * window name do not fit a narrow panel side by side. The ones that lost that
+ * argument were the buttons, squeezed to where the skull sat against the quit
+ * cross.
+ */
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc(var(--u) * 0.125);
+}
+
+.buttons > svg {
+  width: calc(var(--u) * 0.875);
+  height: calc(var(--u) * 0.875);
+  /* The 6-unit hit box every ChromeButton has, drawn as padding so the glyphs
+     sit the distance apart they really do. */
+  padding: calc(var(--u) * 0.3125);
+  box-sizing: content-box;
+  flex: none;
+  color: var(--hud-muted);
+}
+
+/* --- the room line ---------------------------------------------------------- */
+
+/**
+ * Where you are, on the row the chrome leaves empty while you are playing.
+ *
+ * It loses its slab in this skin: the shared component draws itself on a
+ * rounded tinted block, which is right on a panel made of blocks and wrong on
+ * one made of rules, where it reads as a sixth widget stacked on the
+ * instrument.
+ */
+.stateLine {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.375);
+  min-width: 0;
+  padding-block: calc(var(--u) * 0.125);
+  padding-inline: calc(var(--u) * 0.125);
+}
+
+.room {
+  min-width: 0;
+  overflow: hidden;
+  font-size: calc(var(--u) * 0.6875);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* "In hideout" but "At Frozen Tundra" — a room is a place you are at, which is
+   also the difference between waiting and farming. */
+.roomAt {
+  color: var(--hud-muted);
+}
+
+.roomName {
+  font-weight: 600;
+}
+
+/**
+ * Rooms finished, riding along at the right.
+ *
+ * A number, but a slow one — it moves a handful of times an hour where the
+ * figures below move every second — so a whole card of the readout would be
+ * width spent on what is really context for the room beside it.
+ */
+.runs {
+  margin-inline-start: auto;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: calc(var(--u) * 0.25);
+}
+
+.runsCount {
+  font-size: calc(var(--u) * 0.6875);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- the readout ------------------------------------------------------------ */
+
+/**
+ * `.hud-tl-grid`: one frame, and every division inside it a hairline.
+ *
+ * The single most important thing about this layout, and the thing a row of
+ * cards cannot imitate: the cells run edge to edge with a rule between them and
+ * no gap at all, so the block reads as one instrument with several dials rather
+ * than as five widgets that happen to be adjacent.
+ *
+ * `overflow: hidden` so the cells square off against the rounded corner instead
+ * of poking through it.
+ */
+.grid {
+  overflow: hidden;
+  border: 1px solid var(--hud-line);
+  border-radius: var(--hud-radius);
+  background: oklch(0 0 0 / 22%);
+}
+
+.top {
+  display: flex;
+  align-items: stretch;
+}
+
+.headlineCell {
+  flex: 1;
+  min-width: 0;
+  padding: calc(var(--u) * 0.25) calc(var(--u) * 0.5);
+}
+
+.headlineHead {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--u) * 0.5);
+  min-width: 0;
+}
+
+/**
+ * The headline's own heading, and the one label on the panel that is not grey.
+ *
+ * Orange, because it names the number the layout is built around.
+ */
+.heading {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.25);
+  min-width: 0;
+  overflow: hidden;
+  font-size: calc(var(--u) * 0.5);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--hud-primary);
+}
+
+/** Four pixels of "this one", in a skin where every label is the same size. */
+.dot {
+  width: calc(var(--u) * 0.25);
+  height: calc(var(--u) * 0.25);
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--hud-primary);
+}
+
+.headlineItem {
+  margin-inline-start: auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: calc(var(--u) * 0.5625);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headlineRow {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.375);
+  min-width: 0;
+}
+
+/** Sized to the number beside it rather than to the other icons. */
+.headlineIcon {
+  width: calc(var(--u) * 1.35);
+  height: calc(var(--u) * 1.35);
+  flex: none;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.headlineIcon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/**
+ * The largest thing on the panel by a long way.
+ *
+ * The best drop, not the session total and not gold per hour: the one item that
+ * carried the evening. A farm session has one question in it — was that room
+ * worth it — and this layout answers it with the whole panel.
+ */
+.headline {
+  min-width: 0;
+  overflow: hidden;
+  font-size: calc(var(--u) * 1.5);
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--hud-gold);
+}
+
+/** `(×20)`: a footnote to the number, not a second one. */
+.trailing {
+  align-self: flex-end;
+  flex: none;
+  font-size: calc(var(--u) * 0.625);
+  font-variant-numeric: tabular-nums;
+  color: var(--hud-muted);
+}
+
+/* A division between cells. `-start` follows the text direction rather than
+   assuming left to right, as the tracker's own `-s` rule does. */
+.ruleStart {
+  border-inline-start: 1px solid var(--hud-line);
+}
+
+.pairs {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  justify-content: center;
+  border-inline-start: 1px solid var(--hud-line);
+}
+
+/**
+ * One of the two small readings beside the headline.
+ *
+ * Label left, value right, on one line — the opposite of every other figure in
+ * this layout, which stacks them. Deliberate: these two sit in a column narrow
+ * enough that stacking would make the block taller than the headline it is
+ * meant to sit quietly next to.
+ */
+.pair {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.5);
+  padding: calc(var(--u) * 0.125) calc(var(--u) * 0.5);
+}
+
+/**
+ * The small grey heading over every figure in the layout.
+ *
+ * Uppercase and letter-spaced, under the minimal skin's smallest label — it can
+ * be, because these sit over numbers two to six times their size.
+ */
+.label {
+  min-width: 0;
+  overflow: hidden;
+  font-size: calc(var(--u) * 0.5);
+  letter-spacing: 0.09em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--hud-muted);
+}
+
+.pairValue {
+  margin-inline-start: auto;
+  width: calc(var(--u) * 3.5);
+  flex: none;
+  text-align: end;
+  font-size: calc(var(--u) * 0.6875);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.band {
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid var(--hud-line);
+}
+
+/** One cell of the totals band. Equal width, because none of them outranks the others. */
+.cell {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  padding: calc(var(--u) * 0.25) calc(var(--u) * 0.5);
+}
+
+.cellValue {
+  min-width: 0;
+  overflow: hidden;
+  font-size: calc(var(--u) * 0.8125);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--hud-gold);
+}
+
+/* --- the loot list ---------------------------------------------------------- */
+
+.loot {
+  display: contents;
+}
+
+/**
+ * The heading, in the accent — which is the skin's decision rather than the
+ * list's, and is made in the token block over there for exactly that reason.
+ *
+ * The gutter is the list's: the header sits outside the scroll area in the real
+ * panel, and the two only line up as a table because they carry the same
+ * padding.
+ */
+.lootHead {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.5);
+  padding-inline: calc(var(--u) * 0.25) calc(var(--u) * 0.75);
+  padding-bottom: calc(var(--u) * 0.25);
+  border-bottom: 1px solid color-mix(in oklab, var(--hud-line) 70%, transparent);
+  font-size: calc(var(--u) * 0.625);
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  color: var(--hud-primary);
+}
+
+/* No icon spacer: the heading is meant to start where the art does. */
+.lootName {
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/**
+ * The room's worth, against the heading rather than across the row from it.
+ *
+ * The figure belongs *to* the word — it is what this list adds up to — and
+ * parked at the far end it reads as a fourth column of the table instead.
+ */
+.lootTotal {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--hud-gold);
+}
+
+/* What holds the number columns against the right edge now that nothing else
+   in the header grows. */
+.spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+/**
+ * The three numbers are one block pinned to the right edge, tight against each
+ * other: they are short, fixed-width and read as a group, so every column of
+ * padding between them is one stolen from the item name — the only thing in the
+ * row that can actually run out of room.
+ */
+.numbers {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: calc(var(--u) * 0.25);
+}
+
+/*
+ * The fixed widths, shared by the header and the rows — the two only line up as
+ * a table because they are the same three numbers. Each one clips rather than
+ * pushing its neighbours, which is what the shared `truncate` does over there:
+ * the heading is a word that can be long in one language and the figure under
+ * it never is.
+ */
+.colQty,
+.colUnit,
+.colTotal {
+  flex: none;
+  overflow: hidden;
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.colQty {
+  width: calc(var(--u) * 1.75);
+}
+
+/* Wider than the quantity beside it: this column's header is a sort button, and
+   the arrow that appears when it is the active one has to fit next to the word. */
+.colUnit {
+  width: calc(var(--u) * 2.25);
+}
+
+.colTotal {
+  width: calc(var(--u) * 3);
+}
+
+/**
+ * The sorted column, and the only one wearing an arrow.
+ *
+ * Marking all three at once would be three arrows to read where the question is
+ * which one is in force — and the unsorted columns have nothing to point
+ * anywhere yet. Total descending is where the list opens.
+ */
+.sorted {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc(var(--u) * 0.0625);
+  color: var(--hud-fg);
+}
+
+.sortArrow {
+  width: calc(var(--u) * 0.625);
+  height: calc(var(--u) * 0.625);
+  flex: none;
+}
+
+/**
+ * The gutter on the right is the scrollbar's, which the real list always keeps
+ * whether or not it is scrolling.
+ *
+ * What is *not* kept is the unit of padding under the last row: over there it
+ * is what the bottom fade lands on, so a half-cut row reads as a list with more
+ * below it rather than as a layout that has overflowed. Nothing here scrolls
+ * and nothing fades, so that unit would only be a gap at the bottom of the
+ * panel with no reason on screen for being there.
+ */
+.rows {
+  margin: 0;
+  padding: 0 calc(var(--u) * 0.5) 0 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.5);
+  padding: calc(var(--u) * 0.125) calc(var(--u) * 0.25);
+  border-radius: var(--hud-radius);
+}
+
+/* The zebra the list has always had, which is what keeps five short numbers
+   attached to the name they belong to. */
+.row:nth-child(odd) {
+  background: rgb(255 255 255 / 0.03);
+}
+
+.rowArt {
+  width: calc(var(--u) * 1.5);
+  height: calc(var(--u) * 1.5);
+  flex: none;
+  border-radius: 1px;
+  object-fit: cover;
+}
+
+.rowName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: calc(var(--u) * 0.75);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Quantity and unit value are supporting detail, so they sit at about two
+   thirds the size of the name and the total. */
+.qty {
+  font-size: calc(var(--u) * 0.5);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  font-size: calc(var(--u) * 0.5);
+  font-variant-numeric: tabular-nums;
+  color: var(--hud-muted);
+}
+
+.total {
+  font-size: calc(var(--u) * 0.75);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--hud-gold);
+}
+
+/* --- the hint --------------------------------------------------------------- */
+
+/**
+ * The one line that may end up drawn straight onto the game.
+ *
+ * The panel behind it goes as transparent as the player wants, and grey on
+ * nothing is grey on whatever the game is showing — bright snow one moment, a
+ * dark cave the next. A ring traced around each glyph keeps it legible on both,
+ * where a border around the line would only have framed the illegibility.
+ */
+.hint {
+  flex: none;
+  text-align: center;
+  font-size: calc(var(--u) * 0.625);
+  color: var(--hud-muted);
+  text-shadow:
+    0 0 2px #000,
+    1px 0 1px #000,
+    -1px 0 1px #000,
+    0 1px 1px #000,
+    0 -1px 1px #000;
+}
+
+/* --- the caption ------------------------------------------------------------ */
+
+/** The page's voice again, under the picture. */
+.caption {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}

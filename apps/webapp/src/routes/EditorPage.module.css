@@ -285,8 +285,19 @@
   background: var(--surface-sunken);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  transition: border-color 120ms ease;
 }
 
+/*
+ * Focus lights the whole field's border, not the input inside it.
+ *
+ * The prefix and the input are one control to the eye — `youtu.be/` then the
+ * id — but two boxes to the DOM, and the global `:focus-visible` rule draws its
+ * accent outline around the *input*, which is only the id half. That reads as
+ * the field coming apart on focus. Suppressing the inner outline (just below)
+ * and moving the highlight onto this wrapper's border makes the focus ring the
+ * shape of the thing it is focusing.
+ */
 .videoField:focus-within {
   border-color: var(--accent);
 }
@@ -310,6 +321,16 @@
 .videoField input:hover {
   border: 0;
   box-shadow: none;
+}
+
+/*
+ * The one that was actually showing. The global focus ring is an `outline` on
+ * `:focus-visible`, which the border/box-shadow reset above never touched — so
+ * it kept drawing around the id box on keyboard focus. The field's own border,
+ * lit above, is the focus indicator now.
+ */
+.videoField input:focus-visible {
+  outline: none;
 }
 
 /* --- the headline ability -------------------------------------------------- */

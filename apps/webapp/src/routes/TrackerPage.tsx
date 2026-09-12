@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, ButtonLink, Icon, Panel } from '@/ui';
+import { HudPreview } from '@/components/HudPreview';
 import { useApp } from '@/data/AppData';
 // The real file, straight off disk and into the bundle, so the page and the
 // thing it tells people to save can never drift apart.
@@ -172,6 +173,22 @@ export function TrackerPage() {
 
       {/* The column that is read rather than scanned. */}
       <div className={styles.main}>
+      {/*
+        The panel itself, before anything about installing it.
+
+        The rail beside this says the tracker shows you your best drop, your
+        gold per hour and what the room below is worth; this is the six of them
+        on one slab, in the reader's own language, with real items at real
+        prices. It answers the second of the three questions the page is
+        ordered by — do I want it — and a picture answers it in less time than
+        any paragraph here could.
+
+        Above the video and the steps for that reason: this is the last thing
+        somebody looks at before deciding, and the two panels below it are for
+        after they have.
+      */}
+      <HudPreview />
+
       {/*
         The walkthrough, folded.
 
