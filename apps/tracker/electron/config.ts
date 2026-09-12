@@ -71,6 +71,10 @@ export const DEFAULTS: TrackerConfig = {
   prices: {},
   halvePrices: true,
   trimLog: true,
+  // On, and the only setting in this file that sends anything anywhere. See
+  // `TrackerConfig.discordPresence` for what that means and why it is on.
+  discordPresence: true,
+  buildUrl: '',
   // Copied a level down, every map and the list: this constant is handed out to
   // a first launch, and a caller that edited one of its rules would be editing
   // the default every later read is built from.
@@ -270,6 +274,12 @@ export function loadConfig(): TrackerConfig {
     // Absent means the default here, and the default is on.
     halvePrices: raw['halvePrices'] !== false,
     trimLog: raw['trimLog'] !== false,
+    // Absent means on, like the two above — including in a profile written
+    // before this setting existed, which upgrades into publishing. That is the
+    // deliberate part: the feature is worth nothing to somebody who never finds
+    // the switch, and it is one switch away for anybody who does.
+    discordPresence: raw['discordPresence'] !== false,
+    buildUrl: typeof raw['buildUrl'] === 'string' ? raw['buildUrl'] : '',
     sounds: firstLaunch ? DEFAULTS.sounds : readSoundSettings(raw['sounds']),
     // The half of the sound settings that names URLs, so it is read by the
     // strictest reader in the app — see `core/packs.ts`. A pack that does not

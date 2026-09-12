@@ -159,6 +159,16 @@ export const zh: Messages = {
     } as Record<RunOutcome, string>,
   },
 
+  presence: {
+    app: 'AOW5 Tools',
+    betweenRooms: '房间之间',
+    tier: (level: number) => `T${level}`,
+    room: (elapsed: string, gold: string) => `${elapsed} · ${gold} 金币`,
+    session: (goldPerHour: string, elapsed: string) => `${goldPerHour} 金币/时 · ${elapsed}`,
+    myBuild: '我的配装',
+    builder: '打开配装器',
+    getTracker: '获取追踪器',
+  },
   settings: {
     prices: {
       title: '物品价格',
@@ -279,6 +289,15 @@ export const zh: Messages = {
       autoResume: '进入第一个秘境时开始计时',
       autoResumeHint:
         '一场开始时是暂停的，这样追踪器可以在 Dota 读条时就开着，而那段时间不算刷图。打开此项后，走进秘境就等于替你按下开始。你在中途手动按下的暂停仍然有效，直到下一个秘境为止。',
+    },
+    presence: {
+      title: 'Discord',
+      blurb: '在 Discord 个人资料中显示本次会话：房间与效率，房间之间则显示次数与平均用时，带计时器和两个链接。从不显示掉落列表。',
+      enabled: '发布到 Discord',
+      enabledHint: '默认开启。需要运行 Discord 桌面端，并在其设置中打开活动隐私。关闭后状态立即消失。',
+      build: '你的配装',
+      buildHint: '作为第一个按钮。留空则按钮指向配装器。',
+      buildPlaceholder: 'https://aow5tools.boardshub.io/builds/…',
     },
     cards: {
       title: 'HUD 卡片',

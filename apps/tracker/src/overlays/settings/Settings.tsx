@@ -741,6 +741,33 @@ export function Settings({
         </section>
 
         {/*
+          The one setting that leaves the machine.
+        
+          Its own section, below the session it publishes and above everything
+          about how the HUD looks, because it is a different kind of decision
+          from both: not "what do I want to see" but "what may other people
+          see". The blurb spells out what goes out rather than describing the
+          feature, since that is the only part a person can consent to.
+        */}
+        <section className="space-y-1.5">
+          <Label>{m.settings.presence.title}</Label>
+          <p className="text-[0.625rem] text-muted-foreground">{m.settings.presence.blurb}</p>
+          <CheckboxRow
+            label={m.settings.presence.enabled}
+            hint={m.settings.presence.enabledHint}
+            checked={config?.discordPresence ?? false}
+            onChange={(next) => void window.tracker.setConfig({ discordPresence: next })}
+          />
+          {config?.discordPresence === true && (
+            <>
+              <Label>{m.settings.presence.build}</Label>
+              <p className="text-[0.625rem] text-muted-foreground">{m.settings.presence.buildHint}</p>
+              <BuildUrlField value={config.buildUrl} m={m} />
+            </>
+          )}
+        </section>
+
+        {/*
           Which cards, before how they look: this is the section that decides
           what the HUD is *for*, and it is the one a player goes looking for
           after a session or two of reading past a number they do not use.
@@ -2224,5 +2251,37 @@ function SoundMenu({
         )}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/**
+ * The build link, committed when it is finished rather than as it is typed.
+ *
+ * Every `setConfig` writes the profile to disk and broadcasts it to every
+ * window; a URL is forty of those if the field is controlled by the config
+ * directly. Same shape as the price field above: a draft, a commit on blur or
+ * Enter, and an effect that adopts a value changed somewhere else.
+ */
+function BuildUrlField({ value, m }: { value: string; m: Messages }) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+
+  const commit = () => {
+    const next = draft.trim();
+    if (next !== value) void window.tracker.setConfig({ buildUrl: next });
+  };
+
+  return (
+    <Input
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') commit();
+      }}
+      placeholder={m.settings.presence.buildPlaceholder}
+      className="h-7 text-xs"
+      spellCheck={false}
+    />
   );
 }
