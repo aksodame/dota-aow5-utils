@@ -1,118 +1,341 @@
+/**
+ * The tracker's page: the browse page's two columns, with a different rail.
+ *
+ * Same widths and the same sticky panel as `Filters`, because it is the same
+ * role — the column you glance down, beside the column you came for. What is in
+ * it is everything that *describes* the app; the column beside it is the five
+ * steps that install it.
+ */
 .page {
-  max-width: 780px;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+  max-width: 1180px;
   margin: 0 auto;
-  padding: var(--space-5) var(--space-5) var(--space-7);
+  padding: var(--space-4) var(--space-5) var(--space-7);
 }
 
 /**
- * The whole page, while the page is being rebuilt.
+ * Sticks to the top of the scrolling region while the panels move past it.
  *
- * No card and no tint. A single sentence does not need a box around it, and a
- * warning colour is for something that went wrong rather than for something
- * that is not finished. Centred and given room above, so it reads as the state
- * of the page rather than as a strip that happens to be first.
+ * The same rule as the filter sidebar's, and for the same reason it is stated
+ * there: `top` clears nothing, because the bar is outside the box this scrolls
+ * in, and the height available is that region's.
  */
-.building {
+.rail {
+  position: sticky;
+  top: var(--space-4);
+  max-height: calc(100svh - var(--topbar-h) - var(--footer-h, 84px) - var(--space-6));
+  display: flex;
+  flex-direction: column;
+}
+
+/* The part that scrolls when the rail is taller than the window. `fill` on the
+   Panel is what lets this be shorter than its contents — see `Panel`. */
+/*
+ * `overflow-x: hidden` is stated rather than left alone.
+ *
+ * A box with `overflow-y: auto` computes `overflow-x` to `auto` as well, so a
+ * child a few pixels too wide turns the rail into a sideways scroller and cuts
+ * every line of text at the same x — which is what the download button did in
+ * Russian, where its label is a third longer than the English one. The button
+ * is allowed to wrap below; this is the guard for the next thing that is not.
+ */
+.railScroll {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: var(--space-1);
   display: grid;
-  justify-items: center;
+  /* Tight: this column carries thirteen bullets, a button and a video, and the
+     whole argument for it is that all of them are in view at once. */
   gap: var(--space-3);
-  padding: var(--space-7) var(--space-3);
+  align-content: start;
+}
+
+.main {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/** A group of bullets inside the rail, headed like a filter group. */
+.group {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.groupHead {
+  padding: var(--space-1) var(--space-3);
+  background: var(--wash-2);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/*
+ * One column under a rail's width.
+ *
+ * 900px rather than a phone breakpoint: at 260 + 260 the prose column is
+ * narrower than the rail beside it, which is the point at which two columns
+ * stop being a layout.
+ */
+@media (max-width: 900px) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Nothing to stick to once it is above the content rather than beside it. */
+  .rail {
+    position: static;
+    max-height: none;
+  }
+}
+
+/* --- the download ----------------------------------------------------------- */
+
+.download {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: stretch;
+  min-width: 0;
+}
+
+/*
+ * The button wraps in this column, unlike everywhere else on the site.
+ *
+ * `Button` sets `white-space: nowrap`, which is right for a row of controls and
+ * wrong for a 260-pixel rail: a label that cannot wrap has a min-content width
+ * of the whole label, and every translation longer than the English one then
+ * pushes the column sideways.
+ */
+.download > a {
+  white-space: normal;
+  min-width: 0;
+  height: auto;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
   text-align: center;
 }
 
-.buildingTitle {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
-
-/** The line of prose, above the way out of it. */
-.buildingBody {
-  max-width: 52ch;
-  color: var(--text-muted);
-  line-height: 1.7;
-  text-wrap: pretty;
-}
-
-.heading {
-  font-size: 28px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-}
-
-.lead {
-  margin-top: var(--space-2);
-  color: var(--text-muted);
-  line-height: 1.7;
-}
-
-.panels {
-  display: grid;
-  gap: var(--space-4);
-  margin-top: var(--space-5);
-}
-
-.download {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-}
-
+/**
+ * What the download costs: the size, and when it was published.
+ *
+ * The smallest type on the site, deliberately. It is read once, on the way to
+ * pressing the button above it, and never again — and at any larger size it
+ * competes with the one thing this column is for. The version is not here; it
+ * is on the title's line, because it names the app rather than the file.
+ */
 .releaseMeta {
-  font-size: 12px;
+  padding-top: var(--space-1);
+  font-size: 9px;
+  line-height: 1.5;
   color: var(--text-dim);
+}
+
+/** The version, on the title's line. Quiet enough not to compete with it. */
+.version {
+  font-size: 11.5px;
   font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
 }
 
-/** The autoexec block. Monospace, selectable in one go, with a copy button. */
-.config {
-  position: relative;
+/* --- the rail's three lists ------------------------------------------------- */
+
+/**
+ * A list of bullets under a group heading.
+ *
+ * Every one of them is an icon and a noun phrase — see `Strings.tracker`. The
+ * clause that used to follow each name is gone: thirteen of them turned a column
+ * meant to be skimmed into a column to read, and what a bullet cannot say in
+ * three words the panel on the right says properly.
+ */
+.bullets {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  padding: 0 var(--space-1);
+  margin: 0;
 }
 
-.configCode {
-  display: block;
-  max-height: 260px;
-  padding: var(--space-3);
-  overflow: auto;
+.bullet {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+/**
+ * The only place on the site where an emoji is, and it is load-bearing.
+ *
+ * More so since the explanations went: the picture is now half of what tells
+ * one line from the next at a glance. Hidden from screen readers — the words
+ * beside it say the same thing.
+ */
+.bulletEmoji {
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.bulletName {
+  font-weight: 800;
+  color: var(--text);
+}
+
+
+
+.copyBlock {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.copyLine {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.copyLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.copyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/**
+ * The thing to paste, and it may not wrap.
+ *
+ * A path broken across two lines is a path somebody copies wrong by hand when
+ * the clipboard button is not the thing they reach for — so it scrolls sideways
+ * instead, inside its own box.
+ */
+.copyValue {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding: var(--space-2) var(--space-3);
   background: var(--surface-sunken);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.6;
-  white-space: pre;
-  color: var(--text-muted);
-}
-
-.copy {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
+  font-size: 12.5px;
+  white-space: nowrap;
+  scrollbar-width: thin;
 }
 
 .steps {
   display: grid;
-  gap: var(--space-2);
-  color: var(--text-muted);
-  line-height: 1.7;
+  gap: var(--space-3);
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
 }
 
-.steps li {
+.step {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
-  gap: var(--space-2);
+  grid-template-columns: 26px 1fr;
+  gap: var(--space-3);
+  align-items: start;
 }
 
 .stepNumber {
-  font-weight: 800;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
-.path {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text);
-  user-select: all;
+.stepBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
+
+.stepTitle {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.stepText {
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.fineprint {
+  margin-top: var(--space-3);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.config {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+/**
+ * The file itself, in a box that scrolls rather than one that grows.
+ *
+ * It is forty lines of console channels nobody reads top to bottom; the button
+ * above is how it is meant to be taken, and this is here so that what lands on
+ * the clipboard is visible first.
+ */
+.configCode {
+  display: block;
+  max-height: 220px;
+  overflow: auto;
+  padding: var(--space-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.55;
+  white-space: pre;
+  color: var(--text-muted);
+  scrollbar-width: thin;
+}
+
+/* --- the video -------------------------------------------------------------- */
+
+.video {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #000;
+}
+
+.videoFrame {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+
+
+

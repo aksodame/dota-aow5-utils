@@ -431,6 +431,61 @@ export interface Strings {
     building: string;
     buildingHint: string;
     openOldSite: string;
+    download: {
+      title: string;
+      /** The button when a release was found, and when one was not. */
+      installer: string;
+      allReleases: string;
+      none: string;
+      failed: string;
+    };
+    /**
+     * The five things somebody would install it for, as bullets.
+     *
+     * One line each: this is the column beside the download, read in the two
+     * seconds before somebody clicks it or leaves. Anything that needs a
+     * paragraph is a panel on the right instead.
+     *
+     * The emoji is load-bearing rather than decoration — five pictures are five
+     * things at a glance, five headings are a list to read.
+     */
+    /**
+     * The rail's three lists: why you would install it, what it opens, and what
+     * you can change about it.
+     *
+     * **An icon and a noun phrase, and nothing else.** Every bullet used to
+     * carry a clause explaining it, and thirteen of those turned a column meant
+     * to be skimmed into a column to read — the explanation was competing with
+     * the thing it explained. What a line cannot say in two or three words
+     * belongs in the panel on the right, where there is room to say it properly.
+     */
+    features: { title: string; items: { emoji: string; name: string }[] };
+    windows: { title: string; items: { emoji: string; name: string }[] };
+    fitting: { title: string; items: { emoji: string; name: string }[] };
+    setup: {
+      title: string;
+      /** The path both the game and the tracker are pointed at. */
+      logPath: string;
+      launchOption: string;
+      /** What each copy box is for. */
+      fileLabel: string;
+      optionLabel: string;
+      /**
+       * The optional file, and it has to say what it is for.
+       *
+       * It used to read "optional", which is true and answers nothing: the
+       * question somebody has in front of a config file is what happens if they
+       * skip it. Dota writes its whole console to the log — megabytes an hour
+       * around the handful of lines the tracker reads — and this is what stops
+       * that. So the label says so.
+       */
+      cfgLabel: string;
+      cfgPath: string;
+      /** The numbered walkthrough. Each step is a thing to do, not a paragraph. */
+      steps: { title: string; text: string }[];
+      pathWarning: string;
+      videoTitle: string;
+    };
   };
   common: {
     loading: string;
@@ -438,6 +493,8 @@ export interface Strings {
     cancel: string;
     close: string;
     language: string;
+    /** The button on anything that goes to the clipboard and is not a link. */
+    copy: string;
     /** The panel both preferences sit in. */
     appearance: string;
     /** The palette, and the two names for it. Everything else about the theme
@@ -733,6 +790,77 @@ const en: Strings = {
     buildingHint:
       'The download and the setup steps are on the old site until this one catches up. Everything else about the tracker is unchanged.',
     openOldSite: 'Open the old tracker page',
+    download: {
+      title: 'Download',
+      installer: 'Windows installer',
+      allReleases: 'All releases',
+      none: 'No release published yet.',
+      failed: 'Could not reach GitHub. The link still works.',
+    },
+    features: {
+      title: 'Highlights',
+      items: [
+        { emoji: '🏆', name: 'Session best item' },
+        { emoji: '⏱️', name: 'Time: session, map, average' },
+        { emoji: '💰', name: 'Gold: session, map, average, hourly' },
+        { emoji: '🎮', name: 'Discord status' },
+        { emoji: '🔄', name: 'In-app updates' },
+      ],
+    },
+    windows: {
+      title: 'Screens',
+      items: [
+        { emoji: '📊', name: 'Farm panel' },
+        { emoji: '🕘', name: 'Session history' },
+        { emoji: '🧪', name: 'Crafting recipes' },
+        { emoji: '⚙️', name: 'Settings' },
+      ],
+    },
+    fitting: {
+      title: 'Make it yours',
+      items: [
+        { emoji: '🏷️', name: 'Your own item prices' },
+        { emoji: '📋', name: 'The drop list' },
+        { emoji: '🎛️', name: 'Two HUD styles' },
+        { emoji: '🎨', name: 'Size and transparency' },
+        { emoji: '🌍', name: 'Three languages' },
+        { emoji: '🔔', name: 'Your own sounds' },
+      ],
+    },
+    setup: {
+      title: 'Setting up manually',
+      logPath: 'C:\\Users\\Public\\aow5-console.log',
+      launchOption: '-con_logfile C:\\Users\\Public\\aow5-console.log',
+      fileLabel: 'The path — the file you make in step 1',
+      optionLabel: 'The launch option — the same path, after -con_logfile',
+      cfgLabel: 'Log growing? Save this as autoexec.cfg in the folder below',
+      cfgPath: 'steamapps\\common\\dota 2 beta\\game\\dota\\cfg\\autoexec.cfg',
+      steps: [
+        {
+          title: 'Make the log file',
+          text: 'Open C:\\Users\\Public, right-click → New → Text Document, and rename it to aow5-console.log — the ending included, which means switching on View → File name extensions in Explorer if it is off. Make it now: in step 4 you pick it from a file dialog, and a dialog cannot select a file that does not exist.',
+        },
+        {
+          title: 'Give Dota the launch option',
+          text: 'Steam → right-click Dota 2 → Properties → Launch Options, and paste the second line above. Chose a different path in step 1? Use that one here.',
+        },
+        {
+          title: 'Restart Dota',
+          text: 'Launch options only apply to a fresh start. Set the game to windowed or borderless while you are there — fullscreen covers every overlay, this one included.',
+        },
+        {
+          title: 'Point the tracker at the same file',
+          text: 'Start the tracker, press Ctrl+Alt+T so it accepts clicks, then Settings → Console log → Choose, and pick the file from step 1.',
+        },
+        {
+          title: 'Play',
+          text: 'The overlay starts counting the moment the first room does.',
+        },
+      ],
+      pathWarning:
+        'Keep the path in plain English letters and keep the .log ending. If your Windows account name is in Russian, so is your user folder — and Dota handed a path like that writes nothing at all, without a word of complaint. C:\\Users\\Public is suggested because it is spelled the same on every machine and needs no permissions.',
+      videoTitle: 'Video guide to setting up',
+    },
   },
   common: {
     loading: 'Loading…',
@@ -740,6 +868,7 @@ const en: Strings = {
     cancel: 'Cancel',
     close: 'Close',
     language: 'Language',
+    copy: 'Copy',
     appearance: 'Appearance',
     theme: 'Theme',
     themeDark: 'Dark',
@@ -1027,12 +1156,79 @@ const ru: Strings = {
       `${{ enemy: 'вражеских', friendly: 'союзных', both: 'всех' }[team]} ${{ units: 'юнитов', heroes: 'героев', creeps: 'крипов' }[scope]}`,
   },
   tracker: {
-    heading: 'Трекер фарма',
-    back: 'К списку сборок',
-    building: 'Эта страница ещё переделывается',
-    buildingHint:
-      'Загрузка и настройка пока живут на старой версии сайта — пользуйтесь ей, пока эта страница не догонит. С самим трекером ничего не изменилось.',
+    heading: 'Фарм-трекер',
+    back: 'К сборкам',
+    building: 'Страница ещё перестраивается',
+    buildingHint: 'Загрузка и инструкция пока на старом сайте. Сам трекер при этом не изменился.',
     openOldSite: 'Открыть старую страницу трекера',
+    download: {
+      title: 'Загрузка',
+      installer: 'Установщик Windows',
+      allReleases: 'Все релизы',
+      none: 'Релизов пока нет.',
+      failed: 'Не достучались до GitHub. Ссылка всё равно работает.',
+    },
+    features: {
+      title: 'Главное',
+      items: [
+        { emoji: '🏆', name: 'Лучший дроп за сессию' },
+        { emoji: '⏱️', name: 'Время: сессия, комната, среднее' },
+        { emoji: '💰', name: 'Золото: сессия, комната, среднее, в час' },
+        { emoji: '🎮', name: 'Статус в Discord' },
+        { emoji: '🔄', name: 'Обновление из приложения' },
+      ],
+    },
+    windows: {
+      title: 'Экраны',
+      items: [
+        { emoji: '📊', name: 'Панель фарма' },
+        { emoji: '🕘', name: 'История сессий' },
+        { emoji: '🧪', name: 'Рецепты крафта' },
+        { emoji: '⚙️', name: 'Настройки' },
+      ],
+    },
+    fitting: {
+      title: 'Под себя',
+      items: [
+        { emoji: '🏷️', name: 'Свои цены предметов' },
+        { emoji: '📋', name: 'Список дропа' },
+        { emoji: '🎛️', name: 'Два стиля HUD' },
+        { emoji: '🎨', name: 'Размер и прозрачность' },
+        { emoji: '🌍', name: 'Три языка' },
+        { emoji: '🔔', name: 'Свои звуки' },
+      ],
+    },
+    setup: {
+      title: 'Настройка вручную',
+      logPath: 'C:\\Users\\Public\\aow5-console.log',
+      launchOption: '-con_logfile C:\\Users\\Public\\aow5-console.log',
+      fileLabel: 'Путь — файл, который вы создаёте на шаге 1',
+      optionLabel: 'Параметр запуска — тот же путь, после -con_logfile',
+      cfgLabel: 'Не хотите, чтобы лог разрастался? Сохраните это как autoexec.cfg в папке ниже',
+      cfgPath: 'steamapps\\common\\dota 2 beta\\game\\dota\\cfg\\autoexec.cfg',
+      steps: [
+        {
+          title: 'Создайте лог-файл',
+          text: 'Откройте C:\\Users\\Public, правой кнопкой → Создать → Текстовый документ и переименуйте в aow5-console.log — вместе с расширением, а значит включите Вид → Расширения имён файлов, если они скрыты. Сделайте это сейчас: на шаге 4 файл выбирается диалогом, а диалог не выберет то, чего нет.',
+        },
+        {
+          title: 'Добавьте параметр запуска',
+          text: 'Steam → правой кнопкой по Dota 2 → Свойства → Параметры запуска, вставьте вторую строку сверху. Выбрали на шаге 1 другой путь — ставьте его.',
+        },
+        {
+          title: 'Перезапустите Dota',
+          text: 'Параметры запуска применяются только при новом старте. Заодно переключите игру в оконный или безрамочный режим — полноэкранный перекрывает любые оверлеи, включая этот.',
+        },
+        {
+          title: 'Укажите трекеру тот же файл',
+          text: 'Запустите трекер, нажмите Ctrl+Alt+T, чтобы он начал принимать клики, затем Настройки → Консольный лог → Выбрать и укажите файл из шага 1.',
+        },
+        { title: 'Играйте', text: 'Оверлей начинает считать в тот момент, когда начинается первая комната.' },
+      ],
+      pathWarning:
+        'Держите путь в латинице и сохраните окончание .log. Если имя вашей учётной записи Windows русское — такая же и пользовательская папка, а Dota с таким путём не пишет вообще ничего и молчит об этом. C:\\Users\\Public предложен потому, что называется одинаково на любой машине и не требует прав.',
+      videoTitle: 'Видеогайд по настройке',
+    },
   },
   common: {
     loading: 'Загрузка…',
@@ -1040,6 +1236,7 @@ const ru: Strings = {
     cancel: 'Отмена',
     close: 'Закрыть',
     language: 'Язык',
+    copy: 'Копировать',
     appearance: 'Оформление',
     theme: 'Тема',
     themeDark: 'Тёмная',
@@ -1324,11 +1521,79 @@ const zh: Strings = {
       `${{ enemy: '敌方', friendly: '友方', both: '全体' }[team]}${{ units: '单位', heroes: '英雄', creeps: '小兵' }[scope]}`,
   },
   tracker: {
-    heading: '打宝追踪器',
-    back: '返回配装列表',
+    heading: '刷图追踪器',
+    back: '返回配装',
     building: '此页面仍在重建中',
-    buildingHint: '在本页赶上之前，下载和设置步骤都在旧版网站上。追踪器本身没有任何变化。',
-    openOldSite: '打开旧版追踪器页面',
+    buildingHint: '下载和设置步骤暂时在旧站点上。追踪器本身没有变化。',
+    openOldSite: '打开旧的追踪器页面',
+    download: {
+      title: '下载',
+      installer: 'Windows 安装程序',
+      allReleases: '全部版本',
+      none: '尚未发布版本。',
+      failed: '无法连接 GitHub。链接仍然可用。',
+    },
+    features: {
+      title: '亮点',
+      items: [
+        { emoji: '🏆', name: '本次最佳掉落' },
+        { emoji: '⏱️', name: '时间：会话、房间、平均' },
+        { emoji: '💰', name: '金币：会话、房间、平均、每小时' },
+        { emoji: '🎮', name: 'Discord 状态' },
+        { emoji: '🔄', name: '应用内更新' },
+      ],
+    },
+    windows: {
+      title: '界面',
+      items: [
+        { emoji: '📊', name: '刷图面板' },
+        { emoji: '🕘', name: '会话历史' },
+        { emoji: '🧪', name: '合成配方' },
+        { emoji: '⚙️', name: '设置' },
+      ],
+    },
+    fitting: {
+      title: '个性化',
+      items: [
+        { emoji: '🏷️', name: '自定物品价格' },
+        { emoji: '📋', name: '掉落列表' },
+        { emoji: '🎛️', name: '两种 HUD 风格' },
+        { emoji: '🎨', name: '尺寸与透明度' },
+        { emoji: '🌍', name: '三种语言' },
+        { emoji: '🔔', name: '自定义声音' },
+      ],
+    },
+    setup: {
+      title: '手动设置',
+      logPath: 'C:\\Users\\Public\\aow5-console.log',
+      launchOption: '-con_logfile C:\\Users\\Public\\aow5-console.log',
+      fileLabel: '路径——第 1 步创建的文件',
+      optionLabel: '启动项——同一路径，跟在 -con_logfile 后',
+      cfgLabel: '不想让日志越来越大？把它保存为下面文件夹中的 autoexec.cfg',
+      cfgPath: 'steamapps\\common\\dota 2 beta\\game\\dota\\cfg\\autoexec.cfg',
+      steps: [
+        {
+          title: '创建日志文件',
+          text: '打开 C:\\Users\\Public，右键 → 新建 → 文本文档，重命名为 aow5-console.log——含扩展名，所以若资源管理器隐藏了扩展名，请在「查看 → 文件扩展名」中打开。现在就建好：第 4 步要用文件对话框选它，而对话框选不了不存在的文件。',
+        },
+        {
+          title: '添加启动项',
+          text: 'Steam → 右键 Dota 2 → 属性 → 启动选项，粘贴上面第二行。第 1 步换了路径？这里也用那个。',
+        },
+        {
+          title: '重启 Dota',
+          text: '启动项只对全新启动生效。顺便把游戏设成窗口或无边框——全屏会盖住所有浮层，包括这一个。',
+        },
+        {
+          title: '让追踪器指向同一个文件',
+          text: '启动追踪器，按 Ctrl+Alt+T 让它接受点击，然后「设置 → 控制台日志 → 选择」，选中第 1 步那个文件。',
+        },
+        { title: '开始游戏', text: '第一个房间开始的那一刻，浮层就开始计数。' },
+      ],
+      pathWarning:
+        '路径请用英文字母，并保留 .log 结尾。如果你的 Windows 账户名是中文，用户目录也是——Dota 拿到这样的路径会什么都不写，而且一声不吭。建议用 C:\\Users\\Public：它在每台机器上拼写相同，也不需要权限。',
+      videoTitle: '设置视频指南',
+    },
   },
   common: {
     loading: '加载中…',
@@ -1336,6 +1601,7 @@ const zh: Strings = {
     cancel: '取消',
     close: '关闭',
     language: '语言',
+    copy: '复制',
     appearance: '外观',
     theme: '主题',
     themeDark: '深色',
