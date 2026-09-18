@@ -37,8 +37,9 @@
  * 4: the tracker page stopped sharing the site card and got one of its own, and
  * the site card's title changed with the route's — it says Farm tracker now,
  * because that is what the page's own heading says.
+ * 5: a teal season chip before the tier's blue one, as the build page draws it.
  */
-export const CARD_VERSION = 4;
+export const CARD_VERSION = 5;
 
 export interface CardKey {
   /** The file, without its extension. Unique per build, version and language. */

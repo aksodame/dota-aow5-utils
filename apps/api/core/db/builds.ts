@@ -21,7 +21,7 @@ import type { PayloadFacets } from '../codec/validatePayload.ts';
 import { readPriority, serialisePriority } from '../builds/priority.ts';
 import type { BuildFields } from '../builds/validate.ts';
 import type { VideoRef } from '../builds/video.ts';
-import type { TierKey } from 'aow5-shared/data';
+import { DEFAULT_SEASON, type SeasonKey, type TierKey } from 'aow5-shared/data';
 import type { Db } from './open.ts';
 import { buildMaps, builds } from './schema.ts';
 import { toPublicUser, type UserRow, type UserSummary } from './users.ts';
@@ -54,6 +54,12 @@ export interface NewBuild {
   price: number;
   /** Authored, not read from the payload. Null only on a draft. */
   tier: TierKey | null;
+  /**
+   * Already checked against the payload's hero by the service. Optional so a
+   * caller that predates seasons — the seed and import scripts — gets the
+   * column's default, S1.
+   */
+  season?: SeasonKey;
   /**
    * The headline ability's slot.
    *
@@ -180,6 +186,7 @@ export function createBuild(
         referral: input.referral,
         price: input.price,
         tier: input.tier,
+        season: input.season ?? DEFAULT_SEASON,
         mainSpell: input.mainSpell ?? null,
         videoId: input.video?.id ?? '',
         videoStart: input.video?.start ?? 0,
@@ -261,6 +268,8 @@ export interface BuildPatch {
   price?: number;
   /** Absent leaves the tier alone; `null` clears it. */
   tier?: TierKey | null;
+  /** Absent leaves the season alone. There is no "none" to clear it to. */
+  season?: SeasonKey;
   /** Absent leaves the headline alone; `null` puts it back to the kit order. */
   mainSpell?: MainSpellKey | null;
   /** Absent leaves the video alone; `null` clears it. */
@@ -281,6 +290,7 @@ export function updateBuild(db: Db, build: BuildRow, patch: BuildPatch, now: num
   if (patch.referral !== undefined) values.referral = patch.referral;
   if (patch.price !== undefined) values.price = patch.price;
   if (patch.tier !== undefined) values.tier = patch.tier;
+  if (patch.season !== undefined) values.season = patch.season;
   if (patch.mainSpell !== undefined) values.mainSpell = patch.mainSpell;
   if (patch.video !== undefined) {
     values.videoId = patch.video?.id ?? '';
@@ -325,6 +335,7 @@ export function toBuildSummary(build: BuildRow, author: UserSummary, maps: strin
     // own. Never re-encoded here — see the note on the column.
     payload: build.payload,
     heroId: build.heroId,
+    season: build.season,
     tier: build.tier,
     maps,
     price: build.price,

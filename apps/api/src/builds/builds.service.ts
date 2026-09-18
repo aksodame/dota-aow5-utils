@@ -11,7 +11,8 @@ import type {
   UpdateBuildBody,
 } from 'aow5-api-contract';
 import { HERO_TABLE, ID_TABLE, MAP_BY_ID } from '../../core/codec/tables.ts';
-import { categoryOfMap, isTierKey, type TierKey } from 'aow5-shared/data';
+import { categoryOfMap, isTierKey, parseSeason, type SeasonKey, type TierKey } from 'aow5-shared/data';
+import { resolveSeason } from '../../core/builds/season.ts';
 import { ABILITY_SLOTS } from 'aow5-shared/types';
 import { validatePayload, type PayloadFacets } from '../../core/codec/validatePayload.ts';
 import {
@@ -173,6 +174,19 @@ export class BuildsService {
   }
 
   /**
+   * The season, judged against the hero the saved board will hold.
+   *
+   * See `resolveSeason` for what an omitted one means. The error is filed
+   * under `season` rather than the hero: the season is the field the author
+   * picks last, and the one the editor draws the message under.
+   */
+  private season(raw: unknown, heroId: string | null, stored: SeasonKey | null): SeasonKey {
+    const result = resolveSeason(raw, heroId, stored);
+    if (!result.ok) throw new ApiException('VALIDATION_FAILED', 'Some fields need fixing.', result.errors);
+    return result.season;
+  }
+
+  /**
    * Which ability the build is about, checked against the build's own spells.
    *
    * Refused rather than dropped when it names an empty slot: a headline
@@ -281,6 +295,7 @@ export class BuildsService {
         referral: this.referral(body.referral),
         price,
         tier,
+        season: this.season(body.season, facets.heroId, null),
         mainSpell: this.mainSpell(body.mainSpell, facets.spellKeys),
         video: this.video(body.video),
         priority: this.priority(body.priority),
@@ -379,6 +394,16 @@ export class BuildsService {
       const keys = patch.facets?.spellKeys ?? this.checkPayload(build.payload).facets.spellKeys;
       patch.mainSpell = this.mainSpell(body.mainSpell, keys);
     }
+    /*
+     * After the payload as well: the season and the hero move together, and an
+     * author switching a build from Lina to Void Spirit sends S2 in the same
+     * save. Judged whenever either changes, so a new board cannot slip a hero
+     * past the season it is filed under.
+     */
+    if (body.season !== undefined || patch.facets !== undefined) {
+      const season = this.season(body.season, patch.facets?.heroId ?? build.heroId, build.season);
+      if (season !== build.season) patch.season = season;
+    }
     if (body.status !== undefined) patch.status = body.status === 'draft' ? 'draft' : 'published';
 
     /*
@@ -434,9 +459,17 @@ export class BuildsService {
       .split(',')
       .map((key) => key.trim())
       .filter((key) => key !== '');
+    const season = parseSeason(query['season']);
     const filters: BrowseFilters = {
       ...(query['q'] !== undefined ? { q: query['q'] } : {}),
       ...(query['hero'] !== undefined ? { hero: query['hero'] } : {}),
+      /*
+       * One season. An unrecognised one is dropped, like an unknown tier —
+       * though here that widens to every season rather than narrowing to none,
+       * which is the right way round for a facet with one value: `?season=3`
+       * is a stale link, and a list of everything beats an empty one.
+       */
+      ...(season !== null ? { season } : {}),
       // Comma-separated, because a tier chip in the sidebar means "every map at
       // this tier" and that is several ids in one request.
       ...(maps.length > 0 ? { maps } : {}),

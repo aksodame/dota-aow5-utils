@@ -3,11 +3,16 @@ import type { BuildSort } from 'aow5-api-contract';
 import { Button, Panel, cx } from '@/ui';
 import { useApp } from '@/data/AppData';
 import {
+  LATEST_SEASON,
+  SEASON_KEYS,
   categoryOfMap,
+  isHeroInSeason,
   listedMaps,
   listedTiers,
+  seasonLabel,
   tierLabel,
   type MapSummary,
+  type SeasonKey,
   type TierKey,
 } from 'aow5-shared/data';
 import { HeroChoices } from './HeroChoices';
@@ -15,7 +20,7 @@ import { MapChoices } from './MapChoices';
 import styles from './Filters.module.css';
 
 /**
- * The left sidebar: hero, tier, map, sort.
+ * The left sidebar: season, hero, tier, map, sort.
  *
  * **Tier is not a filter of its own.** A tier is a property of a room — the
  * game says "Lv. 6: Temple Depths", not "this build is tier 6" — so a tier chip
@@ -32,6 +37,12 @@ import styles from './Filters.module.css';
  * default shallow compare works.
  */
 export interface FilterState {
+  /**
+   * Always exactly one season, the current one (S2) by default and after a
+   * reset. Only the heroes split by season — rooms and tiers are the same list
+   * whichever is chosen.
+   */
+  season: SeasonKey;
   hero?: string;
   /**
    * Tiers to include. Empty means every tier.
@@ -127,7 +138,21 @@ export const Filters = memo(function Filters({ value, onChange }: FiltersProps) 
     });
   };
 
-  const isFiltered = value.hero !== undefined || value.tiers.length > 0 || value.maps.length > 0;
+  /*
+   * A season, and what that does to the hero below it.
+   *
+   * A radio, not a toggle: one season is always chosen. Choosing one that
+   * does not offer the chosen hero lets the hero go too, rather than keeping a
+   * pair that can only ever find nothing — Lina's S2 guides do not exist.
+   */
+  const pickSeason = (season: SeasonKey) => {
+    const keepHero = value.hero === undefined || isHeroInSeason(value.hero, season);
+    const { hero: _dropped, ...rest } = value;
+    onChange(keepHero ? { ...value, season } : { ...rest, season });
+  };
+
+  const isFiltered =
+    value.season !== LATEST_SEASON || value.hero !== undefined || value.tiers.length > 0 || value.maps.length > 0;
 
   return (
     <Panel
@@ -139,6 +164,32 @@ export const Filters = memo(function Filters({ value, onChange }: FiltersProps) 
       <div className={styles.scroll}>
         <div className={styles.group}>
           <div className={styles.groupHead}>
+            <span>{strings.filters.season}</span>
+          </div>
+          {/* The tier chips' shape: a season is a coarse facet too, and one of
+              few values. Exactly one is always lit. */}
+          <div className={styles.tiers} role="radiogroup" aria-label={strings.filters.season}>
+            {SEASON_KEYS.map((key) => {
+              const on = value.season === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={cx(styles.tier, on && styles.tierOn)}
+                  onClick={() => pickSeason(key)}
+                  role="radio"
+                  aria-checked={on}
+                  title={`${strings.filters.season} ${key}`}
+                >
+                  {seasonLabel(key)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className={styles.group}>
+          <div className={styles.groupHead}>
             <span>{strings.filters.hero}</span>
           </div>
           {/*
@@ -146,7 +197,7 @@ export const Filters = memo(function Filters({ value, onChange }: FiltersProps) 
             because "any hero" is a real answer here — pressing the chosen one
             releases it, which is what saves a separate "any" tile to aim at.
           */}
-          <HeroChoices value={value.hero} onPick={(hero) => set({ hero })} clearable />
+          <HeroChoices value={value.hero} onPick={(hero) => set({ hero })} season={value.season} clearable />
         </div>
 
         <div className={styles.group}>
@@ -239,7 +290,7 @@ export const Filters = memo(function Filters({ value, onChange }: FiltersProps) 
           size="sm"
           block
           disabled={!isFiltered}
-          onClick={() => onChange({ tiers: [], maps: [], sort: value.sort })}
+          onClick={() => onChange({ season: LATEST_SEASON, tiers: [], maps: [], sort: value.sort })}
         >
           {strings.filters.clear}
         </Button>

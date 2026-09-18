@@ -45,6 +45,8 @@ export function myBuilds(signal?: AbortSignal): Promise<BuildSummary[]> {
 
 export interface BrowseQuery {
   q?: string;
+  /** One season, sent as `?season=1`. */
+  season?: number;
   hero?: string;
   /** Tiers to include, comma-separated on the wire like `map`. */
   tiers?: string[];

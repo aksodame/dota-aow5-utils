@@ -12,6 +12,7 @@ test('the default view has an empty query string', () => {
 
 test('a full query survives a round trip', () => {
   const state = {
+    season: 1 as const,
     hero: 'npc_dota_hero_axe',
     tiers: ['3' as const, 'event' as const],
     maps: ['M001', 'M007'],
@@ -74,4 +75,18 @@ test('parameters this page does not own are ignored', () => {
 test('a trimmed search is what gets written, so two spellings are one URL', () => {
   assert.equal(browseSearch({ ...DEFAULT_BROWSE, q: '  frost  ' }), '?q=frost');
   assert.equal(browseSearch({ ...DEFAULT_BROWSE, q: '   ' }), '', 'whitespace alone is no search');
+});
+
+test('the season is always one, the current one unless the link says otherwise', () => {
+  assert.equal(DEFAULT_BROWSE.season, 2);
+  assert.equal(readBrowseParams('').season, 2, 'absent is S2');
+  assert.equal(readBrowseParams('?season=1').season, 1);
+  assert.equal(readBrowseParams('?season=9').season, 2, 'a season that does not exist is the current one');
+  assert.equal(browseSearch(DEFAULT_BROWSE), '', 'the default stays out of the URL');
+  assert.equal(browseSearch({ ...DEFAULT_BROWSE, season: 1 }), '?season=1');
+  assert.deepEqual(readBrowseParams(browseSearch({ ...DEFAULT_BROWSE, season: 1, hero: 'npc_dota_hero_lina' })), {
+    ...DEFAULT_BROWSE,
+    season: 1,
+    hero: 'npc_dota_hero_lina',
+  });
 });

@@ -7,7 +7,7 @@
  */
 import { sql } from 'drizzle-orm';
 import { check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { MAX_BUILDS_CEILING } from 'aow5-api-contract';
+import { MAX_BUILDS_CEILING, type SeasonKey } from 'aow5-api-contract';
 
 /**
  * A person. **Not** a Steam account, and not a password either.
@@ -222,6 +222,18 @@ export const builds = sqliteTable(
     codecVersion: integer('codec_version').notNull(),
     heroId: text('hero_id'),
     /**
+     * Which season of the game the guide is for: `1` or `2`.
+     *
+     * The author's field. Seasons have separate hero pools, and the service
+     * refuses a hero the season does not offer — see `SEASON_HEROES` in
+     * `aow5-shared`. Nothing else is split by season: items and rooms are the
+     * same list whichever one a guide is for.
+     *
+     * Not null, defaulting to 1, which is also what the migration gave every
+     * build that already existed: they were written for the only game there was.
+     */
+    season: integer('season').$type<SeasonKey>().notNull().default(1),
+    /**
      * What the guide is filed under: `'1'`..`'9'`, or `'event'`.
      *
      * **The author's own field, not the room's tier.** A guide may cover a
@@ -314,6 +326,7 @@ export const builds = sqliteTable(
     // The browse page's two facets. Tier leads because it is the coarser one
     // and the one the sidebar defaults to.
     index('builds_tier').on(table.tier, table.status),
+    index('builds_season').on(table.season, table.status),
     index('builds_top').on(table.status, table.likeCount),
     index('builds_price').on(table.status, table.price),
     /*
@@ -332,6 +345,7 @@ export const builds = sqliteTable(
       'builds_tier',
       sql`${table.tier} is null or ${table.tier} in ('1','2','3','4','5','6','7','8','9','event')`,
     ),
+    check('builds_season', sql`${table.season} in (1, 2)`),
     check(
       'builds_main_spell',
       sql`${table.mainSpell} is null or ${table.mainSpell} in ('passive','q','w','e','d','f','r')`,

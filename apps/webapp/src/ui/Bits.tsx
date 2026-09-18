@@ -42,7 +42,7 @@ export function Avatar({ src, name, size = 28 }: AvatarProps) {
   );
 }
 
-type BadgeTone = 'default' | 'tier' | 'draft';
+type BadgeTone = 'default' | 'tier' | 'season' | 'draft';
 
 export function Badge({
   tone = 'default',
@@ -62,6 +62,7 @@ export function Badge({
       className={cx(
         styles.badge,
         tone === 'tier' && styles.badgeTier,
+        tone === 'season' && styles.badgeSeason,
         tone === 'draft' && styles.badgeDraft,
         small && styles.badgeSm,
         className,

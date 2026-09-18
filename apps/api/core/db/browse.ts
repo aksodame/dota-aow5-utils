@@ -17,6 +17,8 @@ import type { UserSummary } from './users.ts';
 export interface BrowseFilters {
   q?: string;
   hero?: string;
+  /** One season, or absent for every season. */
+  season?: number;
   /**
    * Rooms to include. Empty or absent means every room.
    *
@@ -80,7 +82,7 @@ const SORT_ORDER: Record<BuildSort, string> = {
 
 const GUIDE_COLUMNS = `
   g.id, g.slug, g.user_id, g.slot, g.title, g.body, g.payload, g.priority, g.referral,
-  g.codec_version, g.hero_id, g.tier, g.price, g.main_spell, g.video_id, g.video_start,
+  g.codec_version, g.hero_id, g.season, g.tier, g.price, g.main_spell, g.video_id, g.video_start,
   g.item_count, g.spell_count,
   g.status, g.like_count, g.comment_count, g.view_count,
   g.published_at, g.created_at, g.updated_at, g.deleted_at,
@@ -105,6 +107,7 @@ function toGuide(row: Record<string, unknown>): BuildRow {
     referral: String(row['referral']),
     codecVersion: Number(row['codec_version']),
     heroId: (row['hero_id'] as string | null) ?? null,
+    season: Number(row['season']) as BuildRow['season'],
     tier: (row['tier'] as BuildRow['tier'] | null) ?? null,
     price: Number(row['price']),
     // The author's headline ability, as a slot key. Null means they left it to
@@ -269,6 +272,10 @@ export function browseBuilds(sqlite: Sqlite, filters: BrowseFilters): BrowseResu
   if (filters.hero !== undefined && filters.hero !== '') {
     where.push('g.hero_id = ?');
     params.push(filters.hero);
+  }
+  if (filters.season !== undefined) {
+    where.push('g.season = ?');
+    params.push(filters.season);
   }
   /*
    * Tiers and rooms, `OR`ed.

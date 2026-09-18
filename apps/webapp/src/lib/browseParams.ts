@@ -1,5 +1,5 @@
 import type { BuildSort } from 'aow5-api-contract';
-import { isTierKey, type TierKey } from 'aow5-shared/data';
+import { LATEST_SEASON, isTierKey, parseSeason, type SeasonKey, type TierKey } from 'aow5-shared/data';
 
 /**
  * The browse query, in the URL.
@@ -19,6 +19,11 @@ import { isTierKey, type TierKey } from 'aow5-shared/data';
  * `string | null`.
  */
 export interface BrowseQueryState {
+  /**
+   * Always one season. The current one, S2, unless the URL says otherwise —
+   * so it is also what an absent `?season=` and a cleared filter mean.
+   */
+  season: SeasonKey;
   hero?: string;
   /** Tiers to include. Empty means every tier. `OR`ed with `maps`, not intersected. */
   tiers: TierKey[];
@@ -35,7 +40,7 @@ export interface BrowseQueryState {
  */
 const SORTS: readonly BuildSort[] = ['top', 'new', 'discussed', 'cheap', 'costly'];
 
-export const DEFAULT_BROWSE: BrowseQueryState = { tiers: [], maps: [], sort: 'top', q: '' };
+export const DEFAULT_BROWSE: BrowseQueryState = { season: LATEST_SEASON, tiers: [], maps: [], sort: 'top', q: '' };
 
 /**
  * Reads a browse query out of `location.search`.
@@ -50,6 +55,9 @@ export function readBrowseParams(search: string): BrowseQueryState {
   const sort = params.get('sort');
   const hero = params.get('hero')?.trim() ?? '';
   return {
+    // Anything that is not a season is the current one: a stale link still
+    // lands on a list rather than on nothing.
+    season: parseSeason(params.get('season')) ?? LATEST_SEASON,
     // One comma-separated parameter, exactly as the rooms are: they are one
     // control in the sidebar and one question to the server, so they travel
     // the same way. Keys the site does not have are dropped rather than
@@ -84,6 +92,8 @@ export function browseSearch(state: BrowseQueryState): string {
   const params = new URLSearchParams();
 
   if (state.q.trim() !== '') params.set('q', state.q.trim());
+  // The default is left out, like `sort=top`: the plain list stays `/`.
+  if (state.season !== LATEST_SEASON) params.set('season', String(state.season));
   if (state.hero !== undefined && state.hero !== '') params.set('hero', state.hero);
   if (state.tiers.length > 0) params.set('tier', state.tiers.join(','));
   // One parameter carrying the list, matching what the API takes: a repeated

@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import type { BuildSummary } from 'aow5-api-contract';
-import { goldIconUrl, heroIconUrl, tierLabel } from 'aow5-shared/data';
+import { goldIconUrl, heroIconUrl, seasonLabel, tierLabel } from 'aow5-shared/data';
 import { Avatar, Badge, Icon } from '@/ui';
 import { useApp } from '@/data/AppData';
 import { buildPath, Link } from '@/router';
@@ -76,6 +76,11 @@ export const BuildRow = memo(function BuildRow({
           {/* The word for Event, as on the filter chip that found this row.
               `T3` needs no translating and `E` is a letter somebody has to be
               taught — so the badge says whichever of the two it is. */}
+          {/* The season first: it is the coarser fact, and the one the
+              sidebar's first group filters on. */}
+          <Badge tone="season" className={styles.metaTier} title={strings.build.season}>
+            {seasonLabel(build.season)}
+          </Badge>
           {build.tier !== null && (
             <Badge tone="tier" className={styles.metaTier}>
               {tierLabel(build.tier, strings.build.event)}

@@ -42,11 +42,14 @@ export function isTierKey(value: unknown): value is TierKey {
  * Keyed by id rather than by name so a translation cannot break it.
  */
 const OVERRIDES: Readonly<Record<string, TierKey>> = {
-  // Ender Shrine — sits at 8 in the data, played at 7.
+  // The three DLC rooms. Their localized names put them at 8, 8 and 9 until pak
+  // 3011606331, which moved the English and Russian names to their KV levels —
+  // so the data now agrees with these, and they stay as a pin in case it moves
+  // back. Ender Shrine is played at 7.
   M010: '7',
-  // Ender Thunder Mountain — 8 in the data, and its KV level is 5.
+  // Ender Thunder Mountain — KV level 5.
   M014: '5',
-  // Shrine of Desire — 9 in the data, played at 8.
+  // Shrine of Desire — played at 8.
   M013: '8',
   // Event content, none of which belongs on the tier ladder.
   G001: 'event',

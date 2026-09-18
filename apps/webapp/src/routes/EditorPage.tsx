@@ -33,7 +33,18 @@ import { BlankTile, ItemTile, SpellTile } from '@/components/Tile';
 import { SpellPicker } from '@/components/SpellPicker';
 import { HeroChoices } from '@/components/HeroChoices';
 import { MapChoices } from '@/components/MapChoices';
-import { categoryOfMap, listedTiers, tierLabel, type TierKey } from 'aow5-shared/data';
+import {
+  LATEST_SEASON,
+  SEASON_KEYS,
+  categoryOfMap,
+  isHeroInSeason,
+  listedTiers,
+  seasonLabel,
+  seasonsOfHero,
+  tierLabel,
+  type SeasonKey,
+  type TierKey,
+} from 'aow5-shared/data';
 import { mainSpellKey, spellsInDisplayOrder } from '@/lib/preview';
 import { carriesBuildPayload, editPath, navigate, toBuild, useSearch, viewPath, withLang } from '@/router';
 import styles from './EditorPage.module.css';
@@ -98,6 +109,13 @@ export function EditorPage() {
    * which is why changing the tier clears it.
    */
   const [tier, setTier] = useState<TierKey | undefined>(undefined);
+  /*
+   * The season this guide is for. It decides which heroes are offered, and the
+   * server refuses a hero the season does not have — see `seasons.ts`.
+   *
+   * A new build starts on the newest season; a saved one opens on its own.
+   */
+  const [season, setSeason] = useState<SeasonKey>(LATEST_SEASON);
   /**
    * The ability the guide is about, as a slot key. `''` is "not chosen".
    *
@@ -172,6 +190,7 @@ export function EditorPage() {
           // zero the author would have to delete before typing.
           setPrice(detail.price > 0 ? String(detail.price) : '');
           setTier(detail.tier ?? undefined);
+          setSeason(detail.season);
           setMainSpell(detail.mainSpell ?? '');
           // Rebuilt from the stored id: the URL the author originally pasted
           // was never kept, and this is the canonical form of the same link.
@@ -224,6 +243,19 @@ export function EditorPage() {
   const priceValue = price === '' ? 0 : Number(price);
   const priceError = priceValue > MAX_PRICE ? strings.editor.priceTooBig : fieldErrors['price'];
   const tierError = fieldErrors['tier'];
+  const seasonError = fieldErrors['season'];
+
+  /*
+   * A hero that arrived without a season to match — a loadout opened from a
+   * `#b=` link, which carries no season — moves the season to one that has it,
+   * rather than showing a hero the picker below does not offer. Axe fits either
+   * and moves nothing.
+   */
+  useEffect(() => {
+    if (state.hero === null || isHeroInSeason(state.hero, season)) return;
+    const fits = seasonsOfHero(state.hero)[0];
+    if (fits !== undefined) setSeason(fits);
+  }, [state.hero, season]);
   const priceHint =
     priceValue > 0
       ? `${formatPriceExact(priceValue)} ${strings.build.gold} · ${formatPrice(priceValue)}`
@@ -323,6 +355,7 @@ export function EditorPage() {
           referral,
           price: priceValue,
           ...(tier !== undefined ? { tier } : {}),
+          season,
           // `null` clears it back to the kit order, which is what the empty
           // option means — so it is sent rather than omitted.
           mainSpell: mainSpell === '' ? null : mainSpell,
@@ -352,7 +385,7 @@ export function EditorPage() {
         setStatus({ tone: 'error', text });
       }
     },
-    [title, body, payload, referral, priceValue, tier, mainSpell, priority, video, slug, state, strings, refreshMe],
+    [title, body, payload, referral, priceValue, tier, season, mainSpell, priority, video, slug, state, strings, refreshMe],
   );
 
   /*
@@ -581,12 +614,43 @@ export function EditorPage() {
                 the only thing on this page you could not see the state of
                 without opening something.
               */}
+              {/*
+                Season before hero: it decides which heroes there are to pick.
+                Switching to a season that does not offer the chosen hero lets
+                the hero go — its spells were only ever that hero's, which is
+                also what choosing another hero does.
+              */}
+              <Fieldset label={strings.editor.season} hint={seasonError ?? strings.editor.seasonHint}>
+                <div className={styles.tiers}>
+                  {SEASON_KEYS.map((option) => {
+                    const on = season === option;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        className={cx(styles.tier, on && styles.tierOn)}
+                        aria-pressed={on}
+                        onClick={() => {
+                          setSeason(option);
+                          if (state.hero !== null && !isHeroInSeason(state.hero, option)) {
+                            dispatch({ type: 'setHero', hero: null });
+                          }
+                        }}
+                      >
+                        {seasonLabel(option)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Fieldset>
+
               <Fieldset
                 label={strings.editor.hero}
                 {...(hero !== undefined ? { hint: strings.editor.changeHeroWarning } : {})}
               >
                 <HeroChoices
                   value={state.hero ?? undefined}
+                  season={season}
                   onPick={(id) => {
                     const choice = id === undefined ? undefined : core.heroes.byHero.get(id);
                     if (choice === undefined) return;

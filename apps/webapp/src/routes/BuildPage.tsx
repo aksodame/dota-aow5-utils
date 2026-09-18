@@ -4,7 +4,7 @@ import { ApiFailure } from '@/lib/api';
 import { decodeBuild } from 'aow5-shared/codec';
 import { BUILD_VERSION_PARAM, buildShareUrl } from '@/lib/links';
 import { groupsInPanel, type SlotGroup } from 'aow5-shared/codec';
-import { goldIconUrl, heroIconUrl } from 'aow5-shared/data';
+import { goldIconUrl, heroIconUrl, seasonLabel } from 'aow5-shared/data';
 import { Avatar, Badge, Button, Icon, Loading, Notice, Panel, cx } from '@/ui';
 import { useApp } from '@/data/AppData';
 import { getBuild, setLike } from '@/builds/api';
@@ -205,6 +205,9 @@ export function BuildPage({ slug }: { slug: string }) {
             {build.title}
           </h1>
           <div className={styles.subtitle}>
+            <Badge tone="season" title={strings.build.season}>
+              {seasonLabel(build.season)}
+            </Badge>
             {build.tier !== null && (
               <Badge tone="tier">
                 {build.tier === 'event' ? strings.build.event : `${strings.build.tier} ${build.tier}`}

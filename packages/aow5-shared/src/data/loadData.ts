@@ -61,6 +61,20 @@ export {
   type TierKey,
 } from './tiers.ts';
 
+// Season hero pools, for the same reason: the API and the site must agree. See `seasons.ts`.
+export {
+  DEFAULT_SEASON,
+  LATEST_SEASON,
+  SEASON_KEYS,
+  isHeroInSeason,
+  isSeasonKey,
+  parseSeason,
+  seasonHeroes,
+  seasonLabel,
+  seasonsOfHero,
+  type SeasonKey,
+} from './seasons.ts';
+
 const base = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '/';
 const dataUrl = (file: string) => `${base}data/${file}`;
 

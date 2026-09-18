@@ -63,6 +63,7 @@ export interface Strings {
     hero: string;
     map: string;
     tier: string;
+    season: string;
     any: string;
     anyTier: string;
     sort: string;
@@ -154,6 +155,7 @@ export interface Strings {
     mainSpellAuto: string;
     mainSpellHint: string;
     tier: string;
+    season: string;
     /** The word for the Event category, which is not a numbered tier. */
     event: string;
     /**
@@ -286,6 +288,9 @@ export interface Strings {
     referral: string;
     referralHint: string;
     tier: string;
+    season: string;
+    /** Under the season picker: why the heroes change with it. */
+    seasonHint: string;
     tierHint: string;
     mapHint: string;
     price: string;
@@ -571,6 +576,7 @@ const en: Strings = {
     hero: 'Hero',
     map: 'Map',
     tier: 'Tier',
+    season: 'Season',
     any: 'Any',
     anyTier: 'Any tier',
     sort: 'Sort',
@@ -645,6 +651,7 @@ const en: Strings = {
     mainSpellAuto: 'Automatic',
     mainSpellHint: 'The ability a browse row leads with. Automatic reads the kit in order.',
     tier: 'Tier',
+    season: 'Season',
     event: 'Event',
     published: 'Published',
     updated: 'updated',
@@ -724,6 +731,8 @@ const en: Strings = {
     referralHint: 'Shown to anyone reading this build. Optional.',
     price: 'Price',
     tier: 'Tier',
+    season: 'Season',
+    seasonHint: 'Each season has its own heroes. Axe is in both.',
     tierHint: 'Which tier this build is for. Required.',
     mapHint: 'A particular room at that tier, if the build is for one. Optional.',
     priceHint: 'What it cost you to put together, in gold.',
@@ -962,6 +971,7 @@ const ru: Strings = {
     hero: 'Герой',
     map: 'Карта',
     tier: 'Тир',
+    season: 'Сезон',
     any: 'Любой',
     anyTier: 'Любой тир',
     sort: 'Сортировка',
@@ -1036,6 +1046,7 @@ const ru: Strings = {
     mainSpellAuto: 'Автоматически',
     mainSpellHint: 'Умение, с которого начинается строка в списке. «Автоматически» берёт первое по порядку.',
     tier: 'Тир',
+    season: 'Сезон',
     event: 'Событие',
     published: 'Опубликовано',
     updated: 'обновлено',
@@ -1115,6 +1126,8 @@ const ru: Strings = {
     referralHint: 'Виден всем, кто читает сборку. Необязательно.',
     price: 'Цена',
     tier: 'Тир',
+    season: 'Сезон',
+    seasonHint: 'В каждом сезоне свои герои. Акс есть в обоих.',
     tierHint: 'Для какого тира эта сборка. Обязательно.',
     mapHint: 'Конкретная карта этого тира, если сборка про неё. Необязательно.',
     priceHint: 'Во сколько обошлась сборка, в золоте.',
@@ -1352,6 +1365,7 @@ const zh: Strings = {
     hero: '英雄',
     map: '地图',
     tier: '层数',
+    season: '赛季',
     any: '全部',
     anyTier: '全部层数',
     sort: '排序',
@@ -1426,6 +1440,7 @@ const zh: Strings = {
     mainSpellAuto: '自动',
     mainSpellHint: '列表中每一行首先显示的技能。“自动”按技能顺序取第一个。',
     tier: '层数',
+    season: '赛季',
     event: '活动',
     published: '发布于',
     updated: '更新于',
@@ -1504,6 +1519,8 @@ const zh: Strings = {
     referralHint: '所有阅读此配装的人都能看到。可不填。',
     price: '价格',
     tier: '层数',
+    season: '赛季',
+    seasonHint: '每个赛季的英雄不同，斧王在两个赛季都可用。',
     tierHint: '这套配装针对哪个层数。必填。',
     mapHint: '该层数里的某张地图，如果配装是针对它的。可不填。',
     priceHint: '这套配装花了多少金币。',

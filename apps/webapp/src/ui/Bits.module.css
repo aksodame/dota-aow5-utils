@@ -45,6 +45,17 @@
   color: var(--accent);
 }
 
+/**
+ * The season, beside the tier. The same chip in the second accent, because the
+ * two sit side by side on every row and in one colour `S1 T3` read as one mark
+ * twice — the case `--accent-2` exists for.
+ */
+.badgeSeason {
+  background: color-mix(in srgb, var(--accent-2) 18%, transparent);
+  border-color: color-mix(in srgb, var(--accent-2) 45%, transparent);
+  color: var(--accent-2);
+}
+
 /** Inline, for a mark that belongs inside a line of text. See `small`. */
 .badgeSm {
   height: 17px;

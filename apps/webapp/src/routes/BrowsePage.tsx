@@ -112,7 +112,7 @@ export function BrowsePage({
   const requested = useRef(new Set<number>());
 
   const filterKey =
-    `${filters.sort}|${filters.hero ?? ''}|${filters.tiers.join(',')}|${filters.maps.join(',')}|${query}`;
+    `${filters.sort}|${filters.season}|${filters.hero ?? ''}|${filters.tiers.join(',')}|${filters.maps.join(',')}|${query}`;
   const settledKey = useDebounced(filterKey, QUERY_DEBOUNCE_MS);
   /*
    * A request is coming but has not been made. The list draws skeletons for
@@ -152,11 +152,12 @@ export function BrowsePage({
       sort: filters.sort,
       limit: WINDOW,
       ...(query !== '' ? { q: query } : {}),
+      season: filters.season,
       ...(filters.hero !== undefined ? { hero: filters.hero } : {}),
       ...(filters.tiers.length > 0 ? { tiers: filters.tiers } : {}),
       ...(filters.maps.length > 0 ? { maps: filters.maps } : {}),
     }),
-    [filters.sort, filters.hero, filters.tiers, filters.maps, query],
+    [filters.sort, filters.season, filters.hero, filters.tiers, filters.maps, query],
   );
 
   /** Fetches one window and files its rows at their own indices. */

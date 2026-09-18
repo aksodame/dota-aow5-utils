@@ -296,3 +296,26 @@ test('the rooms of a build go with it, and the pair is the key', () => {
   sqlite.close();
 });
 
+
+test('a season is 1 or 2, and every build written before seasons is S1', () => {
+  const { sqlite, userId } = fixture();
+  // The insert every other test uses, which names no season — the shape of
+  // every row the migration found.
+  insertGuide(sqlite, userId, 0, 'old');
+  const row = sqlite.prepare(`select season from builds where slug = 'old'`).get() as { season: number };
+  assert.equal(row.season, 1);
+
+  const now = Math.floor(Date.now() / 1000);
+  let slot = 1;
+  const withSeason = (season: number | null) =>
+    sqlite
+      .prepare(
+        `insert into builds (slug, user_id, slot, title, payload, codec_version, item_count, season, created_at, updated_at)
+         values (?, ?, ?, 'a title', '8.AAAAAA', 8, 1, ?, ?, ?)`,
+      )
+      .run(`season${slot}`, userId, slot++, season, now, now);
+  assert.doesNotThrow(() => withSeason(2));
+  for (const bad of [0, 3, -1]) assert.throws(() => withSeason(bad), /CHECK/, `season ${bad}`);
+  assert.throws(() => withSeason(null), /NOT NULL/);
+  sqlite.close();
+});

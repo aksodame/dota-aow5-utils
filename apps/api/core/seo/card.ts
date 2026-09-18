@@ -26,6 +26,7 @@
 import { clampWidth, wrapWidth, type SeoLang } from 'aow5-shared/seo';
 import {
   ACCENT,
+  ACCENT_2,
   BORDER,
   CARD_HEIGHT,
   CARD_WIDTH,
@@ -93,6 +94,11 @@ export interface CardModel {
    * key under them rather than as a list.
    */
   spellIcon?: string | null;
+  /**
+   * `S2`. Drawn as a teal chip before the tier's blue one, as the build page
+   * draws its two badges. Absent on the cards that are not a build.
+   */
+  season?: string | null;
   /** `T6`, or the Event word. Drawn as the chip the build page uses. */
   tier: string | null;
   /** `Axe · Frozen Plain`. The tier and price are drawn in their own places. */
@@ -144,13 +150,13 @@ function gearRow(items: readonly (string | null)[], x: number, y: number): strin
 }
 
 /**
- * The tier chip, drawn as `.badgeTier` is: the accent at 18%, its border at
- * 45%, and the label in it uppercase and letter-spaced.
+ * A chip, drawn as `.badgeTier` and `.badgeSeason` are: the colour at 18%, its
+ * border at 45%, and the label in it uppercase and letter-spaced.
  *
  * Returns its own width so the facts line knows where to start, because SVG
  * will not tell you how wide the thing you just drew turned out to be.
  */
-function tierChip(label: string, x: number, baseline: number): { svg: string; width: number } {
+function chip(label: string, x: number, baseline: number, colour: string): { svg: string; width: number } {
   const SIZE = 24;
   // Measured rather than counted: `Событие` is seven characters and `活动` is
   // two, and the second is the wider of them.
@@ -161,12 +167,12 @@ function tierChip(label: string, x: number, baseline: number): { svg: string; wi
     width,
     svg:
       `<rect x="${x}" y="${top}" width="${width}" height="${height}" rx="${RADIUS}"` +
-      ` fill="${ACCENT}" fill-opacity="0.18" stroke="${ACCENT}" stroke-opacity="0.45" stroke-width="2" />` +
+      ` fill="${colour}" fill-opacity="0.18" stroke="${colour}" stroke-opacity="0.45" stroke-width="2" />` +
       text(label.toUpperCase(), {
         x: x + width / 2,
         y: baseline,
         size: SIZE,
-        fill: ACCENT,
+        fill: colour,
         weight: 700,
         anchor: 'middle',
         spacing: 0.7,
@@ -312,14 +318,21 @@ export function renderCard(model: CardModel): string {
     );
   }
 
-  // The tier chip and the facts, on one line under the title — the build page's
-  // subtitle row, in the same order.
+  // The season and tier chips and the facts, on one line under the title — the
+  // build page's subtitle row, in the same order and the same two colours.
   y += 54;
   let factsAt = left;
+  if (model.season != null) {
+    const drawn = chip(model.season, factsAt, y, ACCENT_2);
+    parts.push(drawn.svg);
+    factsAt += drawn.width + 12;
+  }
   if (model.tier !== null) {
-    const chip = tierChip(model.tier, left, y);
-    parts.push(chip.svg);
-    factsAt = left + chip.width + 20;
+    const drawn = chip(model.tier, factsAt, y, ACCENT);
+    parts.push(drawn.svg);
+    factsAt += drawn.width + 20;
+  } else if (factsAt !== left) {
+    factsAt += 8;
   }
   const FACT_SIZE = 28;
   if (model.facts !== '') {

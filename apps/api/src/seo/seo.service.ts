@@ -12,7 +12,7 @@ import {
   type PageMeta,
   type SeoLang,
 } from 'aow5-shared/seo';
-import { tierLabel } from 'aow5-shared/data';
+import { seasonLabel, tierLabel } from 'aow5-shared/data';
 import type { BuildRow } from '../../core/db/builds.ts';
 import {
   SITEMAP_LIMIT,
@@ -192,6 +192,7 @@ export class SeoService {
       title: oneLine(build.title) === '' ? strings.untitled : oneLine(build.title),
       spell: facts.spell,
       spellIcon,
+      season: seasonLabel(build.season),
       tier: build.tier === null ? null : tierLabel(build.tier, strings.event),
       /*
        * The rooms, and the hero only when there is no portrait.

@@ -179,6 +179,15 @@ export type BuildStatus = 'draft' | 'published';
  */
 export type MainSpellKey = 'passive' | 'q' | 'w' | 'e' | 'd' | 'f' | 'r';
 
+/**
+ * Which season of the game a guide is for.
+ *
+ * Declared here as well as in `aow5-shared` for the same reason `TierKey` is:
+ * this package has no runtime dependencies. The shared package owns which
+ * heroes each season offers; this is only the shape the wire carries.
+ */
+export type SeasonKey = 1 | 2;
+
 export interface BuildSummary {
   slug: string;
   title: string;
@@ -190,6 +199,11 @@ export interface BuildSummary {
    */
   payload: string;
   heroId: string | null;
+  /**
+   * The season the guide is for. Never null: every build written before
+   * seasons existed is S1, which is what the migration filled in.
+   */
+  season: SeasonKey;
   /**
    * What the guide is filed under: a tier, or `event`. Null only on a draft.
    *
@@ -459,6 +473,8 @@ export type TierKey = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | 'eve
 /** The sidebar's facets. Every field is optional; omitting one means "any". */
 export interface BuildFilter {
   heroId?: string;
+  /** One season. Seasons split heroes, so this narrows which heroes the filter offers too. */
+  season?: SeasonKey;
   mapId?: string;
   tier?: TierKey;
   /** Full-text over title and body. */
@@ -469,6 +485,14 @@ export interface CreateBuildBody {
   title: string;
   body?: string;
   payload: string;
+  /**
+   * Which season the guide is for. Omitted on create means S1, the column's
+   * default; omitted on update leaves it alone.
+   *
+   * The build's hero has to be one the season offers — see `SEASON_HEROES` in
+   * `aow5-shared` — and the server refuses the pair rather than moving either.
+   */
+  season?: SeasonKey;
   /**
    * Which tier the guide is for. Required to publish.
    *

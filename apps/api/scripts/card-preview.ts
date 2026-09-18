@@ -78,6 +78,7 @@ const SAMPLES: Array<{ name: string; model: CardModel }> = [
       title: 'Frost-lock Axe, a 40k clear for the deep tiers',
       spell: "Berserker's Call",
       spellIcon: ability('axe_berserkers_call.png'),
+      season: 'S2',
       tier: 'T6',
       facts: 'Axe \u00b7 Frozen Plain',
       price: '12.4k gold',

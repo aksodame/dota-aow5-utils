@@ -63,6 +63,7 @@ export const TEXT = '#eef3ff'; // --text
 export const MUTED = '#9dadd0'; // --text-muted
 export const BORDER = '#26304d'; // --border
 export const ACCENT = '#4c8eef'; // --accent, as its own token comment quotes it
+export const ACCENT_2 = '#3fc0c0'; // --accent-2, oklch(0.74 0.11 195) in sRGB — the season chip
 export const GOLD = '#ffc44d'; // --gold
 
 /** `--radius` and `--radius-lg`. */
