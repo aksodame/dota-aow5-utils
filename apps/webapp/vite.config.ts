@@ -20,6 +20,21 @@ const require = createRequire(import.meta.url);
 const sharedPublicDir = path.join(path.dirname(require.resolve('aow5-shared/package.json')), 'public');
 
 /**
+ * A version for the data files, so a deploy that changes them is fetched fresh.
+ *
+ * `/data/*` is cached for an hour under one URL while the bundle that reads it
+ * is content-hashed — so new code could run against old data until the cache
+ * expired. This hashes `meta.json`, which carries every table's hash and the
+ * time the data was generated, and `loadData` puts it on each data URL. Same
+ * data, same URL, and the hour of caching still applies between deploys.
+ */
+const dataVersion = crypto
+  .createHash('sha256')
+  .update(fs.readFileSync(path.join(sharedPublicDir, 'data', 'meta.json')))
+  .digest('hex')
+  .slice(0, 12);
+
+/**
  * The two files a static host needs and a bundler does not produce.
  *
  * `404.html` is what makes path routing work on GitHub Pages. The site has
@@ -103,6 +118,9 @@ function cspScriptHashes(): Plugin {
 // Build with: VITE_BASE=/dota-aow5-utils/ pnpm build
 export default defineConfig({
   base: process.env.VITE_BASE ?? '/',
+  define: {
+    'import.meta.env.VITE_AOW5_DATA_VERSION': JSON.stringify(dataVersion),
+  },
   /**
    * The API, on this origin.
    *

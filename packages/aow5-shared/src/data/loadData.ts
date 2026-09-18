@@ -75,8 +75,24 @@ export {
   type SeasonKey,
 } from './seasons.ts';
 
-const base = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '/';
-const dataUrl = (file: string) => `${base}data/${file}`;
+const env = (import.meta as { env?: { BASE_URL?: string; VITE_AOW5_DATA_VERSION?: string } }).env;
+const base = env?.BASE_URL ?? '/';
+/*
+ * Which data this bundle was built against, stamped in by the webapp's Vite
+ * config as a hash of `meta.json`.
+ *
+ * The bundle's own files are content-hashed and cached forever, but the data
+ * keeps one URL and is cached for an hour — so without this, a deploy that
+ * refreshes the game data is new code reading old data for up to an hour. That
+ * is how Void Spirit went missing after the seasons deploy: the new S2 pool
+ * named a hero the cached `heroes.json` did not have. A query that changes with
+ * the data makes the browser ask for the new file the moment the new code runs.
+ *
+ * Absent outside Vite (node tests, anything that builds without the define),
+ * where the URLs stay as they were.
+ */
+const dataVersion = env?.VITE_AOW5_DATA_VERSION ?? '';
+const dataUrl = (file: string) => `${base}data/${file}${dataVersion === '' ? '' : `?v=${dataVersion}`}`;
 
 export const iconUrl = (icon: string): string =>
   icon === 'placeholder.png' ? `${base}icons/placeholder.png` : `${base}icons/items/${icon}`;
