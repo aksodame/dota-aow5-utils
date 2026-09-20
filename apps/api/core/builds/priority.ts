@@ -27,7 +27,7 @@ import {
 } from 'aow5-api-contract';
 import { stripControl, textLength, type FieldErrors } from './validate.ts';
 
-/** The loadout is fifteen slots; a plan may only speak about those. */
+/** The loadout is sixteen slots; a plan may only speak about those. */
 const MAX_SLOT = MAX_PRIORITY_ITEMS - 1;
 
 /** An item's `values` key, as the extracted data spells them. */

@@ -52,9 +52,19 @@ interface ItemTileProps {
   item: ItemSummary;
   onClick?: () => void;
   className?: string;
+  /**
+   * Draws the item as a spell does.
+   *
+   * For the one place an item stands in for an ability: a Life Soul takes over
+   * the `f` key, and a square tile in a row of circles would read as an item
+   * that had wandered into the spell strip rather than as what that key does.
+   * The rarity ring stays, because it is still an item and its quality is still
+   * the thing to know about it.
+   */
+  round?: boolean;
 }
 
-export function ItemTile({ item, onClick, className }: ItemTileProps) {
+export function ItemTile({ item, onClick, className, round = false }: ItemTileProps) {
   // Null outside a provider, which is a real answer: the tile still renders and
   // its card falls back to what the index already knows.
   const store = useItemDetailsStore();
@@ -68,6 +78,7 @@ export function ItemTile({ item, onClick, className }: ItemTileProps) {
       {...(store !== null ? { onOpen: store.request } : {})}
     >
       <TileShell
+        round={round}
         className={cx(styles.rarity, className)}
         // The ring reads its colour from here, so the rarity scale lives in one
         // place rather than as a class per quality.

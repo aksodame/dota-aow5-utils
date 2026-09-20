@@ -23,7 +23,7 @@ import type { SeoLang } from 'aow5-shared/seo';
 import type { PreviewItem } from 'aow5-shared/overlay';
 import { categoryOfMap, type TierKey } from 'aow5-shared/data';
 import { ABILITY_SLOTS } from 'aow5-shared/types';
-import { decodeBuild, type BuildState } from 'aow5-shared/codec';
+import { decodeBuild, groupsInPanel, type BuildState } from 'aow5-shared/codec';
 
 import heroes from 'aow5-shared/public/data/heroes.json' with { type: 'json' };
 import maps from 'aow5-shared/public/data/maps.json' with { type: 'json' };
@@ -241,8 +241,30 @@ export function decodeStored(payload: string): BuildState | null {
  * thinks of as the point of the build.
  */
 export function mainSpellName(state: BuildState | null, slot: string | null, lang: SeoLang): string | null {
+  // A worn Life Soul takes the `f` key over, so a card whose headline is `f`
+  // names the soul rather than the Emergency Heal every build in the list has.
+  const soul = headlineSoul(state, slot);
+  if (soul !== null) return ITEM_NAMES[lang][soul] ?? ITEM_NAMES.en[soul] ?? null;
   const id = mainSpellId(state, slot);
   return id === null ? null : abilityName(id, lang);
+}
+
+/** Where a Life Soul is worn. From the layout, so it follows the layout. */
+const SOUL_SLOT: number | null = groupsInPanel('soul')[0]?.start ?? null;
+
+/**
+ * The Life Soul standing in for the headline, or null.
+ *
+ * Non-null only when the headline key is `f` and the loadout wears one — the
+ * same rule `equippedSoul` applies in the webapp, restated here because the
+ * server decodes payloads of its own and must not disagree with the page the
+ * card is a picture of.
+ */
+export function headlineSoul(state: BuildState | null, slot: string | null): string | null {
+  if (state === null || SOUL_SLOT === null) return null;
+  if ((slot ?? 'q') !== 'f') return null;
+  const value = state.slots[SOUL_SLOT];
+  return value?.k === 'id' ? value.id : null;
 }
 
 /**

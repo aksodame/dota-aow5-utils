@@ -113,7 +113,11 @@ export const BuildRow = memo(function BuildRow({
       )}
 
       <div className={styles.preview} aria-hidden>
-        {preview?.spell != null ? (
+        {/* A Life Soul takes the `f` key over, so a row led by `f` is led by
+            the soul — see `equippedSoul`. */}
+        {preview?.soul != null ? (
+          <ItemTile item={preview.soul} round className={styles.previewSpell} />
+        ) : preview?.spell != null ? (
           <SpellTile spell={preview.spell} className={styles.previewSpell} />
         ) : (
           <BlankTile round className={styles.previewSpell} />

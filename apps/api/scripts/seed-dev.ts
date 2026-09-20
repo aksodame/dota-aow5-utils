@@ -41,8 +41,8 @@ const SEED_PASSWORD_HASH = 'seed$not-a-real-hash';
 import { validatePayload } from '../core/codec/validatePayload.ts';
 import { HERO_TABLE, ID_TABLE } from '../core/codec/tables.ts';
 import { builds, comments, likes, users } from '../core/db/schema.ts';
-import { createEmptyState, encodeBuild } from 'aow5-shared/codec';
-import { TIER_KEYS, categoryOfMap, listedMaps, tierShort } from 'aow5-shared/data';
+import { createEmptyState, encodeBuild, groupsInPanel } from 'aow5-shared/codec';
+import { TIER_KEYS, categoryOfMap, listedMaps, seasonsOfHero, tierShort, type SeasonKey } from 'aow5-shared/data';
 import { ABILITY_SLOTS, SLOT_KIND } from 'aow5-shared/types';
 import { MAX_BUILDS_PER_USER } from 'aow5-api-contract';
 import heroes from 'aow5-shared/public/data/heroes.json' with { type: 'json' };
@@ -101,6 +101,15 @@ function pool(kind: number) {
 const equipment = pool(SLOT_KIND.EQUIP);
 const runeItems = pool(SLOT_KIND.RUNE);
 const potions = pool(SLOT_KIND.POTION);
+/*
+ * Life Souls, and where one is worn.
+ *
+ * S2 only, and the seed has to reflect that: a soul on a first-season build is
+ * a slot the game does not have, and the browse list would be showing something
+ * nobody can reproduce.
+ */
+const souls = pool(SLOT_KIND.SOUL);
+const SOUL_SLOT = groupsInPanel('soul')[0]?.start ?? -1;
 
 /**
  * The rooms builds are filed under, in the order the site lists them.
@@ -252,6 +261,16 @@ for (let i = 0; i < count; i += 1) {
   const hero = playableHeroes[(i * 3) % playableHeroes.length]!;
   const author = authors[Math.floor(i / MAX_BUILDS_PER_USER)]!;
 
+  /*
+   * The season, taken from the hero rather than left to the column's default.
+   *
+   * Without this every seeded build was S1, while the editor and the browse
+   * filter both open on the newest season — so a freshly seeded database looked
+   * like an empty site. Axe is in both, which is what gives each season rows.
+   */
+  const heroSeasons = seasonsOfHero(hero.id);
+  const season: SeasonKey = heroSeasons[i % Math.max(1, heroSeasons.length)] ?? 1;
+
   const state = createEmptyState();
   state.hero = hero.id;
   state.maps = [room.id];
@@ -263,6 +282,14 @@ for (let i = 0; i < count; i += 1) {
   for (let slot = 9; slot <= 11; slot += 1) state.slots[slot] = { k: 'id', id: pick(runeItems, slot)[1] };
   state.slots[13] = { k: 'id', id: pick(equipment, 13)[1] };
   state.slots[14] = { k: 'id', id: pick(equipment, 14)[1] };
+  /*
+   * A Life Soul on most second-season builds, and none at all on the first.
+   * Most rather than all, so both states are on screen: the soul slot filled,
+   * and the `f` key still showing the shared heal it stands in for.
+   */
+  if (season === 2 && SOUL_SLOT >= 0 && souls.length > 0 && i % 4 !== 3) {
+    state.slots[SOUL_SLOT] = { k: 'id', id: pick(souls, SOUL_SLOT)[1] };
+  }
 
   ABILITY_SLOTS.forEach((key, n) => {
     const candidates = (hero.bySlot as Record<string, string[] | undefined>)[key] ?? [];
@@ -340,6 +367,7 @@ for (let i = 0; i < count; i += 1) {
       // game's own name claims, which is exactly why this goes through
       // `categoryOfMap` rather than reading `room.tier`.
       tier: categoryOfMap(room),
+      season,
       /*
        * Two builds in three name their headline, and the rest leave it to the
        * kit order — both states are on screen that way, which is the whole
@@ -347,7 +375,14 @@ for (let i = 0; i < count; i += 1) {
        * the fallback already picks and a seed where the two agree would never
        * show the field doing anything.
        */
-      mainSpell: i % 3 === 0 ? null : i % 3 === 1 ? 'w' : 'r',
+      /*
+       * ...except a build wearing a Life Soul, every so often, which leads with
+       * `f`. That is the one key whose meaning comes from the loadout rather
+       * than the kit, and it is the only way to see a row led by a soul rather
+       * than by the Emergency Heal every build in the list also has.
+       */
+      mainSpell:
+        state.slots[SOUL_SLOT] != null && i % 6 === 0 ? 'f' : i % 3 === 0 ? null : i % 3 === 1 ? 'w' : 'r',
       priority,
       facets: check.facets,
       status,

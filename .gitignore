@@ -49,6 +49,9 @@ infra/.env
 *.db
 *.db-wal
 *.db-shm
+# Hand-made copies of a dev database, taken before something that rewrites it.
+*.bak-preseed
+*.pre-builds-rename.bak
 *.bak
 
 # Written by scripts/bootstrap-deploy.ts: the deploy keypair and a filled-in

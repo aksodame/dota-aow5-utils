@@ -24,7 +24,7 @@ import { SPELLS_PER_SECTION } from '../types/heroes.ts';
  *   [2]     u8     hero, as its 1-based frozen roster position (0 = none)
  *   [3]     u8     how many maps follow (0 = none)
  *   [4..]   u16be  one per map, each a 1-based frozen table position
- *   then    u16be  occupancy bitmap over the 15 slots, MSB-first
+ *   then    u16be  occupancy bitmap over the slots, MSB-first
  *   then           packed 12-bit item indices, one per set bit, ascending
  *
  * v7 was the same with exactly one map word and no count, which is what makes
@@ -59,6 +59,23 @@ import { SPELLS_PER_SECTION } from '../types/heroes.ts';
  * becomes a one-element list. Nothing re-encodes as v7, so a v7 link opened and
  * saved comes back as v8.
  *
+ * ## Why the Life Soul did not need a v9
+ *
+ * `LOADOUT_LAYOUT` says appending a group means bumping the version, and the
+ * S2 soul slot is the first append since v8 shipped. It stays v8 anyway,
+ * because this particular append changes nothing about the bytes: the bitmap
+ * was already two whole bytes for fifteen slots, so slot 15 took the bit that
+ * was there and always zero, and every byte after it keeps its offset. A v8
+ * link written before the slot existed decodes here unchanged, and one written
+ * here with a soul in it still decodes on a deployment that has not heard of
+ * the slot — that reader counts fifteen bits, takes the indices belonging to
+ * them, and leaves the soul's trailing index unread.
+ *
+ * That asymmetry is the whole reason not to bump. The tracker is an installed
+ * application: a v9 would have every copy of it that has not updated refuse
+ * links it can in fact read all but one slot of. A version bump is for a
+ * layout change that would make an old reader wrong, and this one does not.
+ *
  * ## What happened to v1-v6
  *
  * They encoded a board of up to nine sections, each with its own name,
@@ -82,7 +99,7 @@ const INDEX_BITS = 12;
 export const MAX_ENCODABLE_INDEX = (1 << INDEX_BITS) - 2; // 0xFFF is reserved
 const RESERVED_INDEX = (1 << INDEX_BITS) - 1;
 
-/** ceil(15 / 8) and ceil(7 / 8). */
+/** ceil(SLOT_COUNT / 8) and ceil(7 / 8). */
 const SLOT_BITMAP_BYTES = Math.ceil(SLOT_COUNT / 8);
 const SPELL_BITMAP_BYTES = Math.ceil(SPELLS_PER_SECTION / 8);
 /** Fingerprint, hero, map count. What sits before the map words in v8. */

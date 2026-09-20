@@ -293,6 +293,20 @@
   width: var(--slot);
 }
 
+/**
+ * The Life Soul, in its own divided column after the carried pair.
+ *
+ * Same treatment as `.carry` rather than a third block inside it: neutral and
+ * backpack are what the run handed you, and the soul is worn — one divider per
+ * kind of thing is what keeps the row readable at a glance.
+ */
+.soul {
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--border);
+}
+
 /** Spells and runes are rows of small tiles. */
 .strip {
   display: grid;

@@ -18,6 +18,7 @@ import {
   countSpells,
   createEmptyState,
   groupsInPanel,
+  visibleGroups,
   isEmptyState,
   slotAcceptsAt,
   slotKindAt,
@@ -475,8 +476,9 @@ test('the layout covers every slot exactly once', () => {
 });
 
 test('slot indices are the ones every existing link was written against', () => {
-  // Frozen. Changing any of these repoints every build already shared.
-  assert.equal(SLOT_COUNT, 15);
+  // Frozen. Changing any of these repoints every build already shared. A new
+  // group may only be appended, which is what slot 15 is.
+  assert.equal(SLOT_COUNT, 16);
   assert.equal(slotKindAt(0), SLOT_KIND.POTION);
   assert.equal(slotKindAt(2), SLOT_KIND.POTION);
   assert.equal(slotKindAt(3), SLOT_KIND.EQUIP);
@@ -486,6 +488,38 @@ test('slot indices are the ones every existing link was written against', () => 
   assert.equal(slotKindAt(12), SLOT_KIND.PET);
   assert.equal(slotKindAt(13), SLOT_KIND.NEUTRAL);
   assert.equal(slotKindAt(14), SLOT_KIND.BACKPACK);
+  assert.equal(slotKindAt(15), SLOT_KIND.SOUL);
+});
+
+test('appending the soul slot did not widen the board, which is why it is still v8', () => {
+  /*
+   * The bitmap was already two whole bytes for fifteen slots, so slot 15 took
+   * a bit that existed and was always zero. Encoding a board with nothing in
+   * the soul slot has to produce exactly the bytes it produced before the slot
+   * existed, or every link in the wild now points somewhere else.
+   */
+  const before = createEmptyState();
+  before.slots[3] = { k: 'id', id: ITEM_IDS[5] as string };
+  before.slots[14] = { k: 'id', id: ITEM_IDS[9] as string };
+  const payload = encodeBuild(before, table);
+
+  // Two bytes of bitmap, sixteen bits, and slot 15 is the last of them.
+  assert.equal(Math.ceil(16 / 8), 2);
+  assert.equal(payload.startsWith('8.'), true);
+
+  const withSoul = createEmptyState();
+  withSoul.slots[3] = before.slots[3] ?? null;
+  withSoul.slots[14] = before.slots[14] ?? null;
+  withSoul.slots[15] = { k: 'id', id: ITEM_IDS[11] as string };
+  const soulPayload = encodeBuild(withSoul, table);
+
+  assert.notEqual(soulPayload, payload);
+  // Still v8: nothing about the layout makes an older reader wrong, it simply
+  // stops one slot short. See the note in buildCodec.ts.
+  assert.equal(soulPayload.startsWith('8.'), true);
+  const back = decodeBuild(soulPayload, table);
+  assert.equal(back.ok, true);
+  assert.deepEqual(back.ok ? back.state.slots[15] : null, withSoul.slots[15]);
 });
 
 test('the neutral slot deliberately accepts more than its own kind', () => {
@@ -493,15 +527,39 @@ test('the neutral slot deliberately accepts more than its own kind', () => {
   assert.equal(slotAcceptsAt(13), SLOT_KIND.BACKPACK);
 });
 
-test('the four panels between them hold every group', () => {
+test('the five panels between them hold every group', () => {
   const grouped = [
     ...groupsInPanel('consumable'),
     ...groupsInPanel('gear'),
     ...groupsInPanel('carry'),
     ...groupsInPanel('rune'),
+    ...groupsInPanel('soul'),
   ];
   assert.equal(grouped.length, LOADOUT_LAYOUT.length);
   assert.deepEqual(new Set(grouped.map((g) => g.key)), new Set(LOADOUT_LAYOUT.map((g) => g.key)));
+});
+
+test('the soul slot is offered in S2, and out of season only when it is filled', () => {
+  const empty = createEmptyState();
+  assert.deepEqual(visibleGroups('soul', empty.slots, 2).map((g) => g.key), ['soul']);
+  // S1 does not have the slot, and a link carries no season at all.
+  assert.deepEqual(visibleGroups('soul', empty.slots, 1), []);
+  assert.deepEqual(visibleGroups('soul', empty.slots), []);
+
+  // Whatever the season says, a slot holding something is drawn: a build that
+  // moved back to S1, or a `#b=` link, must not silently lose what it carries.
+  const filled = createEmptyState();
+  filled.slots[15] = { k: 'id', id: 'item_H0001' };
+  assert.deepEqual(visibleGroups('soul', filled.slots, 1).map((g) => g.key), ['soul']);
+  assert.deepEqual(visibleGroups('soul', filled.slots).map((g) => g.key), ['soul']);
+});
+
+test('the hidden pet slot comes back the moment it holds something', () => {
+  const empty = createEmptyState();
+  assert.equal(visibleGroups('carry', empty.slots, 2).some((g) => g.key === 'pet'), false);
+  const filled = createEmptyState();
+  filled.slots[12] = { k: 'id', id: 'item_pet_001' };
+  assert.equal(visibleGroups('carry', filled.slots, 2).some((g) => g.key === 'pet'), true);
 });
 
 test('the worn six are three to a row, and the carried two are their own block', () => {

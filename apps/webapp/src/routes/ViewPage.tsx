@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { MAX_PRICE } from 'aow5-api-contract';
-import { decodeBuild, groupsInPanel, type SlotGroup } from 'aow5-shared/codec';
+import { decodeBuild, groupsInPanel, visibleGroups, type SlotGroup } from 'aow5-shared/codec';
 import { categoryOfMap, goldIconUrl, heroIconUrl, isTierKey, tierLabel } from 'aow5-shared/data';
 import { ABILITY_SLOTS } from 'aow5-shared/types';
 import { Badge, Button, Icon, Loading, Notice, Panel, cx } from '@/ui';
@@ -97,7 +97,7 @@ export function ViewPage() {
 
   const state = decoded.state;
   const hero = state.hero !== null ? core.heroes.byHero.get(state.hero) : undefined;
-  const spells = spellsInDisplayOrder(state.spells, core);
+  const spells = spellsInDisplayOrder(state.spells, core, state.slots);
   const mainKey = mainSpellKey(state.spells, core, extras.mainSpell);
   const itemCount = state.slots.filter((slot) => slot !== null).length;
   // The version the payload declares, which is the part in front of the first
@@ -127,7 +127,8 @@ export function ViewPage() {
   const tier = rooms[0] !== undefined ? categoryOfMap(rooms[0]) : extras.tier;
 
   const gearGroups = groupsInPanel('gear').filter((group) => group.hidden !== true);
-  const carryGroups = groupsInPanel('carry').filter((group) => group.hidden !== true);
+  const carryGroups = visibleGroups('carry', state.slots);
+  const soulGroups = visibleGroups('soul', state.slots);
   const carryLabel = (key: string) => (key === 'neutral' ? strings.build.neutral : strings.build.backpack);
 
   return (
@@ -235,6 +236,24 @@ export function ViewPage() {
                   </div>
                 ))}
               </div>
+              {soulGroups.length > 0 && (
+                /*
+                  The Life Soul. A `#b=` link carries no season, so
+                  `visibleGroups` is given none and draws this only when the
+                  loadout actually holds one — the same rule that keeps a hidden
+                  slot visible rather than letting a link's contents vanish.
+                */
+                <div className={styles.soul}>
+                  {soulGroups.map((group) => (
+                    <div key={group.key} className={styles.carrySlot}>
+                      <span className={styles.slotLabel} title={strings.build.soul}>
+                        {strings.build.soul}
+                      </span>
+                      {slots(group)}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Panel>
 
@@ -246,7 +265,7 @@ export function ViewPage() {
         <div className={styles.column}>
           <Panel title={strings.build.spells}>
             <div className={styles.strip}>
-              {spells.map(({ key, spell, unknown }) => {
+              {spells.map(({ key, spell, unknown, soul }) => {
                 // Marked exactly as the build page marks it: the sender's
                 // choice out of `?spell=` when the link carried one, and the
                 // kit order when it did not — a board always leads with
@@ -258,7 +277,14 @@ export function ViewPage() {
                     className={cx(styles.spellCell, main && styles.spellCellMain)}
                     title={main ? strings.build.mainSpell : undefined}
                   >
-                    {spell !== null ? <SpellTile spell={spell} /> : <BlankTile round unknown={unknown} />}
+                    {/* A worn Life Soul is what `f` does — see `equippedSoul`. */}
+                    {soul !== null ? (
+                      <ItemTile item={soul} round />
+                    ) : spell !== null ? (
+                      <SpellTile spell={spell} />
+                    ) : (
+                      <BlankTile round unknown={unknown} />
+                    )}
                     <span className={cx(styles.spellKey, main && styles.spellKeyMain)}>{key}</span>
                   </div>
                 );

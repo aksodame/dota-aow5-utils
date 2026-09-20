@@ -189,8 +189,12 @@ export const COMMENT_EDIT_WINDOW_SECONDS = 15 * 60;
  * loadout's own size restated, not a policy. The editor only offers the gear
  * slots, but the cap is the whole board: a plan is keyed by slot index, and a
  * limit narrower than the board would refuse a legal one for no reason.
+ *
+ * Restated rather than imported: this package deliberately depends on nothing,
+ * so when `SLOT_COUNT` moves this has to move with it by hand. It went from 15
+ * to 16 when S2 added the Life Soul.
  */
-export const MAX_PRIORITY_ITEMS = 15;
+export const MAX_PRIORITY_ITEMS = 16;
 
 /**
  * Stats an item may rank.

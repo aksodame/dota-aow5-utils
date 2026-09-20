@@ -239,3 +239,56 @@ test('a headline naming an empty slot falls back rather than drawing a hole', ()
   const preview = buildPreview(encodeBuild(state, TABLES.items, TABLES.heroes), DATA, TABLES, 'r');
   assert.equal(preview.spell?.id, q, 'the kit order answers when the named slot is empty');
 });
+
+/**
+ * The Life Soul, and the key it takes over.
+ *
+ * Against the real data rather than a fixture: the point is that the soul slot
+ * the layout names holds an item the index actually flags `SLOT_KIND.SOUL`, and
+ * a fixture would keep passing after the pak stopped shipping any.
+ */
+const SOUL_SLOT = 15;
+const SOULS = DATA.items.filter((i) => (i.kinds & 64) !== 0);
+
+test('a worn Life Soul is what the f key shows, in place of the shared heal', () => {
+  assert.ok(SOULS.length > 0, 'the emitted index has Life Souls to wear');
+  const { state } = sample();
+  const heal = spellsInDisplayOrder(state.spells, DATA, state.slots).find((s) => s.key === 'f');
+  assert.equal(heal?.soul, null, 'nothing worn, so f is the ordinary heal');
+  assert.notEqual(heal?.spell, null);
+
+  state.slots[SOUL_SLOT] = { k: 'id', id: SOULS[0]!.id };
+  const listed = spellsInDisplayOrder(state.spells, DATA, state.slots);
+  const f = listed.find((s) => s.key === 'f');
+  assert.equal(f?.soul?.id, SOULS[0]!.id);
+  // The ability underneath is untouched — the soul is a display override, not
+  // an edit to what the build encodes.
+  assert.notEqual(f?.spell, null);
+  // And no other key moves.
+  for (const entry of listed) if (entry.key !== 'f') assert.equal(entry.soul, null);
+});
+
+test('a row led by f leads with the soul, and one led by anything else does not', () => {
+  const { state } = sample();
+  state.slots[SOUL_SLOT] = { k: 'id', id: SOULS[0]!.id };
+  const payload = encodeBuild(state, TABLES.items, TABLES.heroes);
+
+  assert.equal(buildPreview(payload, DATA, TABLES, 'f').soul?.id, SOULS[0]!.id);
+  assert.equal(buildPreview(payload, DATA, TABLES, 'q').soul, null);
+});
+
+test('the soul slot survives the codec, which is what lets the f tile find it', () => {
+  const hero = heroesData.heroes[0]!;
+  const state = createEmptyState();
+  state.hero = hero.id;
+  // `f` has to be a headline the row can actually draw, which means the heal is
+  // in the build — the soul stands in for that ability, it does not replace it.
+  const heal = hero.bySlot['f']?.[0];
+  assert.ok(heal !== undefined, 'every hero carries the shared heal on f');
+  state.spells[ABILITY_SLOTS.indexOf('f')] = { k: 'id', id: heal };
+  state.slots[SOUL_SLOT] = { k: 'id', id: SOULS[0]!.id };
+
+  const payload = encodeBuild(state, TABLES.items, TABLES.heroes);
+  assert.equal(payload.startsWith('8.'), true, 'still v8 — see buildCodec.ts');
+  assert.equal(buildPreview(payload, DATA, TABLES, 'f').soul?.id, SOULS[0]!.id);
+});

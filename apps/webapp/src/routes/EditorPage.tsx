@@ -14,6 +14,7 @@ import {
   decodeBuild,
   encodeBuild,
   groupsInPanel,
+  visibleGroups,
   slotAcceptsAt,
   spellDefaults,
   type BuildState,
@@ -45,7 +46,7 @@ import {
   type SeasonKey,
   type TierKey,
 } from 'aow5-shared/data';
-import { mainSpellKey, spellsInDisplayOrder } from '@/lib/preview';
+import { mainSpellKey, spellDisplayName, spellsInDisplayOrder } from '@/lib/preview';
 import { carriesBuildPayload, editPath, navigate, toBuild, useSearch, viewPath, withLang } from '@/router';
 import styles from './EditorPage.module.css';
 
@@ -428,7 +429,7 @@ export function EditorPage() {
       );
     });
 
-  const spells = spellsInDisplayOrder(state.spells, core);
+  const spells = spellsInDisplayOrder(state.spells, core, state.slots);
   /*
    * The slots that actually hold something, named.
    *
@@ -439,8 +440,13 @@ export function EditorPage() {
   const mainKey = mainSpellKey(state.spells, core, mainSpell === '' ? null : mainSpell);
   const filledSpells = spells
     .filter((entry): entry is typeof entry & { spell: NonNullable<typeof entry.spell> } => entry.spell !== null)
-    .map((entry) => ({ key: entry.key as MainSpellKey, name: entry.spell.name }));
+    // Named by the Life Soul when one has taken the key over, so the headline
+    // select says what the tile above it shows.
+    .map((entry) => ({ key: entry.key as MainSpellKey, name: spellDisplayName(entry) ?? entry.spell.name }));
   const gearGroups = groupsInPanel('gear').filter((g) => g.hidden !== true);
+  const soulGroups = visibleGroups('soul', state.slots, season);
+  /** Where a Life Soul is worn, for the `f` tile to open. */
+  const soulSlot = groupsInPanel('soul')[0]?.start ?? null;
 
   /*
    * Neutral or backpack. Read twice — once as the caption and once as its
@@ -567,9 +573,7 @@ export function EditorPage() {
                 <div className={styles.gear}>{gearGroups.flatMap((group) => slots(group))}</div>
               </div>
               <div className={styles.carry}>
-                {groupsInPanel('carry')
-                  .filter((g) => g.hidden !== true)
-                  .map((group) => (
+                {visibleGroups('carry', state.slots, season).map((group) => (
                     <div key={group.key} className={styles.carrySlot}>
                       <span className={styles.slotLabel} title={carryLabel(group.key)}>
                         {carryLabel(group.key)}
@@ -578,6 +582,24 @@ export function EditorPage() {
                     </div>
                   ))}
               </div>
+              {soulGroups.length > 0 && (
+                /*
+                  The Life Soul, which S2 added and S1 does not have. Drawn for
+                  a second-season build, and for any build that already holds
+                  one — switching a build back to S1 hides the slot but does not
+                  empty it, and a slot with something in it is always shown.
+                */
+                <div className={styles.soul}>
+                  {soulGroups.map((group) => (
+                    <div key={group.key} className={styles.carrySlot}>
+                      <span className={styles.slotLabel} title={strings.build.soul}>
+                        {strings.build.soul}
+                      </span>
+                      {slots(group)}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Panel>
 
@@ -671,9 +693,19 @@ export function EditorPage() {
               {hero !== undefined && (
                 <Fieldset label={strings.build.spells}>
                   <div className={styles.strip}>
-                    {spells.map(({ key, spell, unknown }, i) => {
+                    {spells.map(({ key, spell, unknown, soul }, i) => {
                       const index = ABILITY_SLOTS.indexOf(key as (typeof ABILITY_SLOTS)[number]);
-                      const open = () => setPicking({ kind: 'spell', index });
+                      /*
+                       * A worn Life Soul takes the `f` key over, so that tile
+                       * opens the soul slot rather than a spell picker: the
+                       * ability underneath it is the one Emergency Heal every
+                       * hero has, and a dialog offering a list of one is not
+                       * what somebody clicking the soul is asking for.
+                       */
+                      const open =
+                        soul !== null && soulSlot !== null
+                          ? () => setPicking({ kind: 'item', slot: soulSlot })
+                          : () => setPicking({ kind: 'spell', index });
                       /*
                        * Which one the build currently leads with — the answer
                        * the select below is about, drawn on the tiles above it.
@@ -687,7 +719,9 @@ export function EditorPage() {
                           className={cx(styles.spellCell, main && styles.spellCellMain)}
                           title={main ? strings.build.mainSpell : undefined}
                         >
-                          {spell !== null ? (
+                          {soul !== null ? (
+                            <ItemTile item={soul} round onClick={open} />
+                          ) : spell !== null ? (
                             <SpellTile spell={spell} onClick={open} />
                           ) : (
                             <BlankTile round unknown={unknown} onClick={open} label={strings.editor.pickSpell} />

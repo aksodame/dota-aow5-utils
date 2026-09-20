@@ -17,14 +17,20 @@ import type { RollTables } from 'aow5-shared/types';
  */
 
 /**
- * The panels the priority is about: worn gear, and the two carried slots.
+ * The panels the priority is about: worn gear, the two carried slots, and the
+ * Life Soul.
  *
  * Not consumables and not runes. A potion is a potion — there is no copy of it
  * to prefer — and a rune's values do not roll, so a priority for one would be a
  * set of controls with nothing behind them. The gear is where a copy differs
  * from a copy, which is the entire subject of the panel.
+ *
+ * A Life Soul belongs here for exactly that reason: its stats roll like any
+ * worn piece, and the addon refines one through the same panel it reforges gear
+ * with — same nine levels, same enhanced and divine marks — so the controls
+ * behind the card all mean something.
  */
-const PRIORITY_PANELS = new Set(['gear', 'carry']);
+const PRIORITY_PANELS = new Set(['gear', 'carry', 'soul']);
 
 /** True for a slot the panel draws a card for, whatever is in it. */
 export function isPrioritySlot(slot: number): boolean {

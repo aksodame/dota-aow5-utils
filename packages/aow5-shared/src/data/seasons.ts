@@ -1,15 +1,19 @@
 /**
  * Which season of the game a guide is for, and who can be played in it.
  *
- * **This site's curation, not the addon's data** — the same standing as
- * `tiers.ts`. The addon relaunched as seasons with separate maps (`s1-1`,
- * `s1-2`, `s2-1`), but nothing in the pak says which hero belongs to which: the
- * hero, profession and ability tables are shared by every season. So the pools
- * are written down here, by hand, and change here when the game's do.
+ * **The hero pools here are this site's curation, not the addon's data** — the
+ * same standing as `tiers.ts`. The addon relaunched as seasons with separate
+ * maps, but nothing in the pak says which hero belongs to which: the hero,
+ * profession and ability tables are shared by every season. So the pools are
+ * written down here, by hand, and change here when the game's do.
  *
- * Seasons split *heroes* and nothing else. Items and rooms are the same for
- * every season on this site — a room that leaves the game stays offered, and no
- * item is filtered by season — which is why nothing below mentions either.
+ * Items are a different matter, and this comment used to say otherwise. The pak
+ * *does* split them: an item may carry `AllowedRulesets`, and the pipeline
+ * emits that as `ItemFull.seasons`. Sixty-five items are S2-only, thirty of
+ * them the Life Souls, which is why `LOADOUT_LAYOUT`'s soul slot names a season
+ * rather than being offered everywhere. Rooms are still not filtered here — a
+ * room that leaves the game stays offered — which is why nothing below mentions
+ * them.
  *
  * Shared rather than per-app because the API refuses a build whose hero is not
  * in its season and the site must not offer a pair the API will refuse.

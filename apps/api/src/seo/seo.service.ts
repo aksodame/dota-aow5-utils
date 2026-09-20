@@ -30,6 +30,7 @@ import {
   heroName,
   itemIconPath,
   abilityIconPath,
+  headlineSoul,
   mainSpellId,
   mainSpellName,
   mapName,
@@ -172,7 +173,13 @@ export class SeoService {
 
     // The ability the author called the headline, as a picture. The *id* rather
     // than the name, which is why `mainSpellId` exists beside `mainSpellName`.
+    //
+    // Unless a Life Soul has taken that key over, in which case the picture is
+    // the soul — the same substitution `mainSpellName` makes for the line of
+    // text beside it, so the card's words and its icon agree.
+    const soulId = headlineSoul(state, build.mainSpell);
     const spellId = mainSpellId(state, build.mainSpell);
+    const headlineIcon = soulId !== null ? itemIconPath(soulId) : spellId === null ? null : abilityIconPath(spellId);
 
     const [logo, logoAspect, portrait, background, gold, spellIcon, ...items] = await Promise.all([
       this.cards.brand(LOGOTYPE),
@@ -180,7 +187,7 @@ export class SeoService {
       this.cards.icon(heroIconPath(build.heroId)),
       this.cards.icon(sceneOf(mapIds)),
       this.cards.icon(build.price > 0 ? GOLD_COIN : null),
-      this.cards.icon(spellId === null ? null : abilityIconPath(spellId)),
+      this.cards.icon(headlineIcon),
       ...slots.map((path) => this.cards.icon(path)),
     ]);
 

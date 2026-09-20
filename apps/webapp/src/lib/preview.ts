@@ -1,4 +1,4 @@
-import { decodeBuild, groupsInPanel, type HeroTable, type IdTable } from 'aow5-shared/codec';
+import { decodeBuild, groupsInPanel, type HeroTable, type IdTable, type SlotValue } from 'aow5-shared/codec';
 import { ABILITY_SLOT_ORDER, ABILITY_SLOTS } from 'aow5-shared/types';
 import type { CoreData, ItemSummary, SpellSummary } from 'aow5-shared/data';
 
@@ -17,6 +17,14 @@ export interface BuildPreview {
   /** The build's headline ability, or null when it names none. */
   spell: SpellSummary | null;
   /**
+   * The Life Soul drawn in the headline's place.
+   *
+   * Non-null only when the headline is `f` and the build wears one — the soul
+   * is what that key does, so the row that leads with `f` has to lead with the
+   * soul rather than with the heal every build in the list also has.
+   */
+  soul: ItemSummary | null;
+  /**
    * The worn six, in slot order, with `null` where a slot is empty.
    *
    * The whole gear block rather than "the first few items placed": that earlier
@@ -29,6 +37,39 @@ export interface BuildPreview {
 }
 
 /**
+ * The key a Life Soul takes over, and the slot it is worn in.
+ *
+ * Every hero's `f` is the same Emergency Heal, which is why the editor fills it
+ * in rather than asking. A Life Soul replaces it: the item's own tooltip reads
+ * "Life Soul Skill: <name>" with the heal demoted to a bonus line underneath,
+ * so a board showing the plain heal on `f` while a soul is worn is showing the
+ * wrong thing. Nothing about the encoding changes — the soul is an item in an
+ * item slot, and `f` still carries the heal — this is what the tile draws.
+ */
+const SOUL_ABILITY_SLOT = 'f';
+const SOUL_SLOT: number | null = groupsInPanel('soul')[0]?.start ?? null;
+
+/** The Life Soul a loadout is wearing, if this deployment can name it. */
+export function equippedSoul(
+  slots: ReadonlyArray<SlotValue | null>,
+  core: CoreData,
+): ItemSummary | null {
+  if (SOUL_SLOT === null) return null;
+  const value = slots[SOUL_SLOT] ?? null;
+  if (value?.k !== 'id') return null;
+  return core.byId.get(value.id) ?? null;
+}
+
+/** One key's tile: the ability it holds, and the Life Soul that took it over. */
+export interface SpellDisplay {
+  key: string;
+  spell: SpellSummary | null;
+  unknown: boolean;
+  /** Non-null only on `f`, and only while a Life Soul is worn. */
+  soul: ItemSummary | null;
+}
+
+/**
  * Which key counts as "the main skill".
  *
  * `q` first. The ultimate looked like the obvious headline and is not: in this
@@ -38,6 +79,12 @@ export interface BuildPreview {
  * distinguishes one row from the next. Then the rest in the order the kit
  * reads, with the passive last. The shared `f` heal is excluded outright: every
  * hero has it, so it identifies nothing.
+ *
+ * A Life Soul does make `f` say something — it is the one key whose meaning
+ * comes from the loadout rather than the kit — but it stays out of the
+ * automatic order all the same. `q` is still the better guess at what a build
+ * is about, and an author who thinks otherwise can name `f` outright, which is
+ * what the headline field is for. When they do, the row draws the soul.
  */
 const MAIN_SPELL_ORDER = ['q', 'w', 'e', 'r', 'd', 'passive'] as const;
 
@@ -107,7 +154,7 @@ export function buildPreview(
   mainSpell?: string | null,
 ): BuildPreview {
   const decoded = decodeBuild(payload, tables.items, tables.heroes);
-  if (!decoded.ok) return { spell: null, items: [] };
+  if (!decoded.ok) return { spell: null, soul: null, items: [] };
   const state = decoded.state;
 
   /*
@@ -129,18 +176,28 @@ export function buildPreview(
     return core.byId.get(value.id) ?? null;
   });
 
-  return { spell, items };
+  const soul = key === SOUL_ABILITY_SLOT ? equippedSoul(state.slots, core) : null;
+
+  return { spell, soul, items };
 }
 
 /** The spells a build chose, in the order the kit reads rather than wire order. */
 export function spellsInDisplayOrder(
   spells: ReadonlyArray<{ k: 'id'; id: string } | { k: 'unknown'; idx: number } | null>,
   core: CoreData,
-): Array<{ key: string; spell: SpellSummary | null; unknown: boolean }> {
+  slots?: ReadonlyArray<SlotValue | null>,
+): SpellDisplay[] {
+  const soul = slots === undefined ? null : equippedSoul(slots, core);
   return ABILITY_SLOT_ORDER.map((key) => {
+    const overriddenBy = key === SOUL_ABILITY_SLOT ? soul : null;
     const value = spells[ABILITY_SLOTS.indexOf(key)] ?? null;
-    if (value === null) return { key, spell: null, unknown: false };
-    if (value.k === 'unknown') return { key, spell: null, unknown: true };
-    return { key, spell: core.heroes.spells.get(value.id) ?? null, unknown: false };
+    if (value === null) return { key, spell: null, unknown: false, soul: overriddenBy };
+    if (value.k === 'unknown') return { key, spell: null, unknown: true, soul: overriddenBy };
+    return { key, spell: core.heroes.spells.get(value.id) ?? null, unknown: false, soul: overriddenBy };
   });
+}
+
+/** What the name of a key's tile is: the Life Soul's when one has taken it over. */
+export function spellDisplayName(entry: SpellDisplay): string | null {
+  return entry.soul?.name ?? entry.spell?.name ?? null;
 }

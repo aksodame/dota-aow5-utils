@@ -109,6 +109,11 @@ export interface Strings {
     consumables: string;
     neutral: string;
     backpack: string;
+    /**
+     * The Life Soul slot, S2 only. The addon's own name for the category —
+     * `ak_item_type_soul` — in each language it ships.
+     */
+    soul: string;
     notes: string;
     /** The unit, for a screen reader and for the exact figure in a tooltip. */
     gold: string;
@@ -618,6 +623,7 @@ const en: Strings = {
     consumables: 'Consumables',
     neutral: 'Neutral',
     backpack: 'Backpack',
+    soul: 'Life Soul',
     notes: 'Notes',
     gold: 'gold',
     price: 'Price',
@@ -1013,6 +1019,7 @@ const ru: Strings = {
     consumables: 'Расходники',
     neutral: 'Нейтрал',
     backpack: 'Рюкзак',
+    soul: 'Душа жизни',
     notes: 'Заметки',
     gold: 'золота',
     price: 'Цена',
@@ -1407,6 +1414,7 @@ const zh: Strings = {
     consumables: '消耗品',
     neutral: '中立物品',
     backpack: '背包',
+    soul: '命魂',
     notes: '说明',
     gold: '金币',
     price: '价格',

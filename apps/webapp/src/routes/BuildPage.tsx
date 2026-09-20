@@ -3,7 +3,7 @@ import type { BuildDetail } from 'aow5-api-contract';
 import { ApiFailure } from '@/lib/api';
 import { decodeBuild } from 'aow5-shared/codec';
 import { BUILD_VERSION_PARAM, buildShareUrl } from '@/lib/links';
-import { groupsInPanel, type SlotGroup } from 'aow5-shared/codec';
+import { groupsInPanel, visibleGroups, type SlotGroup } from 'aow5-shared/codec';
 import { goldIconUrl, heroIconUrl, seasonLabel } from 'aow5-shared/data';
 import { Avatar, Badge, Button, Icon, Loading, Notice, Panel, cx } from '@/ui';
 import { useApp } from '@/data/AppData';
@@ -144,7 +144,7 @@ export function BuildPage({ slug }: { slug: string }) {
   const rooms = build.maps
     .map((id) => core.maps.byId.get(id)?.name)
     .filter((name): name is string => name !== undefined);
-  const spells = decoded !== null ? spellsInDisplayOrder(decoded.spells, core) : [];
+  const spells = decoded !== null ? spellsInDisplayOrder(decoded.spells, core, decoded.slots) : [];
   const mainKey = decoded !== null ? mainSpellKey(decoded.spells, core, build.mainSpell) : null;
   const isAuthor = me != null && me.id === build.author.id;
   /*
@@ -183,8 +183,10 @@ export function BuildPage({ slug }: { slug: string }) {
   const runeGroups = groupsInPanel('rune');
   const consumableGroups = groupsInPanel('consumable');
   // The pet slot lives here and is still hidden; it keeps its wire position so
-  // no existing link shifts.
-  const carryGroups = groupsInPanel('carry').filter((g) => g.hidden !== true);
+  // no existing link shifts, and comes back if a build somehow holds a pet.
+  const carryGroups = visibleGroups('carry', decoded?.slots ?? [], build.season);
+  // The build's own season decides whether the Life Soul slot is offered.
+  const soulGroups = visibleGroups('soul', decoded?.slots ?? [], build.season);
 
   /*
    * Neutral or backpack. Read twice — once as the caption and once as its
@@ -375,6 +377,25 @@ export function BuildPage({ slug }: { slug: string }) {
                   </div>
                 ))}
               </div>
+              {soulGroups.length > 0 && (
+                /*
+                  The Life Soul, in a divided column of its own beside the
+                  carried pair. S2 added it and S1 does not have it, so
+                  `visibleGroups` draws it on a second-season build and leaves
+                  it out of a first-season one — unless that build somehow holds
+                  one, in which case it is drawn anyway rather than hidden.
+                */
+                <div className={styles.soul}>
+                  {soulGroups.map((group) => (
+                    <div key={group.key} className={styles.carrySlot}>
+                      <span className={styles.slotLabel} title={strings.build.soul}>
+                        {strings.build.soul}
+                      </span>
+                      {slots(group)}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Panel>
 
@@ -399,7 +420,7 @@ export function BuildPage({ slug }: { slug: string }) {
         <div className={styles.column}>
           <Panel title={strings.build.spells}>
             <div className={styles.strip}>
-              {spells.map(({ key, spell, unknown }) => {
+              {spells.map(({ key, spell, unknown, soul }) => {
                 // The one the build leads with, wherever it appears: the
                 // author's choice when they made one, and the kit order when
                 // they did not — see `mainSpellKey`. Marked either way, because
@@ -411,7 +432,14 @@ export function BuildPage({ slug }: { slug: string }) {
                     className={cx(styles.spellCell, main && styles.spellCellMain)}
                     title={main ? strings.build.mainSpell : undefined}
                   >
-                    {spell !== null ? <SpellTile spell={spell} /> : <BlankTile round unknown={unknown} />}
+                    {/* A worn Life Soul is what `f` does — see `equippedSoul`. */}
+                    {soul !== null ? (
+                      <ItemTile item={soul} round />
+                    ) : spell !== null ? (
+                      <SpellTile spell={spell} />
+                    ) : (
+                      <BlankTile round unknown={unknown} />
+                    )}
                     <span className={cx(styles.spellKey, main && styles.spellKeyMain)}>{key}</span>
                   </div>
                 );

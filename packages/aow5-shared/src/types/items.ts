@@ -89,10 +89,12 @@ export interface Dismantle {
  * Derived from the addon data as follows:
  *   POTION   itemType 'potion', plus the `item_P*` entries the data types as
  *            'special' (drinks and other consumables that share the P naming)
- *   EQUIP    itemType 'equip', excluding pets, which have their own slot
+ *   EQUIP    itemType 'equip', excluding pets and life souls, which have slots
+ *            of their own
  *   RUNE     itemType 'gem' — the "Glyph: …" items the UI calls runes
  *   PET      IsPet / PetUnitName
  *   NEUTRAL  carries ItemIsNeutralActiveDrop
+ *   SOUL     listed in the addon's `ak_life_souls` ruleset table
  *   BACKPACK everything
  */
 export const SLOT_KIND = {
@@ -102,6 +104,7 @@ export const SLOT_KIND = {
   PET: 8,
   NEUTRAL: 16,
   BACKPACK: 32,
+  SOUL: 64,
 } as const;
 
 export type SlotKindName = keyof typeof SLOT_KIND;
@@ -191,7 +194,22 @@ export interface ItemFull {
   isPet?: boolean;
   /** Drops from neutral creeps; eligible for the neutral slot. */
   isNeutral?: boolean;
+  /**
+   * A Life Soul — the addon's own item category, listed in its `ak_life_souls`
+   * ruleset table. Typed `equip` in the item table like everything worn, but
+   * the addon's library excludes them from Equipment and gives them a tab of
+   * their own, so the pipeline gives them a slot kind of their own too.
+   */
+  isSoul?: boolean;
   petUnitName?: string;
+  /**
+   * The seasons this item exists in, as the numbers `seasons.ts` uses.
+   *
+   * Absent means every season, which is what the addon's `AllowedRulesets`
+   * saying nothing means. Present is a real restriction: the client deletes a
+   * restricted item from its catalogue outside those rulesets.
+   */
+  seasons?: number[];
   /** Bitmask of SLOT_KIND values this item may be placed into. */
   kinds: SlotKindMask;
 

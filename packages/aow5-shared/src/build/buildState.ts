@@ -1,4 +1,5 @@
 import { SLOT_KIND, type ItemId, type SlotKindMask } from '../types/items.ts';
+import type { SeasonKey } from '../data/seasons.ts';
 import { ABILITY_SLOTS, SPELLS_PER_SECTION, type AbilityId, type HeroId, type HeroInfo } from '../types/heroes.ts';
 import type { MapId } from '../types/maps.ts';
 
@@ -14,22 +15,23 @@ import type { MapId } from '../types/maps.ts';
  * builds — which is also what makes a build filterable, likeable and rankable
  * as a unit.
  *
- * The fifteen slots and their indices are unchanged from the old per-section
- * layout. Nothing about which slot means what has moved; only the number of
- * loadouts has.
+ * The slots and their indices are unchanged from the old per-section layout.
+ * Nothing about which slot means what has moved; only the number of loadouts
+ * has, and the Life Soul that S2 added, which is appended after all of them.
  */
-export type SlotGroupKey = 'potion' | 'equip' | 'rune' | 'pet' | 'neutral' | 'backpack';
+export type SlotGroupKey = 'potion' | 'equip' | 'rune' | 'pet' | 'neutral' | 'backpack' | 'soul';
 
 /**
  * Which panel a group is drawn in.
  *
- * Four: the consumables carried into a run, the six worn pieces, the two
- * single slots that are carried rather than worn, and the runes. A group's
- * panel is presentation, but it lives here rather than in the webapp because it
- * is a statement about the game — a rune is not gear, and a neutral drop is not
- * one of your six equipment slots — and the tracker will want the same grouping.
+ * Five: the consumables carried into a run, the six worn pieces, the single
+ * Life Soul, the two single slots that are carried rather than worn, and the
+ * runes. A group's panel is presentation, but it lives here rather than in the
+ * webapp because it is a statement about the game — a rune is not gear, and a
+ * neutral drop is not one of your six equipment slots — and the tracker will
+ * want the same grouping.
  */
-export type SlotPanel = 'gear' | 'rune' | 'consumable' | 'carry';
+export type SlotPanel = 'gear' | 'rune' | 'consumable' | 'carry' | 'soul';
 
 export interface SlotGroup {
   key: SlotGroupKey;
@@ -52,6 +54,17 @@ export interface SlotGroup {
    * still shown, so nothing a link carries can silently vanish.
    */
   hidden?: boolean;
+  /**
+   * The seasons this group is offered in. Absent means every season.
+   *
+   * Unlike `hidden` this is not a decision about the site: the addon ships the
+   * Life Soul items with `AllowedRulesets "s2"` and deletes them from its own
+   * catalogue in S1, so offering the slot there would be offering a slot the
+   * game does not have. Out of season it behaves exactly like a hidden group —
+   * the slot still exists, and is still drawn when it holds something, because
+   * a link's slot positions are frozen and nothing it carries may vanish.
+   */
+  seasons?: readonly SeasonKey[];
 }
 
 /**
@@ -83,6 +96,16 @@ export const LOADOUT_LAYOUT: SlotGroup[] = [
    */
   { key: 'neutral', kind: SLOT_KIND.NEUTRAL, accepts: SLOT_KIND.BACKPACK, start: 13, count: 1, columns: 1, panel: 'carry' },
   { key: 'backpack', kind: SLOT_KIND.BACKPACK, accepts: SLOT_KIND.BACKPACK, start: 14, count: 1, columns: 1, panel: 'carry' },
+  /*
+   * The Life Soul, S2 only, appended rather than slotted in beside the worn six
+   * — every position above it is baked into links that already exist.
+   *
+   * It is a panel of its own rather than a seventh tile in the gear grid for
+   * the same reason the addon's own item library gives it a tab of its own: it
+   * is not one of the six worn pieces, it is refined rather than reforged, and
+   * a character has exactly one.
+   */
+  { key: 'soul', kind: SLOT_KIND.SOUL, accepts: SLOT_KIND.SOUL, start: 15, count: 1, columns: 1, panel: 'soul', seasons: [2] },
 ];
 
 export const SLOT_COUNT = LOADOUT_LAYOUT.reduce((n, g) => n + g.count, 0);
@@ -109,6 +132,35 @@ export function slotAcceptsAt(slot: number): SlotKindMask {
 /** The groups drawn in one panel, in layout order. */
 export function groupsInPanel(panel: SlotPanel): SlotGroup[] {
   return LOADOUT_LAYOUT.filter((g) => g.panel === panel);
+}
+
+/**
+ * Whether a group belongs to a season.
+ *
+ * `null` is "no season in hand" — a `#b=` link carries none — and answers no,
+ * so a season-scoped group is drawn on those screens only when it is filled.
+ * That is the same rule `hidden` already gets, and it is the safe direction:
+ * a slot that holds something is always shown.
+ */
+export function groupInSeason(group: SlotGroup, season: SeasonKey | null | undefined): boolean {
+  if (group.seasons === undefined) return true;
+  return season != null && group.seasons.includes(season);
+}
+
+/**
+ * The groups of a panel that should be drawn, given the season and what the
+ * loadout holds. Hidden and out-of-season groups survive only when filled.
+ */
+export function visibleGroups(
+  panel: SlotPanel,
+  slots: readonly (SlotValue | null)[],
+  season?: SeasonKey | null,
+): SlotGroup[] {
+  return groupsInPanel(panel).filter((group) => {
+    if (group.hidden !== true && groupInSeason(group, season)) return true;
+    for (let i = 0; i < group.count; i++) if (slots[group.start + i]) return true;
+    return false;
+  });
 }
 
 /**
