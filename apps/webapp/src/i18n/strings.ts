@@ -484,6 +484,18 @@ export interface Strings {
     loading: string;
     /** On the tile, and as the link's accessible name. */
     openPage: string;
+    /** The reforge cost table. */
+    reforge: string;
+    reforgeLevel: string;
+    reforgeGold: string;
+    reforgeMaterials: string;
+    reforgeTotal: string;
+    /** Said under the table, because the numbers are derived rather than listed. */
+    reforgeNote: string;
+    /** The addon's own name for the dismantle rule that applies. */
+    dismantleRule: string;
+    /** Why no per-essence count is shown. */
+    dismantleNote: string;
   };
   tracker: {
     heading: string;
@@ -930,6 +942,14 @@ const en: Strings = {
     browse: 'Browse builds',
     loading: 'Loading the item table…',
     openPage: 'Open item page',
+    reforge: 'Reforging',
+    reforgeLevel: 'Level',
+    reforgeGold: 'Gold',
+    reforgeMaterials: 'Materials',
+    reforgeTotal: 'All nine',
+    reforgeNote: 'Computed from the item’s level and grade the way the game computes it, not read from a table.',
+    dismantleRule: 'Rule',
+    dismantleNote: 'Which essences come back. How many is decided on the server, so it is not shown.',
   },
   tracker: {
     heading: 'Farm tracker',
@@ -1368,6 +1388,14 @@ const ru: Strings = {
     browse: 'К списку сборок',
     loading: 'Загружается таблица предметов…',
     openPage: 'Открыть страницу предмета',
+    reforge: 'Перековка',
+    reforgeLevel: 'Уровень',
+    reforgeGold: 'Золото',
+    reforgeMaterials: 'Материалы',
+    reforgeTotal: 'Все девять',
+    reforgeNote: 'Считается из уровня и качества предмета так же, как это делает игра, а не берётся из таблицы.',
+    dismantleRule: 'Правило',
+    dismantleNote: 'Какие эссенции возвращаются. Их количество определяет сервер, поэтому оно не показано.',
   },
   tracker: {
     heading: 'Фарм-трекер',
@@ -1801,6 +1829,14 @@ const zh: Strings = {
     browse: '浏览配装',
     loading: '正在加载物品表…',
     openPage: '打开物品页面',
+    reforge: '重铸',
+    reforgeLevel: '等级',
+    reforgeGold: '金币',
+    reforgeMaterials: '材料',
+    reforgeTotal: '全部九级',
+    reforgeNote: '按游戏的算法从物品等级与品质推算，并非取自表格。',
+    dismantleRule: '规则',
+    dismantleNote: '显示会返还哪些精华。数量由服务器决定，因此不予显示。',
   },
   tracker: {
     heading: '刷图追踪器',

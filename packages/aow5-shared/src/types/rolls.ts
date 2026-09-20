@@ -32,6 +32,43 @@ export interface RollTables {
   stableTail: number;
   /** What the fixed attribute adds on top of its roll: +30%. */
   fixedBonusPct: number;
+  /**
+   * What a reforge costs, and therefore what dismantling a reforged item gives
+   * back.
+   *
+   * Transcribed from the client's own arithmetic rather than from a table: the
+   * addon computes a reforge's price from the item's level and grade, and the
+   * same three numbers drive every level from 0 to 9. See `reforgeCost` in
+   * `data/rolls.ts` for the shape they make, and `extractReforgeCost` in the
+   * parser for the expressions these came out of.
+   *
+   * Absent on data emitted before this existed, which is why every reader
+   * treats it as optional.
+   */
+  reforgeCost?: {
+    /**
+     * The per-level multiplier: a cost at level `n` is `base * levelScale**n`,
+     * floored.
+     */
+    levelScale: number;
+    /** A flat surcharge added from `surchargeFrom` upwards. */
+    surcharge: number;
+    surchargeFrom: number;
+    /** Gold per attempt, before the level scaling: `goldPerLevel * max(1, level)`. */
+    goldPerLevel: number;
+    /**
+     * The essences a reforge consumes, per point of item level, by grade.
+     *
+     * `mythic` is quality 6 and up, `common` everything below — the two
+     * branches the addon itself splits on. `M507` is Mythic Gear Essence,
+     * `M315` Legendary, `M009` Equipment; the ids are `ESSENCE_IDS`.
+     */
+    materials: {
+      mythicThreshold: number;
+      mythic: { item_M507: { perLevel: number; offset: number }; item_M315: { perLevel: number } };
+      common: { item_M315: { perLevel: number }; item_M009: { perLevel: number } };
+    };
+  };
   /** `[min, max]` reforge level the enhancement can demand before it unlocks. */
   enhancedLevel: [number, number];
   /** `[min, max]` percent the enhancement adds once it does. */

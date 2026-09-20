@@ -1,5 +1,13 @@
 import { useEffect } from 'react';
-import { goldIconUrl, iconUrl, seasonLabel, type ItemSummary } from 'aow5-shared/data';
+import {
+  goldIconUrl,
+  iconUrl,
+  reforgeCost,
+  reforgeCostTotal,
+  seasonLabel,
+  type ItemSummary,
+  type ReforgeCostRow,
+} from 'aow5-shared/data';
 import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
 import { Badge, Button, Panel, cx } from '@/ui';
 import { useApp } from '@/data/AppData';
@@ -105,6 +113,16 @@ function ItemBody({ item }: { item: ItemSummary }) {
   if (full?.timeCost) meta.push(`${ti.craftTime} ${full.timeCost}`);
 
   const nameOf = (id: string) => core?.byId.get(id)?.name ?? id;
+
+  /*
+   * The reforge table, for worn things only.
+   *
+   * A potion and a recipe are never reforged, and the arithmetic would happily
+   * price them — `reforgeCost` takes a level and a grade and asks no questions
+   * — so the gate is here rather than there.
+   */
+  const reforgeable = item.type === 'equip' || item.type === 'stone' || full?.isSoul === true;
+  const reforgeRows = reforgeable ? reforgeCost(store?.rolls, item) : [];
   const hasAbout = sections.length > 0 || meta.length > 0 || behavior !== null || affects !== null;
   const hasStats = stats.length > 0 || gems.length > 0;
   const hasObtain =
@@ -148,10 +166,6 @@ function ItemBody({ item }: { item: ItemSummary }) {
             <code className={styles.id}>{item.id}</code>
           </div>
         </div>
-
-        <Link to={{ href: '/' }} className={styles.back}>
-          {t.back}
-        </Link>
       </header>
 
       {store !== null && store.full === null && store.loading && <p className={styles.loading}>{ti.loadingDetails}</p>}
@@ -202,6 +216,19 @@ function ItemBody({ item }: { item: ItemSummary }) {
 
         {layout.lead !== 'obtain' && hasObtain && <Obtain full={full} nameOf={nameOf} strings={strings} />}
 
+        {/*
+          What a reforge costs, level by level.
+          
+          Only for the things that are actually reforged — the addon's own
+          panel refuses anything that is not worn — and only when the tables
+          carry the pricing, which is an extraction that is allowed to fail.
+        */}
+        {full !== undefined && reforgeRows.length > 0 && (
+          <Panel title={t.reforge}>
+            <ReforgeTable rows={reforgeRows} nameOf={nameOf} strings={strings} />
+          </Panel>
+        )}
+
         {full?.dismantle !== undefined && full.dismantle.outputs.length > 0 && (
           <Panel title={t.dismantle}>
             <ul className={styles.links}>
@@ -212,6 +239,15 @@ function ItemBody({ item }: { item: ItemSummary }) {
                 </li>
               ))}
             </ul>
+            {/* The addon's own name for the rule that matched — which is the
+                grade band a dismantle is priced by, and the nearest thing to a
+                "dismantling tier" the data actually states. */}
+            <p className={styles.meta}>
+              {t.dismantleRule}
+              {ti.colon}
+              <code className={styles.id}>{full.dismantle.rule}</code>
+            </p>
+            <p className={styles.note}>{t.dismantleNote}</p>
           </Panel>
         )}
 
@@ -379,5 +415,61 @@ function Description({ sections }: { sections: DescSection[] }) {
         ),
       )}
     </div>
+  );
+}
+
+
+/**
+ * What every reforge level costs, and the nine of them added up.
+ *
+ * A table rather than a list: the interesting reading is down a column — how
+ * fast the gold climbs, when the second essence appears — and that is what a
+ * table is for.
+ */
+function ReforgeTable({
+  rows,
+  nameOf,
+  strings,
+}: {
+  rows: readonly ReforgeCostRow[];
+  nameOf: (id: string) => string;
+  strings: ReturnType<typeof useApp>['strings'];
+}) {
+  const t = strings.itemPage;
+  const total = reforgeCostTotal(rows);
+  const materials = (row: ReforgeCostRow) =>
+    Object.entries(row.materials)
+      .map(([id, need]) => `${nameOf(id)} ×${need}`)
+      .join(', ');
+
+  return (
+    <>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th scope="col">{t.reforgeLevel}</th>
+            <th scope="col">{t.reforgeGold}</th>
+            <th scope="col">{t.reforgeMaterials}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.level}>
+              <th scope="row">+{row.level}</th>
+              <td className={styles.num}>{row.gold.toLocaleString()}</td>
+              <td>{materials(row)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row">{t.reforgeTotal}</th>
+            <td className={styles.num}>{total.gold.toLocaleString()}</td>
+            <td>{materials(total)}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <p className={styles.note}>{t.reforgeNote}</p>
+    </>
   );
 }

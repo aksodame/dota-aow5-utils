@@ -352,3 +352,64 @@
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 13px;
 }
+
+/* --- the reforge table ------------------------------------------------ */
+
+/**
+ * Nine levels and their cost.
+ *
+ * `tabular-nums` on the figures, because the reading is down the gold column
+ * and proportional digits make a climbing number look ragged rather than
+ * climbing.
+ */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th,
+.table td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.table thead th {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.table tbody th,
+.table tfoot th {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.table tfoot th,
+.table tfoot td {
+  border-bottom: 0;
+  border-top: 2px solid var(--border);
+  font-weight: 700;
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/** A sentence about where the numbers above came from. */
+.note {
+  margin: var(--space-2) 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}

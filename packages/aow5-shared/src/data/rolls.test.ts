@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import type { RollTables } from '../types/rolls.ts';
+import { ESSENCE_IDS } from '../types/items.ts';
 import {
   affixPool,
   canBeAffix,
@@ -16,6 +17,8 @@ import {
   isRolled,
   iterationBonus,
   reachableRolls,
+  reforgeCost,
+  reforgeCostTotal,
   rollablePool,
   stableLevel,
   statOutcomes,
@@ -221,4 +224,53 @@ test('a passive number spans a real range, and reforging does not move it', () =
     statOutcomes(tables, 'ability_value_item_0102_damage', 100, 0),
     statOutcomes(tables, 'ability_value_item_0102_damage', 100, tables.maxReforgeLevel),
   );
+});
+
+/**
+ * The reforge cost, against the tables the pipeline actually emitted.
+ *
+ * Transcribed arithmetic, so what is worth pinning is the shape it makes: nine
+ * levels, monotonically rising, the two grade branches burning different
+ * essences, and a total that is the parts added up. The constants themselves
+ * are the addon's and move when it rebalances — asserting those would be a
+ * test that fails on every patch and says nothing.
+ */
+test('a reforge costs more at every level, up to the ceiling', () => {
+  const rows = reforgeCost(tables, { level: 6, quality: 5 });
+  assert.equal(rows.length, tables.maxReforgeLevel);
+  assert.deepEqual(rows.map((r) => r.level), [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  for (let i = 1; i < rows.length; i += 1) {
+    assert.ok(rows[i]!.gold > rows[i - 1]!.gold, `level ${rows[i]!.level} costs more than ${rows[i - 1]!.level}`);
+  }
+});
+
+test('the two grade branches burn different essences', () => {
+  const common = reforgeCost(tables, { level: 9, quality: 5 })[0]!;
+  const mythic = reforgeCost(tables, { level: 9, quality: 6 })[0]!;
+  // Equipment Essence below the threshold, Mythic Gear Essence at or above it.
+  assert.ok(ESSENCE_IDS.EQUIPMENT in common.materials, JSON.stringify(common.materials));
+  assert.ok(!(ESSENCE_IDS.MYTHIC in common.materials));
+  assert.ok(ESSENCE_IDS.MYTHIC in mythic.materials, JSON.stringify(mythic.materials));
+  assert.ok(!(ESSENCE_IDS.EQUIPMENT in mythic.materials));
+});
+
+test('a higher-level item costs more to reforge than a lower one', () => {
+  const low = reforgeCost(tables, { level: 2, quality: 5 })[0]!;
+  const high = reforgeCost(tables, { level: 9, quality: 5 })[0]!;
+  assert.ok(high.gold > low.gold);
+});
+
+test('the total is the nine levels added up', () => {
+  const rows = reforgeCost(tables, { level: 6, quality: 5 });
+  const total = reforgeCostTotal(rows);
+  assert.equal(total.gold, rows.reduce((sum, r) => sum + r.gold, 0));
+  for (const id of Object.keys(total.materials)) {
+    assert.equal(total.materials[id], rows.reduce((sum, r) => sum + (r.materials[id] ?? 0), 0), id);
+  }
+});
+
+test('tables without a cost block yield no rows rather than guessed ones', () => {
+  const without = { ...tables, reforgeCost: undefined };
+  assert.deepEqual(reforgeCost(without, { level: 6, quality: 5 }), []);
+  assert.deepEqual(reforgeCost(null, { level: 6, quality: 5 }), []);
 });

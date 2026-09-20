@@ -41,11 +41,14 @@ export {
   iterationBonus,
   randomPctOf,
   reachableRolls,
+  reforgeCost,
+  reforgeCostTotal,
   rollablePool,
   stableLevel,
   statOutcomes,
   statSpan,
   valueOf,
+  type ReforgeCostRow,
   type StatOutcome,
 } from './rolls.ts';
 

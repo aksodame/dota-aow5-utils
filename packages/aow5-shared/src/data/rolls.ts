@@ -1,4 +1,5 @@
 import type { RollTables } from '../types/rolls.ts';
+import { ESSENCE_IDS } from '../types/items.ts';
 
 /**
  * What a stat can actually be, as opposed to what the item table says.
@@ -271,4 +272,84 @@ export function enhancedBand(tables: RollTables, value: number, key: string): [n
 export function clampReforge(tables: RollTables, level: number): number {
   if (!Number.isFinite(level)) return 0;
   return Math.max(0, Math.min(tables.maxReforgeLevel, Math.trunc(level)));
+}
+
+
+/**
+ * What one reforge level costs, and therefore what a reforged item gives back.
+ *
+ * The addon prices a reforge from the item's own level and grade, scales it by
+ * the level being reached, and adds a flat surcharge from level six. All of
+ * that is `tables.reforgeCost`, transcribed out of the client — see the note
+ * on the type and `extractReforgeCost` in the parser.
+ *
+ * Returns an empty list when the tables predate the extraction, which is why
+ * the field is optional: a page that shows no cost table is honest, and one
+ * that shows a guessed one is not.
+ */
+export interface ReforgeCostRow {
+  /** The level being reached, 1..maxReforgeLevel. */
+  level: number;
+  /** Gold per attempt at this level. */
+  gold: number;
+  /** Essence id -> how many, at this level. */
+  materials: Record<string, number>;
+}
+
+export function reforgeCost(
+  tables: RollTables | null | undefined,
+  item: { level: number; quality: number },
+): ReforgeCostRow[] {
+  const cost = tables?.reforgeCost;
+  if (!cost) return [];
+
+  const lvl = Math.max(1, Math.trunc(item.level));
+  const mythic = item.quality >= cost.materials.mythicThreshold;
+
+  /*
+   * The base amounts, before the per-level scaling. Two branches, exactly as
+   * the addon splits them: a mythic reforge burns Mythic Gear Essence and
+   * Legendary, anything below burns Legendary and Equipment.
+   */
+  const base: Record<string, number> = mythic
+    ? {
+        [ESSENCE_IDS.MYTHIC]: Math.max(0, lvl + cost.materials.mythic.item_M507.offset),
+        [ESSENCE_IDS.LEGENDARY]: cost.materials.mythic.item_M315.perLevel * lvl,
+      }
+    : {
+        // `ceil(2 * lvl * 1.5)` in the addon, which is why this multiplier is
+        // fractional and the ceiling is applied here rather than to the product.
+        [ESSENCE_IDS.LEGENDARY]: Math.ceil(cost.materials.common.item_M315.perLevel * lvl),
+        [ESSENCE_IDS.EQUIPMENT]: cost.materials.common.item_M009.perLevel * lvl,
+      };
+
+  const scale = (value: number, level: number): number =>
+    Math.floor(value * cost.levelScale ** Math.max(0, level)) +
+    (level >= cost.surchargeFrom ? cost.surcharge : 0);
+
+  const rows: ReforgeCostRow[] = [];
+  for (let level = 1; level <= (tables?.maxReforgeLevel ?? 0); level += 1) {
+    const materials: Record<string, number> = {};
+    for (const [id, amount] of Object.entries(base)) {
+      const need = scale(amount, level);
+      if (need > 0) materials[id] = need;
+    }
+    rows.push({
+      level,
+      gold: scale(cost.goldPerLevel * lvl, level),
+      materials,
+    });
+  }
+  return rows;
+}
+
+/** Every reforge from 1 to the ceiling, added up. What a full +9 actually costs. */
+export function reforgeCostTotal(rows: readonly ReforgeCostRow[]): ReforgeCostRow {
+  const materials: Record<string, number> = {};
+  let gold = 0;
+  for (const row of rows) {
+    gold += row.gold;
+    for (const [id, need] of Object.entries(row.materials)) materials[id] = (materials[id] ?? 0) + need;
+  }
+  return { level: rows.length, gold, materials };
 }
