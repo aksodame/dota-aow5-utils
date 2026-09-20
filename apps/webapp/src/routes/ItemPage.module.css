@@ -533,10 +533,3 @@
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
-
-/** Where an item drops — a place, then its weight. */
-.source {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 13px;
-}

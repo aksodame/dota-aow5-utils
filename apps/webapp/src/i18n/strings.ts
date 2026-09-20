@@ -468,6 +468,12 @@ export interface Strings {
     /** Block headings. */
     stats: string;
     about: string;
+    /**
+     * What the item is *for* — its recipe, what it upgrades into, what consumes
+     * it. Named "Usage" rather than "Where it comes from", which is what it
+     * said while it was the only panel of its kind and which read as a drop
+     * source it never was.
+     */
     obtain: string;
     dismantle: string;
     produces: string;
@@ -501,20 +507,6 @@ export interface Strings {
     /** Puts this item's own address on the clipboard. */
     share: string;
     shared: string;
-    /**
-     * Where the item *drops*, as opposed to what it is made from.
-     *
-     * Deliberately not the same words as `obtain`: that panel is the crafting
-     * graph — ingredients, what it upgrades into — and this one is the game
-     * handing it to you. They were both "Where it comes from" for a while, so
-     * a fate stone's page carried the same heading twice.
-     */
-    dropsFrom: string;
-    /** `Greed Cave, depth 14` and the like. */
-    greedCaveBoss: (level: number) => string;
-    greedCaveMerchant: (level: number) => string;
-    /** Why there is a weight rather than a percentage. */
-    sourceNote: string;
   };
   tracker: {
     heading: string;
@@ -950,7 +942,7 @@ const en: Strings = {
     back: 'All items',
     stats: 'Stats',
     about: 'What it does',
-    obtain: 'Where it comes from',
+    obtain: 'Usage',
     dismantle: 'Dismantles into',
     produces: 'Makes',
     upgradesFrom: 'Upgrades from',
@@ -972,10 +964,6 @@ const en: Strings = {
     previewCard: 'Card ↗',
     share: 'Share item',
     shared: 'Copied',
-    dropsFrom: 'Where it drops',
-    greedCaveBoss: (level) => `Greed Cave boss, depth ${level}`,
-    greedCaveMerchant: (level) => `Greed Cave merchant, depth ${level}`,
-    sourceNote: 'Weights are relative within a depth, not a chance per clear — how many rolls a clear makes is decided on the server.',
   },
   tracker: {
     heading: 'Farm tracker',
@@ -1403,7 +1391,7 @@ const ru: Strings = {
     back: 'Все предметы',
     stats: 'Характеристики',
     about: 'Что делает',
-    obtain: 'Откуда берётся',
+    obtain: 'Использование',
     dismantle: 'При разборе даёт',
     produces: 'Создаёт',
     upgradesFrom: 'Улучшается из',
@@ -1425,10 +1413,6 @@ const ru: Strings = {
     previewCard: 'Карточка ↗',
     share: 'Поделиться',
     shared: 'Скопировано',
-    dropsFrom: 'Где выпадает',
-    greedCaveBoss: (level) => `Босс Пещеры жадности, глубина ${level}`,
-    greedCaveMerchant: (level) => `Торговец Пещеры жадности, глубина ${level}`,
-    sourceNote: 'Вес — относительный в пределах глубины, а не шанс за заход: число бросков определяет сервер.',
   },
   tracker: {
     heading: 'Фарм-трекер',
@@ -1851,7 +1835,7 @@ const zh: Strings = {
     back: '全部物品',
     stats: '属性',
     about: '效果',
-    obtain: '获取途径',
+    obtain: '用途',
     dismantle: '分解获得',
     produces: '可合成',
     upgradesFrom: '升级自',
@@ -1873,10 +1857,6 @@ const zh: Strings = {
     previewCard: '卡片 ↗',
     share: '分享物品',
     shared: '已复制',
-    dropsFrom: '掉落来源',
-    greedCaveBoss: (level) => `贪婪洞窟首领，第 ${level} 层`,
-    greedCaveMerchant: (level) => `贪婪洞窟商人，第 ${level} 层`,
-    sourceNote: '权重为同层内的相对值，并非每次通关的概率——掷骰次数由服务器决定。',
   },
   tracker: {
     heading: '刷图追踪器',

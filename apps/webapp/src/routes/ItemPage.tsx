@@ -8,7 +8,7 @@ import {
   type ItemSummary,
   type ReforgeCostRow,
 } from 'aow5-shared/data';
-import type { ItemFull, ItemSource, LocaleDetail } from 'aow5-shared/types';
+import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
 import { Badge, Button, Icon, Panel, cx } from '@/ui';
 import { withLang } from '@/router';
 import { useApp } from '@/data/AppData';
@@ -324,19 +324,6 @@ function ItemBody({ item }: { item: ItemSummary }) {
           </Panel>
         )}
 
-        {/*
-          Where it comes from, for the items the pak actually says.
-          
-          A fate stone has nothing else: it is purchasable, undroppable and in
-          no drop pool — the endless Greed Cave's reward tables are the only
-          statement anywhere in the data about how you get one.
-        */}
-        {full?.sources !== undefined && full.sources.length > 0 && (
-          <Panel title={<PanelTitle icon={<Icon.Crosshair size={15} />} text={t.dropsFrom} />}>
-            <SourceList sources={full.sources} strings={strings} />
-          </Panel>
-        )}
-
         {full?.tags !== undefined && full.tags.length > 0 && (
           <Panel title={<PanelTitle icon={<Icon.Branch size={15} />} text={ti.tags} />}>
             <div className={styles.tags}>
@@ -623,41 +610,3 @@ function Materials({ row, nameOf }: { row: ReforgeCostRow; nameOf: (id: string) 
 }
 
 
-/**
- * Where an item drops, by depth.
- *
- * Grouped by depth rather than listed row by row, because the addon's rows are
- * `GCE_BOSS_24` and `GCE_MERCHANT_BASE_24` — two facts about the same floor,
- * and an id nobody outside the pak has ever seen. Deepest first: a reader
- * wants to know the *easiest* place they can still get one, and that is the
- * shallowest, so the list ends on it.
- */
-function SourceList({
-  sources,
-  strings,
-}: {
-  sources: readonly ItemSource[];
-  strings: ReturnType<typeof useApp>['strings'];
-}) {
-  const t = strings.itemPage;
-  const byDepth = [...sources].sort((a, b) => a.level - b.level || a.kind.localeCompare(b.kind));
-
-  return (
-    <>
-      <ul className={styles.links}>
-        {byDepth.map((source) => (
-          <li key={`${source.pool}:${source.kind}`}>
-            <span className={styles.source}>
-              {source.kind.startsWith('merchant')
-                ? t.greedCaveMerchant(source.level)
-                : t.greedCaveBoss(source.level)}
-            </span>
-            {/* The weight, as the table states it — see `sourceNote`. */}
-            <span className={styles.count}>×{source.weight}</span>
-          </li>
-        ))}
-      </ul>
-      <p className={styles.note}>{t.sourceNote}</p>
-    </>
-  );
-}
