@@ -45,8 +45,10 @@ import {
 } from '../../core/seo/names.ts';
 import { renderCard, type CardModel } from '../../core/seo/card.ts';
 import { renderItemCard } from '../../core/seo/item-card.ts';
+import { cardStats, itemDetail, useAssetsDir } from '../../core/seo/item-data.ts';
 import { renderTrackerCard } from '../../core/seo/tracker-card.ts';
 import type { SitemapEntry } from '../../core/seo/sitemap.ts';
+import { CONFIG, type AppConfig } from '../config.ts';
 import { DB } from '../db/tokens.ts';
 /*
  * The emitted data's own stamp, for `dataVersion`. The same file the shared
@@ -116,7 +118,17 @@ export class SeoService {
   constructor(
     @Inject(DB) private readonly db: Db,
     private readonly cards: CardService,
-  ) {}
+    @Inject(CONFIG) config: AppConfig,
+  ) {
+    /*
+     * Where the heavy item tables live, handed to the module that reads them.
+     *
+     * `item-data.ts` is plain functions rather than a provider — it is a cache
+     * over four files that never change while the process runs — so it is told
+     * the directory once instead of being injected everywhere it is called.
+     */
+    useAssetsDir(config.assetsDir);
+  }
 
   /** A published build by slug, or undefined. Drafts and deleted builds are both "no". */
   findPublic(slug: string): BuildRow | undefined {
@@ -216,6 +228,18 @@ export class SeoService {
       this.cards.icon(facts.cost > 0 ? GOLD_COIN : null),
     ]);
 
+    /*
+     * Stats or a sentence, by what the item is.
+     *
+     * Equipment and the things reforged like it are their numbers; everything
+     * else — a material, a chest, a consumable — is its description. Asking for
+     * the stats of a chest would get an empty list and fall through to the
+     * sentence anyway, but deciding it here says which is intended.
+     */
+    const worn = facts.type === 'equip' || facts.type === 'stone';
+    const stats = worn ? cardStats(facts.id, lang) : [];
+    const description = worn ? '' : (itemDetail(facts.id, lang)?.descPlain ?? '');
+
     return renderItemCard({
       lang,
       logo,
@@ -224,7 +248,9 @@ export class SeoService {
       title: facts.name,
       art,
       rarity: qualityColour(facts.quality),
-      rarityLabel: facts.quality > 0 ? `${strings.quality} ${facts.quality}` : null,
+      // The grade by name — `Mythic`, not `Quality 6`. The page says the name,
+      // so the picture of the page has to as well.
+      rarityLabel: strings.rarities[facts.quality] ?? null,
       tier: facts.level > 0 ? `T${facts.level}` : null,
       // The category alone: the tier, the grade and the price all have places of
       // their own on this card, so repeating them in the line would be the card
@@ -232,9 +258,11 @@ export class SeoService {
       facts: strings.itemTypes[facts.type] ?? facts.type,
       price: facts.cost > 0 ? `${formatGold(facts.cost)} ${strings.gold}` : null,
       gold,
-      description: facts.description,
+      description,
+      stats,
     });
   }
+
 
   /**
    * One build's card, as SVG, with every picture already encoded.

@@ -89,6 +89,16 @@
   --accent: oklch(0.65 0.16 258);
   --accent-strong: oklch(0.72 0.17 258);
   --accent-ink: oklch(0.16 0.02 260);
+  /*
+   * The ink for a label sitting *on* a rarity colour.
+   *
+   * It flips with the ramp, exactly as `--accent-ink` flips with the accent:
+   * the grades are bright here and dark in the light theme, so a near-black
+   * label is legible on this one and invisible on that one. A rarity pill had
+   * this colour written into it as a literal, which is how the item page came
+   * out with unreadable badges on white.
+   */
+  --rarity-ink: #0b0f18;
 
 /**
    * The colour a like is drawn in, everywhere it appears.
@@ -298,6 +308,8 @@
   --accent: oklch(0.52 0.17 258);
   --accent-strong: oklch(0.45 0.17 258);
   --accent-ink: #ffffff;
+  /* The ramp is dark here, so its labels are white. See the dark theme's note. */
+  --rarity-ink: #ffffff;
 
   --accent-2: oklch(0.52 0.1 195);
   --accent-2-ink: #ffffff;

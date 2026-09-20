@@ -496,6 +496,8 @@ export interface Strings {
     dismantleRule: string;
     /** What the counts above are counts *of*. */
     dismantleNote: string;
+    /** Development only: opens the API-rendered social card. */
+    previewCard: string;
   };
   tracker: {
     heading: string;
@@ -928,7 +930,7 @@ const en: Strings = {
     none: 'Nothing matches that.',
   },
   itemPage: {
-    back: 'All builds',
+    back: 'All items',
     stats: 'Stats',
     about: 'What it does',
     obtain: 'Where it comes from',
@@ -950,6 +952,7 @@ const en: Strings = {
     reforgeNote: 'Computed from the item’s level and grade the way the game computes it, not read from a table.',
     dismantleRule: 'Rule',
     dismantleNote: 'For one copy at +0. A reforged item also returns part of what the reforge cost.',
+    previewCard: 'Card ↗',
   },
   tracker: {
     heading: 'Farm tracker',
@@ -1374,7 +1377,7 @@ const ru: Strings = {
     none: 'Ничего не найдено.',
   },
   itemPage: {
-    back: 'Все сборки',
+    back: 'Все предметы',
     stats: 'Характеристики',
     about: 'Что делает',
     obtain: 'Откуда берётся',
@@ -1396,6 +1399,7 @@ const ru: Strings = {
     reforgeNote: 'Считается из уровня и качества предмета так же, как это делает игра, а не берётся из таблицы.',
     dismantleRule: 'Правило',
     dismantleNote: 'За одну копию на +0. Улучшенный предмет вернёт ещё и часть потраченного на перековку.',
+    previewCard: 'Карточка ↗',
   },
   tracker: {
     heading: 'Фарм-трекер',
@@ -1815,7 +1819,7 @@ const zh: Strings = {
     none: '没有匹配的物品。',
   },
   itemPage: {
-    back: '全部配装',
+    back: '全部物品',
     stats: '属性',
     about: '效果',
     obtain: '获取途径',
@@ -1837,6 +1841,7 @@ const zh: Strings = {
     reforgeNote: '按游戏的算法从物品等级与品质推算，并非取自表格。',
     dismantleRule: '规则',
     dismantleNote: '按 +0 的单件计算。已强化的物品还会返还部分重铸消耗。',
+    previewCard: '卡片 ↗',
   },
   tracker: {
     heading: '刷图追踪器',

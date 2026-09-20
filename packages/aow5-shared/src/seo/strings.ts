@@ -100,8 +100,17 @@ export interface SeoStrings {
   itemCardAlt: string;
   /** The words for an item's own facts line, in the reader's language. */
   itemTypes: Record<string, string>;
-  /** `Quality 5`, beside an item's rarity. */
+  /** `Quality 5`, beside an item's rarity. Kept for the facts line. */
   quality: string;
+  /**
+   * The grades by name, 1-7.
+   *
+   * **Copied from `apps/webapp/src/i18n/strings.ts`, not translated again
+   * here.** A card is a picture of a page, and a grade called Mythic on the
+   * page and `Quality 6` on the card is the card describing a different item.
+   * The same argument the overlay strings in this file already make.
+   */
+  rarities: Record<number, string>;
   /** The alt text on the tracker page's card, which is a picture of the overlay. */
   overlayAlt: string;
   /**
@@ -175,6 +184,7 @@ const EN: SeoStrings = {
   cardAlt: 'Build card',
   itemCardAlt: 'Item card',
   quality: 'Quality',
+  rarities: { 1: 'Common', 2: 'Uncommon', 3: 'Rare', 4: 'Epic', 5: 'Legendary', 6: 'Mythic', 7: 'Divine' },
   itemTypes: {
     equip: 'Equipment',
     gem: 'Rune',
@@ -245,6 +255,15 @@ const RU: SeoStrings = {
   cardAlt: 'Карточка сборки',
   itemCardAlt: 'Карточка предмета',
   quality: 'Качество',
+  rarities: {
+    1: 'Обычное',
+    2: 'Необычное',
+    3: 'Редкое',
+    4: 'Эпическое',
+    5: 'Легендарное',
+    6: 'Мифическое',
+    7: 'Божественное',
+  },
   itemTypes: {
     equip: 'Снаряжение',
     gem: 'Руна',
@@ -314,6 +333,7 @@ const ZH: SeoStrings = {
   cardAlt: '配装卡片',
   itemCardAlt: '物品卡片',
   quality: '品质',
+  rarities: { 1: '普通', 2: '优秀', 3: '稀有', 4: '史诗', 5: '传说', 6: '神话', 7: '神圣' },
   itemTypes: {
     equip: '装备',
     gem: '符印',

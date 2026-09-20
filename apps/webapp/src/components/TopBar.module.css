@@ -137,3 +137,21 @@
     display: none;
   }
 }
+
+
+/**
+ * The rule before the catalogue tab.
+ *
+ * The tabs before it are things you do on this site; the one after it is a
+ * reference book about the game. A gap alone would read as a layout accident
+ * at some widths, so it is a drawn line — short, dim, and the tab row's own
+ * height rather than the bar's.
+ */
+.navRule {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 1px;
+  height: 18px;
+  margin: 0 var(--space-2);
+  background: var(--border);
+}

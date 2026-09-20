@@ -84,9 +84,12 @@
   text-transform: uppercase;
 }
 
-/* The grade's own colour, so the pill reads as the rarity it names. */
+/*
+ * The grade's own colour, so the pill reads as the rarity it names — and the
+ * ink that goes on it, which flips with the theme. See `--rarity-ink`.
+ */
 .rarity {
-  color: #0b0f18;
+  color: var(--rarity-ink);
 }
 
 .type,
@@ -501,4 +504,32 @@
 .level {
   color: var(--accent);
   font-variant-numeric: tabular-nums;
+}
+
+/* --- the header's links ------------------------------------------------ */
+
+.headLinks {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/**
+ * A development-only affordance, marked as one.
+ *
+ * Dashed rather than solid so it is visibly not part of the page: it is here to
+ * open the social card in a tab while working on it, and it is compiled out of
+ * a production build entirely.
+ */
+.devLink {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--border);
+}
+
+.devLink:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }

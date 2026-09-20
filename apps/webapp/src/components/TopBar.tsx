@@ -54,15 +54,6 @@ export function TopBar({ match }: { match: Match }) {
             {strings.nav.mine}
           </Tab>
         )}
-        {/*
-          The catalogue, next to the builder because it is the other half of the
-          same question: what can I put in a slot, and what is this thing. An
-          item's own page lights this tab too — it is the page you reach *from*
-          here, the way the editor lights My Creations.
-        */}
-        <Tab href={pathOf('items')} active={route === 'items' || route === 'item'} onClick={intercept}>
-          {strings.nav.items}
-        </Tab>
         <Tab href={pathOf('tracker')} active={route === 'tracker'} onClick={intercept}>
           {strings.nav.tracker}
         </Tab>
@@ -73,6 +64,20 @@ export function TopBar({ match }: { match: Match }) {
         */}
         <Tab href={pathOf('settings')} active={route === 'settings'} onClick={intercept}>
           {strings.nav.settings}
+        </Tab>
+
+        {/*
+          The catalogue, last and behind a rule.
+          
+          The four tabs before it are things you *do* here — browse, publish,
+          track, configure. This is a reference book about the game, which is a
+          different kind of destination, and the separator is what says so
+          rather than making it a fifth thing of the same sort. An item's own
+          page lights it too, the way the editor lights My Creations.
+        */}
+        <span className={styles.navRule} aria-hidden />
+        <Tab href={pathOf('items')} active={route === 'items' || route === 'item'} onClick={intercept}>
+          {strings.nav.items}
         </Tab>
       </Tabs>
 

@@ -85,10 +85,18 @@ COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /repo/apps/api/dist ./dist
 
 # The pictures a card is composed from, at the path `ASSETS_DIR` defaults to in
-# production. Only the icon tree: the JSON beside it in the shared package is
-# either bundled into main.cjs already or not needed here at all, and
-# items.full.json alone is 1.3 MB of text nothing on a card reads.
+# production.
 COPY --from=build /repo/packages/aow5-shared/public/icons ./assets/icons
+
+# And the extracted data beside them, which an item's card now reads: its stat
+# lines and, for a material, its description.
+#
+# On disk rather than bundled, which is the same call the icons already got and
+# for the same reason. `items.full.json` is 1.3 MB and the three
+# `locale.*.details.json` are half a megabyte each — four megabytes of text
+# compiled into main.cjs so that a card can quote four lines of it. Read lazily
+# and cached instead; see `dataFile` in core/seo/item-data.ts.
+COPY --from=build /repo/packages/aow5-shared/public/data ./assets/data
 
 # The site's wordmark, which is the webapp's rather than the shared package's —
 # it is branding, not extracted game data, and it lives with the component that

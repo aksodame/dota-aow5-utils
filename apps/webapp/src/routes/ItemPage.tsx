@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   goldIconUrl,
   iconUrl,
@@ -10,6 +10,7 @@ import {
 } from 'aow5-shared/data';
 import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
 import { Badge, Button, Icon, Panel, cx } from '@/ui';
+import { withLang } from '@/router';
 import { useApp } from '@/data/AppData';
 import { useItemDetailsStore } from '@/data/ItemDetailsProvider';
 import { RichText } from '@/components/RichText';
@@ -17,7 +18,7 @@ import { qualityVar } from '@/components/Tile';
 import { affectsOf, behaviorOf, gemRows, hasNamedSkill, statRows, type StatRow } from '@/lib/itemStats';
 import { splitDescription, type DescSection } from '@/lib/richDesc';
 import { rarityLabel } from '@/i18n/strings';
-import { itemPath, navigate, Link } from '@/router';
+import { itemPath, navigate, pathOf, Link } from '@/router';
 import { dataVersion, factsOfItem, useDocumentMeta } from '@/lib/meta';
 import styles from './ItemPage.module.css';
 
@@ -110,20 +111,47 @@ function ItemBody({ item }: { item: ItemSummary }) {
   if (ability?.cooldown) meta.push(`${ti.cooldown} ${ability.cooldown}`);
   if (ability?.manaCost) meta.push(`${ti.manaCost} ${ability.manaCost}`);
   if (ability?.castRange) meta.push(`${ti.castRange} ${ability.castRange}`);
-  if (full?.timeCost) meta.push(`${ti.craftTime} ${full.timeCost}`);
+  /*
+   * The craft time is deliberately *not* in that list.
+   *
+   * It used to be, and it was the only thing on the page that could open a
+   * panel headed "What it does" — so a material with no skill at all got an
+   * otherwise-empty box saying `Craft time 30`. How long it takes to make is a
+   * fact about making it, so it belongs beside the recipe; see `Obtain`.
+   */
+
+  const [copied, setCopied] = useState(false);
+  const share = useCallback(() => {
+    const url = new URL(withLang(itemPath(item.id)), window.location.origin).href;
+    void navigator.clipboard?.writeText(url);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  }, [item.id]);
 
   const nameOf = (id: string) => core?.byId.get(id)?.name ?? id;
 
   /*
-   * The reforge table, for worn things only.
+   * The reforge table, for the things actually worth reforging.
    *
-   * A potion and a recipe are never reforged, and the arithmetic would happily
-   * price them — `reforgeCost` takes a level and a grade and asks no questions
-   * — so the gate is here rather than there.
+   * A potion and a recipe are never reforged at all, and the arithmetic would
+   * happily price them — `reforgeCost` takes a level and a grade and asks no
+   * questions — so that gate is here rather than there.
+   *
+   * The tier and grade floors are a deliberate hardcode rather than a rule read
+   * out of the game: nobody takes a tier-2 uncommon to the forge, and nine rows
+   * of prices for one makes the page longer without making it more useful. If
+   * the addon ever states a real threshold, this is where it goes.
    */
-  const reforgeable = item.type === 'equip' || item.type === 'stone' || full?.isSoul === true;
+  const REFORGE_MIN_TIER = 3;
+  const REFORGE_MIN_QUALITY = 5;
+  const reforgeable =
+    (item.type === 'equip' || item.type === 'stone' || full?.isSoul === true) &&
+    item.level >= REFORGE_MIN_TIER &&
+    item.quality >= REFORGE_MIN_QUALITY;
   const reforgeRows = reforgeable ? reforgeCost(store?.rolls, item) : [];
   const hasAbout = sections.length > 0 || meta.length > 0 || behavior !== null || affects !== null;
+  // What making it costs in time, drawn with the recipe rather than the skill.
+  const craftTime = full?.timeCost !== undefined && full.timeCost > 0 ? full.timeCost : null;
   const hasStats = stats.length > 0 || gems.length > 0;
   const hasObtain =
     full !== undefined &&
@@ -166,6 +194,41 @@ function ItemBody({ item }: { item: ItemSummary }) {
             <code className={styles.id}>{item.id}</code>
           </div>
         </div>
+
+        <div className={styles.headLinks}>
+          {/*
+            The page's own address, on the clipboard.
+            
+            An item page is the one screen here whose whole value is being
+            linkable — it is what somebody sends when they are asked "what does
+            this do" — and until now the only way to share one was to select the
+            address bar. `withLang` carries `?lang=` so a link shared out of the
+            Russian site arrives in Russian, exactly as a build's does.
+          */}
+          <Button size="sm" onClick={share}>
+            <Icon.Copy size={14} />
+            {copied ? strings.build.copied : strings.build.share}
+          </Button>
+          {/* The catalogue, which is this page's parent — not the build list,
+              which is a different part of the site entirely. */}
+          <Link to={{ href: pathOf('items') }} className={styles.back}>
+            {t.back}
+          </Link>
+          {/*
+            The social card, in development only.
+
+            It is rendered by the API and never appears in the page, so the only
+            way to look at one was to know the URL and paste it.
+            `import.meta.env.DEV` is replaced with `false` in a production build
+            and the whole branch is dropped, so this costs the shipped bundle
+            nothing.
+          */}
+          {import.meta.env.DEV && (
+            <a className={styles.devLink} href={`/api/og/items/${item.id}.png`} target="_blank" rel="noreferrer">
+              {t.previewCard}
+            </a>
+          )}
+        </div>
       </header>
 
       {store !== null && store.full === null && store.loading && <p className={styles.loading}>{ti.loadingDetails}</p>}
@@ -177,7 +240,7 @@ function ItemBody({ item }: { item: ItemSummary }) {
           makes, because that is the only question anybody opens one to ask.
         */}
         {layout.lead === 'obtain' && hasObtain && (
-          <Obtain full={full} nameOf={nameOf} strings={strings} />
+          <Obtain full={full} nameOf={nameOf} strings={strings} craftTime={craftTime} />
         )}
 
         {hasStats && (
@@ -214,7 +277,9 @@ function ItemBody({ item }: { item: ItemSummary }) {
           </Panel>
         )}
 
-        {layout.lead !== 'obtain' && hasObtain && <Obtain full={full} nameOf={nameOf} strings={strings} />}
+        {layout.lead !== 'obtain' && hasObtain && (
+          <Obtain full={full} nameOf={nameOf} strings={strings} craftTime={craftTime} />
+        )}
 
         {/*
           What a reforge costs, level by level.
@@ -297,10 +362,13 @@ function Obtain({
   full,
   nameOf,
   strings,
+  craftTime,
 }: {
   full: ItemFull | undefined;
   nameOf: (id: string) => string;
   strings: ReturnType<typeof useApp>['strings'];
+  /** Seconds, or null for anything that is not crafted. */
+  craftTime: number | null;
 }) {
   const t = strings.itemPage;
   const ti = strings.item;
@@ -335,6 +403,11 @@ function Obtain({
               </li>
             ))}
           </ul>
+          {craftTime !== null && (
+            <p className={styles.meta}>
+              {ti.craftTime} {craftTime}
+            </p>
+          )}
         </Section>
       )}
       {full.usedBy.length > 0 && (
