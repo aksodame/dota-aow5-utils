@@ -201,7 +201,19 @@ function ItemBody({ item }: { item: ItemSummary }) {
               build and the branch is dropped, so it costs the bundle nothing.
             */}
             {import.meta.env.DEV && (
-              <a className={styles.devLink} href={`/api/og/items/${item.id}.png`} target="_blank" rel="noreferrer">
+              <a
+                className={styles.devLink}
+                /*
+                  `?lang=` so the preview is the card for the page you are
+                  looking at. Without it the renderer fell back to
+                  `Accept-Language`, so switching the site to Russian still
+                  opened the English card — which is the one thing a preview of
+                  a localized picture must not do.
+                */
+                href={`/api/og/items/${item.id}.png?lang=${lang}`}
+                target="_blank"
+                rel="noreferrer"
+              >
                 {t.previewCard}
               </a>
             )}
