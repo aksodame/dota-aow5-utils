@@ -10,30 +10,38 @@
  * table is six literals.
  *
  * What must not drift is the behaviour, which is pinned by tests on both sides:
- * six static paths, one dynamic segment, and anything unrecognised falling
+ * seven static paths, two dynamic segments, and anything unrecognised falling
  * through to the browse page rather than to an error.
  */
 
 import { isSlug } from '../builds/slug.ts';
 
 /** The static routes, keyed by the path segment that names them. Mirrors `ROUTES`. */
-const STATIC: Record<string, Exclude<RouteName, 'build'>> = {
+const STATIC: Record<string, Exclude<RouteName, 'build' | 'item'>> = {
   '': 'browse',
   me: 'mine',
   edit: 'edit',
   view: 'view',
   settings: 'settings',
   tracker: 'tracker',
+  items: 'items',
 };
 
-export type RouteName = 'browse' | 'mine' | 'edit' | 'view' | 'settings' | 'tracker' | 'build';
+export type RouteName = 'browse' | 'mine' | 'edit' | 'view' | 'settings' | 'tracker' | 'items' | 'build' | 'item';
 
 export type RouteMatch =
-  | { route: Exclude<RouteName, 'build'>; lang: string | undefined }
-  | { route: 'build'; slug: string; lang: string | undefined };
+  | { route: Exclude<RouteName, 'build' | 'item'>; lang: string | undefined }
+  | { route: 'build'; slug: string; lang: string | undefined }
+  | { route: 'item'; itemId: string; lang: string | undefined };
 
 /** Mirrors `BUILD_PREFIX`. */
 const BUILD_PREFIX = 'builds';
+
+/** Mirrors `ITEM_PREFIX`, which is the `items` route's own literal. */
+const ITEM_PREFIX = 'items';
+
+/** Mirrors the webapp's `ITEM_ID`. */
+const ITEM_ID = /^item_[A-Za-z0-9_]{1,40}$/;
 
 /**
  * Parses a request URI — path and query, as Caddy passes it on.
@@ -68,6 +76,12 @@ export function matchPath(uri: string): RouteMatch {
     // client — it falls through rather than rendering an error for a path that
     // was probably never a link.
     if (isSlug(slug)) return { route: 'build', slug, lang };
+    return { route: 'browse', lang };
+  }
+
+  if (tail.startsWith(`${ITEM_PREFIX}/`)) {
+    const itemId = tail.slice(ITEM_PREFIX.length + 1);
+    if (ITEM_ID.test(itemId)) return { route: 'item', itemId, lang };
     return { route: 'browse', lang };
   }
 

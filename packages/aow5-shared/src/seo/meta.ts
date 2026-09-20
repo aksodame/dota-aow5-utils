@@ -16,6 +16,7 @@
  */
 
 import { tierLabel, type TierKey } from '../data/tiers.ts';
+import type { ItemId } from '../types/items.ts';
 import { formatGold } from '../format/gold.ts';
 import { clampWidth, oneLine } from './text.ts';
 import { SEO_STRINGS, type SeoLang } from './strings.ts';
@@ -69,7 +70,34 @@ export interface BuildFacts {
   updatedAt: number;
 }
 
-/** Which page to describe. Everything but `build` is a static route. */
+/**
+ * The facts one item's page, card and description are written from.
+ *
+ * A subset of `ItemFull` rather than the record itself: this crosses to the API,
+ * which holds a trimmed copy of the item table and has no business carrying a
+ * megabyte of stats to put four words on a card.
+ */
+export interface ItemFacts {
+  id: ItemId;
+  /** The item's name in the reader's language. */
+  name: string;
+  /** The addon's own category — `equip`, `gem`, `stone`, `potion`, … */
+  type: string;
+  /** 1-7 custom rarity. */
+  quality: number;
+  /** 1-10 progression tier, which the site draws as `T1`…`T10`. */
+  level: number;
+  /** Gold. `0` for the items that are not bought. */
+  cost: number;
+  /** The icon's filename, as `iconUrl` wants it. */
+  icon: string;
+  /** Its flattened description, for the meta description. May be empty. */
+  description: string;
+  /** The seasons it exists in, when the pak restricts it. */
+  seasons?: readonly number[];
+}
+
+/** Which page to describe. Everything but `build` and `item` is a static route. */
 export type MetaTarget =
   | { kind: 'browse' }
   | { kind: 'mine' }
@@ -77,6 +105,8 @@ export type MetaTarget =
   | { kind: 'view' }
   | { kind: 'settings' }
   | { kind: 'tracker' }
+  /** The catalogue grid, which is a real page a crawler should index. */
+  | { kind: 'items' }
   | { kind: 'build'; build: BuildFacts }
   /**
    * A build page whose build could not be loaded — deleted, never existed, or
@@ -86,7 +116,21 @@ export type MetaTarget =
    * URL must stay the one that was asked for: a crawler told that
    * `/builds/gone` canonicalises to `/` would merge the two.
    */
-  | { kind: 'missing'; slug: string };
+  | { kind: 'missing'; slug: string }
+  /**
+   * One item's page. `version` is the data version — see `itemCardPath` — and
+   * is absent where the caller has none, which only costs the card its
+   * cache-busting.
+   */
+  | { kind: 'item'; item: ItemFacts; version?: string }
+  /**
+   * An item page whose id is not in this deployment's table.
+   *
+   * Its own case for the same reason `missing` is one: the canonical URL has to
+   * stay the address that was asked for, so a crawler does not merge a dead
+   * item page into the browse list.
+   */
+  | { kind: 'missingItem'; id: string };
 
 export interface PageMeta {
   lang: SeoLang;
@@ -191,6 +235,27 @@ export function trackerCardPath(lang?: SeoLang): string {
  * existed still have to answer. The route falls back to `Accept-Language` for
  * those, exactly as it always did.
  */
+/**
+ * One item's card.
+ *
+ * The language is in the path for the same reason a build's is — see
+ * `trackerCardPath` — and the *data version* takes the place of a build's
+ * `updated_at`: an item has no edit time of its own, and what makes its card go
+ * out of date is the pak being refreshed under it. `meta.json`'s hash is
+ * already the site's name for "this data", so the card inherits it and a
+ * refresh gets new addresses for free.
+ */
+export function itemCardPath(id: ItemId, version?: string, lang?: SeoLang): string {
+  if (version === undefined || version === '') return `/api/og/items/${id}.png`;
+  const versioned = `/api/og/items/${id}.${version}`;
+  return lang === undefined ? `${versioned}.png` : `${versioned}.${lang}.png`;
+}
+
+/** The site-root-relative page for one item. Mirrors `itemPath` in the webapp. */
+export function itemPagePath(id: ItemId, base = '/'): string {
+  return `${base}items/${id}`;
+}
+
 export function buildCardPath(slug: string, version?: number, lang?: SeoLang): string {
   if (version === undefined) return `/api/og/builds/${slug}.png`;
   const versioned = `/api/og/builds/${slug}.${version}`;
@@ -211,6 +276,42 @@ export function buildCardPath(slug: string, version?: number, lang?: SeoLang): s
  * pass them without inventing the rest.
  */
 export type FactFields = Pick<BuildFacts, 'hero' | 'tier' | 'maps' | 'spell' | 'price'>;
+
+/**
+ * An item's facts, as a list: `Equipment · T6 · Quality 5 · 12.4k gold`.
+ *
+ * The same shape and the same separator as `buildFactLine`, deliberately: the
+ * two lines sit in the same places — a card's subtitle, a meta description —
+ * and two different punctuations for one idea reads as two different kinds of
+ * page. Absent facts are left out rather than written as zero, for the reason
+ * given there.
+ */
+export function itemFactLine(item: ItemFacts, lang: SeoLang): string {
+  const strings = SEO_STRINGS[lang];
+  const parts: string[] = [];
+  const typeName = strings.itemTypes[item.type];
+  if (typeName !== undefined) parts.push(typeName);
+  // `T1`…`T10`, the same label the browse filter and every tile use.
+  if (item.level > 0) parts.push(`T${item.level}`);
+  if (item.quality > 0) parts.push(`${strings.quality} ${item.quality}`);
+  if (item.cost > 0) parts.push(`${formatGold(item.cost)} ${strings.gold}`);
+  return parts.join(strings.factSep);
+}
+
+/**
+ * The sentence an item's page offers a search result.
+ *
+ * Its own facts first, then as much of the addon's description as fits — that
+ * order because the facts are what distinguishes one Fate Stone from the next,
+ * while the descriptions of a rune line are near-identical for three tiers.
+ */
+export function itemDescription(item: ItemFacts, lang: SeoLang): string {
+  const strings = SEO_STRINGS[lang];
+  const facts = itemFactLine(item, lang);
+  const body = oneLine(item.description);
+  const sentence = body === '' ? strings.routes.item.description : body;
+  return clampWidth(facts === '' ? sentence : `${facts}${strings.sep}${sentence}`, DESCRIPTION_BUDGET);
+}
 
 export function buildFactLine(build: FactFields, lang: SeoLang): string {
   const strings = SEO_STRINGS[lang];
@@ -330,7 +431,39 @@ export function pageMeta(target: MetaTarget, lang: SeoLang, base = '/'): PageMet
     };
   }
 
+  if (target.kind === 'item') {
+    const item = target.item;
+    return {
+      ...common,
+      title: `${item.name}${strings.sep}${strings.brand}`,
+      socialTitle: item.name,
+      description: itemDescription(item, lang),
+      path: itemPagePath(item.id, base),
+      image: itemCardPath(item.id, target.version, lang),
+      imageAlt: `${strings.itemCardAlt}: ${item.name}`,
+      /*
+       * A website, not an article. An item page is a record the site derives
+       * from the game rather than something somebody wrote on a date, so it has
+       * no author and no published time — and `article` without those is a
+       * shape that invites crawlers to ask for both.
+       */
+      type: 'website',
+      noindex: false,
+    };
+  }
+
   const site = { ...common, image: SITE_CARD, type: 'website' as const };
+
+  if (target.kind === 'missingItem') {
+    return {
+      ...site,
+      title: `${strings.routes.item.title}${strings.sep}${strings.brand}`,
+      socialTitle: strings.routes.item.title,
+      description: strings.routes.item.description,
+      path: itemPagePath(target.id, base),
+      noindex: true,
+    };
+  }
 
   switch (target.kind) {
     case 'missing':
@@ -351,6 +484,17 @@ export function pageMeta(target: MetaTarget, lang: SeoLang, base = '/'): PageMet
         socialTitle: strings.routes.browse.title,
         description: strings.routes.browse.description,
         path: base,
+        noindex: false,
+      };
+    case 'items':
+      return {
+        ...site,
+        title: `${strings.routes.items.title}${strings.sep}${strings.brand}`,
+        socialTitle: strings.routes.items.title,
+        description: strings.routes.items.description,
+        path: at('items'),
+        // Indexed, unlike the private routes: it is a page of links to every
+        // item page, which is the only way a crawler reaches them at all.
         noindex: false,
       };
     case 'tracker':

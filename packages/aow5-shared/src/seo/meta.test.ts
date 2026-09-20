@@ -2,11 +2,13 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SEO_LANGS, SEO_STRINGS } from './strings.ts';
 import {
+  DESCRIPTION_BUDGET,
   SITE_CARD,
   SOCIAL_TITLE_BUDGET,
   TITLE_BUDGET,
   buildCardPath,
   buildFactLine,
+  itemFactLine,
   pageMeta,
   trackerCardPath,
   type BuildFacts,
@@ -257,4 +259,66 @@ test('the language follows the version, and is optional too', () => {
   // what makes the address safe to call immutable, and the language alone
   // would be a second unversioned URL for the same picture.
   assert.equal(buildCardPath('7kQm2', undefined, 'ru'), '/api/og/builds/7kQm2.png');
+});
+
+/**
+ * An item's page meta.
+ *
+ * The card's address has to change when the data does, and the canonical has to
+ * stay the address that was asked for even when the id names nothing — both of
+ * which are the same rules a build's page follows, restated for the second
+ * dynamic route so neither can drift.
+ */
+const ITEM = {
+  id: 'item_H0001',
+  name: 'Waterfowl Dance',
+  type: 'equip',
+  quality: 5,
+  level: 6,
+  cost: 1800,
+  icon: 'soul_phantome.png',
+  description: 'Deals pure damage equal to the sum of attributes.',
+  seasons: [2],
+} as const;
+
+test('an item page is titled by its own name and canonicalises to its own path', () => {
+  const meta = pageMeta({ kind: 'item', item: ITEM, version: '1789897138124' }, 'en');
+  assert.equal(meta.path, '/items/item_H0001');
+  assert.ok(meta.title.startsWith('Waterfowl Dance'), meta.title);
+  assert.equal(meta.socialTitle, 'Waterfowl Dance');
+  assert.equal(meta.noindex, false);
+  // A record the site derives, not something somebody wrote on a date.
+  assert.equal(meta.type, 'website');
+});
+
+test("an item's card address carries the data version, so a refresh busts it", () => {
+  const a = pageMeta({ kind: 'item', item: ITEM, version: '111' }, 'en').image;
+  const b = pageMeta({ kind: 'item', item: ITEM, version: '222' }, 'en').image;
+  assert.notEqual(a, b);
+  assert.ok(a.includes('item_H0001'), a);
+  assert.ok(a.endsWith('.en.png'), a);
+  // Without one it still resolves, it simply cannot be called immutable.
+  assert.equal(pageMeta({ kind: 'item', item: ITEM }, 'en').image, '/api/og/items/item_H0001.png');
+});
+
+test('the facts line opens the description, and every language has one', () => {
+  for (const lang of SEO_LANGS) {
+    const meta = pageMeta({ kind: 'item', item: ITEM }, lang);
+    assert.notEqual(meta.description, '');
+    assert.ok(meta.description.length <= DESCRIPTION_BUDGET, `${lang}: ${meta.description.length}`);
+    // The tier is on the line, whatever the language spells the rest as.
+    assert.ok(itemFactLine(ITEM, lang).includes('T6'), itemFactLine(ITEM, lang));
+  }
+});
+
+test('an id that names nothing keeps its own canonical and is not indexed', () => {
+  const meta = pageMeta({ kind: 'missingItem', id: 'item_gone' }, 'en');
+  assert.equal(meta.path, '/items/item_gone');
+  assert.equal(meta.noindex, true);
+});
+
+test('the catalogue is indexed, because it is how an item page is found', () => {
+  const meta = pageMeta({ kind: 'items' }, 'en');
+  assert.equal(meta.path, '/items');
+  assert.equal(meta.noindex, false);
 });

@@ -61,3 +61,32 @@ test('a URI that will not parse still answers', () => {
 test('a percent-encoded path is decoded before matching', () => {
   assert.equal(matchPath('/%74racker').route, 'tracker');
 });
+
+/**
+ * The item routes, which must match the client's `matchRoute` exactly.
+ *
+ * Two implementations of one table — see the note at the top of `routes.ts` —
+ * so the behaviour is pinned on both sides rather than the code being shared.
+ */
+test('the catalogue and one item are different routes', () => {
+  assert.deepEqual(matchPath('/items'), { route: 'items', lang: undefined });
+  assert.deepEqual(matchPath('/items/'), { route: 'items', lang: undefined });
+  assert.deepEqual(matchPath('/items/item_0123'), { route: 'item', itemId: 'item_0123', lang: undefined });
+});
+
+test('every shape of item id the addon uses matches', () => {
+  for (const id of ['item_0123', 'item_G410_2', 'item_s_MT002', 'item_MTB001_easy', 'item_H0001']) {
+    assert.deepEqual(matchPath(`/items/${id}`), { route: 'item', itemId: id, lang: undefined }, id);
+  }
+});
+
+test('a malformed item id falls through to browse rather than erroring', () => {
+  for (const bad of ['nope', 'Item_0123', 'item_', `item_${'a'.repeat(41)}`]) {
+    assert.deepEqual(matchPath(`/items/${bad}`), { route: 'browse', lang: undefined }, bad);
+  }
+});
+
+test('the language rides on an item URL like any other', () => {
+  assert.deepEqual(matchPath('/items/item_H0001?lang=ru'), { route: 'item', itemId: 'item_H0001', lang: 'ru' });
+  assert.deepEqual(matchPath('/items?lang=ru'), { route: 'items', lang: 'ru' });
+});

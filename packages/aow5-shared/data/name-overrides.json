@@ -1,0 +1,296 @@
+{
+  "schema": 1,
+  "_comment": "Item names written here because the addon has none. Applied by the extraction pipeline (parser step 04) on top of what the pak ships, per language, and ONLY where the pak leaves the name in Chinese — so the day its authors translate one, theirs wins and the run warns that the entry here can go. Tracked rather than left in parser/config because these are words somebody wrote, not data a re-run can reproduce.",
+  "_sourceComment": "Compound names are composed from the item each one is actually about — a recipe from what it produces, a fate stone from what it upgrades, an ancestral piece from the stone that makes it — and the Recipe:/Ancestral:/Fate Stone:/Rune: wording is the addon's own, copied from lines it did translate. The words genuinely invented here are the six Magic Tower equips, seven rune lines, two cube consumables and the tower-chest vocabulary.",
+  "_duplicateComment": "item_G410_4/_5 and item_G413_4/_5 repeat the names of item_G410/_2 and item_G413/_2. That is faithful: the pak gives those S2 additions the same Chinese names as the lines they extend.",
+  "names": {
+    "item_0880": {
+      "en": "Ancestral: Focus Bow",
+      "ru": "Предок: Лук концентрации"
+    },
+    "item_0881": {
+      "en": "Ancestral: Hunter's Chain",
+      "ru": "Предок: Охотничья цепь"
+    },
+    "item_0882": {
+      "en": "Ancestral: Blade of Essence",
+      "ru": "Предок: Клинок первоосновы"
+    },
+    "item_0883": {
+      "en": "Ancestral: Hourglass of Lingering Time",
+      "ru": "Предок: Песочные часы замершего времени"
+    },
+    "item_0884": {
+      "en": "Ancestral: Crystal of Essence",
+      "ru": "Предок: Кристалл первоосновы"
+    },
+    "item_0885": {
+      "en": "Ancestral: Rocksplit Echo",
+      "ru": "Предок: Эхо раскола скал"
+    },
+    "item_0886": {
+      "en": "Ancestral: Duskroot Draw",
+      "ru": "Предок: Вытяжка сумеречного корня"
+    },
+    "item_0887": {
+      "en": "Ancestral: Glimmer Edge",
+      "ru": "Предок: Острие проблеска"
+    },
+    "item_1322": {
+      "en": "Recipe: Splinter Bow",
+      "ru": "Рецепт: Лук расщепления"
+    },
+    "item_1323": {
+      "en": "Recipe: Focus Bow",
+      "ru": "Рецепт: Лук концентрации"
+    },
+    "item_G410_4": {
+      "en": "Rune: Unified Volley I",
+      "ru": "Руна: Единый залп I"
+    },
+    "item_G410_5": {
+      "en": "Rune: Unified Volley II",
+      "ru": "Руна: Единый залп II"
+    },
+    "item_G413_4": {
+      "en": "Rune: Downpour I",
+      "ru": "Руна: Ливень I"
+    },
+    "item_G413_5": {
+      "en": "Rune: Downpour II",
+      "ru": "Руна: Ливень II"
+    },
+    "item_G502": {
+      "en": "Rune: Sigil Resonance I",
+      "ru": "Руна: Резонанс печати I"
+    },
+    "item_G502_2": {
+      "en": "Rune: Sigil Resonance II",
+      "ru": "Руна: Резонанс печати II"
+    },
+    "item_G502_3": {
+      "en": "Rune: Sigil Resonance III",
+      "ru": "Руна: Резонанс печати III"
+    },
+    "item_G503": {
+      "en": "Rune: Essence Return I",
+      "ru": "Руна: Возврат энергии I"
+    },
+    "item_G503_2": {
+      "en": "Rune: Essence Return II",
+      "ru": "Руна: Возврат энергии II"
+    },
+    "item_G503_3": {
+      "en": "Rune: Essence Return III",
+      "ru": "Руна: Возврат энергии III"
+    },
+    "item_G518": {
+      "en": "Rune: Ancestral Astral Step I",
+      "ru": "Руна: Астральный шаг предков I"
+    },
+    "item_G518_2": {
+      "en": "Rune: Ancestral Astral Step II",
+      "ru": "Руна: Астральный шаг предков II"
+    },
+    "item_G518_3": {
+      "en": "Rune: Ancestral Astral Step III",
+      "ru": "Руна: Астральный шаг предков III"
+    },
+    "item_G519": {
+      "en": "Rune: Threefold Finish I",
+      "ru": "Руна: Тройное завершение I"
+    },
+    "item_G519_2": {
+      "en": "Rune: Threefold Finish II",
+      "ru": "Руна: Тройное завершение II"
+    },
+    "item_G519_3": {
+      "en": "Rune: Threefold Finish III",
+      "ru": "Руна: Тройное завершение III"
+    },
+    "item_G520": {
+      "en": "Rune: Void Step Resonance I",
+      "ru": "Руна: Резонанс шага в пустоту I"
+    },
+    "item_G520_2": {
+      "en": "Rune: Void Step Resonance II",
+      "ru": "Руна: Резонанс шага в пустоту II"
+    },
+    "item_G520_3": {
+      "en": "Rune: Void Step Resonance III",
+      "ru": "Руна: Резонанс шага в пустоту III"
+    },
+    "item_MT001": {
+      "en": "Mineheart Bulwark",
+      "ru": "Бастион рудного сердца"
+    },
+    "item_MT002": {
+      "en": "Rocksplit Echo",
+      "ru": "Эхо раскола скал"
+    },
+    "item_MT003": {
+      "en": "Deepwood Dewdrop",
+      "ru": "Роса глухого леса"
+    },
+    "item_MT004": {
+      "en": "Duskroot Draw",
+      "ru": "Вытяжка сумеречного корня"
+    },
+    "item_MT005": {
+      "en": "Fading Step Sigil",
+      "ru": "Печать ускользающего шага"
+    },
+    "item_MT006": {
+      "en": "Glimmer Edge",
+      "ru": "Острие проблеска"
+    },
+    "item_MTB001": {
+      "en": "Level 1 Mine Tower Chest (Normal)",
+      "ru": "Сундук башни рудника 1-го уровня (обычный)"
+    },
+    "item_MTB001_easy": {
+      "en": "Level 1 Mine Tower Chest (Easy)",
+      "ru": "Сундук башни рудника 1-го уровня (лёгкий)"
+    },
+    "item_MTB001_hard": {
+      "en": "Level 1 Mine Tower Chest (Hard)",
+      "ru": "Сундук башни рудника 1-го уровня (сложный)"
+    },
+    "item_MTB002": {
+      "en": "Level 2 Mine Tower Chest (Normal)",
+      "ru": "Сундук башни рудника 2-го уровня (обычный)"
+    },
+    "item_MTB002_easy": {
+      "en": "Level 2 Mine Tower Chest (Easy)",
+      "ru": "Сундук башни рудника 2-го уровня (лёгкий)"
+    },
+    "item_MTB002_hard": {
+      "en": "Level 2 Mine Tower Chest (Hard)",
+      "ru": "Сундук башни рудника 2-го уровня (сложный)"
+    },
+    "item_MTB003": {
+      "en": "Level 3 Mine Tower Chest (Normal)",
+      "ru": "Сундук башни рудника 3-го уровня (обычный)"
+    },
+    "item_MTB003_easy": {
+      "en": "Level 3 Mine Tower Chest (Easy)",
+      "ru": "Сундук башни рудника 3-го уровня (лёгкий)"
+    },
+    "item_MTB003_hard": {
+      "en": "Level 3 Mine Tower Chest (Hard)",
+      "ru": "Сундук башни рудника 3-го уровня (сложный)"
+    },
+    "item_MTB004": {
+      "en": "Level 1 Forest Tower Chest (Normal)",
+      "ru": "Сундук башни леса 1-го уровня (обычный)"
+    },
+    "item_MTB004_easy": {
+      "en": "Level 1 Forest Tower Chest (Easy)",
+      "ru": "Сундук башни леса 1-го уровня (лёгкий)"
+    },
+    "item_MTB004_hard": {
+      "en": "Level 1 Forest Tower Chest (Hard)",
+      "ru": "Сундук башни леса 1-го уровня (сложный)"
+    },
+    "item_MTB005": {
+      "en": "Level 2 Forest Tower Chest (Normal)",
+      "ru": "Сундук башни леса 2-го уровня (обычный)"
+    },
+    "item_MTB005_easy": {
+      "en": "Level 2 Forest Tower Chest (Easy)",
+      "ru": "Сундук башни леса 2-го уровня (лёгкий)"
+    },
+    "item_MTB005_hard": {
+      "en": "Level 2 Forest Tower Chest (Hard)",
+      "ru": "Сундук башни леса 2-го уровня (сложный)"
+    },
+    "item_MTB006": {
+      "en": "Level 3 Forest Tower Chest (Normal)",
+      "ru": "Сундук башни леса 3-го уровня (обычный)"
+    },
+    "item_MTB006_easy": {
+      "en": "Level 3 Forest Tower Chest (Easy)",
+      "ru": "Сундук башни леса 3-го уровня (лёгкий)"
+    },
+    "item_MTB006_hard": {
+      "en": "Level 3 Forest Tower Chest (Hard)",
+      "ru": "Сундук башни леса 3-го уровня (сложный)"
+    },
+    "item_MTB007": {
+      "en": "Level 1 Shadow Tower Chest (Normal)",
+      "ru": "Сундук башни теней 1-го уровня (обычный)"
+    },
+    "item_MTB007_easy": {
+      "en": "Level 1 Shadow Tower Chest (Easy)",
+      "ru": "Сундук башни теней 1-го уровня (лёгкий)"
+    },
+    "item_MTB007_hard": {
+      "en": "Level 1 Shadow Tower Chest (Hard)",
+      "ru": "Сундук башни теней 1-го уровня (сложный)"
+    },
+    "item_MTB008": {
+      "en": "Level 2 Shadow Tower Chest (Normal)",
+      "ru": "Сундук башни теней 2-го уровня (обычный)"
+    },
+    "item_MTB008_easy": {
+      "en": "Level 2 Shadow Tower Chest (Easy)",
+      "ru": "Сундук башни теней 2-го уровня (лёгкий)"
+    },
+    "item_MTB008_hard": {
+      "en": "Level 2 Shadow Tower Chest (Hard)",
+      "ru": "Сундук башни теней 2-го уровня (сложный)"
+    },
+    "item_MTB009": {
+      "en": "Level 3 Shadow Tower Chest (Normal)",
+      "ru": "Сундук башни теней 3-го уровня (обычный)"
+    },
+    "item_MTB009_easy": {
+      "en": "Level 3 Shadow Tower Chest (Easy)",
+      "ru": "Сундук башни теней 3-го уровня (лёгкий)"
+    },
+    "item_MTB009_hard": {
+      "en": "Level 3 Shadow Tower Chest (Hard)",
+      "ru": "Сундук башни теней 3-го уровня (сложный)"
+    },
+    "item_P272": {
+      "en": "Cube Pact",
+      "ru": "Тайный договор куба"
+    },
+    "item_P273": {
+      "en": "Cube Brew",
+      "ru": "Особый состав куба"
+    },
+    "item_s_0323": {
+      "en": "Fate Stone: Focus Bow",
+      "ru": "Грань: Лук концентрации"
+    },
+    "item_s_0654": {
+      "en": "Fate Stone: Hunter's Chain",
+      "ru": "Грань: Охотничья цепь"
+    },
+    "item_s_0655": {
+      "en": "Fate Stone: Blade of Essence",
+      "ru": "Грань: Клинок первоосновы"
+    },
+    "item_s_0656": {
+      "en": "Fate Stone: Hourglass of Lingering Time",
+      "ru": "Грань: Песочные часы замершего времени"
+    },
+    "item_s_0658": {
+      "en": "Fate Stone: Crystal of Essence",
+      "ru": "Грань: Кристалл первоосновы"
+    },
+    "item_s_MT002": {
+      "en": "Fate Stone: Rocksplit Echo",
+      "ru": "Грань: Эхо раскола скал"
+    },
+    "item_s_MT004": {
+      "en": "Fate Stone: Duskroot Draw",
+      "ru": "Грань: Вытяжка сумеречного корня"
+    },
+    "item_s_MT006": {
+      "en": "Fate Stone: Glimmer Edge",
+      "ru": "Грань: Острие проблеска"
+    }
+  }
+}

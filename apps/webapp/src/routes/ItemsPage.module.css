@@ -1,0 +1,173 @@
+/**
+ * The catalogue grid.
+ *
+ * Ten to a row at full width, which is the shape asked for and also the one
+ * that makes 1,885 items scannable: wide enough that a tile is recognisable by
+ * its art, narrow enough that the eye takes a row at a glance.
+ */
+
+.page {
+  max-width: 90rem;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5) var(--space-7);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.heading {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.count {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/**
+ * The search bar, stuck to the top of the scroll region.
+ *
+ * `#main` is what scrolls on this site, not the window, so a sticky element
+ * here pins against the top of that box. Without it, filtering a catalogue
+ * means scrolling back up to change the query.
+ */
+.searchRow {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--space-2) 0 var(--space-3);
+  margin-bottom: var(--space-1);
+  background: var(--bg);
+}
+
+.search {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.empty {
+  padding: var(--space-6) 0;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+/**
+ * Ten per row, and fewer as the page narrows.
+ *
+ * An explicit count rather than `auto-fill`, because the ask is a row of ten
+ * and `auto-fill` would give whatever the viewport divided by a minimum came
+ * to. The steps below are the same grid at smaller counts rather than a
+ * different layout — a phone gets four, which is still a grid of art.
+ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 1400px) {
+  .grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/**
+ * Cheap virtualization.
+ *
+ * Every playable item is in the DOM, and `content-visibility` lets the browser
+ * skip layout and paint for the tiles below the fold. `contain-intrinsic-size`
+ * is the height to assume while it is skipping them, so the scrollbar is the
+ * right length from the first frame instead of growing as you scroll.
+ */
+.cell {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 104px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) 4px;
+  border-radius: var(--radius);
+  color: inherit;
+  text-decoration: none;
+}
+
+.tile:hover {
+  background: var(--surface-sunken);
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/** A fixed square the art fills, so a row of mixed aspect ratios still lines up. */
+.art {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.art img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/**
+ * Two lines of name, then an ellipsis.
+ *
+ * Names run from `Roar` to `Ancestral: Hourglass of Lingering Time`, and a
+ * tile that grew to fit the longest would leave a row of ragged heights. Two
+ * lines covers most of them; the full name is on the link's `title`.
+ */
+.name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.tile:hover .name {
+  color: var(--text);
+}

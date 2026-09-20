@@ -1,0 +1,351 @@
+/**
+ * One item's own page.
+ *
+ * The site's palette, not the hover card's. `ItemCard.module.css` paints the
+ * game's tooltip and keeps the game's furniture; this is a page of the site
+ * that happens to be about an item, so it takes `--surface`, `--border` and the
+ * rest like every other route. The one thing it borrows is the rarity ramp,
+ * because a grade's colour is the same fact wherever it is drawn.
+ */
+
+.page {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5) var(--space-7);
+}
+
+/* --- header ---------------------------------------------------------- */
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+/**
+ * A fixed square the art fills.
+ *
+ * Same rule as the card's frame and for the same reason: icons come out of the
+ * pak at a dozen aspect ratios, and a box that sized itself around the image
+ * would make every header a different height.
+ */
+.art {
+  flex: 0 0 auto;
+  width: 88px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+}
+
+.art img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.identity {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  font-size: 1.6rem;
+  line-height: 1.2;
+  /* Long compound names — "Ancestral: Hourglass of Lingering Time" — wrap
+     rather than pushing the badges off the row. */
+  overflow-wrap: anywhere;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.rarity,
+.type,
+.season {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* The grade's own colour, so the pill reads as the rarity it names. */
+.rarity {
+  color: #0b0f18;
+}
+
+.type,
+.season {
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.cost {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 700;
+}
+
+.cost img {
+  width: 16px;
+  height: 16px;
+}
+
+.id {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.back {
+  flex: 0 0 auto;
+  font-size: 13px;
+}
+
+.loading {
+  margin: 0 0 var(--space-3);
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* --- the blocks ------------------------------------------------------- */
+
+/**
+ * Two columns where there is room, one where there is not.
+ *
+ * `auto-fit` rather than a media query: the breakpoint that matters is the
+ * width of a stat block, not the width of a phone, and this page is reached
+ * from a tile inside a dialog as often as from an address bar.
+ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  align-items: start;
+  gap: var(--space-4);
+}
+
+/* Equipment and fate stones: a long rolled stat list earns the wider column. */
+.gridWide {
+  grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
+}
+
+.rule {
+  height: 1px;
+  margin: var(--space-3) 0;
+  border: 0;
+  background: var(--border);
+}
+
+/* --- stats ------------------------------------------------------------ */
+
+.stats {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stats li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.statValue {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.statLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/** What another copy of the same item could have rolled instead. */
+.statSpan {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* --- description ------------------------------------------------------ */
+
+.factLines {
+  margin-bottom: var(--space-3);
+}
+
+.fact {
+  margin: 0 0 2px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.fact span {
+  color: var(--text);
+}
+
+.desc {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/** A passive, drawn as the game draws it: a heading bar over its own box. */
+.descBox {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.descHeading {
+  margin: 0;
+  padding: 4px var(--space-3);
+  background: var(--surface-sunken);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.descBody {
+  padding: var(--space-3);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Unboxed text has no box to pad it. */
+.desc > .descBody {
+  padding: 0;
+}
+
+.meta {
+  margin: var(--space-3) 0 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.lore {
+  margin: var(--space-3) 0 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text-dim);
+}
+
+/* --- the graph -------------------------------------------------------- */
+
+.section + .section {
+  margin-top: var(--space-4);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--space-2);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.links {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.itemLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  text-decoration: none;
+}
+
+.itemLink:hover {
+  background: var(--surface-sunken);
+  color: var(--accent);
+}
+
+.itemLink img {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.count,
+.chance {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tags span {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* --- the id that named nothing ---------------------------------------- */
+
+.state {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.missingTitle {
+  margin: 0 0 var(--space-2);
+  font-size: 1.3rem;
+  color: var(--text);
+}
+
+.missingHint {
+  margin: 0 0 var(--space-3);
+  line-height: 1.5;
+}
+
+.missingId {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+}

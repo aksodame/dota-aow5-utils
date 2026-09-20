@@ -68,6 +68,17 @@ export interface SeoStrings {
      * calls it a farm tracker is a link that looks like it went somewhere else.
      */
     tracker: { title: string; description: string };
+    /**
+     * One item's own page.
+     *
+     * `title` names the section rather than the item, for the case where the id
+     * resolves to nothing; an item that *is* found puts its own name in front.
+     * `description` is the tail of a sentence the item's facts open — see
+     * `itemDescription`.
+     */
+    item: { title: string; description: string };
+    /** The catalogue grid, which lists every item page. */
+    items: { title: string; description: string };
   };
   /** The word for the Event category, which is not a numbered tier. */
   event: string;
@@ -85,6 +96,12 @@ export interface SeoStrings {
   untitled: string;
   /** The alt text on a build's card image. */
   cardAlt: string;
+  /** The alt text on an item's card image. */
+  itemCardAlt: string;
+  /** The words for an item's own facts line, in the reader's language. */
+  itemTypes: Record<string, string>;
+  /** `Quality 5`, beside an item's rarity. */
+  quality: string;
   /** The alt text on the tracker page's card, which is a picture of the overlay. */
   overlayAlt: string;
   /**
@@ -139,6 +156,14 @@ const EN: SeoStrings = {
       title: 'Farm tracker',
       description: 'The desktop tracker for Age of Weapons 5: watch your drops, get told about the ones worth keeping.',
     },
+    item: {
+      title: 'Items',
+      description: 'An item from Age of Weapons 5: what it costs, what it rolls, and what it is made from.',
+    },
+    items: {
+      title: 'All items',
+      description: 'Every item in Age of Weapons 5, searchable by name or id: equipment, runes, fate stones, recipes and consumables.',
+    },
   },
   event: 'Event',
   gold: 'gold',
@@ -148,6 +173,21 @@ const EN: SeoStrings = {
   mainSpell: 'Main',
   untitled: 'Untitled build',
   cardAlt: 'Build card',
+  itemCardAlt: 'Item card',
+  quality: 'Quality',
+  itemTypes: {
+    equip: 'Equipment',
+    gem: 'Rune',
+    stone: 'Fate Stone',
+    potion: 'Potion',
+    blueprint: 'Recipe',
+    material: 'Material',
+    special: 'Special',
+    identity: 'Identity Tag',
+    change: 'Transmog',
+    soul: 'Life Soul',
+    pet: 'Pet',
+  },
   overlayAlt: 'The farm overlay, with a session in progress',
   overlay: {
     window: 'tracker',
@@ -186,6 +226,14 @@ const RU: SeoStrings = {
       description:
         'Настольный трекер для Age of Weapons 5: следит за дропом и сообщает о том, что стоит оставить.',
     },
+    item: {
+      title: 'Предметы',
+      description: 'Предмет из Age of Weapons 5: сколько стоит, что даёт и из чего собирается.',
+    },
+    items: {
+      title: 'Все предметы',
+      description: 'Все предметы Age of Weapons 5 с поиском по названию и идентификатору: снаряжение, руны, грани судьбы, рецепты и расходники.',
+    },
   },
   event: 'Событие',
   gold: 'золота',
@@ -195,6 +243,21 @@ const RU: SeoStrings = {
   mainSpell: 'Основное',
   untitled: 'Сборка без названия',
   cardAlt: 'Карточка сборки',
+  itemCardAlt: 'Карточка предмета',
+  quality: 'Качество',
+  itemTypes: {
+    equip: 'Снаряжение',
+    gem: 'Руна',
+    stone: 'Грань судьбы',
+    potion: 'Зелье',
+    blueprint: 'Рецепт',
+    material: 'Материал',
+    special: 'Особое',
+    identity: 'Именной жетон',
+    change: 'Облик',
+    soul: 'Душа жизни',
+    pet: 'Питомец',
+  },
   overlayAlt: 'Оверлей фарм-трекера с активной сессией',
   overlay: {
     window: 'трекер',
@@ -231,6 +294,14 @@ const ZH: SeoStrings = {
       title: '刷图追踪器',
       description: 'Age of Weapons 5 的桌面追踪器：监控掉落，并提示值得保留的物品。',
     },
+    item: {
+      title: '物品',
+      description: '《兵器时代5》中的物品：价格、属性与合成来源。',
+    },
+    items: {
+      title: '全部物品',
+      description: '《兵器时代5》的全部物品，可按名称或 ID 搜索：装备、符印、命石、图纸与消耗品。',
+    },
   },
   event: '活动',
   gold: '金币',
@@ -241,6 +312,21 @@ const ZH: SeoStrings = {
   mainSpell: '主技能',
   untitled: '未命名配装',
   cardAlt: '配装卡片',
+  itemCardAlt: '物品卡片',
+  quality: '品质',
+  itemTypes: {
+    equip: '装备',
+    gem: '符印',
+    stone: '命石',
+    potion: '药水',
+    blueprint: '图纸',
+    material: '材料',
+    special: '特殊',
+    identity: '身份标签',
+    change: '外观',
+    soul: '命魂',
+    pet: '宠物',
+  },
   overlayAlt: '刷图追踪器浮层，展示进行中的一场',
   overlay: {
     window: '追踪器',

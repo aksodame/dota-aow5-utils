@@ -104,6 +104,22 @@ export function trackerCardKey(lang: string): CardKey {
 }
 
 /**
+ * The key for one item's card.
+ *
+ * Keyed like a build's, with the *data* version where a build has its
+ * `updated_at`: an item has no edit time of its own, and what makes its card
+ * stale is a pak refresh underneath it. So a refresh supersedes every item card
+ * at once, which is correct — the names, the prices and the tiers all moved.
+ *
+ * The family is the item's id, so the eviction sweep replaces that item's older
+ * cards and leaves every other item alone.
+ */
+export function itemCardKey(id: string, version: string, lang: string): CardKey {
+  const generation = `${id}.${version}v${CARD_VERSION}`;
+  return { name: `${generation}.${lang}`, family: id, generation };
+}
+
+/**
  * Which files in the cache directory this key replaces.
  *
  * Everything in the same family that is not in the same generation. The key's

@@ -5,6 +5,7 @@ import {
   buildPath,
   carriesBuildPayload,
   editPath,
+  itemPath,
   matchRoute,
   pathOf,
   routeAt,
@@ -124,4 +125,42 @@ test('a shared loadout has a page of its own, carrying the payload in the fragme
   assert.equal(matchRoute('/view', ROOT).id, 'view');
   assert.equal(routeAt('/view/', ROOT), 'view', 'a trailing slash is the same route');
   assert.equal(carriesBuildPayload('#b=8.abc'), true);
+});
+
+/**
+ * `/items/<id>`, the second route with a variable in it.
+ *
+ * Same contract as a build's: a well-formed id matches, a malformed one falls
+ * through to the browse list rather than rendering an error, and the prefix on
+ * its own is not a page.
+ */
+test('an item id matches, in every shape the addon uses', () => {
+  for (const id of ['item_0123', 'item_G410_2', 'item_s_MT002', 'item_MTB001_easy', 'item_H0001', 'item_pet_cat_sly']) {
+    assert.deepEqual(matchRoute(`/items/${id}`, '/'), { id: 'item', itemId: id }, id);
+  }
+});
+
+test('a malformed item id is the browse list, not an error', () => {
+  // `''` is not in this list: `/items/` is the catalogue, asserted below.
+  for (const bad of ['nope', 'Item_0123', 'item_', 'item_0123/extra', `item_${'a'.repeat(41)}`]) {
+    assert.deepEqual(matchRoute(`/items/${bad}`, '/'), { id: 'browse' }, JSON.stringify(bad));
+  }
+  // The prefix alone is the catalogue, not an item and not a fall-through.
+  assert.deepEqual(matchRoute('/items', '/'), { id: 'items' });
+  assert.deepEqual(matchRoute('/items/', '/'), { id: 'items' });
+});
+
+test('itemPath and matchRoute are inverses, base and all', () => {
+  for (const base of ['/', '/dota-aow5-utils/']) {
+    const path = itemPath('item_G502_3', base);
+    assert.equal(path, `${base}items/item_G502_3`);
+    assert.deepEqual(matchRoute(path, base), { id: 'item', itemId: 'item_G502_3' });
+  }
+});
+
+test('an item id can never be mistaken for a build slug', () => {
+  // Both dynamic routes live under their own prefix, so the two id spaces
+  // never have to be told apart — but the slug alphabet excludes `_`, which
+  // is what would make them ambiguous if they ever shared one.
+  assert.equal(/^[1-9A-HJ-NP-Za-km-z]{4,16}$/.test('item_0123'), false);
 });

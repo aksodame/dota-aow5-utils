@@ -19,7 +19,7 @@
  * it replaces was applying, answered the other way.
  */
 
-import type { SeoLang } from 'aow5-shared/seo';
+import type { ItemFacts, SeoLang } from 'aow5-shared/seo';
 import type { PreviewItem } from 'aow5-shared/overlay';
 import { categoryOfMap, type TierKey } from 'aow5-shared/data';
 import { ABILITY_SLOTS } from 'aow5-shared/types';
@@ -94,12 +94,75 @@ const ITEM_ICONS: ReadonlyMap<string, string> = new Map(
  * list needs the rarity to colour a name with and the cost to price a pile at.
  * Same positional index, read through the same named destructure.
  */
-const ITEM_FACTS: ReadonlyMap<string, { icon: string; quality: number; cost: number }> = new Map(
+const ITEM_FACTS: ReadonlyMap<
+  string,
+  { icon: string; type: string; quality: number; level: number; cost: number }
+> = new Map(
   itemsIndex.rows.map((row) => {
-    const [, id, , quality, , cost, icon] = row;
-    return [id as string, { icon: icon as string, quality: quality as number, cost: cost as number }];
+    const [, id, type, quality, level, cost, icon] = row;
+    return [
+      id as string,
+      {
+        icon: icon as string,
+        type: type as string,
+        quality: quality as number,
+        level: level as number,
+        cost: cost as number,
+      },
+    ];
   }),
 );
+
+/**
+ * The rarity ramp, as hex.
+ *
+ * The same seven colours `--q1`…`--q7` resolve to on the page's dark theme,
+ * restated because a card is drawn by a string concatenator that has no
+ * stylesheet to ask. The dark values specifically: a social card has one
+ * appearance and it is the dark one, the way every other card this server
+ * draws already is.
+ */
+const QUALITY_COLOURS = ['#9aa7c7', '#5bd18a', '#4aa3ff', '#b06bff', '#ff9a3d', '#ff5c7a', '#ffd94a'] as const;
+
+export function qualityColour(quality: number): string {
+  return QUALITY_COLOURS[Math.min(Math.max(Math.trunc(quality), 1), 7) - 1] as string;
+}
+
+/**
+ * One item's facts, for its page and its card.
+ *
+ * Undefined for an id this deployment's table does not have, which the caller
+ * turns into the `missingItem` meta target — a 404 with a canonical of its own
+ * rather than a redirect to the catalogue.
+ *
+ * **No description.** The three `locale.*.details.json` files are half a
+ * megabyte each and the only thing a card would take from them is a sentence;
+ * `itemDescription` already falls back to the facts plus a generic line, which
+ * is what the card shows. If a card ever needs the real text, that is the
+ * moment to weigh the bundle, not before.
+ */
+export function itemFacts(id: string, lang: SeoLang): ItemFacts | undefined {
+  const facts = ITEM_FACTS.get(id);
+  if (facts === undefined) return undefined;
+  return {
+    id,
+    // English as the fallback rather than the id, as `previewItem` does it.
+    name: ITEM_NAMES[lang][id] ?? ITEM_NAMES.en[id] ?? id,
+    type: facts.type,
+    quality: facts.quality,
+    level: facts.level,
+    cost: facts.cost,
+    icon: facts.icon,
+    description: '',
+  };
+  /*
+   * No `seasons` either, and for the same reason as the description: it lives
+   * in `items.full.json`, not in the index this file imports. So the page draws
+   * an S2 chip where the card does not. That is a difference worth naming: the
+   * fix is a season column on the index row, which is a schema change and a
+   * re-emit, and it buys one chip on one picture.
+   */
+}
 
 /** Item name per language. See the note at the top of this file for why these are imported. */
 const ITEM_NAMES: Record<SeoLang, Record<string, string>> = {

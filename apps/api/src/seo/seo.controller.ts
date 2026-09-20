@@ -8,7 +8,7 @@ import { pickLang } from '../../core/seo/lang.ts';
 import { renderPrerender } from '../../core/seo/html.ts';
 import { renderRobots, renderSitemap } from '../../core/seo/sitemap.ts';
 import { CONFIG, type AppConfig } from '../config.ts';
-import { buildCardKey, siteCardKey, trackerCardKey, type CardKey } from '../../core/seo/cache-key.ts';
+import { buildCardKey, itemCardKey, siteCardKey, trackerCardKey, type CardKey } from '../../core/seo/cache-key.ts';
 import { CardService } from './card.service.ts';
 import { SeoService } from './seo.service.ts';
 
@@ -84,8 +84,29 @@ export class SeoController {
       });
     }
 
-    // `match.route` is every route but `build`, which the branch above returned
-    // for — and every one of those is a `MetaTarget` with no other fields.
+    if (match.route === 'item') {
+      const facts = this.seo.itemFacts(match.itemId, lang);
+      if (facts === undefined) {
+        // A 404 with a body and a canonical of its own, exactly as a deleted
+        // build gets: an item that left the game should stop being indexed
+        // rather than start pointing at the catalogue.
+        response.status(404);
+        const meta = this.seo.meta({ kind: 'missingItem', id: match.itemId }, lang);
+        return renderPrerender({ meta, origin: this.origin, heading: meta.title });
+      }
+
+      const meta = this.seo.meta({ kind: 'item', item: facts, version: this.seo.dataVersion() }, lang);
+      return renderPrerender({
+        meta,
+        origin: this.origin,
+        heading: facts.name,
+        paragraphs: [meta.description],
+      });
+    }
+
+    // `match.route` is every route but `build` and `item`, which the branches
+    // above returned for — and every one of those is a `MetaTarget` with no
+    // other fields.
     const meta = this.seo.meta({ kind: match.route } satisfies MetaTarget, lang);
     return renderPrerender({
       meta,
@@ -94,7 +115,18 @@ export class SeoController {
       paragraphs: [meta.description],
       // Only the browse page lists anything. It is the one route whose content
       // is a set of links to pages a crawler cannot otherwise reach.
-      links: match.route === 'browse' ? this.seo.recentLinks(lang) : undefined,
+      links:
+        match.route === 'browse'
+          ? this.seo.recentLinks(lang)
+          : /*
+             * The catalogue lists every item page, which is the only way a
+             * crawler reaches one: nothing else on the site links to them in
+             * bulk, and the grid itself is rendered by JavaScript a crawler
+             * does not run.
+             */
+            match.route === 'items'
+            ? this.seo.itemLinks(lang)
+            : undefined,
     });
   }
 
@@ -167,6 +199,68 @@ export class SeoController {
       // address outlives the picture at it, which is how an edited build kept
       // showing its old card wherever the link had already been posted.
       versioned,
+    );
+  }
+
+  /**
+   * One item's card, at `<id>.<data-version>.<lang>.png`.
+   *
+   * The same three shapes a build's card answers on, and for the same reason —
+   * an `og:image` that 404s is a broken preview wherever the link was posted,
+   * so a bare `<id>.png` and an unversioned `<id>.<lang>.png` both work.
+   *
+   * Read by *shape* rather than by position, exactly as `buildCard` does it:
+   * an item id contains underscores and digits but never a dot, so splitting
+   * the name on dots is unambiguous. The all-digits field is the data version
+   * wherever it appears, and a two-letter field is the language.
+   *
+   * The version is a cache-buster, not an argument: whatever it says, this
+   * answers with the item's current card. Refusing a stale one would break
+   * every link shared before the last pak refresh.
+   */
+  @Get('og/items/:id')
+  @Throttle({ default: { ttl: 60_000, limit: 240 } })
+  async itemCard(
+    @Param('id') param: string,
+    @Query('lang') lang: string | undefined,
+    @Headers('accept-language') acceptLanguage: string | undefined,
+    @Res() response: Response,
+  ): Promise<void> {
+    const name = param.endsWith('.png') ? param.slice(0, -4) : param;
+
+    /*
+     * An id is `item_` plus letters, digits and underscores, so the *first two*
+     * dot-separated fields are never part of it — but the id itself contains no
+     * dot, and neither does a version or a language, so one split does read it:
+     * the first field is the id, and each field after it is a version if it is
+     * all digits and a language if it is two letters.
+     */
+    const [id, ...rest] = name.split('.');
+    let version: string | undefined;
+    let named: string | undefined;
+    for (const field of rest) {
+      if (/^\d+$/.test(field)) version = field;
+      else if (field.length === 2) named = field;
+    }
+
+    const chosen = pickLang(named ?? lang, acceptLanguage);
+    const facts = id === undefined ? undefined : this.seo.itemFacts(id, chosen);
+
+    if (facts === undefined) {
+      // The site's own card rather than a 404, exactly as a deleted build gets:
+      // a preview with a generic picture beats one with a broken picture.
+      await this.sendCard(response, siteCardKey(chosen), () => this.seo.siteCard(chosen), false);
+      return;
+    }
+
+    const current = this.seo.dataVersion();
+    await this.sendCard(
+      response,
+      itemCardKey(facts.id, current, chosen),
+      () => this.seo.cardForItem(facts, chosen),
+      // Only a versioned address may be called immutable, and only when the
+      // version asked for is the one being served.
+      version === current,
     );
   }
 

@@ -9,10 +9,10 @@ import { buildPath, editPath, matchRoute, pathOf, type Match, type RouteId } fro
 import { LANG_PARAM } from '@/i18n/strings';
 
 /**
- * Four routes, no dependency.
+ * A handful of routes, no dependency.
  *
  * A router library buys nested layouts, dynamic segments, loaders and data
- * revalidation. This site has four static paths, one dynamic segment and none
+ * revalidation. This site has six static paths, two dynamic segments and none
  * of the rest, so what it would actually buy is 15 kB on the page whose whole
  * argument is that it is small. What follows is the History API with a
  * subscription around it.
@@ -28,6 +28,7 @@ export {
   buildPath,
   carriesBuildPayload,
   editPath,
+  itemPath,
   matchRoute,
   pathOf,
   routeAt,
@@ -67,7 +68,7 @@ const subscribeHash = (onChange: () => void) => {
 };
 
 /**
- * The current route including the one dynamic segment.
+ * The current route including its dynamic segment, where it has one.
  *
  * `getSnapshot` must return a stable reference or useSyncExternalStore loops,
  * and `matchRoute` builds a fresh object every call — so the result is cached

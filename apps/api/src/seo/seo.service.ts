@@ -5,9 +5,12 @@ import {
   SEO_STRINGS,
   buildFactLine,
   formatGold,
+  itemFactLine,
+  itemPagePath,
   oneLine,
   pageMeta,
   type BuildFacts,
+  type ItemFacts,
   type MetaTarget,
   type PageMeta,
   type SeoLang,
@@ -37,11 +40,22 @@ import {
   mapNames,
   mapScenePath,
   previewItem,
+  itemFacts,
+  qualityColour,
 } from '../../core/seo/names.ts';
 import { renderCard, type CardModel } from '../../core/seo/card.ts';
+import { renderItemCard } from '../../core/seo/item-card.ts';
 import { renderTrackerCard } from '../../core/seo/tracker-card.ts';
 import type { SitemapEntry } from '../../core/seo/sitemap.ts';
 import { DB } from '../db/tokens.ts';
+/*
+ * The emitted data's own stamp, for `dataVersion`. The same file the shared
+ * package ships to the browser, imported here for one field — `generatedAt`,
+ * which is written from the pak's mtime and therefore moves on a refresh and
+ * on nothing else.
+ */
+import meta from 'aow5-shared/public/data/meta.json' with { type: 'json' };
+import itemsIndex from 'aow5-shared/public/data/items.index.json' with { type: 'json' };
 import { CardService } from './card.service.ts';
 
 /**
@@ -143,6 +157,83 @@ export class SeoService {
 
   meta(target: MetaTarget, lang: SeoLang): PageMeta {
     return pageMeta(target, lang);
+  }
+
+  /**
+   * One item's facts, or undefined for an id this deployment has never heard of.
+   *
+   * A thin pass-through to `names.ts`, which owns the imported tables — here so
+   * the controller talks to one service rather than reaching around it, the
+   * same way `factsFor` fronts the build tables.
+   */
+  itemFacts(id: string, lang: SeoLang): ItemFacts | undefined {
+    return itemFacts(id, lang);
+  }
+
+  /**
+   * The version of the emitted data, for an item card's address.
+   *
+   * The pak's own mtime, which `generatedAt` is written from. Mirrors
+   * `dataVersion` in the webapp's `lib/meta.ts`; the two must agree, or a card
+   * cached under the address the browser wrote is not the address the server
+   * answers on.
+   */
+  dataVersion(): string {
+    const at = Date.parse(meta.generatedAt);
+    return Number.isFinite(at) ? String(at) : '0';
+  }
+
+  /**
+   * Every item, as links, for the catalogue's prerendered copy.
+   *
+   * The grid a person sees is built by JavaScript from a fetched index, which a
+   * crawler does not run — so without this, 1,885 item pages exist and nothing
+   * links to them. Unlimited on purpose, unlike `recentLinks`: this is the page
+   * whose entire job is to be that list.
+   */
+  itemLinks(lang: SeoLang): Array<{ href: string; text: string }> {
+    return itemsIndex.rows.flatMap((row) => {
+      const facts = itemFacts(row[1] as string, lang);
+      if (facts === undefined) return [];
+      const line = itemFactLine(facts, lang);
+      return [
+        {
+          href: itemPagePath(facts.id),
+          text: line === '' ? facts.name : `${facts.name} — ${line}`,
+        },
+      ];
+    });
+  }
+
+  /** One item's card, as SVG, with every picture already encoded. */
+  async cardForItem(facts: ItemFacts, lang: SeoLang): Promise<string> {
+    const strings = SEO_STRINGS[lang];
+
+    const [logo, logoAspect, art, gold] = await Promise.all([
+      this.cards.brand(LOGOTYPE),
+      this.cards.brandAspect(LOGOTYPE),
+      this.cards.icon(itemIconPath(facts.id)),
+      this.cards.icon(facts.cost > 0 ? GOLD_COIN : null),
+    ]);
+
+    return renderItemCard({
+      lang,
+      logo,
+      logoAspect,
+      brand: strings.brand,
+      title: facts.name,
+      art,
+      rarity: qualityColour(facts.quality),
+      rarityLabel: facts.quality > 0 ? `${strings.quality} ${facts.quality}` : null,
+      tier: facts.level > 0 ? `T${facts.level}` : null,
+      // The category alone: the tier, the grade and the price all have places of
+      // their own on this card, so repeating them in the line would be the card
+      // saying everything twice.
+      facts: strings.itemTypes[facts.type] ?? facts.type,
+      price: facts.cost > 0 ? `${formatGold(facts.cost)} ${strings.gold}` : null,
+      gold,
+      description: facts.description,
+    });
   }
 
   /**
@@ -363,8 +454,18 @@ export class SeoService {
   sitemap(): SitemapEntry[] {
     const entries: SitemapEntry[] = [
       { path: '/', changefreq: 'daily', priority: '1.0' },
+      { path: '/items', changefreq: 'monthly', priority: '0.6' },
       { path: '/tracker', changefreq: 'monthly', priority: '0.5' },
     ];
+    /*
+     * The catalogue itself, and not the 1,885 pages under it.
+     *
+     * A sitemap naming every item would be most of a megabyte of XML that says
+     * the same `changefreq` on every line, and the pages are already reachable:
+     * `/items` prerenders as a list of links to all of them, which is the route
+     * a crawler takes anyway. If an item page ever gains something worth a
+     * `lastmod` of its own, that is the moment to reconsider.
+     */
     for (const build of listPublishedBuilds(this.db, SITEMAP_LIMIT)) {
       entries.push({
         path: `/builds/${build.slug}`,

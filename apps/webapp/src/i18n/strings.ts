@@ -34,7 +34,7 @@ export const LANG_LABEL: Record<Lang, string> = {
 
 export interface Strings {
   brand: string;
-  nav: { browse: string; mine: string; tracker: string; settings: string };
+  nav: { browse: string; mine: string; items: string; tracker: string; settings: string };
   auth: {
     signIn: string;
     signUp: string;
@@ -433,6 +433,46 @@ export interface Strings {
     behavior: Record<'passive' | 'active' | 'toggle', string>;
     affectsLabel: (team: 'enemy' | 'friendly' | 'both', scope: 'units' | 'heroes' | 'creeps') => string;
   };
+  /** The catalogue grid at `/items`. */
+  itemsPage: {
+    heading: string;
+    searchLabel: string;
+    searchPlaceholder: string;
+    /** `1,885 items`, when nothing is filtered. */
+    total: (n: number) => string;
+    /** `42 of 1,885`, when something is. */
+    found: (n: number, total: number) => string;
+    none: string;
+  };
+  /**
+   * The item's own page, which the card is the short version of.
+   *
+   * Separate from `item` because that block is the hover card's vocabulary and
+   * this is a page's: headings for blocks the card deliberately does not draw,
+   * and the words for an id that names nothing.
+   */
+  itemPage: {
+    back: string;
+    /** Block headings. */
+    stats: string;
+    about: string;
+    obtain: string;
+    dismantle: string;
+    produces: string;
+    upgradesFrom: string;
+    /** `Only in S2`, under the badges. */
+    seasonOnly: (seasons: string) => string;
+    /** A guaranteed essence has no chance beside it; this labels the ones that do. */
+    chance: (pct: number) => string;
+    /** The id resolved to nothing in this deployment's table. */
+    missingTitle: string;
+    missingHint: string;
+    browse: string;
+    /** The whole catalogue is still arriving. */
+    loading: string;
+    /** On the tile, and as the link's accessible name. */
+    openPage: string;
+  };
   tracker: {
     heading: string;
     back: string;
@@ -555,7 +595,7 @@ export interface Strings {
 
 const en: Strings = {
   brand: 'AOW5 Builds',
-  nav: { browse: 'Builder', mine: 'My Creations', tracker: 'Tracker', settings: 'Settings' },
+  nav: { browse: 'Builder', mine: 'My Creations', items: 'Items', tracker: 'Tracker', settings: 'Settings' },
   auth: {
     signIn: 'Sign in',
     signUp: 'Create an account',
@@ -838,6 +878,30 @@ const en: Strings = {
     affectsLabel: (team, scope) =>
       `${{ enemy: 'Enemy', friendly: 'Allied', both: 'All' }[team]} ${{ units: 'units', heroes: 'heroes', creeps: 'creeps' }[scope]}`,
   },
+  itemsPage: {
+    heading: 'Items',
+    searchLabel: 'Search items by name or id',
+    searchPlaceholder: 'Name or id — "focus bow", "item_G502"',
+    total: (n) => `${n.toLocaleString()} items`,
+    found: (n, total) => `${n.toLocaleString()} of ${total.toLocaleString()}`,
+    none: 'Nothing matches that.',
+  },
+  itemPage: {
+    back: 'All builds',
+    stats: 'Stats',
+    about: 'What it does',
+    obtain: 'Where it comes from',
+    dismantle: 'Dismantles into',
+    produces: 'Makes',
+    upgradesFrom: 'Upgrades from',
+    seasonOnly: (seasons) => `Only in ${seasons}`,
+    chance: (pct) => `${pct}% chance`,
+    missingTitle: 'No such item',
+    missingHint: 'This deployment’s item table has nothing under that id. It may have left the game, or the link may be mistyped.',
+    browse: 'Browse builds',
+    loading: 'Loading the item table…',
+    openPage: 'Open item page',
+  },
   tracker: {
     heading: 'Farm tracker',
     back: 'Back to builds',
@@ -951,7 +1015,7 @@ const en: Strings = {
 
 const ru: Strings = {
   brand: 'Сборки AOW5',
-  nav: { browse: 'Сборки', mine: 'Мои сборки', tracker: 'Трекер', settings: 'Настройки' },
+  nav: { browse: 'Сборки', mine: 'Мои сборки', items: 'Предметы', tracker: 'Трекер', settings: 'Настройки' },
   auth: {
     signIn: 'Войти',
     signUp: 'Создать аккаунт',
@@ -1235,6 +1299,30 @@ const ru: Strings = {
     affectsLabel: (team, scope) =>
       `${{ enemy: 'вражеских', friendly: 'союзных', both: 'всех' }[team]} ${{ units: 'юнитов', heroes: 'героев', creeps: 'крипов' }[scope]}`,
   },
+  itemsPage: {
+    heading: 'Предметы',
+    searchLabel: 'Поиск предметов по названию или идентификатору',
+    searchPlaceholder: 'Название или id — «лук», «item_G502»',
+    total: (n) => `${n.toLocaleString('ru-RU')} предметов`,
+    found: (n, total) => `${n.toLocaleString('ru-RU')} из ${total.toLocaleString('ru-RU')}`,
+    none: 'Ничего не найдено.',
+  },
+  itemPage: {
+    back: 'Все сборки',
+    stats: 'Характеристики',
+    about: 'Что делает',
+    obtain: 'Откуда берётся',
+    dismantle: 'При разборе даёт',
+    produces: 'Создаёт',
+    upgradesFrom: 'Улучшается из',
+    seasonOnly: (seasons) => `Только в ${seasons}`,
+    chance: (pct) => `шанс ${pct}%`,
+    missingTitle: 'Предмет не найден',
+    missingHint: 'В таблице предметов этой сборки сайта нет ничего с таким идентификатором. Возможно, предмет убрали из игры или в ссылке опечатка.',
+    browse: 'К списку сборок',
+    loading: 'Загружается таблица предметов…',
+    openPage: 'Открыть страницу предмета',
+  },
   tracker: {
     heading: 'Фарм-трекер',
     back: 'К сборкам',
@@ -1346,7 +1434,7 @@ const ru: Strings = {
 
 const zh: Strings = {
   brand: 'AOW5 配装',
-  nav: { browse: '配装', mine: '我的配装', tracker: '追踪器', settings: '设置' },
+  nav: { browse: '配装', mine: '我的配装', items: '物品', tracker: '追踪器', settings: '设置' },
   auth: {
     signIn: '登录',
     signUp: '注册账号',
@@ -1626,6 +1714,30 @@ const zh: Strings = {
     behavior: { passive: '被动', active: '主动', toggle: '切换' },
     affectsLabel: (team, scope) =>
       `${{ enemy: '敌方', friendly: '友方', both: '全体' }[team]}${{ units: '单位', heroes: '英雄', creeps: '小兵' }[scope]}`,
+  },
+  itemsPage: {
+    heading: '物品',
+    searchLabel: '按名称或 ID 搜索物品',
+    searchPlaceholder: '名称或 ID —「凝心弓」「item_G502」',
+    total: (n) => `${n.toLocaleString()} 件物品`,
+    found: (n, total) => `${n.toLocaleString()} / ${total.toLocaleString()}`,
+    none: '没有匹配的物品。',
+  },
+  itemPage: {
+    back: '全部配装',
+    stats: '属性',
+    about: '效果',
+    obtain: '获取途径',
+    dismantle: '分解获得',
+    produces: '可合成',
+    upgradesFrom: '升级自',
+    seasonOnly: (seasons) => `仅限${seasons}`,
+    chance: (pct) => `${pct}% 概率`,
+    missingTitle: '没有这个物品',
+    missingHint: '本站的物品表中没有该 ID。它可能已从游戏中移除，或链接有误。',
+    browse: '浏览配装',
+    loading: '正在加载物品表…',
+    openPage: '打开物品页面',
   },
   tracker: {
     heading: '刷图追踪器',

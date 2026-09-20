@@ -54,6 +54,15 @@ export function TopBar({ match }: { match: Match }) {
             {strings.nav.mine}
           </Tab>
         )}
+        {/*
+          The catalogue, next to the builder because it is the other half of the
+          same question: what can I put in a slot, and what is this thing. An
+          item's own page lights this tab too — it is the page you reach *from*
+          here, the way the editor lights My Creations.
+        */}
+        <Tab href={pathOf('items')} active={route === 'items' || route === 'item'} onClick={intercept}>
+          {strings.nav.items}
+        </Tab>
         <Tab href={pathOf('tracker')} active={route === 'tracker'} onClick={intercept}>
           {strings.nav.tracker}
         </Tab>

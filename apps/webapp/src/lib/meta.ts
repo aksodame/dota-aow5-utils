@@ -24,6 +24,7 @@ import {
   SEO_LANGS,
   pageMeta,
   type BuildFacts,
+  type ItemFacts,
   type MetaTarget,
   type PageMeta,
   type SeoLang,
@@ -202,4 +203,55 @@ export function factsOfBuild(
     publishedAt: build.publishedAt,
     updatedAt: build.updatedAt,
   };
+}
+
+
+/**
+ * The facts one item's page and card are written from.
+ *
+ * The browser's counterpart to `SeoService.itemFactsFor`, and the pair exists
+ * for the same reason `factsOfBuild` has one: the names and the description
+ * live in files this side has already fetched, and the server reaches a trimmed
+ * copy of the same table by a different route. Both feed one `pageMeta`.
+ *
+ * `full` is optional because the megabyte of item detail arrives after the
+ * index does, and a title that waited for it would leave the tab saying the
+ * wrong thing for the first second. Without it the description falls back to
+ * the item's facts alone, which is what `itemDescription` does with an empty
+ * body anyway.
+ */
+export function factsOfItem(
+  item: { id: string; name: string; type: string; quality: number; level: number; cost: number; icon: string },
+  detail?: { descPlain?: string },
+  seasons?: readonly number[],
+): ItemFacts {
+  return {
+    id: item.id,
+    name: item.name,
+    type: item.type,
+    quality: item.quality,
+    level: item.level,
+    cost: item.cost,
+    icon: item.icon,
+    description: detail?.descPlain ?? '',
+    ...(seasons !== undefined && seasons.length > 0 ? { seasons } : {}),
+  };
+}
+
+
+/**
+ * The version of the emitted data, for an address that has to change with it.
+ *
+ * The pak's own mtime, which is what `generatedAt` is written from — so it
+ * moves on every refresh and on nothing else. A build's card uses its
+ * `updated_at` for this; an item has no edit time of its own, and the thing
+ * that makes its card stale is the pak changing underneath it.
+ *
+ * The server computes the same number from its own copy of `meta.json`; see
+ * `SeoService.dataVersion`. The two must agree or a card cached under one
+ * address is served from another.
+ */
+export function dataVersion(meta: { generatedAt: string }): string {
+  const at = Date.parse(meta.generatedAt);
+  return Number.isFinite(at) ? String(at) : '0';
 }

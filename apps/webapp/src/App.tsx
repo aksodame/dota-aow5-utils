@@ -9,6 +9,8 @@ import { BuildPage } from '@/routes/BuildPage';
 import { EditorPage } from '@/routes/EditorPage';
 import { MyCreationsPage } from '@/routes/MyCreationsPage';
 import { SettingsPage } from '@/routes/SettingsPage';
+import { ItemPage } from '@/routes/ItemPage';
+import { ItemsPage } from '@/routes/ItemsPage';
 import { ViewPage } from '@/routes/ViewPage';
 import { TrackerPage } from '@/routes/TrackerPage';
 import { navigateTo, pathOf, useMatch, useScrollReset, useSearch } from '@/router';
@@ -96,7 +98,7 @@ function Shell() {
   );
   const onSearch = useCallback((next: string) => setBrowse({ ...browse, q: next }), [setBrowse, browse]);
 
-  useScrollReset(`${match.id}:${match.slug ?? ''}`);
+  useScrollReset(`${match.id}:${match.slug ?? match.itemId ?? ''}`);
 
   /*
    * Steam sends people back to `/` with `?auth=failed` or `?auth=banned` when
@@ -120,7 +122,9 @@ function Shell() {
    * `lib/meta.ts`.
    */
   const meta = useMemo<MetaTarget | null>(
-    () => (match.id === 'build' ? null : { kind: match.id }),
+    // `build` and `item` both need a record this component does not have, so
+    // those two pages own their own head. Everything else is a static route.
+    () => (match.id === 'build' || match.id === 'item' ? null : { kind: match.id }),
     [match.id],
   );
   useDocumentMeta(meta, lang);
@@ -151,6 +155,8 @@ function Shell() {
         {match.id === 'settings' && <SettingsPage />}
         {match.id === 'tracker' && <TrackerPage />}
         {match.id === 'build' && match.slug !== undefined && <BuildPage slug={match.slug} />}
+        {match.id === 'items' && <ItemsPage />}
+        {match.id === 'item' && match.itemId !== undefined && <ItemPage itemId={match.itemId} />}
       </main>
 
       <SiteFooter />

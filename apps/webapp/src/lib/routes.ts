@@ -4,10 +4,10 @@
  * Split out of `router.tsx` so it can be tested: `node --test` strips types
  * but not JSX, so anything that has to be verified lives in a file with none.
  *
- * Four routes, which is the whole site. The planner, the landing page, the
- * separate published-builds list and the my-builds page collapsed into these:
- * browsing *is* the front page now, and the thing that used to be the planner
- * is the editor behind it.
+ * Six static routes and two with a variable in them, which is the whole site.
+ * The planner, the landing page, the separate published-builds list and the
+ * my-builds page collapsed into these: browsing *is* the front page now, and
+ * the thing that used to be the planner is the editor behind it.
  */
 
 export const ROUTES = {
@@ -36,10 +36,18 @@ export const ROUTES = {
   /** The account: which providers vouch for you, and the language. */
   settings: 'settings',
   tracker: 'tracker',
+  /**
+   * The catalogue: every playable item, as a grid.
+   *
+   * Both a page and the parent of `/items/<id>`, which is why the prefix below
+   * is the same literal. A bare `/items` is the grid; anything after the slash
+   * is one item.
+   */
+  items: 'items',
 } as const;
 
 /**
- * The one route with a variable in it: `/builds/<slug>`.
+ * The first route with a variable in it: `/builds/<slug>`.
  *
  * Kept out of `ROUTES` rather than folded in, because that table maps a name to
  * a literal and `routeAt` is a lookup in it — both stay simple as long as
@@ -49,6 +57,27 @@ export const ROUTES = {
  * right author to publish.
  */
 export const BUILD_PREFIX = 'builds';
+
+/**
+ * The second route with a variable in it: `/items/<id>`.
+ *
+ * Beside `BUILD_PREFIX` and for the same reason — `ROUTES` maps a name to a
+ * literal and `routeAt` is a lookup in it, so neither table gains a hole. The
+ * prefix is plural because the segment names a collection and the id names one
+ * of it, which is the shape every other list-plus-detail on the site uses.
+ */
+export const ITEM_PREFIX = ROUTES.items;
+
+/**
+ * What an item id may look like.
+ *
+ * The addon's own shape: `item_` and then letters, digits and underscores —
+ * `item_0123`, `item_G410_2`, `item_s_MT002`, `item_MTB001_easy`. Matched
+ * rather than looked up in the table, because `matchRoute` is pure and the
+ * table is fetched; a well-formed id that names nothing is the page's problem
+ * to report, not the router's.
+ */
+const ITEM_ID = /^item_[A-Za-z0-9_]{1,40}$/;
 
 /**
  * What a slug may look like.
@@ -80,6 +109,11 @@ export function pathOf(id: RouteId, base: string = BASE): string {
 /** The path for one published build. */
 export function buildPath(slug: string, base: string = BASE): string {
   return `${base}${BUILD_PREFIX}/${slug}`;
+}
+
+/** The path for one item's own page. Mirrors `itemPagePath` in `aow5-shared/seo`. */
+export function itemPath(id: string, base: string = BASE): string {
+  return `${base}${ITEM_PREFIX}/${id}`;
 }
 
 /**
@@ -162,9 +196,11 @@ export function routeAt(pathname: string, base: string = BASE): RouteId {
 }
 
 export interface Match {
-  id: RouteId | 'build';
+  id: RouteId | 'build' | 'item';
   /** Only present for `build`. */
   slug?: string;
+  /** Only present for `item`. */
+  itemId?: string;
 }
 
 /**
@@ -181,6 +217,13 @@ export function matchRoute(pathname: string, base: string = BASE): Match {
     // A malformed slug is not a build page. It falls through to the browse
     // list like any other unrecognised path rather than rendering an error.
     if (SLUG.test(slug)) return { id: 'build', slug };
+    return { id: 'browse' };
+  }
+
+  if (tail.startsWith(`${ITEM_PREFIX}/`)) {
+    const itemId = tail.slice(ITEM_PREFIX.length + 1);
+    // Same rule as a slug: a malformed id was never a link here.
+    if (ITEM_ID.test(itemId)) return { id: 'item', itemId };
     return { id: 'browse' };
   }
 
