@@ -292,5 +292,1132 @@
       "en": "Fate Stone: Glimmer Edge",
       "ru": "Грань: Острие проблеска"
     }
+  },
+  "_textComment": "Descriptions and lore for the items the addon leaves in Chinese in every locale file. Same rule as the names above: applied only where the pak still has Han characters there, so the pak always wins and the run says when an entry can go. The <h1>/<br> markup and every %placeholder% are carried through verbatim — the pipeline substitutes the placeholders and parses the markup, so a translation that dropped one would be a sentence with a hole in it. The generator asserts the placeholder sets match before writing.",
+  "text": {
+    "item_P046": {
+      "en": {
+        "desc": "<h1>Use: Meditate</h1>Increases mana regeneration by 18 per second and reduces ability mana cost by 15%. Lasts 600 seconds. {health and mana included}"
+      },
+      "ru": {
+        "desc": "<h1>Использование: Медитация</h1>Повышает восстановление маны на 18 в секунду и снижает расход маны способностей на 15%. Длится 600 секунд. {включая здоровье и ману}"
+      }
+    },
+    "item_0322": {
+      "en": {
+        "desc": "<h1>Passive: Multishot</h1>On a ranged attack, fires one extra arrow at up to 1 other enemy in range; extra arrows count as normal attacks. Does not trigger on melee attacks, and passives of the same name do not stack."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Множественные стрелы</h1>При дальней атаке выпускает дополнительную стрелу максимум в 1 другого врага в радиусе атаки; дополнительные стрелы считаются обычными атаками. Не срабатывает в ближнем бою, одноимённые пассивные эффекты не складываются."
+      }
+    },
+    "item_0323": {
+      "en": {
+        "desc": "<h1>Passive: Multishot</h1>On a ranged attack, fires one extra arrow at each of up to %ability_value_extra_target_count% other enemies in range; extra arrows count as normal attacks. Does not trigger on melee attacks, and passives of the same name do not stack.<h1>Passive: Focused Volley</h1>While you are frozen and the current target is the only enemy in range, every extra arrow converges on that target."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Множественные стрелы</h1>При дальней атаке выпускает по дополнительной стреле максимум в %ability_value_extra_target_count% других врагов в радиусе атаки; дополнительные стрелы считаются обычными атаками. Не срабатывает в ближнем бою, одноимённые пассивные эффекты не складываются.<h1>Пассивное: Сосредоточенный залп</h1>Если вы заморожены и в радиусе атаки нет никого, кроме текущей цели, все дополнительные стрелы летят в неё."
+      }
+    },
+    "item_0880": {
+      "en": {
+        "desc": "<h1>Passive: Multishot</h1>On a ranged attack, fires one extra arrow at each of up to %ability_value_extra_target_count% other enemies in range; extra arrows count as normal attacks. Does not trigger on melee attacks, and passives of the same name do not stack.<h1>Passive: Focused Volley</h1>While you are frozen and the current target is the only enemy in range, every extra arrow converges on that target.",
+        "lore": "Frost held the body still; it never held the eye that finds its mark."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Множественные стрелы</h1>При дальней атаке выпускает по дополнительной стреле максимум в %ability_value_extra_target_count% других врагов в радиусе атаки; дополнительные стрелы считаются обычными атаками. Не срабатывает в ближнем бою, одноимённые пассивные эффекты не складываются.<h1>Пассивное: Сосредоточенный залп</h1>Если вы заморожены и в радиусе атаки нет никого, кроме текущей цели, все дополнительные стрелы летят в неё.",
+        "lore": "Мороз сковал тело, но не сковал взгляд, что бьёт без промаха."
+      }
+    },
+    "item_M541": {
+      "en": {
+        "desc": "<h1>Tower Currency</h1>An old coin that circulates inside the Arcane Tower. It vanishes when you leave, and each one turns automatically into 10, 30 or 100 gold in Tower 1, Tower 2 and Tower 3 respectively."
+      },
+      "ru": {
+        "desc": "<h1>Валюта башни</h1>Древняя монета, имеющая хождение в Тайной башне. Исчезает при выходе из башни; каждая монета автоматически превращается в 10, 30 или 100 золота в Башне 1, Башне 2 и Башне 3 соответственно."
+      }
+    },
+    "item_0881": {
+      "en": {
+        "desc": "<h1>Passive: Hunt</h1>On killing an enemy, restores %ability_value_kill_mana_restore_pct%%% of maximum mana and makes your next charged ability cost no charge (this effect has a %ability_value_c_charge_refund_cd% second cooldown).",
+        "lore": "The chain remembers the weight of every kill."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Охота</h1>При убийстве врага восстанавливает %ability_value_kill_mana_restore_pct%%% максимального запаса маны, а следующее применение способности с зарядами не расходует заряд (перезарядка эффекта — %ability_value_c_charge_refund_cd% сек).",
+        "lore": "Цепь помнит вес каждой добычи."
+      }
+    },
+    "item_0882": {
+      "en": {
+        "desc": "<h1>Passive: Essence</h1>Grants bonus attack damage equal to %ability_value_agility_to_damage_pct%%% of your agility.",
+        "lore": "Agility tempered into an edge. The source is never lent out."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Первооснова</h1>Даёт дополнительную силу атаки, равную %ability_value_agility_to_damage_pct%%% вашей ловкости.",
+        "lore": "Ловкость, закалённая в лезвие. Первооснову взаймы не дают."
+      }
+    },
+    "item_0883": {
+      "en": {
+        "desc": "<h1>Passive: Lingering Time</h1>Extends the duration of lasting abilities by %ability_value_duration_pct%%%. While a lasting ability is active, every %ability_amp_interval% seconds grants %ability_value_spell_amp_per_sec%%% ability damage, up to %ability_value_spell_amp_max_pct%%%; the stacks are lost if none is gained within %ability_surge_duration% seconds.",
+        "lore": "Where the grains stop, time takes on a debt."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Застывшее время</h1>Увеличивает длительность продолжительных способностей на %ability_value_duration_pct%%%. Пока такая способность действует, каждые %ability_amp_interval% сек даёт %ability_value_spell_amp_per_sec%%% к урону способностей, максимум %ability_value_spell_amp_max_pct%%%; если за %ability_surge_duration% сек не добавилось ни одного заряда, эффект спадает.",
+        "lore": "Там, где замирают песчинки, время остаётся в долгу."
+      }
+    },
+    "item_0884": {
+      "en": {
+        "desc": "<h1>Passive: Crystal Erosion</h1>For every %ability_value_c_agility_per_step% agility, converts %ability_value_crit_convert_pct_per_step%%% of your physical critical strike chance into magical critical strike chance (up to %ability_value_crit_convert_cap_pct%%%).",
+        "lore": "What the crystal refracts is sharpness in another form."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Кристальная эрозия</h1>За каждые %ability_value_c_agility_per_step% ед. ловкости превращает %ability_value_crit_convert_pct_per_step%%% вашего шанса физического крита в шанс магического крита (не более %ability_value_crit_convert_cap_pct%%%).",
+        "lore": "Кристалл преломляет остроту, обращая её в иную форму."
+      }
+    },
+    "item_0885": {
+      "en": {
+        "desc": "<h1>Passive: Rocksplit Counter</h1>After a shield absorbs damage, deals physical damage equal to %ability_value_shield_damage_pct%%% of the amount absorbed to up to %ability_max_targets% enemies within %ability_radius%; damage to a single target cannot exceed %ability_value_attack_cap_pct%%% of your attack damage. 4 second cooldown.",
+        "lore": "The rock remembers the echo of every answering blow."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Ответ раскола</h1>После того как щит поглотил урон, наносит физический урон, равный %ability_value_shield_damage_pct%%% поглощённого, максимум %ability_max_targets% врагам в радиусе %ability_radius%; урон по одной цели не превышает %ability_value_attack_cap_pct%%% силы атаки. Перезарядка 4 сек.",
+        "lore": "Камень помнит эхо каждого ответного удара."
+      }
+    },
+    "item_MT002": {
+      "en": {
+        "desc": "<h1>Passive: Rocksplit Counter</h1>After a shield absorbs damage, deals physical damage equal to %ability_value_shield_damage_pct%%% of the amount absorbed to up to %ability_max_targets% enemies within %ability_radius%; damage to a single target cannot exceed %ability_value_attack_cap_pct%%% of your attack damage. 4 second cooldown."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Ответ раскола</h1>После того как щит поглотил урон, наносит физический урон, равный %ability_value_shield_damage_pct%%% поглощённого, максимум %ability_max_targets% врагам в радиусе %ability_radius%; урон по одной цели не превышает %ability_value_attack_cap_pct%%% силы атаки. Перезарядка 4 сек."
+      }
+    },
+    "item_0886": {
+      "en": {
+        "desc": "<h1>Passive: Duskroot Draw</h1>After dealing damage over time to an enemy, restores %ability_value_heal_pct%%% of that damage as health, up to %ability_value_heal_cap_pct%%% of maximum health at once. 2 second cooldown.",
+        "lore": "Roots dig into the dusk, and what they draw up was never only blood."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Вытяжка сумеречного корня</h1>После нанесения периодического урона врагу восстанавливает %ability_value_heal_pct%%% этого урона здоровьем, но не более %ability_value_heal_cap_pct%%% максимального здоровья за раз. Перезарядка 2 сек.",
+        "lore": "Корни уходят в сумрак, и вытягивают они отнюдь не только кровь."
+      }
+    },
+    "item_MT004": {
+      "en": {
+        "desc": "<h1>Passive: Duskroot Draw</h1>After dealing damage over time to an enemy, restores %ability_value_heal_pct%%% of that damage as health, up to %ability_value_heal_cap_pct%%% of maximum health at once. 2 second cooldown."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Вытяжка сумеречного корня</h1>После нанесения периодического урона врагу восстанавливает %ability_value_heal_pct%%% этого урона здоровьем, но не более %ability_value_heal_cap_pct%%% максимального здоровья за раз. Перезарядка 2 сек."
+      }
+    },
+    "item_0887": {
+      "en": {
+        "desc": "<h1>Passive: Glimmer</h1>After casting a non-item ability, your next normal attack within %ability_value_c_window% seconds deals an extra %ability_value_attack_damage_pct%%% of attack damage as magical damage. Extra attacks do not trigger it, and only one is held at a time. 5 second cooldown.",
+        "lore": "The light through the gap is quicker than the blade."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Проблеск</h1>После применения способности (не предмета) следующая обычная атака в течение %ability_value_c_window% сек наносит дополнительно %ability_value_attack_damage_pct%%% силы атаки магическим уроном. Дополнительные атаки не срабатывают, сохраняется не более одного заряда. Перезарядка 5 сек.",
+        "lore": "Свет, пробившийся в щель, быстрее клинка."
+      }
+    },
+    "item_MT006": {
+      "en": {
+        "desc": "<h1>Passive: Glimmer</h1>After casting a non-item ability, your next normal attack within %ability_value_c_window% seconds deals an extra %ability_value_attack_damage_pct%%% of attack damage as magical damage. Extra attacks do not trigger it, and only one is held at a time. 5 second cooldown."
+      },
+      "ru": {
+        "desc": "<h1>Пассивное: Проблеск</h1>После применения способности (не предмета) следующая обычная атака в течение %ability_value_c_window% сек наносит дополнительно %ability_value_attack_damage_pct%%% силы атаки магическим уроном. Дополнительные атаки не срабатывают, сохраняется не более одного заряда. Перезарядка 5 сек."
+      }
+    },
+    "item_G410_4": {
+      "en": {
+        "desc": "<h1>Arrow Storm: Unified Volley</h1>Every 5 volleys merge into 1, and every 5 small arrows merge into 1 great arrow; both counts round down and the remainder is discarded. Frostfeather arrows merge separately under the same rule. 0.2 seconds between volleys. Great arrows pierce enemies, fly wider, and each deals 240% of base arrow damage."
+      },
+      "ru": {
+        "desc": "<h1>Град стрел: Единый залп</h1>Каждые 5 залпов сливаются в 1, каждые 5 малых стрел — в 1 большую; оба числа округляются вниз, остаток отбрасывается. Морозные стрелы сливаются отдельно по тому же правилу. Интервал между залпами 0,2 сек. Большие стрелы пробивают врагов, летят шире и наносят по 240% базового урона стрелы."
+      }
+    },
+    "item_G410_5": {
+      "en": {
+        "desc": "<h1>Arrow Storm: Unified Volley</h1>Every 5 volleys merge into 1, and every 4 small arrows merge into 1 great arrow; both counts round down and the remainder is discarded. Frostfeather arrows merge separately under the same rule. 0.2 seconds between volleys. Great arrows pierce enemies, fly wider, and each deals 270% of base arrow damage."
+      },
+      "ru": {
+        "desc": "<h1>Град стрел: Единый залп</h1>Каждые 5 залпов сливаются в 1, каждые 4 малых стрелы — в 1 большую; оба числа округляются вниз, остаток отбрасывается. Морозные стрелы сливаются отдельно по тому же правилу. Интервал между залпами 0,2 сек. Большие стрелы пробивают врагов, летят шире и наносят по 270% базового урона стрелы."
+      }
+    },
+    "item_G413_4": {
+      "en": {
+        "desc": "<h1>Winter Formation: Downpour</h1>Increases arrow-rain frequency by 25%. One enemy can take damage and freezing from at most 1 ice arrow per round, and it must actually hit."
+      },
+      "ru": {
+        "desc": "<h1>Зимний строй: Ливень</h1>Повышает частоту ливня стрел на 25%. Один враг за раунд получает урон и заморозку не более чем от 1 ледяной стрелы, и она должна действительно попасть."
+      }
+    },
+    "item_G413_5": {
+      "en": {
+        "desc": "<h1>Winter Formation: Downpour</h1>Increases arrow-rain frequency by 50%. Adds 2 more rounds of arrow rain and extends the ice formation until the rain ends. One enemy can take damage and freezing from at most 1 ice arrow per round, and it must actually hit."
+      },
+      "ru": {
+        "desc": "<h1>Зимний строй: Ливень</h1>Повышает частоту ливня стрел на 50%. Добавляет ещё 2 раунда ливня и продлевает ледяной строй до его окончания. Один враг за раунд получает урон и заморозку не более чем от 1 ледяной стрелы, и она должна действительно попасть."
+      }
+    },
+    "item_G500": {
+      "en": {
+        "desc": "<h1>Shadow Remnant: Shadow Puppet</h1>The remnant no longer grants a second blink and travels 60% less far. On arrival it becomes a puppet for 6 seconds, attacking the nearest enemy within 575. Every 0.2 seconds it deals magical damage equal to 10% of base impact damage. At most 6 puppets exist at once; a new one replaces the oldest."
+      },
+      "ru": {
+        "desc": "<h1>Остаточная тень: Теневая марионетка</h1>Тень больше не даёт второй рывок и пролетает на 60% меньше. Достигнув конца пути, она превращается в марионетку на 6 сек и атакует ближайшего врага в радиусе 575. Каждые 0,2 сек наносит магический урон, равный 10% базового урона столкновения. Одновременно существует не более 6 марионеток; новая заменяет самую старую."
+      }
+    },
+    "item_G500_2": {
+      "en": {
+        "desc": "<h1>Shadow Remnant: Shadow Puppet</h1>The remnant no longer grants a second blink and travels 60% less far. On arrival it becomes a puppet for 8 seconds, attacking the nearest enemy within 575. Every 0.2 seconds it deals magical damage equal to 10% of base impact damage. At most 6 puppets exist at once; a new one replaces the oldest."
+      },
+      "ru": {
+        "desc": "<h1>Остаточная тень: Теневая марионетка</h1>Тень больше не даёт второй рывок и пролетает на 60% меньше. Достигнув конца пути, она превращается в марионетку на 8 сек и атакует ближайшего врага в радиусе 575. Каждые 0,2 сек наносит магический урон, равный 10% базового урона столкновения. Одновременно существует не более 6 марионеток; новая заменяет самую старую."
+      }
+    },
+    "item_G500_3": {
+      "en": {
+        "desc": "<h1>Shadow Remnant: Shadow Puppet</h1>The remnant no longer grants a second blink and travels 60% less far. On arrival it becomes a puppet for 10 seconds, attacking the nearest enemy within 575. Every 0.2 seconds it deals magical damage equal to 10% of base impact damage. At most 6 puppets exist at once; a new one replaces the oldest."
+      },
+      "ru": {
+        "desc": "<h1>Остаточная тень: Теневая марионетка</h1>Тень больше не даёт второй рывок и пролетает на 60% меньше. Достигнув конца пути, она превращается в марионетку на 10 сек и атакует ближайшего врага в радиусе 575. Каждые 0,2 сек наносит магический урон, равный 10% базового урона столкновения. Одновременно существует не более 6 марионеток; новая заменяет самую старую."
+      }
+    },
+    "item_G501": {
+      "en": {
+        "desc": "<h1>Shadow Remnant: Split Shadows</h1>The remnant no longer grants a second blink, and casting summons three remnants. Each one explodes 0.25 seconds after reaching its maximum distance, dealing enemies within 250 another instance of the same magical damage the remnant deals on hit. Shadow Remnant damage is reduced by 20% and charge rate by 20% (charge restore time increased by 25%)."
+      },
+      "ru": {
+        "desc": "<h1>Остаточная тень: Расщеплённые тени</h1>Тень больше не даёт второй рывок, а применение призывает три тени. Каждая взрывается через 0,25 сек после достижения предельной дальности, нанося врагам в радиусе 250 ещё раз тот же магический урон, что и при попадании тени. Урон Остаточной тени снижен на 20%, скорость накопления зарядов — на 20% (время восстановления заряда увеличено на 25%)."
+      }
+    },
+    "item_G501_2": {
+      "en": {
+        "desc": "<h1>Shadow Remnant: Split Shadows</h1>The remnant no longer grants a second blink, and casting summons three remnants. Each one explodes 0.25 seconds after reaching its maximum distance, dealing enemies within 250 another instance of the same magical damage the remnant deals on hit."
+      },
+      "ru": {
+        "desc": "<h1>Остаточная тень: Расщеплённые тени</h1>Тень больше не даёт второй рывок, а применение призывает три тени. Каждая взрывается через 0,25 сек после достижения предельной дальности, нанося врагам в радиусе 250 ещё раз тот же магический урон, что и при попадании тени."
+      }
+    },
+    "item_G501_3": {
+      "en": {
+        "desc": "<h1>Shadow Remnant: Split Shadows</h1>The remnant no longer grants a second blink, and casting summons three remnants. Each one explodes 0.25 seconds after reaching its maximum distance, dealing enemies within 250 another instance of the same magical damage the remnant deals on hit."
+      },
+      "ru": {
+        "desc": "<h1>Остаточная тень: Расщеплённые тени</h1>Тень больше не даёт второй рывок, а применение призывает три тени. Каждая взрывается через 0,25 сек после достижения предельной дальности, нанося врагам в радиусе 250 ещё раз тот же магический урон, что и при попадании тени."
+      }
+    },
+    "item_G502": {
+      "en": {
+        "desc": "<h1>Resonance Pulse: Sigil Resonance</h1>The Resonance Pulse immediately detonates the Astral Marks on the enemies it hits. Each counted hit restores 2% of your maximum mana; elites and bosses share the hit count with shields and count as 3 and 5 units respectively."
+      },
+      "ru": {
+        "desc": "<h1>Резонансный импульс: Резонанс печати</h1>Резонансный импульс немедленно подрывает Астральные печати на поражённых врагах. Каждое зачтённое попадание восстанавливает 2% вашего максимума маны; элитные враги и боссы делят счётчик попаданий со щитами и считаются за 3 и 5 единиц соответственно."
+      }
+    },
+    "item_G502_2": {
+      "en": {
+        "desc": "<h1>Resonance Pulse: Sigil Resonance</h1>The Resonance Pulse immediately detonates the Astral Marks on the enemies it hits. Each counted hit restores 3% of your maximum mana; elites and bosses share the hit count with shields and count as 3 and 5 units respectively."
+      },
+      "ru": {
+        "desc": "<h1>Резонансный импульс: Резонанс печати</h1>Резонансный импульс немедленно подрывает Астральные печати на поражённых врагах. Каждое зачтённое попадание восстанавливает 3% вашего максимума маны; элитные враги и боссы делят счётчик попаданий со щитами и считаются за 3 и 5 единиц соответственно."
+      }
+    },
+    "item_G502_3": {
+      "en": {
+        "desc": "<h1>Resonance Pulse: Sigil Resonance</h1>The Resonance Pulse immediately detonates the Astral Marks on the enemies it hits. Each counted hit restores 4% of your maximum mana; elites and bosses share the hit count with shields and count as 3 and 5 units respectively."
+      },
+      "ru": {
+        "desc": "<h1>Резонансный импульс: Резонанс печати</h1>Резонансный импульс немедленно подрывает Астральные печати на поражённых врагах. Каждое зачтённое попадание восстанавливает 4% вашего максимума маны; элитные враги и боссы делят счётчик попаданий со щитами и считаются за 3 и 5 единиц соответственно."
+      }
+    },
+    "item_G503": {
+      "en": {
+        "desc": "<h1>Sigil Slash: Essence Return</h1>Each time Sigil Slash hits an enemy, restores 1% of your maximum health and 1% of your maximum mana. Both the forward shockwave and the return slash can trigger it."
+      },
+      "ru": {
+        "desc": "<h1>Печатный разрез: Возврат энергии</h1>Каждое попадание Печатного разреза по врагу восстанавливает 1% вашего максимального здоровья и 1% максимума маны. Срабатывает и от прямой ударной волны, и от обратного разреза."
+      }
+    },
+    "item_G503_2": {
+      "en": {
+        "desc": "<h1>Sigil Slash: Essence Return</h1>Each time Sigil Slash hits an enemy, restores 2% of your maximum health and 2% of your maximum mana. Both the forward shockwave and the return slash can trigger it."
+      },
+      "ru": {
+        "desc": "<h1>Печатный разрез: Возврат энергии</h1>Каждое попадание Печатного разреза по врагу восстанавливает 2% вашего максимального здоровья и 2% максимума маны. Срабатывает и от прямой ударной волны, и от обратного разреза."
+      }
+    },
+    "item_G503_3": {
+      "en": {
+        "desc": "<h1>Sigil Slash: Essence Return</h1>Each time Sigil Slash hits an enemy, restores 3% of your maximum health and 3% of your maximum mana. Both the forward shockwave and the return slash can trigger it."
+      },
+      "ru": {
+        "desc": "<h1>Печатный разрез: Возврат энергии</h1>Каждое попадание Печатного разреза по врагу восстанавливает 3% вашего максимального здоровья и 3% максимума маны. Срабатывает и от прямой ударной волны, и от обратного разреза."
+      }
+    },
+    "item_G504": {
+      "en": {
+        "desc": "<h1>Sigil Slash: Momentum</h1>Each forward shockwave grants 1 stack of Momentum, and every stack increases the damage of later shockwaves by 10%, up to 10 stacks (+100%). Split waves each add a stack; the return slash inherits the bonus without adding one. Each stack lasts 6 seconds on its own. Every cast costs 10 extra mana per stack already held."
+      },
+      "ru": {
+        "desc": "<h1>Печатный разрез: Нарастание</h1>Каждая прямая ударная волна даёт 1 заряд Нарастания, и каждый заряд повышает урон последующих волн на 10%, максимум 10 зарядов (+100%). Расщеплённые волны дают по заряду; обратный разрез наследует прибавку, но заряд не добавляет. Каждый заряд держится 6 сек отдельно. Каждое применение стоит дополнительно 10 ед. маны за каждый уже имеющийся заряд."
+      }
+    },
+    "item_G504_2": {
+      "en": {
+        "desc": "<h1>Sigil Slash: Momentum</h1>Each forward shockwave grants 1 stack of Momentum, and every stack increases the damage of later shockwaves by 15%, up to 10 stacks (+150%). Split waves each add a stack; the return slash inherits the bonus without adding one. Each stack lasts 6 seconds on its own. Every cast costs 10 extra mana per stack already held."
+      },
+      "ru": {
+        "desc": "<h1>Печатный разрез: Нарастание</h1>Каждая прямая ударная волна даёт 1 заряд Нарастания, и каждый заряд повышает урон последующих волн на 15%, максимум 10 зарядов (+150%). Расщеплённые волны дают по заряду; обратный разрез наследует прибавку, но заряд не добавляет. Каждый заряд держится 6 сек отдельно. Каждое применение стоит дополнительно 10 ед. маны за каждый уже имеющийся заряд."
+      }
+    },
+    "item_G504_3": {
+      "en": {
+        "desc": "<h1>Sigil Slash: Momentum</h1>Each forward shockwave grants 1 stack of Momentum, and every stack increases the damage of later shockwaves by 20%, up to 10 stacks (+200%). Split waves each add a stack; the return slash inherits the bonus without adding one. Each stack lasts 6 seconds on its own. Every cast costs 10 extra mana per stack already held."
+      },
+      "ru": {
+        "desc": "<h1>Печатный разрез: Нарастание</h1>Каждая прямая ударная волна даёт 1 заряд Нарастания, и каждый заряд повышает урон последующих волн на 20%, максимум 10 зарядов (+200%). Расщеплённые волны дают по заряду; обратный разрез наследует прибавку, но заряд не добавляет. Каждый заряд держится 6 сек отдельно. Каждое применение стоит дополнительно 10 ед. маны за каждый уже имеющийся заряд."
+      }
+    },
+    "item_G506": {
+      "en": {
+        "desc": "<h1>Astral Step: Three Paths as One</h1>Astral Step leaves three slash trails; the two secondary trails deal 100% of the primary trail’s slash and Astral Mark damage."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг: Три пути как один</h1>Астральный шаг оставляет три следа разреза; два побочных следа наносят 100% урона разреза и Астральной печати основного."
+      }
+    },
+    "item_G506_2": {
+      "en": {
+        "desc": "<h1>Astral Step: Three Paths as One</h1>Astral Step leaves three slash trails; the two secondary trails deal 150% of the primary trail’s slash and Astral Mark damage."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг: Три пути как один</h1>Астральный шаг оставляет три следа разреза; два побочных следа наносят 150% урона разреза и Астральной печати основного."
+      }
+    },
+    "item_G506_3": {
+      "en": {
+        "desc": "<h1>Astral Step: Three Paths as One</h1>Astral Step leaves three slash trails; the two secondary trails deal 200% of the primary trail’s slash and Astral Mark damage."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг: Три пути как один</h1>Астральный шаг оставляет три следа разреза; два побочных следа наносят 200% урона разреза и Астральной печати основного."
+      }
+    },
+    "item_G507": {
+      "en": {
+        "desc": "<h1>Shadow Remnant: Dual Realm Shift</h1>When you use Shadow Remnant’s blink, deals magical damage equal to 200% of your intelligence at both the origin and the destination."
+      },
+      "ru": {
+        "desc": "<h1>Остаточная тень: Смена двух миров</h1>При использовании рывка Остаточной тени наносит магический урон, равный 200% вашего интеллекта, и в точке отправления, и в точке прибытия."
+      }
+    },
+    "item_G507_2": {
+      "en": {
+        "desc": "<h1>Shadow Remnant: Dual Realm Shift</h1>When you use Shadow Remnant’s blink, deals magical damage equal to 250% of your intelligence at both the origin and the destination."
+      },
+      "ru": {
+        "desc": "<h1>Остаточная тень: Смена двух миров</h1>При использовании рывка Остаточной тени наносит магический урон, равный 250% вашего интеллекта, и в точке отправления, и в точке прибытия."
+      }
+    },
+    "item_G507_3": {
+      "en": {
+        "desc": "<h1>Shadow Remnant: Dual Realm Shift</h1>When you use Shadow Remnant’s blink, deals magical damage equal to 300% of your intelligence at both the origin and the destination."
+      },
+      "ru": {
+        "desc": "<h1>Остаточная тень: Смена двух миров</h1>При использовании рывка Остаточной тени наносит магический урон, равный 300% вашего интеллекта, и в точке отправления, и в точке прибытия."
+      }
+    },
+    "item_G508": {
+      "en": {
+        "desc": "Increases Shadow Remnant damage and reduces its cooldown."
+      },
+      "ru": {
+        "desc": "Повышает урон Остаточной тени и снижает время её перезарядки."
+      }
+    },
+    "item_G508_2": {
+      "en": {
+        "desc": "Increases Shadow Remnant damage and reduces its cooldown."
+      },
+      "ru": {
+        "desc": "Повышает урон Остаточной тени и снижает время её перезарядки."
+      }
+    },
+    "item_G508_3": {
+      "en": {
+        "desc": "Increases Shadow Remnant damage and reduces its cooldown."
+      },
+      "ru": {
+        "desc": "Повышает урон Остаточной тени и снижает время её перезарядки."
+      }
+    },
+    "item_G509": {
+      "en": {
+        "desc": "<h1>Astral Step: Starburst Mark</h1>When an Astral Mark detonates, deals other enemies within 300 magical damage equal to 60% of that detonation."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг: Звёздная печать</h1>При подрыве Астральной печати наносит остальным врагам в радиусе 300 магический урон, равный 60% этого подрыва."
+      }
+    },
+    "item_G509_2": {
+      "en": {
+        "desc": "<h1>Astral Step: Starburst Mark</h1>When an Astral Mark detonates, deals other enemies within 350 magical damage equal to 80% of that detonation."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг: Звёздная печать</h1>При подрыве Астральной печати наносит остальным врагам в радиусе 350 магический урон, равный 80% этого подрыва."
+      }
+    },
+    "item_G509_3": {
+      "en": {
+        "desc": "<h1>Astral Step: Starburst Mark</h1>When an Astral Mark detonates, deals other enemies within 400 magical damage equal to 100% of that detonation."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг: Звёздная печать</h1>При подрыве Астральной печати наносит остальным врагам в радиусе 400 магический урон, равный 100% этого подрыва."
+      }
+    },
+    "item_G510": {
+      "en": {
+        "desc": "<h1>Astral Step: Chrono Astral</h1>Astral Mark detonation damage is increased by 100% and delayed by 1.5 seconds. While it waits, every instance of your damage the target takes raises the detonation by a further 10%, up to 8 times."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг: Застывшая пустота</h1>Урон подрыва Астральной печати повышен на 100%, но отложен на 1,5 сек. За время ожидания каждый ваш удар по цели увеличивает подрыв ещё на 10%, максимум 8 раз."
+      }
+    },
+    "item_G510_2": {
+      "en": {
+        "desc": "<h1>Astral Step: Chrono Astral</h1>Astral Mark detonation damage is increased by 200% and delayed by 2 seconds. While it waits, every instance of your damage the target takes raises the detonation by a further 12%, up to 10 times."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг: Застывшая пустота</h1>Урон подрыва Астральной печати повышен на 200%, но отложен на 2 сек. За время ожидания каждый ваш удар по цели увеличивает подрыв ещё на 12%, максимум 10 раз."
+      }
+    },
+    "item_G510_3": {
+      "en": {
+        "desc": "<h1>Astral Step: Chrono Astral</h1>Astral Mark detonation damage is increased by 300% and delayed by 2.5 seconds. While it waits, every instance of your damage the target takes raises the detonation by a further 15%, up to 12 times."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг: Застывшая пустота</h1>Урон подрыва Астральной печати повышен на 300%, но отложен на 2,5 сек. За время ожидания каждый ваш удар по цели увеличивает подрыв ещё на 15%, максимум 12 раз."
+      }
+    },
+    "item_G511": {
+      "en": {
+        "desc": "<h1>Astral Step: Instant Severance</h1>Astral Marks detonate immediately instead, and casting Astral Step has a 40% chance to cost no charge."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг: Мгновенный разрыв</h1>Астральные печати подрываются сразу, а применение Астрального шага с вероятностью 40% не расходует заряд."
+      }
+    },
+    "item_G511_2": {
+      "en": {
+        "desc": "<h1>Astral Step: Instant Severance</h1>Astral Marks detonate immediately instead, and casting Astral Step has a 60% chance to cost no charge."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг: Мгновенный разрыв</h1>Астральные печати подрываются сразу, а применение Астрального шага с вероятностью 60% не расходует заряд."
+      }
+    },
+    "item_G511_3": {
+      "en": {
+        "desc": "<h1>Astral Step: Instant Severance</h1>Astral Marks detonate immediately instead, and casting Astral Step has an 80% chance to cost no charge."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг: Мгновенный разрыв</h1>Астральные печати подрываются сразу, а применение Астрального шага с вероятностью 80% не расходует заряд."
+      }
+    },
+    "item_G512": {
+      "en": {
+        "desc": "<h1>Resonance Pulse: Reverse Resonance</h1>The Resonance Pulse also sends out an inward-collapsing pulse that deals the same damage and pulls enemies towards the centre. The collapsing pulse grants no shield."
+      },
+      "ru": {
+        "desc": "<h1>Резонансный импульс: Обратный резонанс</h1>Резонансный импульс дополнительно порождает сходящуюся внутрь волну, которая наносит такой же урон и стягивает врагов к центру. Сходящаяся волна щит не даёт."
+      }
+    },
+    "item_G512_2": {
+      "en": {
+        "desc": "<h1>Resonance Pulse: Reverse Resonance</h1>The Resonance Pulse also sends out an inward-collapsing pulse that deals the same damage and pulls enemies towards the centre. The collapsing pulse grants no shield."
+      },
+      "ru": {
+        "desc": "<h1>Резонансный импульс: Обратный резонанс</h1>Резонансный импульс дополнительно порождает сходящуюся внутрь волну, которая наносит такой же урон и стягивает врагов к центру. Сходящаяся волна щит не даёт."
+      }
+    },
+    "item_G512_3": {
+      "en": {
+        "desc": "<h1>Resonance Pulse: Reverse Resonance</h1>The Resonance Pulse also sends out an inward-collapsing pulse that deals the same damage and pulls enemies towards the centre. The collapsing pulse grants no shield."
+      },
+      "ru": {
+        "desc": "<h1>Резонансный импульс: Обратный резонанс</h1>Резонансный импульс дополнительно порождает сходящуюся внутрь волну, которая наносит такой же урон и стягивает врагов к центру. Сходящаяся волна щит не даёт."
+      }
+    },
+    "item_G514": {
+      "en": {
+        "desc": "<h1>Netherwalker: Magic Unto Void</h1>While Netherwalker is active, each ability you successfully cast yourself stores magical damage equal to 500% of your intelligence, up to 10 times. When the state ends, all of it is dealt at once to enemies within 1000 of you. The ultimate itself, items, toggles and automatically triggered casts do not count."
+      },
+      "ru": {
+        "desc": "<h1>Странник потустороннего: Магия обращается в пустоту</h1>Пока действует Странник потустороннего, каждое успешно применённое вами вручную умение накапливает магический урон, равный 500% вашего интеллекта, максимум 10 раз. По окончании состояния весь урон наносится разом врагам в радиусе 1000 вокруг вас. Сам ультимейт, предметы, переключатели и автоматические срабатывания не учитываются."
+      }
+    },
+    "item_G514_2": {
+      "en": {
+        "desc": "<h1>Netherwalker: Magic Unto Void</h1>While Netherwalker is active, each ability you successfully cast yourself stores magical damage equal to 750% of your intelligence, up to 10 times. When the state ends, all of it is dealt at once to enemies within 1000 of you. The ultimate itself, items, toggles and automatically triggered casts do not count."
+      },
+      "ru": {
+        "desc": "<h1>Странник потустороннего: Магия обращается в пустоту</h1>Пока действует Странник потустороннего, каждое успешно применённое вами вручную умение накапливает магический урон, равный 750% вашего интеллекта, максимум 10 раз. По окончании состояния весь урон наносится разом врагам в радиусе 1000 вокруг вас. Сам ультимейт, предметы, переключатели и автоматические срабатывания не учитываются."
+      }
+    },
+    "item_G514_3": {
+      "en": {
+        "desc": "<h1>Netherwalker: Magic Unto Void</h1>While Netherwalker is active, each ability you successfully cast yourself stores magical damage equal to 1000% of your intelligence, up to 10 times. When the state ends, all of it is dealt at once to enemies within 1000 of you. The ultimate itself, items, toggles and automatically triggered casts do not count."
+      },
+      "ru": {
+        "desc": "<h1>Странник потустороннего: Магия обращается в пустоту</h1>Пока действует Странник потустороннего, каждое успешно применённое вами вручную умение накапливает магический урон, равный 1000% вашего интеллекта, максимум 10 раз. По окончании состояния весь урон наносится разом врагам в радиусе 1000 вокруг вас. Сам ультимейт, предметы, переключатели и автоматические срабатывания не учитываются."
+      }
+    },
+    "item_G515": {
+      "en": {
+        "desc": "<h1>Netherwalker: Converging Erosions</h1>When Netherwalker ends, all remaining Void Erosion damage you have applied is dealt immediately and increased by 10%."
+      },
+      "ru": {
+        "desc": "<h1>Странник потустороннего: Слияние эрозий</h1>По окончании Странника потустороннего весь оставшийся урон Пустотной эрозии, наложенный вами, наносится немедленно и увеличивается на 10%."
+      }
+    },
+    "item_G515_2": {
+      "en": {
+        "desc": "<h1>Netherwalker: Converging Erosions</h1>When Netherwalker ends, all remaining Void Erosion damage you have applied is dealt immediately and increased by 25%."
+      },
+      "ru": {
+        "desc": "<h1>Странник потустороннего: Слияние эрозий</h1>По окончании Странника потустороннего весь оставшийся урон Пустотной эрозии, наложенный вами, наносится немедленно и увеличивается на 25%."
+      }
+    },
+    "item_G515_3": {
+      "en": {
+        "desc": "<h1>Netherwalker: Converging Erosions</h1>When Netherwalker ends, all remaining Void Erosion damage you have applied is dealt immediately and increased by 40%."
+      },
+      "ru": {
+        "desc": "<h1>Странник потустороннего: Слияние эрозий</h1>По окончании Странника потустороннего весь оставшийся урон Пустотной эрозии, наложенный вами, наносится немедленно и увеличивается на 40%."
+      }
+    },
+    "item_G518": {
+      "en": {
+        "desc": "<h1>Ancestral Astral Step</h1>Astral Step no longer applies Astral Marks, becomes a non-charged ability, ignores bonus charges, and has a 30 second base cooldown. After the slash, every enemy hit along the path takes 6 further interleaved slashes, each dealing magical damage equal to 200% of your intelligence."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг предков</h1>Астральный шаг больше не накладывает Астральные печати, принудительно становится способностью без зарядов, прибавки к зарядам не действуют, базовая перезарядка — 30 сек. После разреза все задетые на пути враги получают ещё 6 перекрёстных разрезов, каждый — магический урон, равный 200% вашего интеллекта."
+      }
+    },
+    "item_G518_2": {
+      "en": {
+        "desc": "<h1>Ancestral Astral Step</h1>Astral Step no longer applies Astral Marks, becomes a non-charged ability, ignores bonus charges, and has a 30 second base cooldown. After the slash, every enemy hit along the path takes 6 further interleaved slashes, each dealing magical damage equal to 300% of your intelligence."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг предков</h1>Астральный шаг больше не накладывает Астральные печати, принудительно становится способностью без зарядов, прибавки к зарядам не действуют, базовая перезарядка — 30 сек. После разреза все задетые на пути враги получают ещё 6 перекрёстных разрезов, каждый — магический урон, равный 300% вашего интеллекта."
+      }
+    },
+    "item_G518_3": {
+      "en": {
+        "desc": "<h1>Ancestral Astral Step</h1>Astral Step no longer applies Astral Marks, becomes a non-charged ability, ignores bonus charges, and has a 30 second base cooldown. After the slash, every enemy hit along the path takes 6 further interleaved slashes, each dealing magical damage equal to 400% of your intelligence."
+      },
+      "ru": {
+        "desc": "<h1>Астральный шаг предков</h1>Астральный шаг больше не накладывает Астральные печати, принудительно становится способностью без зарядов, прибавки к зарядам не действуют, базовая перезарядка — 30 сек. После разреза все задетые на пути враги получают ещё 6 перекрёстных разрезов, каждый — магический урон, равный 400% вашего интеллекта."
+      }
+    },
+    "item_G519": {
+      "en": {
+        "desc": "<h1>Sigil Slash: Threefold Finish</h1>The first shockwave is unchanged; the second releases 2 parallel shockwaves 250 units apart; the third releases 3 in a fan, angled 15 degrees to either side. Waves can hit the same enemy more than once and the damage stacks. Cast animation and repeat rate are 20% slower (0.8x animation, 0.5 seconds between waves)."
+      },
+      "ru": {
+        "desc": "<h1>Печатный разрез: Тройное завершение</h1>Первая ударная волна не меняется; вторая выпускает 2 параллельные волны на расстоянии 250 друг от друга; третья — 3 веером, с отклонением по 15 градусов в каждую сторону. Волны могут попадать по одному врагу несколько раз, урон складывается. Анимация применения и скорость серии снижены на 20% (0,8x анимации, 0,5 сек между волнами)."
+      }
+    },
+    "item_G519_2": {
+      "en": {
+        "desc": "<h1>Sigil Slash: Threefold Finish</h1>Sigil Slash damage is increased by 30%. The first shockwave is unchanged; the second releases 2 parallel shockwaves 250 units apart; the third releases 3 in a fan, angled 15 degrees to either side. Waves can hit the same enemy more than once and the damage stacks. Cast animation and repeat rate are 20% slower (0.8x animation, 0.5 seconds between waves)."
+      },
+      "ru": {
+        "desc": "<h1>Печатный разрез: Тройное завершение</h1>Урон Печатного разреза повышен на 30%. Первая ударная волна не меняется; вторая выпускает 2 параллельные волны на расстоянии 250 друг от друга; третья — 3 веером, с отклонением по 15 градусов в каждую сторону. Волны могут попадать по одному врагу несколько раз, урон складывается. Анимация применения и скорость серии снижены на 20% (0,8x анимации, 0,5 сек между волнами)."
+      }
+    },
+    "item_G519_3": {
+      "en": {
+        "desc": "<h1>Sigil Slash: Threefold Finish</h1>Sigil Slash damage is increased by 60%. The first shockwave is unchanged; the second releases 2 parallel shockwaves 250 units apart; the third releases 3 in a fan, angled 15 degrees to either side. Waves can hit the same enemy more than once and the damage stacks. Cast animation and repeat rate are 20% slower (0.8x animation, 0.5 seconds between waves)."
+      },
+      "ru": {
+        "desc": "<h1>Печатный разрез: Тройное завершение</h1>Урон Печатного разреза повышен на 60%. Первая ударная волна не меняется; вторая выпускает 2 параллельные волны на расстоянии 250 друг от друга; третья — 3 веером, с отклонением по 15 градусов в каждую сторону. Волны могут попадать по одному врагу несколько раз, урон складывается. Анимация применения и скорость серии снижены на 20% (0,8x анимации, 0,5 сек между волнами)."
+      }
+    },
+    "item_G520": {
+      "en": {
+        "desc": "<h1>Resonance Pulse: Void Step Resonance</h1>When Astral Step lands, there is a 10% chance to trigger a Resonance Pulse automatically. That trigger costs no mana or charge and starts no cooldown."
+      },
+      "ru": {
+        "desc": "<h1>Резонансный импульс: Резонанс шага в пустоту</h1>При приземлении Астрального шага с вероятностью 10% автоматически срабатывает Резонансный импульс. Это срабатывание не тратит ману и заряды и не уходит в перезарядку."
+      }
+    },
+    "item_G520_2": {
+      "en": {
+        "desc": "<h1>Resonance Pulse: Void Step Resonance</h1>When Astral Step lands, there is a 20% chance to trigger a Resonance Pulse automatically. That trigger costs no mana or charge and starts no cooldown."
+      },
+      "ru": {
+        "desc": "<h1>Резонансный импульс: Резонанс шага в пустоту</h1>При приземлении Астрального шага с вероятностью 20% автоматически срабатывает Резонансный импульс. Это срабатывание не тратит ману и заряды и не уходит в перезарядку."
+      }
+    },
+    "item_G520_3": {
+      "en": {
+        "desc": "<h1>Resonance Pulse: Void Step Resonance</h1>When Astral Step lands, there is a 30% chance to trigger a Resonance Pulse automatically. That trigger costs no mana or charge and starts no cooldown."
+      },
+      "ru": {
+        "desc": "<h1>Резонансный импульс: Резонанс шага в пустоту</h1>При приземлении Астрального шага с вероятностью 30% автоматически срабатывает Резонансный импульс. Это срабатывание не тратит ману и заряды и не уходит в перезарядку."
+      }
+    },
+    "item_MT001": {
+      "en": {
+        "desc": "Exclusive to the Mine Tower. Raises shield, armour and health; suits a shield-defence build."
+      },
+      "ru": {
+        "desc": "Только для Тайной башни рудника. Повышает щит, броню и здоровье; подходит для защитных сборок на щитах."
+      }
+    },
+    "item_MT003": {
+      "en": {
+        "desc": "Exclusive to the Shadowy Thicket Tower. Raises health, regeneration and magic resistance, shoring up sustained fighting."
+      },
+      "ru": {
+        "desc": "Только для Тайной башни тёмного леса. Повышает здоровье, восстановление и сопротивление магии, усиливая живучесть в затяжном бою."
+      }
+    },
+    "item_MT005": {
+      "en": {
+        "desc": "Exclusive to the Fading Shadows Tower. Raises movement speed, agility and attack speed; suits a mobile build."
+      },
+      "ru": {
+        "desc": "Только для Тайной башни ускользающих теней. Повышает скорость передвижения, ловкость и скорость атаки; подходит для манёвренного боя."
+      }
+    },
+    "item_MTB001": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука."
+      }
+    },
+    "item_MTB002": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука."
+      }
+    },
+    "item_MTB003": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука."
+      }
+    },
+    "item_MTB004": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука."
+      }
+    },
+    "item_MTB005": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука."
+      }
+    },
+    "item_MTB006": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука."
+      }
+    },
+    "item_MTB007": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука."
+      }
+    },
+    "item_MTB008": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука."
+      }
+    },
+    "item_MTB009": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука."
+      }
+    },
+    "item_MTB001_easy": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 70% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 70% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB002_easy": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 70% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 70% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB003_easy": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 70% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 70% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB004_easy": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 70% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 70% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB005_easy": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 70% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 70% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB006_easy": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 70% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 70% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB007_easy": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 70% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 70% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB008_easy": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 70% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 70% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB009_easy": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 70% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 70% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB001_hard": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 150% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 150% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB002_hard": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 150% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 150% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB003_hard": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 150% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 150% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB004_hard": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 150% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 150% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB005_hard": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 150% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 150% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB006_hard": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 150% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 150% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB007_hard": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 150% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 150% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB008_hard": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 150% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 150% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_MTB009_hard": {
+      "en": {
+        "desc": "Opened back at base after a successful extraction, drawing rewards at random from the matching drop pool as many times as the chest is configured for. Yields 150% of the normal version’s item count, rounded to the nearest whole."
+      },
+      "ru": {
+        "desc": "Открывается на базе после успешной эвакуации: выдаёт случайные награды из соответствующего пула столько раз, сколько задано для сундука. Количество предметов — 150% от обычной версии, с округлением до целого."
+      }
+    },
+    "item_P272": {
+      "en": {
+        "desc": "<h1>Cube Will Expansion</h1>Using it unlocks this season’s Cube Will expansion benefits.<br>1. Unlocks the separate tower talent tree, 31 research nodes in all.<br>2. Grants entry to the Mine, Shadowy Thicket and Fading Shadows towers.<br>You still have to unlock the matching main map, and server availability and the daily entry limit still apply.<br>It cannot be used again while active, and doing so consumes no pact.",
+        "lore": "A green crystal core holds the cube’s will, and the silver-grey engraving marks the way to the three towers."
+      },
+      "ru": {
+        "desc": "<h1>Набор воли куба</h1>При использовании открывает привилегии набора воли куба текущего сезона.<br>1. Открывает отдельное древо талантов башни — всего 31 узел исследования.<br>2. Даёт доступ в Тайные башни рудника, тёмного леса и ускользающих теней.<br>Соответствующую основную карту всё равно нужно открыть, а также действуют состояние сервера и дневной лимит входов.<br>Пока набор активен, повторно использовать его нельзя, и договор при этом не тратится.",
+        "lore": "Зелёное кристаллическое ядро хранит волю куба, а серебристо-серая гравировка указывает путь к трём тайным башням."
+      }
+    },
+    "item_P273": {
+      "en": {
+        "desc": "<h1>Cocktail: Cube Resonance</h1>Each bottle permanently grants %ability_permanent_all_stats_pct%%% to all attributes and %ability_permanent_luck% luck, up to 5 times.<br>Each drink also grants %potion_base_health_pct%%% maximum health for %ability_duration% seconds. Drinking again refreshes the duration; the temporary effect does not stack.<br>Once the permanent benefit is capped, further drinks give only the temporary effect.",
+        "lore": "The emerald liquor mirrors stacked cubes, and drinking it you feel the pulse deep in the towers."
+      },
+      "ru": {
+        "desc": "<h1>Коктейль: Резонанс куба</h1>Каждая бутылка навсегда даёт %ability_permanent_all_stats_pct%%% ко всем характеристикам и %ability_permanent_luck% ед. удачи, максимум 5 раз.<br>Каждый приём также даёт %potion_base_health_pct%%% к максимальному здоровью на %ability_duration% сек. Повторный приём обновляет длительность; временный эффект не складывается.<br>После достижения предела постоянной прибавки дальнейшие приёмы дают только временный эффект.",
+        "lore": "Изумрудный напиток отражает череду кубов, и с глотком чувствуешь пульс в глубине тайных башен."
+      }
+    },
+    "item_s_0323": {
+      "en": {
+        "desc": "<h1>Ascension: Focus Bow</h1>Ascending appends the Fate Stone’s random attributes to the matching ancestral equipment."
+      },
+      "ru": {
+        "desc": "<h1>Вознесение: Лук концентрации</h1>Вознесение добавляет случайные свойства грани судьбы к соответствующему снаряжению предков."
+      }
+    },
+    "item_s_0654": {
+      "en": {
+        "desc": "<h1>Ascension: Hunter’s Chain</h1>Ascending appends the Fate Stone’s random attributes to the matching ancestral equipment."
+      },
+      "ru": {
+        "desc": "<h1>Вознесение: Охотничья цепь</h1>Вознесение добавляет случайные свойства грани судьбы к соответствующему снаряжению предков."
+      }
+    },
+    "item_s_0655": {
+      "en": {
+        "desc": "<h1>Ascension: Blade of Essence</h1>Ascending appends the Fate Stone’s random attributes to the matching ancestral equipment."
+      },
+      "ru": {
+        "desc": "<h1>Вознесение: Клинок первоосновы</h1>Вознесение добавляет случайные свойства грани судьбы к соответствующему снаряжению предков."
+      }
+    },
+    "item_s_0656": {
+      "en": {
+        "desc": "<h1>Ascension: Hourglass of Lingering Time</h1>Ascending appends the Fate Stone’s random attributes to the matching ancestral equipment."
+      },
+      "ru": {
+        "desc": "<h1>Вознесение: Песочные часы замершего времени</h1>Вознесение добавляет случайные свойства грани судьбы к соответствующему снаряжению предков."
+      }
+    },
+    "item_s_0658": {
+      "en": {
+        "desc": "<h1>Ascension: Crystal of Essence</h1>Ascending appends the Fate Stone’s random attributes to the matching ancestral equipment."
+      },
+      "ru": {
+        "desc": "<h1>Вознесение: Кристалл первоосновы</h1>Вознесение добавляет случайные свойства грани судьбы к соответствующему снаряжению предков."
+      }
+    },
+    "item_s_MT002": {
+      "en": {
+        "desc": "<h1>Ascension: Rocksplit Echo</h1>Ascending appends the Fate Stone’s random attributes to the matching ancestral equipment."
+      },
+      "ru": {
+        "desc": "<h1>Вознесение: Эхо раскола скал</h1>Вознесение добавляет случайные свойства грани судьбы к соответствующему снаряжению предков."
+      }
+    },
+    "item_s_MT004": {
+      "en": {
+        "desc": "<h1>Ascension: Duskroot Draw</h1>Ascending appends the Fate Stone’s random attributes to the matching ancestral equipment."
+      },
+      "ru": {
+        "desc": "<h1>Вознесение: Вытяжка сумеречного корня</h1>Вознесение добавляет случайные свойства грани судьбы к соответствующему снаряжению предков."
+      }
+    },
+    "item_s_MT006": {
+      "en": {
+        "desc": "<h1>Ascension: Glimmer Edge</h1>Ascending appends the Fate Stone’s random attributes to the matching ancestral equipment."
+      },
+      "ru": {
+        "desc": "<h1>Вознесение: Острие проблеска</h1>Вознесение добавляет случайные свойства грани судьбы к соответствующему снаряжению предков."
+      }
+    },
+    "item_H0001": {
+      "en": {
+        "lore": "Home to the life soul of Waterfowl Dance — the wandering swordsman, serene and shadowless."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Танца водоплавающей птицы — странствующего мечника, безмятежного и не отбрасывающего тени."
+      }
+    },
+    "item_H0002": {
+      "en": {
+        "lore": "Home to the life soul of Waterfowl Dance — the wandering swordsman, serene and shadowless."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Танца водоплавающей птицы — странствующего мечника, безмятежного и не отбрасывающего тени."
+      }
+    },
+    "item_H0003": {
+      "en": {
+        "lore": "Home to the life soul of Tiny’s Boulder Finale."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Каменного финала — Тайни."
+      }
+    },
+    "item_H0004": {
+      "en": {
+        "lore": "Home to the life soul of Tiny’s Boulder Finale."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Каменного финала — Тайни."
+      }
+    },
+    "item_H0005": {
+      "en": {
+        "lore": "Home to the life soul of Tidehunter’s Tidal Wave."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Приливной волны — Тайдхантера."
+      }
+    },
+    "item_H0006": {
+      "en": {
+        "lore": "Home to the life soul of Tidehunter’s Tidal Wave."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Приливной волны — Тайдхантера."
+      }
+    },
+    "item_H0007": {
+      "en": {
+        "lore": "Home to the life soul of the Beast’s Roar."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Рёва — Зверя."
+      }
+    },
+    "item_H0008": {
+      "en": {
+        "lore": "Home to the life soul of the Beast’s Roar."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Рёва — Зверя."
+      }
+    },
+    "item_H0009": {
+      "en": {
+        "lore": "Home to the life soul of the Skullbarren Warrior’s Leaping Slam."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Удара в прыжке — Воина пустых черепов."
+      }
+    },
+    "item_H0010": {
+      "en": {
+        "lore": "Home to the life soul of the Skullbarren Warrior’s Leaping Slam."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Удара в прыжке — Воина пустых черепов."
+      }
+    },
+    "item_H0011": {
+      "en": {
+        "lore": "Home to the life soul of the Icefield Lord’s Leaping Cleave."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Рассечения в прыжке — Владыки ледяных полей."
+      }
+    },
+    "item_H0012": {
+      "en": {
+        "lore": "Home to the life soul of the Icefield Lord’s Leaping Cleave."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Рассечения в прыжке — Владыки ледяных полей."
+      }
+    },
+    "item_H0013": {
+      "en": {
+        "lore": "Home to the life soul of the Astral Path."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Астрального пути."
+      }
+    },
+    "item_H0014": {
+      "en": {
+        "lore": "Home to the life soul of the Astral Path."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Астрального пути."
+      }
+    },
+    "item_H0015": {
+      "en": {
+        "lore": "Home to the life soul of the Blackfeather Apostle’s Radiant Shock."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Лучистого удара — Апостола чёрного пера."
+      }
+    },
+    "item_H0016": {
+      "en": {
+        "lore": "Home to the life soul of the Blackfeather Apostle’s Radiant Shock."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Лучистого удара — Апостола чёрного пера."
+      }
+    },
+    "item_H0017": {
+      "en": {
+        "lore": "Home to the life soul of the Shark Bully’s Anchor Slam."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Удара якорем — Акульего задиры."
+      }
+    },
+    "item_H0018": {
+      "en": {
+        "lore": "Home to the life soul of the Shark Bully’s Anchor Slam."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Удара якорем — Акульего задиры."
+      }
+    },
+    "item_H0019": {
+      "en": {
+        "lore": "Home to the life soul of Storm Spirit’s Storm Blink."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Штормового скачка — Шторм Спирита."
+      }
+    },
+    "item_H0020": {
+      "en": {
+        "lore": "Home to the life soul of Storm Spirit’s Storm Blink."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Штормового скачка — Шторм Спирита."
+      }
+    },
+    "item_H0021": {
+      "en": {
+        "lore": "Home to the life soul of the Thunderclap Swordsman’s Predator Blades."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Клинков хищника — Громового мечника."
+      }
+    },
+    "item_H0022": {
+      "en": {
+        "lore": "Home to the life soul of the Thunderclap Swordsman’s Predator Blades."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Клинков хищника — Громового мечника."
+      }
+    },
+    "item_H0023": {
+      "en": {
+        "lore": "Home to the life soul of the Void Lord’s Void Domain."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Области пустоты — Владыки пустоты."
+      }
+    },
+    "item_H0024": {
+      "en": {
+        "lore": "Home to the life soul of the Void Lord’s Void Domain."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Области пустоты — Владыки пустоты."
+      }
+    },
+    "item_H0025": {
+      "en": {
+        "lore": "Home to the life soul of the Monkey King’s Multi-Staff Strike."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Множественного удара посохом — Царя обезьян."
+      }
+    },
+    "item_H0026": {
+      "en": {
+        "lore": "Home to the life soul of the Monkey King’s Multi-Staff Strike."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Множественного удара посохом — Царя обезьян."
+      }
+    },
+    "item_H0027": {
+      "en": {
+        "lore": "Home to the life soul of the Bat Wraith’s Shadow Hunt."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Теневой охоты — Летучего призрака."
+      }
+    },
+    "item_H0028": {
+      "en": {
+        "lore": "Home to the life soul of the Bat Wraith’s Shadow Hunt."
+      },
+      "ru": {
+        "lore": "Хранит душу жизни Теневой охоты — Летучего призрака."
+      }
+    }
   }
 }
