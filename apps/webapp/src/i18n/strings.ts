@@ -433,11 +433,23 @@ export interface Strings {
     behavior: Record<'passive' | 'active' | 'toggle', string>;
     affectsLabel: (team: 'enemy' | 'friendly' | 'both', scope: 'units' | 'heroes' | 'creeps') => string;
   };
+  /**
+   * The addon's own name for each item category, in the reader's language.
+   *
+   * `ItemFull.type` is the pak's English key — `equip`, `gem`, `stone` — and
+   * the site drew it raw, so an English word appeared on a Russian page and a
+   * Chinese one. These are the addon's own labels, from its `ak_item_type_*`
+   * tokens.
+   */
+  itemTypes: Record<string, string>;
   /** The catalogue grid at `/items`. */
   itemsPage: {
     heading: string;
     searchLabel: string;
     searchPlaceholder: string;
+    filterType: string;
+    filterTier: string;
+    filterRarity: string;
     /** `1,885 items`, when nothing is filtered. */
     total: (n: number) => string;
     /** `42 of 1,885`, when something is. */
@@ -878,10 +890,27 @@ const en: Strings = {
     affectsLabel: (team, scope) =>
       `${{ enemy: 'Enemy', friendly: 'Allied', both: 'All' }[team]} ${{ units: 'units', heroes: 'heroes', creeps: 'creeps' }[scope]}`,
   },
+  itemTypes: {
+    equip: 'Equipment',
+    gem: 'Rune',
+    stone: 'Fate Stone',
+    potion: 'Potion',
+    blueprint: 'Recipe',
+    material: 'Material',
+    special: 'Special',
+    identity: 'Identity Tag',
+    change: 'Transmog',
+    soul: 'Life Soul',
+    pet: 'Pet',
+    unknown: 'Other',
+  },
   itemsPage: {
     heading: 'Items',
     searchLabel: 'Search items by name or id',
     searchPlaceholder: 'Name or id — "focus bow", "item_G502"',
+    filterType: 'Type',
+    filterTier: 'Tier',
+    filterRarity: 'Rarity',
     total: (n) => `${n.toLocaleString()} items`,
     found: (n, total) => `${n.toLocaleString()} of ${total.toLocaleString()}`,
     none: 'Nothing matches that.',
@@ -1299,10 +1328,27 @@ const ru: Strings = {
     affectsLabel: (team, scope) =>
       `${{ enemy: 'вражеских', friendly: 'союзных', both: 'всех' }[team]} ${{ units: 'юнитов', heroes: 'героев', creeps: 'крипов' }[scope]}`,
   },
+  itemTypes: {
+    equip: 'Снаряжение',
+    gem: 'Руна',
+    stone: 'Грань судьбы',
+    potion: 'Зелье',
+    blueprint: 'Рецепт',
+    material: 'Материал',
+    special: 'Особое',
+    identity: 'Именной жетон',
+    change: 'Облик',
+    soul: 'Душа жизни',
+    pet: 'Питомец',
+    unknown: 'Прочее',
+  },
   itemsPage: {
     heading: 'Предметы',
     searchLabel: 'Поиск предметов по названию или идентификатору',
     searchPlaceholder: 'Название или id — «лук», «item_G502»',
+    filterType: 'Тип',
+    filterTier: 'Тир',
+    filterRarity: 'Редкость',
     total: (n) => `${n.toLocaleString('ru-RU')} предметов`,
     found: (n, total) => `${n.toLocaleString('ru-RU')} из ${total.toLocaleString('ru-RU')}`,
     none: 'Ничего не найдено.',
@@ -1715,10 +1761,27 @@ const zh: Strings = {
     affectsLabel: (team, scope) =>
       `${{ enemy: '敌方', friendly: '友方', both: '全体' }[team]}${{ units: '单位', heroes: '英雄', creeps: '小兵' }[scope]}`,
   },
+  itemTypes: {
+    equip: '装备',
+    gem: '符印',
+    stone: '命石',
+    potion: '药水',
+    blueprint: '图纸',
+    material: '材料',
+    special: '特殊',
+    identity: '身份标签',
+    change: '外观',
+    soul: '命魂',
+    pet: '宠物',
+    unknown: '其他',
+  },
   itemsPage: {
     heading: '物品',
     searchLabel: '按名称或 ID 搜索物品',
     searchPlaceholder: '名称或 ID —「凝心弓」「item_G502」',
+    filterType: '类型',
+    filterTier: '等级',
+    filterRarity: '品质',
     total: (n) => `${n.toLocaleString()} 件物品`,
     found: (n, total) => `${n.toLocaleString()} / ${total.toLocaleString()}`,
     none: '没有匹配的物品。',

@@ -128,7 +128,7 @@ function ItemBody({ item }: { item: ItemSummary }) {
               {rarityLabel(strings, item.quality)}
             </span>
             {item.level > 0 && <Badge tone="tier">T{item.level}</Badge>}
-            <span className={styles.type}>{item.type}</span>
+            <span className={styles.type}>{strings.itemTypes[item.type] ?? item.type}</span>
             {/* Only when the pak actually restricts it — most items have no
                 season and saying "every season" on all of them is noise. */}
             {full?.seasons !== undefined && full.seasons.length > 0 && (

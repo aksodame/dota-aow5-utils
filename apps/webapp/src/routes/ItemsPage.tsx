@@ -1,18 +1,29 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { iconUrl, type ItemSummary } from 'aow5-shared/data';
-import { Input } from '@/ui';
+import { Icon, Input, Panel } from '@/ui';
 import { useApp } from '@/data/AppData';
 import { qualityVar } from '@/components/Tile';
+import {
+  EMPTY_ITEM_FILTERS,
+  ItemFilters,
+  isItemFiltered,
+  type ItemFilterState,
+} from '@/components/ItemFilters';
 import { itemPath, Link } from '@/router';
 import styles from './ItemsPage.module.css';
 
 /**
- * The catalogue: every playable item, as a grid.
+ * The catalogue: filters on the left, items on the right.
  *
- * The picker answers "which of these fits this slot"; this answers "what is in
- * this game". So it is unfiltered by slot kind, it is a page rather than a
- * dialog, and every tile is a real link — which is what makes an item's page
- * reachable by walking rather than only by knowing its id.
+ * **The browse page's layout, deliberately.** Same two columns, same 260px
+ * sidebar, same search bar in the same place above the same panel — because it
+ * is the same kind of screen and somebody who has used one should not have to
+ * learn the other. It shares that page's sidebar stylesheet for the same
+ * reason; see `ItemFilters`.
+ *
+ * Where it differs is that nothing here is fetched. The whole index is already
+ * in memory for the picker, so filtering is an array pass rather than a query,
+ * which is why there is no debounce, no windowing and no skeleton.
  *
  * ## Everything at once, on purpose
  *
@@ -27,6 +38,7 @@ export function ItemsPage() {
   const t = strings.itemsPage;
 
   const [query, setQuery] = useState('');
+  const [filters, setFilters] = useState<ItemFilterState>(EMPTY_ITEM_FILTERS);
   /*
    * The filter runs over ~1,900 rows and rebuilds a grid of that many nodes,
    * which is enough to make a fast typist feel each keystroke. Deferring lets
@@ -35,58 +47,86 @@ export function ItemsPage() {
   const deferred = useDeferredValue(query);
 
   const items = core?.items ?? [];
-  const shown = useMemo(() => matching(items, deferred), [items, deferred]);
+
+  /** The categories this table actually has, in the order the chips draw them. */
+  const types = useMemo(() => [...new Set(items.map((i) => i.type))].sort(), [items]);
+
+  const shown = useMemo(() => matching(items, deferred, filters), [items, deferred, filters]);
+  const narrowed = deferred.trim() !== '' || isItemFiltered(filters);
 
   return (
     <div className={styles.page}>
-      <header className={styles.head}>
-        <h1 className={styles.heading}>{t.heading}</h1>
+      <ItemFilters value={filters} onChange={setFilters} types={types} />
+
+      {/* The list column: its own search bar, then the grid. Siblings, so the
+          sidebar's first line and the search bar's line up — as on browse. */}
+      <div className={styles.column}>
+        {/*
+          No button, for the reason the browse search has none: it filters as
+          you type, so a control whose only meaning is "now" is worth less than
+          its width. Enter still submits, which costs nothing.
+        */}
+        <form className={styles.search} role="search" onSubmit={(event) => event.preventDefault()}>
+          <Icon.Search size={16} className={styles.searchIcon} />
+          <Input
+            className={styles.searchInput}
+            type="search"
+            value={query}
+            placeholder={t.searchPlaceholder}
+            aria-label={t.searchLabel}
+            autoComplete="off"
+            spellCheck={false}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </form>
+
         <p className={styles.count}>
-          {shown.length === items.length ? t.total(items.length) : t.found(shown.length, items.length)}
+          {narrowed ? t.found(shown.length, items.length) : t.total(items.length)}
         </p>
-      </header>
 
-      <div className={styles.searchRow}>
-        <Input
-          type="search"
-          className={styles.search}
-          value={query}
-          placeholder={t.searchPlaceholder}
-          aria-label={t.searchLabel}
-          autoComplete="off"
-          spellCheck={false}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <Panel flush>
+          {core === null ? (
+            <p className={styles.empty}>{strings.itemPage.loading}</p>
+          ) : shown.length === 0 ? (
+            <p className={styles.empty}>{t.none}</p>
+          ) : (
+            <ul className={styles.grid}>
+              {shown.map((item) => (
+                <ItemCell key={item.id} item={item} />
+              ))}
+            </ul>
+          )}
+        </Panel>
       </div>
-
-      {core === null ? (
-        <p className={styles.empty}>{strings.itemPage.loading}</p>
-      ) : shown.length === 0 ? (
-        <p className={styles.empty}>{t.none}</p>
-      ) : (
-        <ul className={styles.grid}>
-          {shown.map((item) => (
-            <ItemCell key={item.id} item={item} />
-          ))}
-        </ul>
-      )}
     </div>
   );
 }
 
 /**
- * Name and id, both.
+ * Name and id for the text, then the three facets.
  *
  * `ItemSummary.search` is already `"<name> <id>"` lowercased — the picker's
  * search field is built on it — so matching an id costs nothing extra and
  * `item_G502` finds the rune somebody read in a changelog. A query with spaces
- * in it has to match every word rather than the whole phrase, so "ancestral
- * bow" finds `Ancestral: Focus Bow`.
+ * has to match every word rather than the whole phrase, so "ancestral bow"
+ * finds `Ancestral: Focus Bow`.
+ *
+ * The facets are `AND`ed with the query and with each other, and an empty list
+ * means "every one of these" rather than "none" — the shape every filter on
+ * this site uses.
  */
-function matching(items: ItemSummary[], query: string): ItemSummary[] {
+function matching(items: ItemSummary[], query: string, filters: ItemFilterState): ItemSummary[] {
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return items;
-  return items.filter((item) => words.every((word) => item.search.includes(word)));
+  const { types, tiers, qualities } = filters;
+
+  if (words.length === 0 && !isItemFiltered(filters)) return items;
+
+  return items.filter((item) => {
+    if (types.length > 0 && !types.includes(item.type)) return false;
+    if (tiers.length > 0 && !tiers.includes(item.level)) return false;
+    if (qualities.length > 0 && !qualities.includes(item.quality)) return false;
+    return words.every((word) => item.search.includes(word));
+  });
 }
 
 /**

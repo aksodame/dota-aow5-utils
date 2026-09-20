@@ -1,77 +1,79 @@
 /**
- * The catalogue grid.
+ * The catalogue, laid out as the browse page is.
  *
- * Ten to a row at full width, which is the shape asked for and also the one
- * that makes 1,885 items scannable: wide enough that a tile is recognisable by
- * its art, narrow enough that the eye takes a row at a glance.
+ * The frame — two columns, the 260px sidebar, the search bar above a panel —
+ * is `BrowsePage.module.css`'s, restated rather than imported because these
+ * are page stylesheets and neither owns the other. What must not drift is the
+ * geometry: the two screens are meant to read as the same screen about
+ * different things, so the numbers here are that file's numbers.
  */
 
 .page {
-  max-width: 90rem;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+  max-width: 1280px;
   margin: 0 auto;
   padding: var(--space-4) var(--space-5) var(--space-7);
 }
 
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
+/** Search bar, then the grid. */
+.column {
+  display: grid;
   gap: var(--space-3);
-  margin-bottom: var(--space-3);
+  min-width: 0;
 }
 
-.heading {
-  margin: 0;
-  font-size: 1.4rem;
-}
-
-.count {
-  margin: 0;
-  color: var(--text-dim);
-  font-size: 13px;
-}
-
-/**
- * The search bar, stuck to the top of the scroll region.
- *
- * `#main` is what scrolls on this site, not the window, so a sticky element
- * here pins against the top of that box. Without it, filtering a catalogue
- * means scrolling back up to change the query.
- */
-.searchRow {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  padding: var(--space-2) 0 var(--space-3);
-  margin-bottom: var(--space-1);
-  background: var(--bg);
-}
-
+/* The search bar, at the head of the thing it searches — as on browse. */
 .search {
-  width: 100%;
-  max-width: 28rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.searchIcon {
+  position: absolute;
+  left: 11px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.searchInput {
+  padding-left: 36px;
+}
+
+/** How much there is, above the grid it describes. Browse's `.count`. */
+.count {
+  margin-top: calc(-1 * var(--space-1));
+  min-height: 18px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
 }
 
 .empty {
-  padding: var(--space-6) 0;
+  padding: var(--space-6) var(--space-4);
   text-align: center;
   color: var(--text-dim);
 }
 
 /**
- * Ten per row, and fewer as the page narrows.
+ * Ten per row, and fewer as the column narrows.
  *
  * An explicit count rather than `auto-fill`, because the ask is a row of ten
  * and `auto-fill` would give whatever the viewport divided by a minimum came
- * to. The steps below are the same grid at smaller counts rather than a
- * different layout — a phone gets four, which is still a grid of art.
+ * to. The breakpoints are the *page's*, and the grid now lives inside a panel
+ * beside a 260px sidebar — so they are earlier than they would be for a
+ * full-width grid.
  */
 .grid {
   display: grid;
   grid-template-columns: repeat(10, minmax(0, 1fr));
   gap: var(--space-3) var(--space-2);
   margin: 0;
-  padding: 0;
+  padding: var(--space-3);
   list-style: none;
 }
 
@@ -87,7 +89,12 @@
   }
 }
 
-@media (max-width: 800px) {
+@media (max-width: 900px) {
+  .page {
+    /* The sidebar stops being a sidebar before the grid stops being a grid. */
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
@@ -132,10 +139,16 @@
   outline-offset: 2px;
 }
 
-/** A fixed square the art fills, so a row of mixed aspect ratios still lines up. */
+/**
+ * A fixed square the art fills edge to edge.
+ *
+ * `cover`, not `contain`: the pak's icons come out at a dozen aspect ratios and
+ * a contained one floated in a box of background with its rarity ring around
+ * empty space. Cropping the overhang is the lesser loss — these are
+ * centre-weighted icons, and what gets cut is margin.
+ */
 .art {
-  display: grid;
-  place-items: center;
+  display: block;
   width: 52px;
   height: 52px;
   overflow: hidden;
@@ -145,8 +158,10 @@
 }
 
 .art img {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 /**
