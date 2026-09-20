@@ -91,6 +91,32 @@ export interface Dismantle {
 }
 
 /**
+ * One place an item comes from.
+ *
+ * Only the endless Greed Cave today, which is the one table in the pak that
+ * says where a **fate stone** comes from at all — a stone is purchasable,
+ * undroppable, and in no drop pool, treasure pool or fragment shop. The same
+ * table names equipment, so both carry these.
+ *
+ * Deliberately not a drop *chance*. The table gives a weight within a pool and
+ * a split between the pools, and turning those into "3.4% per clear" needs the
+ * number of rolls a clear makes, which is server-side. A weight is honest about
+ * being relative; a percentage would not be.
+ */
+export interface ItemSource {
+  /** The addon's own row id, e.g. `GCE_BOSS_08`. */
+  pool: string;
+  /** The depth that row is for. */
+  level: number;
+  /** `boss_reward`, `merchant_base`, `merchant_bag`. */
+  kind: string;
+  /** This item's weight within its group, as the table states it. */
+  weight: number;
+  /** The share of the row's rolls that go to this item's group, in percent. */
+  groupPct: number;
+}
+
+/**
  * Which kind of slot an item may go into.
  *
  * A bitmask rather than a single category, because one item can be valid in
@@ -214,6 +240,8 @@ export interface ItemFull {
    */
   isSoul?: boolean;
   petUnitName?: string;
+  /** Where it comes from, where the pak says. Absent for most items. */
+  sources?: ItemSource[];
   /**
    * The seasons this item exists in, as the numbers `seasons.ts` uses.
    *

@@ -498,6 +498,16 @@ export interface Strings {
     dismantleNote: string;
     /** Development only: opens the API-rendered social card. */
     previewCard: string;
+    /** Puts this item's own address on the clipboard. */
+    share: string;
+    shared: string;
+    /** Where the pak says the item comes from. */
+    dropsFrom: string;
+    /** `Greed Cave, depth 14` and the like. */
+    greedCaveBoss: (level: number) => string;
+    greedCaveMerchant: (level: number) => string;
+    /** Why there is a weight rather than a percentage. */
+    sourceNote: string;
   };
   tracker: {
     heading: string;
@@ -953,6 +963,12 @@ const en: Strings = {
     dismantleRule: 'Rule',
     dismantleNote: 'For one copy at +0. A reforged item also returns part of what the reforge cost.',
     previewCard: 'Card ↗',
+    share: 'Share item',
+    shared: 'Copied',
+    dropsFrom: 'Where it comes from',
+    greedCaveBoss: (level) => `Greed Cave boss, depth ${level}`,
+    greedCaveMerchant: (level) => `Greed Cave merchant, depth ${level}`,
+    sourceNote: 'Weights are relative within a depth, not a chance per clear — how many rolls a clear makes is decided on the server.',
   },
   tracker: {
     heading: 'Farm tracker',
@@ -1400,6 +1416,12 @@ const ru: Strings = {
     dismantleRule: 'Правило',
     dismantleNote: 'За одну копию на +0. Улучшенный предмет вернёт ещё и часть потраченного на перековку.',
     previewCard: 'Карточка ↗',
+    share: 'Поделиться',
+    shared: 'Скопировано',
+    dropsFrom: 'Откуда берётся',
+    greedCaveBoss: (level) => `Босс Пещеры жадности, глубина ${level}`,
+    greedCaveMerchant: (level) => `Торговец Пещеры жадности, глубина ${level}`,
+    sourceNote: 'Вес — относительный в пределах глубины, а не шанс за заход: число бросков определяет сервер.',
   },
   tracker: {
     heading: 'Фарм-трекер',
@@ -1842,6 +1864,12 @@ const zh: Strings = {
     dismantleRule: '规则',
     dismantleNote: '按 +0 的单件计算。已强化的物品还会返还部分重铸消耗。',
     previewCard: '卡片 ↗',
+    share: '分享物品',
+    shared: '已复制',
+    dropsFrom: '获取途径',
+    greedCaveBoss: (level) => `贪婪洞窟首领，第 ${level} 层`,
+    greedCaveMerchant: (level) => `贪婪洞窟商人，第 ${level} 层`,
+    sourceNote: '权重为同层内的相对值，并非每次通关的概率——掷骰次数由服务器决定。',
   },
   tracker: {
     heading: '刷图追踪器',

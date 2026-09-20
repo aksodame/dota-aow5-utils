@@ -8,7 +8,7 @@ import {
   type ItemSummary,
   type ReforgeCostRow,
 } from 'aow5-shared/data';
-import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
+import type { ItemFull, ItemSource, LocaleDetail } from 'aow5-shared/types';
 import { Badge, Button, Icon, Panel, cx } from '@/ui';
 import { withLang } from '@/router';
 import { useApp } from '@/data/AppData';
@@ -18,7 +18,7 @@ import { qualityVar } from '@/components/Tile';
 import { affectsOf, behaviorOf, gemRows, hasNamedSkill, statRows, type StatRow } from '@/lib/itemStats';
 import { splitDescription, type DescSection } from '@/lib/richDesc';
 import { rarityLabel } from '@/i18n/strings';
-import { itemPath, navigate, pathOf, Link } from '@/router';
+import { itemPath, navigate, Link } from '@/router';
 import { dataVersion, factsOfItem, useDocumentMeta } from '@/lib/meta';
 import styles from './ItemPage.module.css';
 
@@ -192,42 +192,37 @@ function ItemBody({ item }: { item: ItemSummary }) {
               </span>
             )}
             <code className={styles.id}>{item.id}</code>
+            {/*
+              The card this page would be shared as, in development only.
+              
+              Beside the id because that is already the line for things a reader
+              does not need and somebody working on the page does.
+              `import.meta.env.DEV` is replaced with `false` in a production
+              build and the branch is dropped, so it costs the bundle nothing.
+            */}
+            {import.meta.env.DEV && (
+              <a className={styles.devLink} href={`/api/og/items/${item.id}.png`} target="_blank" rel="noreferrer">
+                {t.previewCard}
+              </a>
+            )}
           </div>
         </div>
 
+        {/*
+          One control, and it shares *this item*.
+          
+          It used to be three — a share button borrowing the build page's
+          "Share build" label, a link back to the catalogue, and a development
+          link to the card. The label was simply wrong, and the other two did
+          not belong at the top of the page: the nav's Items tab is the way back
+          to the catalogue, and the card link has moved down beside the item id,
+          which is where the other developer-facing detail already lives.
+        */}
         <div className={styles.headLinks}>
-          {/*
-            The page's own address, on the clipboard.
-            
-            An item page is the one screen here whose whole value is being
-            linkable — it is what somebody sends when they are asked "what does
-            this do" — and until now the only way to share one was to select the
-            address bar. `withLang` carries `?lang=` so a link shared out of the
-            Russian site arrives in Russian, exactly as a build's does.
-          */}
           <Button size="sm" onClick={share}>
             <Icon.Copy size={14} />
-            {copied ? strings.build.copied : strings.build.share}
+            {copied ? t.shared : t.share}
           </Button>
-          {/* The catalogue, which is this page's parent — not the build list,
-              which is a different part of the site entirely. */}
-          <Link to={{ href: pathOf('items') }} className={styles.back}>
-            {t.back}
-          </Link>
-          {/*
-            The social card, in development only.
-
-            It is rendered by the API and never appears in the page, so the only
-            way to look at one was to know the URL and paste it.
-            `import.meta.env.DEV` is replaced with `false` in a production build
-            and the whole branch is dropped, so this costs the shipped bundle
-            nothing.
-          */}
-          {import.meta.env.DEV && (
-            <a className={styles.devLink} href={`/api/og/items/${item.id}.png`} target="_blank" rel="noreferrer">
-              {t.previewCard}
-            </a>
-          )}
         </div>
       </header>
 
@@ -314,6 +309,19 @@ function ItemBody({ item }: { item: ItemSummary }) {
               <code className={styles.id}>{full.dismantle.rule}</code>
             </p>
             <p className={styles.note}>{t.dismantleNote}</p>
+          </Panel>
+        )}
+
+        {/*
+          Where it comes from, for the items the pak actually says.
+          
+          A fate stone has nothing else: it is purchasable, undroppable and in
+          no drop pool — the endless Greed Cave's reward tables are the only
+          statement anywhere in the data about how you get one.
+        */}
+        {full?.sources !== undefined && full.sources.length > 0 && (
+          <Panel title={<PanelTitle icon={<Icon.Crosshair size={15} />} text={t.dropsFrom} />}>
+            <SourceList sources={full.sources} strings={strings} />
           </Panel>
         )}
 
@@ -599,5 +607,45 @@ function Materials({ row, nameOf }: { row: ReforgeCostRow; nameOf: (id: string) 
         );
       })}
     </span>
+  );
+}
+
+
+/**
+ * Where an item drops, by depth.
+ *
+ * Grouped by depth rather than listed row by row, because the addon's rows are
+ * `GCE_BOSS_24` and `GCE_MERCHANT_BASE_24` — two facts about the same floor,
+ * and an id nobody outside the pak has ever seen. Deepest first: a reader
+ * wants to know the *easiest* place they can still get one, and that is the
+ * shallowest, so the list ends on it.
+ */
+function SourceList({
+  sources,
+  strings,
+}: {
+  sources: readonly ItemSource[];
+  strings: ReturnType<typeof useApp>['strings'];
+}) {
+  const t = strings.itemPage;
+  const byDepth = [...sources].sort((a, b) => a.level - b.level || a.kind.localeCompare(b.kind));
+
+  return (
+    <>
+      <ul className={styles.links}>
+        {byDepth.map((source) => (
+          <li key={`${source.pool}:${source.kind}`}>
+            <span className={styles.source}>
+              {source.kind.startsWith('merchant')
+                ? t.greedCaveMerchant(source.level)
+                : t.greedCaveBoss(source.level)}
+            </span>
+            {/* The weight, as the table states it — see `sourceNote`. */}
+            <span className={styles.count}>×{source.weight}</span>
+          </li>
+        ))}
+      </ul>
+      <p className={styles.note}>{t.sourceNote}</p>
+    </>
   );
 }
