@@ -7,7 +7,7 @@ import styles from './Panel.module.css';
  * A titled black card.
  *
  * The reference's whole vocabulary is this shape repeated — Main Skill, Pact,
- * Hero Trait, Filter Builds — so it is one component with a slot for whatever
+ * Hero Trait, Filter — so it is one component with a slot for whatever
  * sits opposite the title (a search affordance, a count, nothing).
  */
 /*

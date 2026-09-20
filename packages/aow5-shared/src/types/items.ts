@@ -61,16 +61,28 @@ export interface DismantleOutput {
   id: EssenceId;
   /** Drop chance in percent. Absent means guaranteed. */
   chance?: number;
+  /**
+   * How many come back, for one copy of the item at reforge level 0.
+   *
+   * Absent on data emitted before this was known. It used to be absent
+   * *always*, on the grounds that the client never computes it — the knapsack
+   * asks the server and draws the answer — and the published pak ships its
+   * server half encrypted. The author also publishes the addon's source tree
+   * as a separate workshop item, and `make.lua` is in the clear there, so the
+   * counts are read from the function that actually produces them. See
+   * `dismantleOf` in the pipeline's 04 step.
+   */
+  count?: number;
 }
 
 /**
- * What dismantling an item returns.
+ * What dismantling an item returns, and how much of it.
  *
- * There is deliberately no per-output count. The addon decides how many
- * essences a dismantle yields on the server, inside an encrypted Lua bundle,
- * and answers the client's `request_dismantle_preview` with the numbers — so
- * only *which* essences come back is knowable from the VPK. See `dismantleOf`
- * in the pipeline's 04-build-items step for the rules and where they come from.
+ * The counts are for one copy at reforge level 0. A reforged item returns more
+ * — the server hands back a share of what the reforge cost — which is a
+ * separate calculation this record does not carry; the item page prices the
+ * reforge itself instead. See `dismantleOf` in the pipeline's 04-build-items
+ * step for where the rules and the counts each come from.
  */
 export interface Dismantle {
   /** The addon's own name for the rule that matched, kept verbatim. */

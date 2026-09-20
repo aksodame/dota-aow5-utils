@@ -9,7 +9,7 @@ import {
   type ReforgeCostRow,
 } from 'aow5-shared/data';
 import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
-import { Badge, Button, Panel, cx } from '@/ui';
+import { Badge, Button, Icon, Panel, cx } from '@/ui';
 import { useApp } from '@/data/AppData';
 import { useItemDetailsStore } from '@/data/ItemDetailsProvider';
 import { RichText } from '@/components/RichText';
@@ -181,7 +181,7 @@ function ItemBody({ item }: { item: ItemSummary }) {
         )}
 
         {hasStats && (
-          <Panel title={t.stats}>
+          <Panel title={<PanelTitle icon={<Icon.Crosshair size={15} />} text={t.stats} />}>
             {gems.length > 0 && <StatList rows={gems} />}
             {gems.length > 0 && stats.length > 0 && <hr className={styles.rule} />}
             {stats.length > 0 && <StatList rows={stats} />}
@@ -189,7 +189,7 @@ function ItemBody({ item }: { item: ItemSummary }) {
         )}
 
         {hasAbout && (
-          <Panel title={t.about}>
+          <Panel title={<PanelTitle icon={<Icon.Play size={15} />} text={t.about} />}>
             {(behavior !== null || affects !== null) && (
               <div className={styles.factLines}>
                 {behavior !== null && (
@@ -224,17 +224,18 @@ function ItemBody({ item }: { item: ItemSummary }) {
           carry the pricing, which is an extraction that is allowed to fail.
         */}
         {full !== undefined && reforgeRows.length > 0 && (
-          <Panel title={t.reforge}>
+          <Panel title={<PanelTitle icon={<Icon.Hourglass size={15} />} text={t.reforge} />}>
             <ReforgeTable rows={reforgeRows} nameOf={nameOf} strings={strings} />
           </Panel>
         )}
 
         {full?.dismantle !== undefined && full.dismantle.outputs.length > 0 && (
-          <Panel title={t.dismantle}>
+          <Panel title={<PanelTitle icon={<Icon.Trash size={15} />} text={t.dismantle} />}>
             <ul className={styles.links}>
               {full.dismantle.outputs.map((out) => (
                 <li key={out.id}>
                   <ItemLink id={out.id} name={nameOf(out.id)} />
+                  {out.count !== undefined && <span className={styles.count}>×{out.count}</span>}
                   {out.chance !== undefined && <span className={styles.chance}>{t.chance(out.chance)}</span>}
                 </li>
               ))}
@@ -252,7 +253,7 @@ function ItemBody({ item }: { item: ItemSummary }) {
         )}
 
         {full?.tags !== undefined && full.tags.length > 0 && (
-          <Panel title={ti.tags}>
+          <Panel title={<PanelTitle icon={<Icon.Branch size={15} />} text={ti.tags} />}>
             <div className={styles.tags}>
               {full.tags.map((tag) => (
                 <span key={tag}>{tag}</span>
@@ -306,7 +307,7 @@ function Obtain({
   if (full === undefined) return null;
 
   return (
-    <Panel title={t.obtain}>
+    <Panel title={<PanelTitle icon={<Icon.Branch size={15} />} text={t.obtain} />}>
       {full.produces !== undefined && (
         <Section title={t.produces}>
           <ItemLink id={full.produces} name={nameOf(full.produces)} />
@@ -437,10 +438,6 @@ function ReforgeTable({
 }) {
   const t = strings.itemPage;
   const total = reforgeCostTotal(rows);
-  const materials = (row: ReforgeCostRow) =>
-    Object.entries(row.materials)
-      .map(([id, need]) => `${nameOf(id)} ×${need}`)
-      .join(', ');
 
   return (
     <>
@@ -455,21 +452,79 @@ function ReforgeTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.level}>
-              <th scope="row">+{row.level}</th>
-              <td className={styles.num}>{row.gold.toLocaleString()}</td>
-              <td>{materials(row)}</td>
+              <th scope="row" className={styles.level}>
+                +{row.level}
+              </th>
+              <td className={styles.gold}>{row.gold.toLocaleString()}</td>
+              <td>
+                <Materials row={row} nameOf={nameOf} />
+              </td>
             </tr>
           ))}
         </tbody>
         <tfoot>
           <tr>
             <th scope="row">{t.reforgeTotal}</th>
-            <td className={styles.num}>{total.gold.toLocaleString()}</td>
-            <td>{materials(total)}</td>
+            <td className={styles.gold}>{total.gold.toLocaleString()}</td>
+            <td>
+              <Materials row={total} nameOf={nameOf} />
+            </td>
           </tr>
         </tfoot>
       </table>
       <p className={styles.note}>{t.reforgeNote}</p>
     </>
+  );
+}
+
+
+/**
+ * A panel heading with a glyph in front of it.
+ *
+ * The page was five identical grey headings down a column of identical black
+ * cards, and nothing told them apart until you read them. A glyph is what the
+ * eye lands on first.
+ */
+function PanelTitle({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <span className={styles.panelTitle}>
+      <span className={styles.panelIcon} aria-hidden>
+        {icon}
+      </span>
+      {text}
+    </span>
+  );
+}
+
+/**
+ * What a reforge level costs, as the essences themselves.
+ *
+ * Icons and a count rather than `Legendary Equipment Essence ×6, Equipment
+ * Essence ×11` — that sentence wrapped to two lines in every row of a
+ * nine-row table, which is what made the block twice as tall as it needed to
+ * be and impossible to scan down.
+ */
+function Materials({ row, nameOf }: { row: ReforgeCostRow; nameOf: (id: string) => string }) {
+  const { core } = useApp();
+  return (
+    <span className={styles.materials}>
+      {Object.entries(row.materials).map(([id, need]) => {
+        const item = core?.byId.get(id);
+        return (
+          <Link key={id} to={{ href: itemPath(id) }} className={styles.material} title={nameOf(id)}>
+            {item !== undefined && (
+              <img
+                src={iconUrl(item.icon)}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                style={{ borderColor: qualityVar(item.quality) }}
+              />
+            )}
+            <span className={styles.count}>×{need}</span>
+          </Link>
+        );
+      })}
+    </span>
   );
 }

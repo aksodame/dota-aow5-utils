@@ -134,22 +134,34 @@
 /* --- the blocks ------------------------------------------------------- */
 
 /**
- * Two columns where there is room, one where there is not.
+ * Two columns that fill, rather than two that line up.
  *
- * `auto-fit` rather than a media query: the breakpoint that matters is the
- * width of a stat block, not the width of a phone, and this page is reached
- * from a tile inside a dialog as often as from an address bar.
+ * This was a grid with `align-items: start`, which is the obvious thing and the
+ * wrong one here: the panels are wildly different heights — a nine-row reforge
+ * table beside a two-line dismantle list — so a grid stranded most of a screen
+ * of blank space under the short column and left the page looking broken.
+ *
+ * CSS columns flow instead of aligning: a panel goes wherever there is room, so
+ * the two columns end at roughly the same place and the gap closes. `avoid`
+ * keeps a panel from being split down the middle across the column break, which
+ * is the one thing this layout can get wrong.
  */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
-  align-items: start;
-  gap: var(--space-4);
+  columns: 2;
+  column-gap: var(--space-4);
 }
 
-/* Equipment and fate stones: a long rolled stat list earns the wider column. */
-.gridWide {
-  grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
+.grid > * {
+  break-inside: avoid;
+  /* `columns` has no row-gap, so the spacing between stacked panels is theirs. */
+  margin-bottom: var(--space-4);
+}
+
+/* One column once there is no room for two — a panel below ~19rem is unreadable. */
+@media (max-width: 44rem) {
+  .grid {
+    columns: 1;
+  }
 }
 
 .rule {
@@ -302,10 +314,23 @@
   width: 24px;
   height: 24px;
   flex: 0 0 auto;
-  object-fit: contain;
+  /* Cropped to its frame, as every other item picture on the site is. */
+  object-fit: cover;
+  border-radius: var(--radius-sm);
 }
 
-.count,
+/**
+ * How many come back. A number worth reading, so it is not dimmed like the
+ * chance beside it — that one is a qualifier on this one.
+ */
+.count {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
 .chance {
   flex: 0 0 auto;
   font-size: 12px;
@@ -412,4 +437,68 @@
   font-size: 11px;
   line-height: 1.45;
   color: var(--text-dim);
+}
+
+
+/* --- the glyph in a panel heading ------------------------------------- */
+
+.panelTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/**
+ * The glyph, in the accent rather than in the heading's own grey.
+ *
+ * It is the thing that distinguishes one black card from the next at a glance,
+ * which it cannot do in the same colour as everything around it.
+ */
+.panelIcon {
+  display: inline-flex;
+  color: var(--accent);
+}
+
+/* --- reforge materials, as the essences themselves -------------------- */
+
+.materials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.material {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.material img {
+  width: 22px;
+  height: 22px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  /* The essence's own grade, so a Mythic reads as a Mythic in the table too. */
+  border-color: currentColor;
+}
+
+.material:hover .count {
+  color: var(--accent);
+}
+
+/** Gold is gold, here as everywhere else on the site. */
+.gold {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/** The reforge level, in the accent: it is the column the table is read down. */
+.level {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
 }

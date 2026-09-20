@@ -494,7 +494,7 @@ export interface Strings {
     reforgeNote: string;
     /** The addon's own name for the dismantle rule that applies. */
     dismantleRule: string;
-    /** Why no per-essence count is shown. */
+    /** What the counts above are counts *of*. */
     dismantleNote: string;
   };
   tracker: {
@@ -641,7 +641,7 @@ const en: Strings = {
     required: 'Sign in to do that.',
   },
   filters: {
-    heading: 'Filter Builds',
+    heading: 'Filter',
     hero: 'Hero',
     map: 'Map',
     tier: 'Tier',
@@ -949,7 +949,7 @@ const en: Strings = {
     reforgeTotal: 'All nine',
     reforgeNote: 'Computed from the item’s level and grade the way the game computes it, not read from a table.',
     dismantleRule: 'Rule',
-    dismantleNote: 'Which essences come back. How many is decided on the server, so it is not shown.',
+    dismantleNote: 'For one copy at +0. A reforged item also returns part of what the reforge cost.',
   },
   tracker: {
     heading: 'Farm tracker',
@@ -1395,7 +1395,7 @@ const ru: Strings = {
     reforgeTotal: 'Все девять',
     reforgeNote: 'Считается из уровня и качества предмета так же, как это делает игра, а не берётся из таблицы.',
     dismantleRule: 'Правило',
-    dismantleNote: 'Какие эссенции возвращаются. Их количество определяет сервер, поэтому оно не показано.',
+    dismantleNote: 'За одну копию на +0. Улучшенный предмет вернёт ещё и часть потраченного на перековку.',
   },
   tracker: {
     heading: 'Фарм-трекер',
@@ -1836,7 +1836,7 @@ const zh: Strings = {
     reforgeTotal: '全部九级',
     reforgeNote: '按游戏的算法从物品等级与品质推算，并非取自表格。',
     dismantleRule: '规则',
-    dismantleNote: '显示会返还哪些精华。数量由服务器决定，因此不予显示。',
+    dismantleNote: '按 +0 的单件计算。已强化的物品还会返还部分重铸消耗。',
   },
   tracker: {
     heading: '刷图追踪器',
