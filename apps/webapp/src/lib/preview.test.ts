@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { createEmptyState, encodeBuild, makeIdTable, type HeroTable } from 'aow5-shared/codec';
 import { ABILITY_SLOTS, type HeroesData, type ItemsIndex, type LocaleAbilities, type MapsData, type Meta } from 'aow5-shared/types';
 import { buildSummaries, rebuildAbilityTable, rebuildIdTable, rebuildMapTable, type CoreData } from 'aow5-shared/data';
-import { buildPreview, spellsInDisplayOrder } from './preview.ts';
+import { buildPreview, spellsInDisplayOrder, tileOffersSouls } from './preview.ts';
 
 /**
  * The browse row's preview, against the real emitted data.
@@ -291,4 +291,32 @@ test('the soul slot survives the codec, which is what lets the f tile find it', 
   const payload = encodeBuild(state, TABLES.items, TABLES.heroes);
   assert.equal(payload.startsWith('8.'), true, 'still v8 — see buildCodec.ts');
   assert.equal(buildPreview(payload, DATA, TABLES, 'f').soul?.id, SOULS[0]!.id);
+});
+
+test('the f tile reaches the souls before one is worn, not only after', () => {
+  /*
+   * The bug this is here for: the tile used to open the souls only while one
+   * was already equipped, so the only way to reach it was the soul slot — the
+   * route somebody clicking `f` has not found. It does not depend on what is
+   * worn, only on the slot being on offer.
+   */
+  assert.equal(tileOffersSouls('f', true, 1), true, 'offered, one heal candidate');
+  assert.equal(tileOffersSouls('f', true, 0), true, 'offered, nothing filled yet');
+
+  // Not where the slot is not on offer — S1 has no Life Soul.
+  assert.equal(tileOffersSouls('f', false, 1), false);
+  // And never on a key that is a real decision.
+  for (const key of ['q', 'w', 'e', 'd', 'r', 'passive']) {
+    assert.equal(tileOffersSouls(key, true, 1), false, `${key} keeps its spell picker`);
+  }
+  // A hypothetical second `f` ability would make that picker a real choice
+  // again, and it must win over the shortcut.
+  assert.equal(tileOffersSouls('f', true, 2), false);
+});
+
+test('every hero has exactly one f candidate, which is what the shortcut rests on', () => {
+  for (const hero of heroesData.heroes.filter((h) => h.playable)) {
+    const candidates = (hero.bySlot as Record<string, string[] | undefined>)['f'] ?? [];
+    assert.equal(candidates.length, 1, `${hero.id} has one f ability`);
+  }
 });

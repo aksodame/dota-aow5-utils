@@ -46,7 +46,7 @@ import {
   type SeasonKey,
   type TierKey,
 } from 'aow5-shared/data';
-import { mainSpellKey, spellDisplayName, spellsInDisplayOrder } from '@/lib/preview';
+import { mainSpellKey, spellDisplayName, spellsInDisplayOrder, tileOffersSouls } from '@/lib/preview';
 import { carriesBuildPayload, editPath, navigate, toBuild, useSearch, viewPath, withLang } from '@/router';
 import styles from './EditorPage.module.css';
 
@@ -447,6 +447,14 @@ export function EditorPage() {
   const soulGroups = visibleGroups('soul', state.slots, season);
   /** Where a Life Soul is worn, for the `f` tile to open. */
   const soulSlot = groupsInPanel('soul')[0]?.start ?? null;
+  /*
+   * Whether the `f` tile reaches the souls.
+   *
+   * Keyed on the slot being drawn at all rather than on one being worn: the
+   * whole point is to be the way *in*. `soulGroups` is already "offered this
+   * season, or filled regardless", which is exactly the condition wanted here.
+   */
+  const soulSlotOffered = soulGroups.length > 0 && soulSlot !== null;
 
   /*
    * Neutral or backpack. Read twice — once as the caption and once as its
@@ -696,16 +704,22 @@ export function EditorPage() {
                     {spells.map(({ key, spell, unknown, soul }, i) => {
                       const index = ABILITY_SLOTS.indexOf(key as (typeof ABILITY_SLOTS)[number]);
                       /*
-                       * A worn Life Soul takes the `f` key over, so that tile
-                       * opens the soul slot rather than a spell picker: the
-                       * ability underneath it is the one Emergency Heal every
-                       * hero has, and a dialog offering a list of one is not
-                       * what somebody clicking the soul is asking for.
+                       * A Life Soul takes the `f` key over, so that tile opens
+                       * the souls rather than a spell picker: the ability
+                       * underneath it is the one Emergency Heal every hero has,
+                       * and a dialog offering a list of one is not what
+                       * somebody clicking that key wants.
+                       *
+                       * Whether or not one is already worn. Gating this on a
+                       * worn soul left the tile reachable only after the soul
+                       * slot had been used, which is the route somebody
+                       * clicking `f` has by definition not found.
                        */
-                      const open =
-                        soul !== null && soulSlot !== null
-                          ? () => setPicking({ kind: 'item', slot: soulSlot })
-                          : () => setPicking({ kind: 'spell', index });
+                      const candidates = index < 0 ? [] : (hero?.bySlot[ABILITY_SLOTS[index]!] ?? []);
+                      const toSouls = soulSlot !== null && tileOffersSouls(key, soulSlotOffered, candidates.length);
+                      const open = toSouls
+                        ? () => setPicking({ kind: 'item', slot: soulSlot })
+                        : () => setPicking({ kind: 'spell', index });
                       /*
                        * Which one the build currently leads with — the answer
                        * the select below is about, drawn on the tiles above it.

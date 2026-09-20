@@ -49,6 +49,27 @@ export interface BuildPreview {
 const SOUL_ABILITY_SLOT = 'f';
 const SOUL_SLOT: number | null = groupsInPanel('soul')[0]?.start ?? null;
 
+/**
+ * Whether clicking a spell tile should offer Life Souls instead of abilities.
+ *
+ * Only `f`, and only where the slot is on offer at all. The point is that `f`
+ * is not a choice — every hero has exactly one candidate there, the shared
+ * Emergency Heal, so its picker is a dialog listing one thing — while the soul
+ * that takes the key over very much is. Clicking the key you want to change and
+ * being shown the one thing you cannot change is the worst of both.
+ *
+ * `candidates` is the hero's own count for the key, and more than one of them
+ * means the picker has a real decision in it and must not be hijacked. That
+ * cannot happen today and is a cheap thing to be wrong about later.
+ *
+ * Deliberately not conditional on a soul already being worn: that was the first
+ * version of this, and it made the tile reachable only once you had used the
+ * soul slot — which is the one route somebody clicking `f` has not found.
+ */
+export function tileOffersSouls(key: string, soulSlotOffered: boolean, candidates: number): boolean {
+  return key === SOUL_ABILITY_SLOT && soulSlotOffered && candidates <= 1;
+}
+
 /** The Life Soul a loadout is wearing, if this deployment can name it. */
 export function equippedSoul(
   slots: ReadonlyArray<SlotValue | null>,
