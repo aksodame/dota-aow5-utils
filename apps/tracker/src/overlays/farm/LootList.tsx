@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { iconUrl, qualityColor } from '@core/items.ts';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -132,9 +133,18 @@ export function LootList({ rows, sort, onSort, pricing, tracked, total }: Props)
             return (
               <li
                 key={row.id}
-                className="flex items-center gap-2 rounded px-1 py-0.5 odd:bg-white/[0.03] hover:bg-white/8"
+                className="hud-loot-row flex items-center gap-2 rounded px-1 py-0.5 odd:bg-white/[0.03] hover:bg-white/8"
               >
-                <img src={iconUrl(info.icon)} alt="" className="size-6 shrink-0 rounded-sm object-cover" loading="lazy" />
+                {/* The rarity rides along as a custom property, unused unless a
+                    skin marks the icon with it — the Dota one draws it as the
+                    bar along the top of an inventory slot. */}
+                <img
+                  src={iconUrl(info.icon)}
+                  alt=""
+                  className="hud-loot-icon size-6 shrink-0 rounded-sm object-cover"
+                  style={{ '--item-quality': qualityColor(info.quality) } as CSSProperties}
+                  loading="lazy"
+                />
                 <span
                   className="min-w-0 flex-1 truncate text-xs font-semibold"
                   style={{ color: qualityColor(info.quality) }}
@@ -144,7 +154,7 @@ export function LootList({ rows, sort, onSort, pricing, tracked, total }: Props)
                 {/* Quantity and unit value are supporting detail, so they sit at
                     ~2/3 the size of the name and the total. */}
                 <span className={COL_NUMBERS}>
-                  <span className={cn(COL_QTY, 'text-[0.5rem] font-medium tabular-nums')}>×{row.qty}</span>
+                  <span className={cn(COL_QTY, 'hud-loot-qty text-[0.5rem] font-medium tabular-nums')}>×{row.qty}</span>
                   {/* A price you set reads in the accent colour, so the list
                       says which numbers are yours without a legend. */}
                   <span

@@ -14,10 +14,14 @@
       'self' covers the icons: a packaged renderer is loaded from file:, where
       it matches the app's own directory — the same rule already loading this
       page's script and stylesheet.
+
+      dotafont: is not remote either. It is main handing over the Radiance
+      files from the player's own Dota install, for the Dota style — see
+      electron/dota-fonts.ts.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; img-src 'self' data:; connect-src 'self'; style-src 'self' 'unsafe-inline'"
+      content="default-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self' dotafont:; style-src 'self' 'unsafe-inline'"
     />
     <title>AOW5 Tracker</title>
   </head>

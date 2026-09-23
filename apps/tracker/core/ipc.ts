@@ -279,6 +279,14 @@ export interface TrackerConfig {
    */
   transparentBackground: boolean;
   /**
+   * The Dota style's outer frame around the farm HUD.
+   *
+   * Off, the HUD is separate floating blocks with the game between them, as
+   * Dota draws its own panels; on, they sit on one framed slab like the other
+   * styles. Only the Dota style reads it — the others always have the slab.
+   */
+  dotaFrame: boolean;
+  /**
    * Multiplier on the root font size, `UI_SCALE.min`–`UI_SCALE.max`.
    *
    * Everything in the overlay is sized in rem, so this one number resizes the

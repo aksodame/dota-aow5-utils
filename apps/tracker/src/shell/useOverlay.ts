@@ -104,6 +104,24 @@ export function useOverlay(): OverlayChrome {
     document.documentElement.dataset['style'] = style;
   }, [style]);
 
+  /*
+   * Which window this is, beside it. A skin that draws the farm HUD as
+   * separate floating blocks has to leave the settings and history slabs
+   * alone — they are pages of text and need their ground — and the root is the
+   * only place a stylesheet can tell the windows apart.
+   */
+  useEffect(() => {
+    document.documentElement.dataset['overlay'] = id;
+  }, [id]);
+
+  // The Dota style's frame switch, the same way: one attribute the stylesheet
+  // keys the frameless HUD off.
+  const dotaFrame = config?.dotaFrame ?? false;
+
+  useEffect(() => {
+    document.documentElement.dataset['dotaFrame'] = String(dotaFrame);
+  }, [dotaFrame]);
+
   const collapsed = config?.overlays[id]?.collapsed ?? false;
 
   const toggleCollapsed = useCallback(() => {

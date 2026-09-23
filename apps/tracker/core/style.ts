@@ -21,16 +21,17 @@
  *      theme that only wants to repaint an existing layout can still be exactly
  *      that: a token block and a reused component.
  *
- * What a style may *not* change is the numbers, the item rarity colours, or
- * which cards the player has turned on. A skin that recoloured rarity would be
- * a skin that lies about the loot, and a skin that ignored the card list would
- * make that setting mean different things in different themes.
+ * What a style may *not* change is the numbers, the order of the rarity tiers,
+ * or which cards the player has turned on. It may retint a tier — the Dota
+ * style uses the game's own item colours — but a skin that swapped two would
+ * be a skin that lies about the loot, and a skin that ignored the card list
+ * would make that setting mean different things in different themes.
  *
  * In `core/` for the same reason `locale.ts` is: `electron/config.ts` has to
  * sanitise a saved value without importing anything from the React tree.
  */
 
-export const TRACKER_STYLES = ['minimal', 'torchlight'] as const;
+export const TRACKER_STYLES = ['minimal', 'torchlight', 'dota'] as const;
 
 export type TrackerStyle = (typeof TRACKER_STYLES)[number];
 

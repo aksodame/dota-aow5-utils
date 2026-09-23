@@ -110,6 +110,8 @@ export const DEFAULTS: TrackerConfig = {
   // Solid by default: a readout you can see is worth more than a game you can
   // see through it, and the slider is right there for anyone who disagrees.
   transparentBackground: false,
+  // Off: the Dota style's own look is blocks floating over the game.
+  dotaFrame: false,
   uiScale: UI_SCALE.default,
   // Real time by default; `--speed=60` compresses a session for UI work.
   mockSpeed: 1,
@@ -290,6 +292,7 @@ export function loadConfig(): TrackerConfig {
     // Absent in a pre-0.3 file, where opacity always meant the whole window —
     // and absent means the default, which is off.
     transparentBackground: raw['transparentBackground'] === true,
+    dotaFrame: raw['dotaFrame'] === true,
     uiScale: clamp(number(raw['uiScale'], DEFAULTS.uiScale), UI_SCALE.min, UI_SCALE.max),
     hotkey: typeof raw['hotkey'] === 'string' && raw['hotkey'] !== '' ? raw['hotkey'] : DEFAULTS.hotkey,
     /*
@@ -390,6 +393,8 @@ export function applyArgs(config: TrackerConfig, argv: readonly string[]): CliOp
     if (source) config.source = source[1] as TrackerConfig['source'];
     const speed = /^--speed=(\d+(?:\.\d+)?)$/.exec(arg);
     if (speed) config.mockSpeed = Number(speed[1]);
+    const style = /^--style=(.+)$/.exec(arg);
+    if (style) config.style = readStyle(style[1]);
     const log = /^--log=(.+)$/.exec(arg);
     if (log) config.logFile = log[1]!;
   }

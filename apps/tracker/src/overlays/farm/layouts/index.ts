@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import type { CardId } from '@core/cards.ts';
 import { DEFAULT_STYLE, type TrackerStyle } from '@core/style.ts';
 import type { ReadoutInput } from '../readout';
+import { DotaHud } from './DotaHud';
 import { MinimalHud } from './MinimalHud';
 import { TorchlightHud } from './TorchlightHud';
 
@@ -32,6 +33,7 @@ export type HudLayout = ComponentType<HudLayoutProps>;
 export const HUD_LAYOUTS: Record<TrackerStyle, HudLayout> = {
   minimal: MinimalHud,
   torchlight: TorchlightHud,
+  dota: DotaHud,
 };
 
 /**

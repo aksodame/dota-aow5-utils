@@ -24,6 +24,7 @@ import { compactLog, type CompactResult } from '../core/sources/logfile.ts';
 import { byRoom } from '../core/stats.ts';
 import { applyArgs, clamp, loadConfig, saveConfig } from './config.ts';
 import { DiscordPresence } from './discord.ts';
+import { registerDotaFontScheme, serveDotaFonts } from './dota-fonts.ts';
 import { History } from './history.ts';
 import { Overlay } from './overlay.ts';
 import { SoundStore } from './packs.ts';
@@ -430,6 +431,8 @@ function bindShortcuts(): void {
  * feed. The winner shows the overlays it would have opened, which is the
  * answer to what the second launch was actually asking for.
  */
+registerDotaFontScheme();
+
 const single = app.requestSingleInstanceLock();
 if (!single) {
   app.quit();
@@ -447,6 +450,7 @@ app.whenReady().then(async () => {
   // lock exists to prevent — for however long it took to go away.
   if (!single) return;
 
+  serveDotaFonts();
   config = loadConfig();
   history = new History();
   store = new SoundStore(path.join(app.getPath('userData'), 'sounds'));

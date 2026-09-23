@@ -1,6 +1,34 @@
 @import 'tailwindcss';
 
 /*
+ * Radiance, Dota's UI face, for the Dota style — served by main out of the
+ * player's own install (see `electron/dota-fonts.ts`). `local()` first for the
+ * rare machine that has it installed. A face is only fetched once something
+ * uses it, so the other styles never ask; and if Dota is not there the request
+ * fails and the family falls through to Segoe UI.
+ */
+@font-face {
+  font-family: 'Radiance';
+  src: local('Radiance'), url('dotafont://fonts/radiance-regular.otf') format('opentype');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'Radiance';
+  src: local('Radiance SemiBold'), url('dotafont://fonts/radiance-semibold.otf') format('opentype');
+  font-weight: 500 600;
+}
+@font-face {
+  font-family: 'Radiance';
+  src: local('Radiance Bold'), url('dotafont://fonts/radiance-bold.otf') format('opentype');
+  font-weight: 700;
+}
+@font-face {
+  font-family: 'Radiance';
+  src: local('Radiance Black'), url('dotafont://fonts/radiance-black.otf') format('opentype');
+  font-weight: 800 900;
+}
+
+/*
  * Design tokens lifted from the sibling planner so the two look like one
  * product — same oklch hue-260 palette, same radius scale.
  *
@@ -39,9 +67,11 @@
    * Item rarity tints, the planner's dark-theme values verbatim — the overlay
    * is always dark, so the lighter light-theme set never applies.
    *
-   * These are the one group a style may not touch. A player learns what a
+   * A style keeps the *order* of these — grey, green, blue, purple, pink,
+   * orange, gold — and may only retint within it. A player learns what a
    * purple name means once and reads it for a thousand hours; a skin that
-   * recoloured rarity would be a skin that lies about the loot.
+   * swapped two tiers would be a skin that lies about the loot. The Dota style
+   * uses that latitude to match the game's own item colours.
    */
   --quality-0: #6b7280;
   --quality-1: #9ca3af;
@@ -145,6 +175,95 @@
      serif — and a serif would be the wrong call for the Chinese catalog
      regardless. */
   --hud-font: 'Segoe UI', system-ui, sans-serif;
+}
+
+/*
+ * Dota: the game's own panel idiom — the warehouse, the backpack, the item
+ * tooltip.
+ *
+ * Every value here was read off a screenshot of the game, pixel by pixel,
+ * rather than chosen — that is the whole brief: the overlay should read as one
+ * more Dota panel, not as a web app floated over one. Three things carry it,
+ * and each is easy to get wrong by a little:
+ *
+ *   - **Neutral grey, not slate.** The inventory panels have no blue in them at
+ *     all: #2b2b2b body, a #3d3d3d→#2b2b2b title bar, slots of #16191b. The
+ *     blue-teal belongs to the item tooltip only, which is why the popover
+ *     tokens are the one cool thing in the block.
+ *   - **White type with a hard black shadow.** Headings and figures are bold
+ *     white, and every glyph in the game sits on a one-pixel black drop shadow.
+ *     Secondary text is a light grey, never a dim one.
+ *   - **Rarity as a bar.** A two-pixel stripe along the top of the slot, in the
+ *     tier's colour — not a frame around it.
+ *
+ * The layout is `DotaHud`, which keeps the minimal arrangement.
+ */
+:root[data-style='dota'] {
+  /* The tabs' and buttons' corner. Slots and panels are square — see below. */
+  --radius: 0.125rem;
+
+  --background: #212121;
+  --foreground: #ffffff;
+  --card: #2b2b2b;
+  --card-foreground: #ffffff;
+  /* The item tooltip: a dark blue-teal, the only cool colour in the skin. */
+  --popover: #192228;
+  --popover-foreground: #e1e1e1;
+  /* The selected tab's gold rim. */
+  --primary: #c6a861;
+  --primary-foreground: #2b2b2b;
+  --secondary: #333333;
+  --secondary-foreground: #c0c0c0;
+  --muted: #333333;
+  /* "Value 1.7m", "Page 1/10": the grey of every secondary line. */
+  --muted-foreground: #ababab;
+  --accent: #3a3a3a;
+  --accent-foreground: #ffffff;
+  --destructive: #d0463a;
+  /* The hairline around a slot. */
+  --border: #373838;
+  --input: #434343;
+  --ring: #c6a861;
+
+  /* The price tag's coin yellow, "2600". Prices only; counts stay white. */
+  --gold: #ffcc34;
+
+  /*
+   * Item tiers, sampled off the rarity bars in the warehouse grid and the
+   * backpack. Grey and white are the two the screenshot does not show, and
+   * are the game's own neutral greys.
+   */
+  --quality-0: #8c8c8c;
+  --quality-1: #d0d0d0;
+  --quality-2: #51bf3d;
+  --quality-3: #1e7db2;
+  --quality-4: #c026c4;
+  --quality-5: #e430e8;
+  --quality-6: #c98b18;
+  --quality-7: #ffcc34;
+
+  /* Black. Every Dota panel is cut out of the scene by a hard dark edge. */
+  --hud-frame: #000000;
+  --hud-blur: 0px;
+  --hud-border-width: 1px;
+  --hud-radius: 0;
+  --hud-shadow: 0 4px 16px oklch(0 0 0 / 70%);
+  --hud-font: 'Radiance', 'Segoe UI', system-ui, sans-serif;
+
+  /* The pieces the blocks below are built from, named once so the layout's
+     classes and the shared-component overrides draw the same ones. */
+  --dota-bar-top: #3d3d3d;
+  --dota-bar-bottom: #2b2b2b;
+  --dota-slot: #16191b;
+  --dota-tab-top: #3a3a3a;
+  --dota-tab-bottom: #2e2e2e;
+  --dota-tab-edge: #434343;
+  --dota-tab-on-top: #6a5228;
+  --dota-tab-on-bottom: #4f3c1d;
+  --dota-tab-on-text: #fff3d2;
+  --dota-button-top: #596468;
+  --dota-button-bottom: #333b3f;
+  --dota-text-shadow: 0 1px 0 #000, 0 1px 2px oklch(0 0 0 / 85%);
 }
 
 @theme inline {
@@ -397,6 +516,83 @@
     font-weight: 600;
   }
 
+  /*
+    The Dota layout's own pieces. Same split as Torchlight's above: the look
+    lives here, the arrangement stays in `DotaHud`.
+  */
+
+  /* What the cards sit in. Black, so the one-pixel seam between cells is the
+     same hard edge the title bar has around it. */
+  .hud-dota-well {
+    background: color-mix(in oklab, #000 var(--hud-panel-alpha, 82%), transparent);
+    border: 1px solid #000;
+  }
+
+  /* A section that is a panel of its own — the loot list, under the cards the
+     way the backpack sits under the warehouse. */
+  .hud-dota-section {
+    background: color-mix(in oklab, var(--card) var(--hud-panel-alpha, 82%), transparent);
+    border: 1px solid #000;
+  }
+
+  /* A cell, in the title bar's colours — the warehouse header's grey falling
+     off toward its foot — so the cards and the room line above them read as
+     one family of bars, with the dark item slot set into each. */
+  .hud-dota-cell {
+    background: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--dota-bar-top) var(--hud-panel-alpha, 82%), transparent),
+      color-mix(in oklab, var(--dota-bar-bottom) var(--hud-panel-alpha, 82%), transparent)
+    );
+  }
+
+  /* An item slot: black edge, the icon filling it. */
+  .hud-dota-slot {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #d0d0d0;
+    background: #0b0c0d;
+    border: 1px solid #000;
+  }
+
+  /* The rarity bar: two pixels of the tier's colour along the top edge. A
+     border rather than an inset shadow, because an image paints over the one
+     and not the other. */
+  .hud-dota-slot-rarity {
+    border-top: 2px solid var(--item-quality);
+  }
+
+  /* The small grey line over a figure — "Value", "Page 1/10". Sentence case,
+     as the game sets it; the letter-spaced capitals were the web card talking. */
+  .hud-dota-label {
+    font-size: 0.5625rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--muted-foreground);
+  }
+  /* The catalog's labels are lower case — the other skins capitalise them in
+     CSS. Dota sets a label as a sentence, so only its first letter goes up,
+     which is also the one casing that is right in every language we ship. */
+  .hud-dota-label::first-letter {
+    text-transform: uppercase;
+  }
+
+  /* A figure: bold white, like a stack count or "3.1m". */
+  .hud-dota-value {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #ffffff;
+  }
+  .hud-dota-value-gold {
+    color: var(--gold);
+  }
+  .hud-dota-trailing {
+    font-size: 0.5rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+  }
+
   /* The room's worth, on the heading's line. */
   .hud-loot-total {
     font-size: 0.625rem;
@@ -416,4 +612,174 @@
     background: transparent;
     padding-inline: 0.125rem;
   }
+}
+
+/*
+ * The Dota skin's reach into shared components.
+ * ----------------------------------------------------------------------
+ *
+ * Unlayered on purpose. These restyle elements whose padding and background
+ * are Tailwind utilities, and the utilities layer beats anything in
+ * `components` however specific it is — only an unlayered rule outranks it.
+ * Every selector is scoped to `[data-style='dota']`, so none of this touches
+ * the other two styles.
+ */
+
+/* Every glyph on a black drop shadow, as every glyph in the game is. */
+:root[data-style='dota'] body {
+  text-shadow: var(--dota-text-shadow);
+}
+
+/* The panel body: flat inventory grey, at the player's transparency. */
+:root[data-style='dota'] .hud-panel {
+  background: color-mix(in oklab, #2b2b2b var(--hud-panel-alpha, 82%), transparent);
+}
+
+/*
+ * The farm HUD has no body at all.
+ *
+ * Dota does not put its panels on a common slab: the warehouse, the backpack
+ * and the tooltip each float over the scene on their own, with the game in
+ * between. So here the outer panel is dropped — no ground, no frame, no
+ * shadow, no interactive ring — and each section brings its own ground and
+ * black edge instead (`.hud-dota-well`, `.hud-dota-section`, the title bar).
+ * The gap between them is simply the game.
+ *
+ * The farm window only: settings and history are pages of text and keep
+ * their slab. `data-overlay` is written by `useOverlay`. And only while the
+ * player has not asked for the frame back — `dotaFrame`, `data-dota-frame`.
+ */
+:root[data-style='dota'][data-overlay='farm']:not([data-dota-frame='true']) .hud-panel {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 0;
+  /* Collapsed, the shell sets `gap-0`; here the gap is the seam between two
+     panels, so it stays whatever the state. */
+  gap: 0.375rem;
+}
+
+/* The chrome row, while interactive, as a title bar of its own — there is no
+   slab behind it any more to read it against. */
+:root[data-style='dota'][data-overlay='farm']:not([data-dota-frame='true']) .hud-panel > header {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--dota-bar-top) var(--hud-panel-alpha, 82%), transparent),
+    color-mix(in oklab, var(--dota-bar-bottom) var(--hud-panel-alpha, 82%), transparent)
+  );
+  border: 1px solid #000;
+  padding: 0.25rem;
+}
+
+/* The room line as the warehouse's title bar: a lighter grey band fading
+   down into the panel, bold white type, no box around it. */
+:root[data-style='dota'] .hud-state-line {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--dota-bar-top) var(--hud-panel-alpha, 82%), transparent),
+    color-mix(in oklab, var(--dota-bar-bottom) var(--hud-panel-alpha, 82%), transparent)
+  );
+  border: 1px solid #000;
+  border-radius: 0;
+  font-weight: 700;
+}
+:root[data-style='dota'] .hud-state-line svg {
+  color: #ffffff;
+}
+
+/* The loot heading as the backpack's: "Backpack (2/50)  Value 1400" — a
+   heavy white title with the value beside it in grey, over a dark rule. */
+:root[data-style='dota'] .hud-loot-head {
+  padding: 0.125rem 0.25rem 0.25rem;
+  border-bottom: 1px solid #000;
+  color: var(--muted-foreground);
+}
+:root[data-style='dota'] .hud-loot-head > button:first-child {
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: none;
+}
+:root[data-style='dota'] .hud-loot-head > button:first-child > span::first-letter {
+  text-transform: uppercase;
+}
+:root[data-style='dota'] .hud-loot-total {
+  color: var(--muted-foreground);
+  font-weight: 600;
+  text-transform: none;
+}
+
+/* Rows on the well, alternating the way the game stripes a list. */
+:root[data-style='dota'] .hud-loot-row {
+  border-radius: 0;
+  background: transparent;
+}
+:root[data-style='dota'] .hud-loot-row:nth-child(odd) {
+  background: oklch(0 0 0 / 18%);
+}
+:root[data-style='dota'] .hud-loot-row:hover {
+  background: oklch(1 0 0 / 6%);
+}
+:root[data-style='dota'] .hud-loot-qty {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* Each loot icon in an inventory slot: black edge, rarity bar on top. */
+:root[data-style='dota'] .hud-loot-icon {
+  background: #0b0c0d;
+  border: 1px solid #000;
+  border-top: 2px solid var(--item-quality, #000);
+  border-radius: 0;
+}
+
+/*
+ * Toggle buttons — the settings' choices — as the warehouse tabs: grey bevels
+ * in a lighter hairline, and the pressed one brown with a gold rim and cream
+ * type. `background-image`, so the utilities' own background colour is left
+ * to sit underneath.
+ */
+:root[data-style='dota'] button[aria-pressed] {
+  background-image: linear-gradient(to bottom, var(--dota-tab-top), var(--dota-tab-bottom));
+  border: 1px solid var(--dota-tab-edge);
+  border-radius: var(--radius);
+  color: #c0c0c0;
+  font-weight: 600;
+}
+:root[data-style='dota'] button[aria-pressed='true'] {
+  background-image: linear-gradient(to bottom, var(--dota-tab-on-top), var(--dota-tab-on-bottom));
+  border-color: var(--primary);
+  color: var(--dota-tab-on-text);
+}
+
+/* Filled buttons as the SORT button: a blue-grey bevel, spaced capitals. */
+:root[data-style='dota'] [data-slot='button'][data-variant='default'],
+:root[data-style='dota'] [data-slot='button'][data-variant='outline'] {
+  background-image: linear-gradient(to bottom, var(--dota-button-top), #4d5a5e 45%, var(--dota-button-bottom));
+  border: 1px solid #454545;
+  border-radius: var(--radius);
+  color: #e9e9e9;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Text fields sunk into the panel like an empty slot. */
+:root[data-style='dota'] [data-slot='input'] {
+  background: var(--dota-slot);
+  border-color: var(--dota-tab-edge);
+  border-radius: 0;
+}
+
+/* Tooltips as the item tooltip: blue-teal, lit at the top, black-edged. */
+:root[data-style='dota'] [data-slot='tooltip-content'] {
+  background: linear-gradient(to bottom, #212d36, var(--popover));
+  border: 1px solid #000;
+  border-radius: 0;
+  color: var(--popover-foreground);
+  text-shadow: var(--dota-text-shadow);
+}
+:root[data-style='dota'] [data-slot='tooltip-content'] svg {
+  background: var(--popover);
+  fill: var(--popover);
 }

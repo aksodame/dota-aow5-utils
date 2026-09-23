@@ -813,7 +813,7 @@ export function Settings({
                   key={option}
                   active={(config?.style ?? DEFAULT_STYLE) === option}
                   onClick={() => onStyle(option)}
-                  title={m.settings.style[option === 'minimal' ? 'minimalHint' : 'torchlightHint']}
+                  title={m.settings.style[`${option}Hint`]}
                 >
                   {m.settings.style[option]}
                 </Choice>
@@ -821,6 +821,16 @@ export function Settings({
             </div>
             <p className="text-[0.625rem] text-muted-foreground">{m.settings.style.blurb}</p>
           </div>
+
+          {/* A knob of the Dota style alone, so it is only drawn under it. */}
+          {config?.style === 'dota' && (
+            <CheckboxRow
+              label={m.settings.style.dotaFrame}
+              hint={m.settings.style.dotaFrameHint}
+              checked={config.dotaFrame}
+              onChange={(next) => void window.tracker.setConfig({ dotaFrame: next })}
+            />
+          )}
 
           {/*
             Transparency is the panel's, never the window's — the numbers stay

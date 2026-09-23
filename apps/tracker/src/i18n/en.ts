@@ -438,11 +438,15 @@ export const en = {
     style: {
       title: 'Tracker style',
       blurb:
-        'How the readout is arranged, not just how it is coloured. Minimalistic gives every stat the same card and lets you read the one you came for. Torchlight puts your best drop of the session across the top and demotes the rest to a band of smaller figures under it.',
+        'How the readout is arranged, not just how it is coloured. Minimalistic gives every stat the same card and lets you read the one you came for. Torchlight puts your best drop of the session across the top and demotes the rest to a band of smaller figures under it. Dota keeps the minimalistic cards and draws them as the game’s own panels, in its colours and its typeface.',
       minimal: 'Minimalistic',
       minimalHint: 'Six equal cards on a frosted slab. Stays out of the way of the game.',
       torchlight: 'Torchlight',
       torchlightHint: 'Your best drop, large. Everything else inlined beneath it, in the idiom of an ARPG loot panel.',
+      dota: 'Dota',
+      dotaFrame: 'Frame around the HUD',
+      dotaFrameHint: 'Off, the sections float over the game as separate panels, the way Dota draws its own. On, they sit on one framed slab.',
+      dotaHint: 'The minimalistic cards, dressed as Dota’s own panels: bevelled slate slabs, item slots, rarity frames.',
     },
     appearance: {
       title: 'Appearance',
