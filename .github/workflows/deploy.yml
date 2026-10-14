@@ -8,6 +8,9 @@ name: Deploy site
 #   * by a tag — `git tag web-v2026.10.14 && git push origin web-v2026.10.14`,
 #     on a commit that is already in `master`.
 #
+# A run by hand tags the commit it deployed (see the last step); a run started
+# by a tag adds none.
+#
 # The tag is prefixed for the same reason the tracker's is (see
 # release-tracker.yml): the tracker ships on its own schedule under
 # `tracker-v*`, and the two must never trigger each other. No GitHub release is
@@ -29,8 +32,9 @@ on:
   push:
     tags: ['web-v*']
 
+# `write` for one thing only: the tag the last step pushes after a manual run.
 permissions:
-  contents: read
+  contents: write
 
 # One deploy at a time, and a second one waits rather than cancelling the
 # first: a container swap cut off halfway is worse than a short queue.
@@ -107,3 +111,31 @@ jobs:
       - name: Forget the key
         if: always()
         run: rm -f ~/.ssh/aow5_deploy
+
+      # A run by hand leaves a mark of what went out: `web-vYYYY.MM.DD`, with
+      # `-2`, `-3` for a second deploy the same day. Not on a run started by a
+      # tag — that commit is already marked — and not on a commit that carries a
+      # `web-v*` tag already, so redeploying it adds nothing. Pushed with the
+      # workflow's own token, which by design starts no other workflow: the tag
+      # does not deploy the commit a second time.
+      - name: Tag what was deployed
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          existing="$(git tag --points-at HEAD --list 'web-v*' | head -n1)"
+          if [ -n "$existing" ]; then
+            echo "Already tagged $existing; nothing to add."
+            exit 0
+          fi
+          git fetch --quiet --tags origin
+          base="web-v$(date -u +%Y.%m.%d)"
+          tag="$base"
+          n=1
+          while git rev-parse -q --verify "refs/tags/$tag" >/dev/null; do
+            n=$((n + 1))
+            tag="$base-$n"
+          done
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a "$tag" -m "Deployed to ${{ vars.SITE_DOMAIN }} by ${{ github.actor }}"
+          git push origin "refs/tags/$tag"
+          echo "Tagged $tag"
