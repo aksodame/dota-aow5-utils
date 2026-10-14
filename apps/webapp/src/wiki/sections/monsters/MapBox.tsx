@@ -6,16 +6,16 @@ import { nameOf } from './model';
 import { waveText, type Ctx } from './parts';
 import styles from '../MonstersPage.module.css';
 
-/** World units to a percentage of the overview image; the image's Y axis runs down. */
+/** World units to a percentage of the room's map; the picture's Y axis runs down. */
 const mapX = (b: Bounds, x: number) => ((x - b.minX) / (b.maxX - b.minX)) * 100;
 const mapY = (b: Bounds, y: number) => ((b.maxY - y) / (b.maxY - b.minY)) * 100;
 
 /**
- * The room's overview with the selected unit's spawn points on it.
+ * The room's map with the selected unit's spawn points on it.
  *
  * A unit in several mapped rooms gets a button that steps through them. The
- * overview is the game's own minimap art, drawn with transparency meant to sit
- * on the dark of the HUD — so it is laid on a dark ground in both themes.
+ * map is the wiki author's in-game screenshot, framed to exactly the room's
+ * bounds, so a point's percentage position lands where the unit stands.
  * A point's opacity follows its spawn chance, and a hunter's point (where its
  * wave comes from, not a spawn) has its own colour.
  */

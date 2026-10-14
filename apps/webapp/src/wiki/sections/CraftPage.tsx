@@ -55,6 +55,7 @@ import {
   useAuctionPrices,
   useWikiData,
   useWikiPageMeta,
+  RowTile,
 } from '../kit';
 import type { SectionProps } from '../WikiPage';
 import { CraftSummary } from './craft/CraftSummary';
@@ -366,7 +367,7 @@ export default function CraftPage({ path }: SectionProps) {
                 key={row.id}
                 href={wikiPath('craft', row.id)}
                 active={selected?.id === row.id}
-                icon={<ItemTile item={row.summary} />}
+                icon={<RowTile item={row.summary} />}
                 title={row.summary.name}
                 meta={[
                   common.levelShort(row.item.level),

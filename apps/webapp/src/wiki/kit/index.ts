@@ -23,7 +23,7 @@ export {
   WikiSidebar,
   WikiSubTabs,
 } from './Layout';
-export { AuctionField, ItemGrid, ItemRef } from './Refs';
+export { AuctionField, ItemGrid, ItemRef, RowTile } from './Refs';
 export { WikiText } from './WikiText';
 export { setAuctionPrice, useAuctionPrice, useAuctionPrices } from './auction';
 export { collate, day, duration, num, pct, pctOf, plural } from './format';

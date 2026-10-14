@@ -6,7 +6,6 @@ import { extractPublishData } from './lib/publishData.ts';
 import { readRulesetTable } from './lib/ruleset.ts';
 import { scriptText } from './lib/hudScript.ts';
 import { readEntityLump, type Kv3Value, type MapEntity } from './lib/kv3bin.ts';
-import { decodeVtex, encodePng, readVtexInfo } from './lib/vtex.ts';
 import { hasHan } from './lib/han.ts';
 import { writeJson } from './lib/writeJson.ts';
 import { check, exitIfFailed, fail, info, ok, step, warn } from './lib/log.ts';
@@ -46,7 +45,7 @@ import type {
  *   minigames.json    the minigames' stage rewards and units
  *   locale.<lang>.monsters.json / locale.<lang>.minigames.json
  *
- * and the minimap overviews to `public/icons/maps/overview/<room>.png`.
+ * and each room's hand-captured map to `public/icons/maps/overview/<room>.webp`.
  *
  * Sources, all plain surface files:
  *
@@ -76,6 +75,8 @@ step('08a · wiki: monsters, locations, minigames');
 
 const OUT = path.join(DIRS.publicData, 'wiki');
 const OVERVIEW_DIR = path.join(DIRS.publicIcons, 'maps', 'overview');
+/** The wiki author's screenshots of each room's map; see the overviews step. */
+const WIKI_MAPS = path.join(DIRS.root, 'assets', 'wiki-maps');
 const MAP_CACHE = path.join(DIRS.cache, 'maps');
 const DATA = 'panorama/layout/custom_game/vendor/data';
 const RULESETS: RulesetId[] = ['s1', 's2', 's3'];
@@ -505,50 +506,39 @@ check(
 // --- overviews ----------------------------------------------------------------
 
 /*
- * The minimap's overview art, `panorama/images/custom_game/maps/<map>_png`.
- * Most are plain DXT5 — not the YCoCg the portal art is, which turns these
- * purple — and two (`map_10`, `map_12`) are format 18, a PNG file carried
- * whole inside the resource. Both keep their alpha: the HUD draws them over
- * a dark panel.
+ * The map a room's spawn points are drawn on.
+ *
+ * **Hand-captured, not the pak's minimap.** The wiki's author screenshotted
+ * each room's map in the game, framed to exactly the room's fog bounds, and
+ * the spawn dots were placed on those pictures — they are what readers know,
+ * and they are sharper than the HUD's minimap art. They live in
+ * `parser/assets/wiki-maps/<room>.webp` (WebP of the original PNGs, at the
+ * original size: a dot's position is a percentage of the picture, so the
+ * picture must cover the same square the bounds name). A room without one
+ * gets no map; nothing is invented for it.
  */
 fs.mkdirSync(OVERVIEW_DIR, { recursive: true });
 {
-  const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   const written = new Set<string>();
   for (const loc of Object.values(locations)) {
-    if (Object.keys(loc.spawns).length === 0) continue;
-    const entry = vpk.get(`${cfg.mapImageDir}/${loc.map}_png.vtex_c`);
-    if (!entry) {
-      warn(`${loc.id}: no overview image for ${loc.map}`);
+    if (Object.keys(loc.spawns).length === 0 || loc.bounds === null) continue;
+    const file = `${loc.id}.webp`;
+    const source = path.join(WIKI_MAPS, file);
+    if (!fs.existsSync(source)) {
+      warn(`${loc.id}: no hand-captured map in assets/wiki-maps; drawn without one`);
       continue;
     }
-    const buf = vpk.read(entry);
-    const vt = readVtexInfo(buf);
-    let png: Buffer | null = null;
-    if (vt?.format === 18) {
-      const at = buf.indexOf(PNG, vt.dataOffset);
-      if (at >= 0) png = buf.subarray(at);
-    } else {
-      const decoded = decodeVtex(buf, { ycocg: false });
-      if (decoded.ok) png = encodePng(decoded.image);
-      else fail(`${loc.id}: overview ${loc.map}: ${decoded.reason}`);
-    }
-    if (png === null) {
-      fail(`${loc.id}: overview ${loc.map} could not be read`);
-      continue;
-    }
-    const file = `${loc.id}.png`;
-    fs.writeFileSync(path.join(OVERVIEW_DIR, file), png);
+    fs.copyFileSync(source, path.join(OVERVIEW_DIR, file));
     loc.overview = file;
     written.add(file);
   }
   for (const file of fs.readdirSync(OVERVIEW_DIR)) {
-    if (file.endsWith('.png') && !written.has(file)) {
+    if (!written.has(file)) {
       fs.unlinkSync(path.join(OVERVIEW_DIR, file));
       warn(`removed orphaned overview ${file}`);
     }
   }
-  ok(`${written.size} overview image(s)`);
+  ok(`${written.size} room map(s)`);
 }
 
 // === minigames ===============================================================

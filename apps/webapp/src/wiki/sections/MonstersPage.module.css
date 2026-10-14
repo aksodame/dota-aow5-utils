@@ -20,29 +20,38 @@
 }
 
 /*
- * The list and the map, stacked, in the page's own flow.
- *
- * Not one sticky box the height of the window: at a laptop's 900px the map
- * took half of it and left the item list three rows tall. The list gets most
- * of a window of its own and the map sits under it, a scroll away.
+ * The list and the map, one sticky column the height of the window — like the
+ * sidebar beside it, it stays put while the detail scrolls. The list takes
+ * whatever the map leaves; the map keeps its square, because a spawn dot's
+ * position is a percentage of it.
  */
 .middle {
+  position: sticky;
+  top: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
+  height: calc(100svh - var(--topbar-h) - 44px - var(--footer-h, 84px) - var(--space-6));
+  min-height: 560px;
 }
 
 .itemsPanel.itemsPanel {
   position: static;
-  flex: none;
-  height: min(620px, calc(100svh - var(--topbar-h) - 44px - var(--footer-h, 84px) - var(--space-6)));
-  min-height: 360px;
+  flex: 1;
+  height: auto;
+  min-height: 220px;
 }
 
 @media (max-width: 1200px) {
-  .itemsPanel.itemsPanel {
+  .middle {
+    position: static;
     height: auto;
+    min-height: 0;
+  }
+
+  .itemsPanel.itemsPanel {
+    flex: none;
     min-height: 0;
     max-height: 70svh;
   }
@@ -343,7 +352,6 @@
 
 .mapCanvas {
   position: relative;
-  margin-top: var(--space-3);
   overflow: hidden;
   background: var(--map-ground);
   border-radius: var(--radius);

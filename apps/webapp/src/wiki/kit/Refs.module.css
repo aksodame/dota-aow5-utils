@@ -99,3 +99,8 @@
 .auctionUnit {
   white-space: nowrap;
 }
+
+.rowTile {
+  flex: none;
+  display: block;
+}

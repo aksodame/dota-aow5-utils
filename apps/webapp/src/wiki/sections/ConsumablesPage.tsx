@@ -68,6 +68,7 @@ import {
   pctOf,
   useWikiData,
   useWikiPageMeta,
+  RowTile,
 } from '../kit';
 import type { SectionProps } from '../WikiPage';
 import styles from './ConsumablesPage.module.css';
@@ -216,7 +217,7 @@ export default function ConsumablesPage({ path }: SectionProps) {
                 key={row.id}
                 href={wikiPath('consumables', row.id)}
                 active={row.id === selectedId}
-                icon={<ItemTile item={row.summary} />}
+                icon={<RowTile item={row.summary} />}
                 title={row.name}
                 meta={
                   <>

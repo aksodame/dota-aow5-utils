@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { ItemSummary } from 'aow5-shared/data';
 import { useApp } from '@/data/AppData';
 import { ItemTile } from '@/components/Tile';
 import { Input, cx } from '@/ui';
@@ -64,6 +65,22 @@ export function ItemRef({
         </span>
       )}
     </Link>
+  );
+}
+
+/**
+ * An item's tile at a list row's size.
+ *
+ * `ItemTile` is square and as wide as its box, which in a list row is no
+ * width at all — so on its own it grew to the row's full width. This pins it
+ * to the height of a title and one line of facts, the same size the monster
+ * and hero lists draw their art at.
+ */
+export function RowTile({ item, size = 36 }: { item: ItemSummary; size?: number }) {
+  return (
+    <span className={styles.rowTile} style={{ width: size, height: size }}>
+      <ItemTile item={item} />
+    </span>
   );
 }
 

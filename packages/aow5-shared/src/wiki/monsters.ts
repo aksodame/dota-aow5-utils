@@ -219,11 +219,12 @@ export interface Location {
   map: string;
   /** Other maps the HUD also files under this room (`map_1_s2`), not read. */
   alternates?: string[];
-  /** World rectangle the overview image covers (the map's fog bounds). */
+  /** World rectangle the map picture covers (the map's fog bounds). */
   bounds: Bounds | null;
   /**
-   * The game's minimap overview, under `icons/maps/overview/`. It is drawn
-   * with transparency meant to sit on a dark background.
+   * The room's map, under `icons/maps/overview/` — the wiki author's
+   * in-game screenshot, covering exactly `bounds`. Absent for a room that
+   * has none.
    */
   overview?: string;
   /** Unit id -> every point it can appear at. */
