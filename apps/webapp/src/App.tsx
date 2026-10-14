@@ -1,8 +1,10 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { Notice } from '@/ui';
 import { AppDataProvider, useApp } from '@/data/AppData';
 import { SiteFooter } from '@/components/SiteFooter';
 import { TopBar } from '@/components/TopBar';
+import { WikiNav } from '@/wiki/WikiNav';
+import { WikiPage } from '@/wiki/WikiPage';
 import type { FilterState } from '@/components/Filters';
 import { BrowsePage } from '@/routes/BrowsePage';
 import { BuildPage } from '@/routes/BuildPage';
@@ -10,10 +12,9 @@ import { EditorPage } from '@/routes/EditorPage';
 import { MyCreationsPage } from '@/routes/MyCreationsPage';
 import { SettingsPage } from '@/routes/SettingsPage';
 import { ItemPage } from '@/routes/ItemPage';
-import { ItemsPage } from '@/routes/ItemsPage';
 import { ViewPage } from '@/routes/ViewPage';
 import { TrackerPage } from '@/routes/TrackerPage';
-import { navigateTo, pathOf, useMatch, useScrollReset, useSearch } from '@/router';
+import { legacyRedirect, navigateTo, pathOf, useMatch, useScrollReset, useSearch } from '@/router';
 import { browseSearch, readBrowseParams, type BrowseQueryState } from '@/lib/browseParams';
 import { LANG_PARAM } from '@/i18n/strings';
 import { useDocumentMeta } from '@/lib/meta';
@@ -98,7 +99,20 @@ function Shell() {
   );
   const onSearch = useCallback((next: string) => setBrowse({ ...browse, q: next }), [setBrowse, browse]);
 
-  useScrollReset(`${match.id}:${match.slug ?? match.itemId ?? ''}`);
+  useScrollReset(`${match.id}:${match.slug ?? match.itemId ?? ''}:${match.section ?? ''}/${match.path?.join('/') ?? ''}`);
+
+  /*
+   * An address the catalogue had before it was part of the wiki.
+   *
+   * The server answers these with a 301 before the app ever loads; this is the
+   * same move for a link followed from a page that was already open, which
+   * never asks the server anything. `replace`, so Back does not land on a URL
+   * that only bounces forward again.
+   */
+  useEffect(() => {
+    const target = legacyRedirect(window.location.pathname);
+    if (target !== null) navigateTo(`${target}${window.location.search}${window.location.hash}`, { replace: true });
+  }, [match]);
 
   /*
    * Steam sends people back to `/` with `?auth=failed` or `?auth=banned` when
@@ -124,8 +138,16 @@ function Shell() {
   const meta = useMemo<MetaTarget | null>(
     // `build` and `item` both need a record this component does not have, so
     // those two pages own their own head. Everything else is a static route.
-    () => (match.id === 'build' || match.id === 'item' ? null : { kind: match.id }),
-    [match.id],
+    () => {
+      if (match.id === 'build' || match.id === 'item') return null;
+      // A wiki section's own list owns no record, so its head is the section's;
+      // anything below it is a record the section's page has and this does not.
+      if (match.id === 'wiki') {
+        return match.section !== undefined && (match.path?.length ?? 0) === 0 ? { kind: 'wiki', section: match.section } : null;
+      }
+      return { kind: match.id };
+    },
+    [match.id, match.section, match.path],
   );
   useDocumentMeta(meta, lang);
 
@@ -136,6 +158,7 @@ function Shell() {
       </a>
 
       <TopBar match={match} />
+      {(match.id === 'wiki' || match.id === 'item') && <WikiNav section={match.section ?? 'items'} />}
 
       <main id="main" className={styles.main}>
         {coreError !== null && (
@@ -155,7 +178,9 @@ function Shell() {
         {match.id === 'settings' && <SettingsPage />}
         {match.id === 'tracker' && <TrackerPage />}
         {match.id === 'build' && match.slug !== undefined && <BuildPage slug={match.slug} />}
-        {match.id === 'items' && <ItemsPage />}
+        {match.id === 'wiki' && match.section !== undefined && (
+          <WikiPage section={match.section} path={match.path ?? []} />
+        )}
         {match.id === 'item' && match.itemId !== undefined && <ItemPage itemId={match.itemId} />}
       </main>
 

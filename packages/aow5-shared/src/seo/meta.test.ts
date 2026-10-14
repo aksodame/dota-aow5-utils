@@ -14,6 +14,7 @@ import {
   type BuildFacts,
 } from './meta.ts';
 import { formatGold } from '../format/gold.ts';
+import { WIKI_SECTIONS, wikiCardPath } from './wiki.ts';
 import { textWidth } from './text.ts';
 
 const BUILD: BuildFacts = {
@@ -283,7 +284,7 @@ const ITEM = {
 
 test('an item page is titled by its own name and canonicalises to its own path', () => {
   const meta = pageMeta({ kind: 'item', item: ITEM, version: '1789897138124' }, 'en');
-  assert.equal(meta.path, '/items/item_H0001');
+  assert.equal(meta.path, '/wiki/items/item_H0001');
   assert.ok(meta.title.startsWith('Waterfowl Dance'), meta.title);
   assert.equal(meta.socialTitle, 'Waterfowl Dance');
   assert.equal(meta.noindex, false);
@@ -313,12 +314,42 @@ test('the facts line opens the description, and every language has one', () => {
 
 test('an id that names nothing keeps its own canonical and is not indexed', () => {
   const meta = pageMeta({ kind: 'missingItem', id: 'item_gone' }, 'en');
-  assert.equal(meta.path, '/items/item_gone');
+  assert.equal(meta.path, '/wiki/items/item_gone');
   assert.equal(meta.noindex, true);
 });
 
-test('the catalogue is indexed, because it is how an item page is found', () => {
-  const meta = pageMeta({ kind: 'items' }, 'en');
-  assert.equal(meta.path, '/items');
+test('a wiki section is indexed, because it is how the pages in it are found', () => {
+  for (const section of WIKI_SECTIONS) {
+    for (const lang of SEO_LANGS) {
+      const meta = pageMeta({ kind: 'wiki', section }, lang);
+      assert.equal(meta.path, `/wiki/${section}`);
+      assert.equal(meta.noindex, false);
+      assert.equal(meta.image, `/api/og/wiki/${section}.${lang}.png`);
+      assert.ok(meta.description.length > 0, `${section} ${lang}`);
+    }
+  }
+});
+
+test('a wiki page carries its own name, facts and versioned card', () => {
+  const page = {
+    section: 'monsters' as const,
+    path: ['monster_12004'],
+    name: 'Mine Lord',
+    facts: 'Boss · Lv. 1 · Abandoned Mine',
+    description: '',
+  };
+  const meta = pageMeta({ kind: 'wikiPage', page, version: '123' }, 'en');
+  assert.equal(meta.path, '/wiki/monsters/monster_12004');
+  assert.equal(meta.image, '/api/og/wiki/monsters/monster_12004.123.en.png');
+  assert.ok(meta.title.startsWith('Mine Lord'));
+  assert.ok(meta.description.startsWith('Boss · Lv. 1 · Abandoned Mine.'));
   assert.equal(meta.noindex, false);
+  // Two segments join with a character no segment can hold.
+  assert.equal(wikiCardPath('progression', ['tree4', 'T123'], '9', 'ru'), '/api/og/wiki/progression/tree4~T123.9.ru.png');
+});
+
+test('a wiki page that names nothing keeps its address and is not indexed', () => {
+  const meta = pageMeta({ kind: 'missingWiki', section: 'heroes', path: ['nobody'] }, 'en');
+  assert.equal(meta.path, '/wiki/heroes/nobody');
+  assert.equal(meta.noindex, true);
 });

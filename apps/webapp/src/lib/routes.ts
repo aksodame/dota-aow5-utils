@@ -1,10 +1,21 @@
+import {
+  DEFAULT_WIKI_SECTION,
+  WIKI_DEPTH,
+  WIKI_PREFIX,
+  WIKI_SEGMENT,
+  isWikiSection,
+  wikiPagePath,
+  type WikiSection,
+} from 'aow5-shared/seo';
+
 /**
  * The route table and the pure functions over it.
  *
  * Split out of `router.tsx` so it can be tested: `node --test` strips types
  * but not JSX, so anything that has to be verified lives in a file with none.
  *
- * Six static routes and two with a variable in them, which is the whole site.
+ * Six static routes, two with a variable in them and the wiki, which is the
+ * whole site.
  * The planner, the landing page, the separate published-builds list and the
  * my-builds page collapsed into these: browsing *is* the front page now, and
  * the thing that used to be the planner is the editor behind it.
@@ -36,15 +47,26 @@ export const ROUTES = {
   /** The account: which providers vouch for you, and the language. */
   settings: 'settings',
   tracker: 'tracker',
-  /**
-   * The catalogue: every playable item, as a grid.
-   *
-   * Both a page and the parent of `/items/<id>`, which is why the prefix below
-   * is the same literal. A bare `/items` is the grid; anything after the slash
-   * is one item.
-   */
-  items: 'items',
 } as const;
+
+/**
+ * The reference book about the game: `/wiki/<section>/…`.
+ *
+ * Not in `ROUTES`, for the reason `/builds/<slug>` is not: every page in it has
+ * a section, and most have something after it. The catalogue that used to be
+ * `/items` is the first section, and its pages moved with it — see
+ * `legacyRedirect` for the old addresses.
+ *
+ * The sections themselves are declared in `aow5-shared/seo`, because the
+ * server's prerenderer and card renderer need the same list.
+ */
+export {
+  DEFAULT_WIKI_SECTION,
+  WIKI_PREFIX,
+  WIKI_SECTIONS,
+  isWikiSection,
+  type WikiSection,
+} from 'aow5-shared/seo';
 
 /**
  * The first route with a variable in it: `/builds/<slug>`.
@@ -59,14 +81,16 @@ export const ROUTES = {
 export const BUILD_PREFIX = 'builds';
 
 /**
- * The second route with a variable in it: `/items/<id>`.
+ * One item's own page: `/wiki/items/<id>`.
  *
- * Beside `BUILD_PREFIX` and for the same reason — `ROUTES` maps a name to a
- * literal and `routeAt` is a lookup in it, so neither table gains a hole. The
- * prefix is plural because the segment names a collection and the id names one
- * of it, which is the shape every other list-plus-detail on the site uses.
+ * Its own match rather than a generic wiki one, because it is the one wiki page
+ * that existed before the wiki did — the item card on the server, the sitemap
+ * and the share links all know it as `item`, and they still do.
  */
-export const ITEM_PREFIX = ROUTES.items;
+export const ITEM_PREFIX = `${WIKI_PREFIX}/items`;
+
+/** Where the catalogue lived before it was a section of the wiki. */
+const LEGACY_ITEM_PREFIX = 'items';
 
 /**
  * What an item id may look like.
@@ -114,6 +138,22 @@ export function buildPath(slug: string, base: string = BASE): string {
 /** The path for one item's own page. Mirrors `itemPagePath` in `aow5-shared/seo`. */
 export function itemPath(id: string, base: string = BASE): string {
   return `${base}${ITEM_PREFIX}/${id}`;
+}
+
+/**
+ * A page of the wiki: its section, then whatever that section keys on.
+ *
+ * Segments are encoded even though every legal one is already URL-safe, so a
+ * caller handing over something it should not have gets a link that matches
+ * nothing rather than one that means something else.
+ */
+export function wikiPath(section: WikiSection, ...rest: string[]): string {
+  return wikiPathAt(BASE, section, ...rest);
+}
+
+/** The same, under an explicit base — for tests. Mirrors `wikiPagePath` in `aow5-shared/seo`. */
+export function wikiPathAt(base: string, section: WikiSection, ...rest: string[]): string {
+  return wikiPagePath(section, rest, base);
 }
 
 /**
@@ -196,11 +236,33 @@ export function routeAt(pathname: string, base: string = BASE): RouteId {
 }
 
 export interface Match {
-  id: RouteId | 'build' | 'item';
+  id: RouteId | 'build' | 'item' | 'wiki';
   /** Only present for `build`. */
   slug?: string;
   /** Only present for `item`. */
   itemId?: string;
+  /** Only present for `wiki`. */
+  section?: WikiSection;
+  /** Only present for `wiki`: the segments after the section, possibly none. */
+  path?: string[];
+}
+
+/**
+ * Where an address the site no longer uses has gone, or `null`.
+ *
+ * `/items` and `/items/<id>` are the catalogue before it became a section of
+ * the wiki. They were shared and indexed, so they keep working: the server
+ * answers them with a 301, and this is the same move for a navigation that
+ * never reached the server — a link inside a page that was already open.
+ */
+export function legacyRedirect(pathname: string, base: string = BASE): string | null {
+  const tail = rest(pathname, base);
+  if (tail === LEGACY_ITEM_PREFIX) return wikiPathAt(base, 'items');
+  if (tail.startsWith(`${LEGACY_ITEM_PREFIX}/`)) {
+    const itemId = tail.slice(LEGACY_ITEM_PREFIX.length + 1);
+    if (ITEM_ID.test(itemId)) return itemPath(itemId, base);
+  }
+  return null;
 }
 
 /**
@@ -227,6 +289,13 @@ export function matchRoute(pathname: string, base: string = BASE): Match {
     return { id: 'browse' };
   }
 
+  if (tail === WIKI_PREFIX || tail.startsWith(`${WIKI_PREFIX}/`)) {
+    const [section = DEFAULT_WIKI_SECTION, ...path] = tail.split('/').slice(1).map(safeDecode);
+    if (!isWikiSection(section)) return { id: 'browse' };
+    if (path.length > WIKI_DEPTH || !path.every((part) => WIKI_SEGMENT.test(part))) return { id: 'browse' };
+    return { id: 'wiki', section, path };
+  }
+
   return { id: routeAt(pathname, base) };
 }
 
@@ -246,4 +315,13 @@ export function carriesBuildPayload(hash: string): boolean {
   const fragment = hash.replace(/^#/, '');
   if (fragment.startsWith('b=') && fragment.length > 2) return true;
   return fragment !== '' && !fragment.includes('=');
+}
+
+/** A segment that does not decode is not one this site wrote, so it matches nothing. */
+function safeDecode(part: string): string {
+  try {
+    return decodeURIComponent(part);
+  } catch {
+    return '\0';
+  }
 }

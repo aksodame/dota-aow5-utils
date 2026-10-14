@@ -10,35 +10,46 @@
  * table is six literals.
  *
  * What must not drift is the behaviour, which is pinned by tests on both sides:
- * seven static paths, two dynamic segments, and anything unrecognised falling
- * through to the browse page rather than to an error.
+ * six static paths, two dynamic segments, the wiki, and anything unrecognised
+ * falling through to the browse page rather than to an error.
+ *
+ * The wiki's section list is *not* duplicated: it is declared once in
+ * `aow5-shared/seo`, because the card renderer needs it too.
  */
 
 import { isSlug } from '../builds/slug.ts';
+import {
+  DEFAULT_WIKI_SECTION,
+  WIKI_DEPTH,
+  WIKI_PREFIX,
+  WIKI_SEGMENT,
+  isWikiSection,
+  type WikiSection,
+} from 'aow5-shared/seo';
 
 /** The static routes, keyed by the path segment that names them. Mirrors `ROUTES`. */
-const STATIC: Record<string, Exclude<RouteName, 'build' | 'item'>> = {
+const STATIC: Record<string, Exclude<RouteName, 'build' | 'item' | 'wiki'>> = {
   '': 'browse',
   me: 'mine',
   edit: 'edit',
   view: 'view',
   settings: 'settings',
   tracker: 'tracker',
-  items: 'items',
 };
 
-export type RouteName = 'browse' | 'mine' | 'edit' | 'view' | 'settings' | 'tracker' | 'items' | 'build' | 'item';
+export type RouteName = 'browse' | 'mine' | 'edit' | 'view' | 'settings' | 'tracker' | 'build' | 'item' | 'wiki';
 
 export type RouteMatch =
-  | { route: Exclude<RouteName, 'build' | 'item'>; lang: string | undefined }
+  | { route: Exclude<RouteName, 'build' | 'item' | 'wiki'>; lang: string | undefined }
+  | { route: 'wiki'; section: WikiSection; path: string[]; lang: string | undefined }
   | { route: 'build'; slug: string; lang: string | undefined }
   | { route: 'item'; itemId: string; lang: string | undefined };
 
 /** Mirrors `BUILD_PREFIX`. */
 const BUILD_PREFIX = 'builds';
 
-/** Mirrors `ITEM_PREFIX`, which is the `items` route's own literal. */
-const ITEM_PREFIX = 'items';
+/** Mirrors `ITEM_PREFIX`: an item's page is the wiki's `items` section plus its id. */
+const ITEM_PREFIX = `${WIKI_PREFIX}/items`;
 
 /** Mirrors the webapp's `ITEM_ID`. */
 const ITEM_ID = /^item_[A-Za-z0-9_]{1,40}$/;
@@ -83,6 +94,13 @@ export function matchPath(uri: string): RouteMatch {
     const itemId = tail.slice(ITEM_PREFIX.length + 1);
     if (ITEM_ID.test(itemId)) return { route: 'item', itemId, lang };
     return { route: 'browse', lang };
+  }
+
+  if (tail === WIKI_PREFIX || tail.startsWith(`${WIKI_PREFIX}/`)) {
+    const [section = DEFAULT_WIKI_SECTION, ...path] = tail.split('/').slice(1);
+    if (!isWikiSection(section)) return { route: 'browse', lang };
+    if (path.length > WIKI_DEPTH || !path.every((part) => WIKI_SEGMENT.test(part))) return { route: 'browse', lang };
+    return { route: 'wiki', section, path, lang };
   }
 
   return { route: STATIC[tail] ?? 'browse', lang };

@@ -2,7 +2,7 @@ import { useState, type MouseEvent } from 'react';
 import { Avatar, Button, Tab, Tabs } from '@/ui';
 import { SignInDialog } from './SignInDialog';
 import { useApp } from '@/data/AppData';
-import { navigateTo, pathOf, type Match } from '@/router';
+import { DEFAULT_WIKI_SECTION, navigateTo, pathOf, wikiPath, type Match } from '@/router';
 // Imported rather than served from a folder: Vite fingerprints it, so the bar's
 // one image is cached forever and replaced by name when it changes. The app has
 // no `public/` of its own — that belongs to the shared package's game data.
@@ -10,7 +10,7 @@ import logotype from '@/assets/logotype.png';
 import styles from './TopBar.module.css';
 
 /**
- * Builder, My Creations, Tracker, Settings, and who you are.
+ * Builder, My Creations, Wikipedia, Tracker, Settings, and who you are.
  *
  * The right-hand end is the account: a Sign in button for a visitor, and the
  * avatar, the nickname and Sign out for somebody with one. The language
@@ -54,6 +54,18 @@ export function TopBar({ match }: { match: Match }) {
             {strings.nav.mine}
           </Tab>
         )}
+        {/*
+          The reference book about the game, beside the things you make with it.
+
+          It used to be a lone Items tab at the far end behind a rule, when the
+          catalogue was the whole of it. Now it is eleven sections, the
+          catalogue among them, and its own row under this one says which — so
+          it sits with the builder rather than apart from it. An item's own page
+          lights it, the way the editor lights My Creations.
+        */}
+        <Tab href={wikiPath(DEFAULT_WIKI_SECTION)} active={route === 'wiki' || route === 'item'} onClick={intercept}>
+          {strings.nav.wiki}
+        </Tab>
         <Tab href={pathOf('tracker')} active={route === 'tracker'} onClick={intercept}>
           {strings.nav.tracker}
         </Tab>
@@ -64,20 +76,6 @@ export function TopBar({ match }: { match: Match }) {
         */}
         <Tab href={pathOf('settings')} active={route === 'settings'} onClick={intercept}>
           {strings.nav.settings}
-        </Tab>
-
-        {/*
-          The catalogue, last and behind a rule.
-          
-          The four tabs before it are things you *do* here — browse, publish,
-          track, configure. This is a reference book about the game, which is a
-          different kind of destination, and the separator is what says so
-          rather than making it a fifth thing of the same sort. An item's own
-          page lights it too, the way the editor lights My Creations.
-        */}
-        <span className={styles.navRule} aria-hidden />
-        <Tab href={pathOf('items')} active={route === 'items' || route === 'item'} onClick={intercept}>
-          {strings.nav.items}
         </Tab>
       </Tabs>
 
@@ -134,7 +132,7 @@ export function TopBar({ match }: { match: Match }) {
  * leaving every modified click — new tab, new window, download — to the
  * browser, exactly as `Link` does.
  */
-function intercept(event: MouseEvent<HTMLAnchorElement>): void {
+export function intercept(event: MouseEvent<HTMLAnchorElement>): void {
   if (event.defaultPrevented || event.button !== 0) return;
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   event.preventDefault();

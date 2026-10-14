@@ -77,8 +77,6 @@ export interface SeoStrings {
      * `itemDescription`.
      */
     item: { title: string; description: string };
-    /** The catalogue grid, which lists every item page. */
-    items: { title: string; description: string };
   };
   /** The word for the Event category, which is not a numbered tier. */
   event: string;
@@ -169,10 +167,6 @@ const EN: SeoStrings = {
       title: 'Items',
       description: 'An item from Age of Weapons 5: what it costs, what it rolls, and what it is made from.',
     },
-    items: {
-      title: 'All items',
-      description: 'Every item in Age of Weapons 5, searchable by name or id: equipment, runes, fate stones, recipes and consumables.',
-    },
   },
   event: 'Event',
   gold: 'gold',
@@ -239,10 +233,6 @@ const RU: SeoStrings = {
     item: {
       title: 'Предметы',
       description: 'Предмет из Age of Weapons 5: сколько стоит, что даёт и из чего собирается.',
-    },
-    items: {
-      title: 'Все предметы',
-      description: 'Все предметы Age of Weapons 5 с поиском по названию и идентификатору: снаряжение, руны, грани судьбы, рецепты и расходники.',
     },
   },
   event: 'Событие',
@@ -316,10 +306,6 @@ const ZH: SeoStrings = {
     item: {
       title: '物品',
       description: '《兵器时代5》中的物品：价格、属性与合成来源。',
-    },
-    items: {
-      title: '全部物品',
-      description: '《兵器时代5》的全部物品，可按名称或 ID 搜索：装备、符印、命石、图纸与消耗品。',
     },
   },
   event: '活动',

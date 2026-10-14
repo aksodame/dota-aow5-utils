@@ -134,6 +134,19 @@ aow5-helper.com, www.aow5-helper.com, aow5-helper.duckdns.org {
 		reverse_proxy api:3000
 	}
 
+	# The catalogue's old addresses, before it became a section of the wiki.
+	#
+	# `/items` and `/items/<id>` were shared and indexed, so they answer with a
+	# 301 to the same page under `/wiki/items` — for crawlers and readers alike,
+	# which is why this sits above the crawler block. A malformed id is left to
+	# the app, which treats it like any other unknown path. `{?query}` keeps a
+	# `?lang=` the link carried; a redirect cannot carry a fragment and has none
+	# to carry here.
+	redir /items /wiki/items{?query} permanent
+	redir /items/ /wiki/items{?query} permanent
+	@legacyItem path_regexp legacyItem ^/items/(item_[A-Za-z0-9_]{1,40})/?$
+	redir @legacyItem /wiki/items/{re.legacyItem.1}{?query} permanent
+
 	# Link scrapers get a prerendered page. Everybody else gets the app.
 	#
 	# This site is a single-page app with no server rendering, so index.html

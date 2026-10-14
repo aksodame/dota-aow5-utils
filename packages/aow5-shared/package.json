@@ -15,7 +15,8 @@
     "./id-table.json": "./data/id-table.json",
     "./ability-table.json": "./data/ability-table.json",
     "./map-table.json": "./data/map-table.json",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./wiki": "./src/wiki/index.ts"
   },
   "scripts": {
     "test": "node --test \"src/*/*.test.ts\"",

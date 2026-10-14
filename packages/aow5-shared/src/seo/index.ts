@@ -39,6 +39,23 @@ export {
   type SeoStrings,
 } from './strings.ts';
 
+export {
+  DEFAULT_WIKI_SECTION,
+  WIKI_DEPTH,
+  WIKI_PREFIX,
+  WIKI_SECTIONS,
+  WIKI_SEGMENT,
+  WIKI_SEO_STRINGS,
+  isWikiSection,
+  wikiCardPath,
+  wikiPageDescription,
+  wikiPagePath,
+  wikiSectionCardPath,
+  type WikiPageFacts,
+  type WikiSection,
+  type WikiSeoStrings,
+} from './wiki.ts';
+
 export { clampWidth, oneLine, textWidth, wrapWidth } from './text.ts';
 
 /** Re-exported so a caller building a card or a description needs one import, not two. */

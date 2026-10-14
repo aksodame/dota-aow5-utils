@@ -130,3 +130,20 @@ export function itemCardKey(id: string, version: string, lang: string): CardKey 
 export function stale(files: readonly string[], key: CardKey): string[] {
   return files.filter((file) => file.startsWith(`${key.family}.`) && !file.startsWith(`${key.generation}.`));
 }
+
+/**
+ * The key for a wiki card: a section's own, or one page in it.
+ *
+ * Keyed like an item's — by the *data* version, because what makes a wiki card
+ * stale is a pak refresh, not an edit. A section's own card has no version: it
+ * says the section's name and sentence, which change with the renderer and
+ * nothing else, so it is keyed like the site card.
+ *
+ * The family is the page, with `~` between its parts as in its URL, so a
+ * refresh replaces that page's older cards and leaves every other page alone.
+ */
+export function wikiCardKey(section: string, path: readonly string[], version: string | null, lang: string): CardKey {
+  const family = `wiki~${[section, ...path].join('~')}`;
+  const generation = `${family}.${version ?? 'section'}v${CARD_VERSION}`;
+  return { name: `${generation}.${lang}`, family, generation };
+}

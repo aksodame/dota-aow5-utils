@@ -6,10 +6,13 @@ import {
   carriesBuildPayload,
   editPath,
   itemPath,
+  legacyRedirect,
   matchRoute,
   pathOf,
   routeAt,
   viewPath,
+  WIKI_SECTIONS,
+  wikiPathAt,
 } from './routes.ts';
 
 /**
@@ -128,7 +131,7 @@ test('a shared loadout has a page of its own, carrying the payload in the fragme
 });
 
 /**
- * `/items/<id>`, the second route with a variable in it.
+ * `/wiki/items/<id>`, the second route with a variable in it.
  *
  * Same contract as a build's: a well-formed id matches, a malformed one falls
  * through to the browse list rather than rendering an error, and the prefix on
@@ -136,24 +139,24 @@ test('a shared loadout has a page of its own, carrying the payload in the fragme
  */
 test('an item id matches, in every shape the addon uses', () => {
   for (const id of ['item_0123', 'item_G410_2', 'item_s_MT002', 'item_MTB001_easy', 'item_H0001', 'item_pet_cat_sly']) {
-    assert.deepEqual(matchRoute(`/items/${id}`, '/'), { id: 'item', itemId: id }, id);
+    assert.deepEqual(matchRoute(`/wiki/items/${id}`, '/'), { id: 'item', itemId: id }, id);
   }
 });
 
 test('a malformed item id is the browse list, not an error', () => {
-  // `''` is not in this list: `/items/` is the catalogue, asserted below.
+  // `''` is not in this list: `/wiki/items/` is the catalogue, asserted below.
   for (const bad of ['nope', 'Item_0123', 'item_', 'item_0123/extra', `item_${'a'.repeat(41)}`]) {
-    assert.deepEqual(matchRoute(`/items/${bad}`, '/'), { id: 'browse' }, JSON.stringify(bad));
+    assert.deepEqual(matchRoute(`/wiki/items/${bad}`, '/'), { id: 'browse' }, JSON.stringify(bad));
   }
   // The prefix alone is the catalogue, not an item and not a fall-through.
-  assert.deepEqual(matchRoute('/items', '/'), { id: 'items' });
-  assert.deepEqual(matchRoute('/items/', '/'), { id: 'items' });
+  assert.deepEqual(matchRoute('/wiki/items', '/'), { id: 'wiki', section: 'items', path: [] });
+  assert.deepEqual(matchRoute('/wiki/items/', '/'), { id: 'wiki', section: 'items', path: [] });
 });
 
 test('itemPath and matchRoute are inverses, base and all', () => {
   for (const base of ['/', '/dota-aow5-utils/']) {
     const path = itemPath('item_G502_3', base);
-    assert.equal(path, `${base}items/item_G502_3`);
+    assert.equal(path, `${base}wiki/items/item_G502_3`);
     assert.deepEqual(matchRoute(path, base), { id: 'item', itemId: 'item_G502_3' });
   }
 });
@@ -163,4 +166,40 @@ test('an item id can never be mistaken for a build slug', () => {
   // never have to be told apart — but the slug alphabet excludes `_`, which
   // is what would make them ambiguous if they ever shared one.
   assert.equal(/^[1-9A-HJ-NP-Za-km-z]{4,16}$/.test('item_0123'), false);
+});
+
+/**
+ * The wiki: a section, then up to three segments that section keys on.
+ */
+test('every wiki section round-trips, bare and with a path, at both bases', () => {
+  for (const base of [ROOT, SUB]) {
+    for (const section of WIKI_SECTIONS) {
+      assert.deepEqual(matchRoute(wikiPathAt(base, section), base), { id: 'wiki', section, path: [] }, section);
+      // `items` with one segment is an item page, asserted above.
+      if (section === 'items') continue;
+      const path = wikiPathAt(base, section, 'tree4', 'T123');
+      assert.deepEqual(matchRoute(path, base), { id: 'wiki', section, path: ['tree4', 'T123'] }, path);
+    }
+  }
+});
+
+test('/wiki on its own is the first section', () => {
+  assert.deepEqual(matchRoute('/wiki', ROOT), { id: 'wiki', section: 'items', path: [] });
+  assert.deepEqual(matchRoute('/wiki/', ROOT), { id: 'wiki', section: 'items', path: [] });
+});
+
+test('an unknown section, a hostile segment or too deep a path is the browse list', () => {
+  for (const bad of ['/wiki/nope', '/wiki/monsters/a%2Fb', '/wiki/monsters/%E0%A4%A', '/wiki/faq/a/b/c/d', '/wiki/monsters/<x>']) {
+    assert.deepEqual(matchRoute(bad, ROOT), { id: 'browse' }, bad);
+  }
+});
+
+test('the old catalogue addresses lead to the new ones', () => {
+  for (const base of [ROOT, SUB]) {
+    assert.equal(legacyRedirect(`${base}items`, base), `${base}wiki/items`);
+    assert.equal(legacyRedirect(`${base}items/`, base), `${base}wiki/items`);
+    assert.equal(legacyRedirect(`${base}items/item_0123`, base), `${base}wiki/items/item_0123`);
+    assert.equal(legacyRedirect(`${base}items/nope`, base), null);
+    assert.equal(legacyRedirect(`${base}wiki/items`, base), null);
+  }
 });

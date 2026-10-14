@@ -11,6 +11,8 @@
  * places to be wrong.
  */
 
+import type { WikiSection } from '@/lib/routes';
+
 export const LANGS = ['en', 'ru', 'zh'] as const;
 export type Lang = (typeof LANGS)[number];
 
@@ -34,7 +36,9 @@ export const LANG_LABEL: Record<Lang, string> = {
 
 export interface Strings {
   brand: string;
-  nav: { browse: string; mine: string; items: string; tracker: string; settings: string };
+  nav: { browse: string; mine: string; wiki: string; tracker: string; settings: string };
+  /** The wiki's second row: one label per section, and the mark on unfinished ones. */
+  wikiNav: { label: string; sections: Record<WikiSection, string>; wip: string; wipTitle: string };
   auth: {
     signIn: string;
     signUp: string;
@@ -630,7 +634,25 @@ export interface Strings {
 
 const en: Strings = {
   brand: 'AOW5 Builds',
-  nav: { browse: 'Builder', mine: 'My Creations', items: 'Items', tracker: 'Tracker', settings: 'Settings' },
+  nav: { browse: 'Builder', mine: 'My Creations', wiki: 'Wikipedia', tracker: 'Tracker', settings: 'Settings' },
+  wikiNav: {
+    label: 'Wiki sections',
+    sections: {
+      items: 'Items',
+      consumables: 'Consumables',
+      monsters: 'Monsters & drops',
+      sky: 'Sky',
+      craft: 'Crafting',
+      progression: 'Progression',
+      heroes: 'Heroes',
+      vendors: 'Vendors',
+      calc: 'Calculator',
+      faq: 'FAQ',
+      patchnotes: 'Patch notes',
+    },
+    wip: 'WIP',
+    wipTitle: 'Still being written: some numbers here may be incomplete',
+  },
   auth: {
     signIn: 'Sign in',
     signUp: 'Create an account',
@@ -1078,7 +1100,25 @@ const en: Strings = {
 
 const ru: Strings = {
   brand: 'Сборки AOW5',
-  nav: { browse: 'Сборки', mine: 'Мои сборки', items: 'Предметы', tracker: 'Трекер', settings: 'Настройки' },
+  nav: { browse: 'Сборки', mine: 'Мои сборки', wiki: 'Википедия', tracker: 'Трекер', settings: 'Настройки' },
+  wikiNav: {
+    label: 'Разделы вики',
+    sections: {
+      items: 'Предметы',
+      consumables: 'Расходники',
+      monsters: 'Монстры и дроп',
+      sky: 'Небо',
+      craft: 'Крафт',
+      progression: 'Прокачка',
+      heroes: 'Герои',
+      vendors: 'Продавцы',
+      calc: 'Калькулятор',
+      faq: 'FAQ',
+      patchnotes: 'Патчноуты',
+    },
+    wip: 'WIP',
+    wipTitle: 'Раздел ещё дописывается: часть цифр может быть неполной',
+  },
   auth: {
     signIn: 'Войти',
     signUp: 'Создать аккаунт',
@@ -1525,7 +1565,25 @@ const ru: Strings = {
 
 const zh: Strings = {
   brand: 'AOW5 配装',
-  nav: { browse: '配装', mine: '我的配装', items: '物品', tracker: '追踪器', settings: '设置' },
+  nav: { browse: '配装', mine: '我的配装', wiki: '百科', tracker: '追踪器', settings: '设置' },
+  wikiNav: {
+    label: '百科分区',
+    sections: {
+      items: '物品',
+      consumables: '消耗品',
+      monsters: '怪物与掉落',
+      sky: '天空',
+      craft: '合成',
+      progression: '天赋成长',
+      heroes: '英雄',
+      vendors: '商人',
+      calc: '计算器',
+      faq: '常见问题',
+      patchnotes: '更新日志',
+    },
+    wip: '施工中',
+    wipTitle: '本分区仍在编写中，部分数值可能不完整',
+  },
   auth: {
     signIn: '登录',
     signUp: '注册账号',

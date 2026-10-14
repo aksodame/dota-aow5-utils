@@ -14,7 +14,13 @@ import {
   type MetaTarget,
   type PageMeta,
   type SeoLang,
+  WIKI_SECTIONS,
+  WIKI_SEO_STRINGS,
+  wikiPagePath,
+  type WikiSection,
 } from 'aow5-shared/seo';
+import { resolveWikiPage, wikiSectionLinks, type WikiLink, type WikiPageCard } from '../../core/seo/wiki-pages.ts';
+import '../../core/seo/wiki-sources.ts';
 import { seasonLabel, tierLabel } from 'aow5-shared/data';
 import type { BuildRow } from '../../core/db/builds.ts';
 import {
@@ -352,6 +358,63 @@ export class SeoService {
     return renderCard(model);
   }
 
+  /** One page of the wiki, or undefined for an address that names nothing. See `wiki-pages.ts`. */
+  wikiPage(section: WikiSection, path: readonly string[], lang: SeoLang): WikiPageCard | undefined {
+    return resolveWikiPage(section, path, lang);
+  }
+
+  /**
+   * Every page in a section, as links, for the section's prerendered copy.
+   *
+   * The catalogue's are the item pages, which have their own lister; every
+   * other section's come from its source in `wiki-sources.ts`.
+   */
+  wikiLinks(section: WikiSection, lang: SeoLang): WikiLink[] {
+    if (section === 'items') return this.itemLinks(lang);
+    return wikiSectionLinks(section, lang);
+  }
+
+  /**
+   * A section's own card, or one page's.
+   *
+   * The build card's layout, because it already is the picture this site's
+   * links are known by: a title, a line of facts, a scene behind it and a row
+   * of icons. A section's card is its name and its sentence over the default
+   * room; a page's is its name, its facts and whatever art the page has — a
+   * hero's portrait, a location's scene, the items it drops.
+   */
+  async wikiCard(section: WikiSection, page: WikiPageCard | null, lang: SeoLang): Promise<string> {
+    const strings = SEO_STRINGS[lang];
+    const wiki = WIKI_SEO_STRINGS[lang];
+    const own = wiki.sections[section];
+    const icons = (page?.icons ?? []).slice(0, 6);
+
+    const [logo, logoAspect, background, portrait, ...row] = await Promise.all([
+      this.cards.brand(LOGOTYPE),
+      this.cards.brandAspect(LOGOTYPE),
+      this.cards.icon(mapScenePath(page?.scene ?? SITE_CARD_ROOM)),
+      this.cards.icon(page?.portrait ?? null),
+      ...icons.map((icon) => this.cards.icon(icon)),
+    ]);
+
+    const facts = page === null ? own.description : [page.facts.facts, oneLine(page.facts.description)].filter(Boolean).join(' — ');
+    return renderCard({
+      lang,
+      logo,
+      logoAspect,
+      brand: strings.brand,
+      title: page === null ? `${wiki.wiki}: ${own.title}` : page.facts.name,
+      spell: page === null ? null : own.title,
+      tier: page?.tier ?? null,
+      facts,
+      price: null,
+      portrait,
+      background,
+      items: row,
+      gold: null,
+    });
+  }
+
   /** The site's own card, for every route that is neither a build nor the tracker. */
   async siteCard(lang: SeoLang): Promise<string> {
     const strings = SEO_STRINGS[lang];
@@ -482,7 +545,13 @@ export class SeoService {
   sitemap(): SitemapEntry[] {
     const entries: SitemapEntry[] = [
       { path: '/', changefreq: 'daily', priority: '1.0' },
-      { path: '/items', changefreq: 'monthly', priority: '0.6' },
+      // Every section of the wiki. Each prerenders as a list of links to the
+      // pages in it, which is how a crawler reaches those.
+      ...WIKI_SECTIONS.map((section): SitemapEntry => ({
+        path: wikiPagePath(section),
+        changefreq: 'monthly',
+        priority: section === 'items' ? '0.6' : '0.5',
+      })),
       { path: '/tracker', changefreq: 'monthly', priority: '0.5' },
     ];
     /*
@@ -490,7 +559,7 @@ export class SeoService {
      *
      * A sitemap naming every item would be most of a megabyte of XML that says
      * the same `changefreq` on every line, and the pages are already reachable:
-     * `/items` prerenders as a list of links to all of them, which is the route
+     * `/wiki/items` prerenders as a list of links to all of them, which is the route
      * a crawler takes anyway. If an item page ever gains something worth a
      * `lastmod` of its own, that is the moment to reconsider.
      */

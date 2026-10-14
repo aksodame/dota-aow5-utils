@@ -1,14 +1,27 @@
 import { Controller, Get, Header, Headers, Inject, Param, Query, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
-import { SEO_STRINGS, oneLine, type MetaTarget } from 'aow5-shared/seo';
+import {
+  SEO_STRINGS,
+  WIKI_SEGMENT,
+  isWikiSection,
+  oneLine,
+  type MetaTarget,
+} from 'aow5-shared/seo';
 import { isSlug } from '../../core/builds/slug.ts';
 import { matchPath } from '../../core/seo/routes.ts';
 import { pickLang } from '../../core/seo/lang.ts';
 import { renderPrerender } from '../../core/seo/html.ts';
 import { renderRobots, renderSitemap } from '../../core/seo/sitemap.ts';
 import { CONFIG, type AppConfig } from '../config.ts';
-import { buildCardKey, itemCardKey, siteCardKey, trackerCardKey, type CardKey } from '../../core/seo/cache-key.ts';
+import {
+  buildCardKey,
+  itemCardKey,
+  siteCardKey,
+  trackerCardKey,
+  wikiCardKey,
+  type CardKey,
+} from '../../core/seo/cache-key.ts';
 import { CardService } from './card.service.ts';
 import { SeoService } from './seo.service.ts';
 
@@ -104,9 +117,41 @@ export class SeoController {
       });
     }
 
-    // `match.route` is every route but `build` and `item`, which the branches
-    // above returned for — and every one of those is a `MetaTarget` with no
-    // other fields.
+    if (match.route === 'wiki') {
+      if (match.path.length === 0) {
+        const meta = this.seo.meta({ kind: 'wiki', section: match.section }, lang);
+        return renderPrerender({
+          meta,
+          origin: this.origin,
+          heading: meta.socialTitle,
+          paragraphs: [meta.description],
+          // The section's list is built by JavaScript a crawler does not run, so
+          // its copy here is every page in it as a link.
+          links: this.seo.wikiLinks(match.section, lang),
+        });
+      }
+
+      const page = this.seo.wikiPage(match.section, match.path, lang);
+      if (page === undefined) {
+        // A 404 with its own canonical, as a deleted build or a retired item
+        // gets: a page that left the game should leave the index.
+        response.status(404);
+        const meta = this.seo.meta({ kind: 'missingWiki', section: match.section, path: match.path }, lang);
+        return renderPrerender({ meta, origin: this.origin, heading: meta.title });
+      }
+
+      const meta = this.seo.meta({ kind: 'wikiPage', page: page.facts, version: this.seo.dataVersion() }, lang);
+      return renderPrerender({
+        meta,
+        origin: this.origin,
+        heading: page.facts.name,
+        paragraphs: [meta.description],
+      });
+    }
+
+    // `match.route` is every route but `build`, `item` and `wiki`, which
+    // the branches above returned for — and every one of those is a
+    // `MetaTarget` with no other fields.
     const meta = this.seo.meta({ kind: match.route } satisfies MetaTarget, lang);
     return renderPrerender({
       meta,
@@ -115,18 +160,9 @@ export class SeoController {
       paragraphs: [meta.description],
       // Only the browse page lists anything. It is the one route whose content
       // is a set of links to pages a crawler cannot otherwise reach.
-      links:
-        match.route === 'browse'
-          ? this.seo.recentLinks(lang)
-          : /*
-             * The catalogue lists every item page, which is the only way a
-             * crawler reaches one: nothing else on the site links to them in
-             * bulk, and the grid itself is rendered by JavaScript a crawler
-             * does not run.
-             */
-            match.route === 'items'
-            ? this.seo.itemLinks(lang)
-            : undefined,
+      // Only the browse page lists anything. It is the one route whose content
+      // is a set of links to pages a crawler cannot otherwise reach.
+      links: match.route === 'browse' ? this.seo.recentLinks(lang) : undefined,
     });
   }
 
@@ -292,6 +328,62 @@ export class SeoController {
     const fromPath = param === undefined ? undefined : param.replace(/\.png$/, '');
     const chosen = pickLang(fromPath ?? lang, acceptLanguage);
     await this.sendCard(response, trackerCardKey(chosen), () => this.seo.trackerCard(chosen), false);
+  }
+
+  /**
+   * A wiki card: a section's own at `<section>.<lang>.png`, or one page's at
+   * `<section>/<seg>~<seg>.<data-version>.<lang>.png`.
+   *
+   * Read by shape like an item card. Segments are `[A-Za-z0-9_-]` and so never
+   * contain a dot or a `~`: splitting the last path part on dots leaves the
+   * page key first, an all-digits version if there is one, and the language.
+   * An address naming nothing gets the section's card rather than a 404, for
+   * the reason every other card endpoint gives — a broken `og:image` is a
+   * broken preview wherever the link was posted.
+   */
+  @Get(['og/wiki/:section', 'og/wiki/:section/:page'])
+  @Throttle({ default: { ttl: 60_000, limit: 240 } })
+  async wikiCard(
+    @Param('section') sectionParam: string,
+    @Param('page') pageParam: string | undefined,
+    @Query('lang') lang: string | undefined,
+    @Headers('accept-language') acceptLanguage: string | undefined,
+    @Res() response: Response,
+  ): Promise<void> {
+    const raw = (pageParam ?? sectionParam).replace(/.png$/, '');
+    const [head = '', ...rest] = raw.split('.');
+    let version: string | undefined;
+    let named: string | undefined;
+    for (const field of rest) {
+      if (/^d+$/.test(field)) version = field;
+      else if (field.length === 2) named = field;
+    }
+    const chosen = pickLang(named ?? lang, acceptLanguage);
+
+    const sectionName = pageParam === undefined ? head : sectionParam;
+    if (!isWikiSection(sectionName)) {
+      await this.sendCard(response, siteCardKey(chosen), () => this.seo.siteCard(chosen), false);
+      return;
+    }
+    const section = sectionName;
+
+    const path = pageParam === undefined ? [] : head.split('~');
+    const page = path.length > 0 && path.every((part) => WIKI_SEGMENT.test(part))
+      ? this.seo.wikiPage(section, path, chosen)
+      : undefined;
+
+    if (page === undefined) {
+      await this.sendCard(response, wikiCardKey(section, [], null, chosen), () => this.seo.wikiCard(section, null, chosen), false);
+      return;
+    }
+
+    const current = this.seo.dataVersion();
+    await this.sendCard(
+      response,
+      wikiCardKey(section, path, current, chosen),
+      () => this.seo.wikiCard(section, page, chosen),
+      version === current,
+    );
   }
 
   /** The default card, for every route with no card of its own. */

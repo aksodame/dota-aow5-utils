@@ -24,17 +24,22 @@ import { LANG_PARAM } from '@/i18n/strings';
  */
 
 export {
+  DEFAULT_WIKI_SECTION,
   ROUTES,
+  WIKI_SECTIONS,
   buildPath,
   carriesBuildPayload,
   editPath,
   itemPath,
+  legacyRedirect,
   matchRoute,
   pathOf,
   routeAt,
   viewPath,
+  wikiPath,
   type Match,
   type RouteId,
+  type WikiSection,
 } from '@/lib/routes';
 
 /*

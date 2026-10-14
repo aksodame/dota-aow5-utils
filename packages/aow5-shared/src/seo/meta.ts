@@ -20,6 +20,15 @@ import type { ItemId } from '../types/items.ts';
 import { formatGold } from '../format/gold.ts';
 import { clampWidth, oneLine } from './text.ts';
 import { SEO_STRINGS, type SeoLang } from './strings.ts';
+import {
+  WIKI_SEO_STRINGS,
+  wikiCardPath,
+  wikiPageDescription,
+  wikiPagePath,
+  wikiSectionCardPath,
+  type WikiPageFacts,
+  type WikiSection,
+} from './wiki.ts';
 
 /**
  * How much room a title and a description actually get.
@@ -105,8 +114,15 @@ export type MetaTarget =
   | { kind: 'view' }
   | { kind: 'settings' }
   | { kind: 'tracker' }
-  /** The catalogue grid, which is a real page a crawler should index. */
-  | { kind: 'items' }
+  /** A section of the wiki on its own — its list, its landing page. Indexed. */
+  | { kind: 'wiki'; section: WikiSection }
+  /**
+   * One page inside a section: a monster, a hero, a talent tree. `version` is
+   * the data version, as for an item — see `wikiCardPath`.
+   */
+  | { kind: 'wikiPage'; page: WikiPageFacts; version?: string }
+  /** A well-formed wiki address whose record is not in the data. Not indexed. */
+  | { kind: 'missingWiki'; section: WikiSection; path: readonly string[] }
   | { kind: 'build'; build: BuildFacts }
   /**
    * A build page whose build could not be loaded — deleted, never existed, or
@@ -253,7 +269,7 @@ export function itemCardPath(id: ItemId, version?: string, lang?: SeoLang): stri
 
 /** The site-root-relative page for one item. Mirrors `itemPath` in the webapp. */
 export function itemPagePath(id: ItemId, base = '/'): string {
-  return `${base}items/${id}`;
+  return wikiPagePath('items', [id], base);
 }
 
 export function buildCardPath(slug: string, version?: number, lang?: SeoLang): string {
@@ -454,6 +470,40 @@ export function pageMeta(target: MetaTarget, lang: SeoLang, base = '/'): PageMet
 
   const site = { ...common, image: SITE_CARD, type: 'website' as const };
 
+  if (target.kind === 'wikiPage') {
+    const page = target.page;
+    const wiki = WIKI_SEO_STRINGS[lang];
+    return {
+      ...common,
+      title: `${clampWidth(page.name, TITLE_BUDGET)}${strings.sep}${wiki.wiki}${strings.sep}${strings.brand}`,
+      socialTitle: clampWidth(page.name, SOCIAL_TITLE_BUDGET),
+      description: wikiPageDescription(page, lang),
+      path: wikiPagePath(page.section, page.path, base),
+      image: wikiCardPath(page.section, page.path, target.version, lang),
+      imageAlt: `${wiki.cardAlt}: ${page.name}`,
+      type: 'article',
+      noindex: false,
+    };
+  }
+
+  if (target.kind === 'wiki' || target.kind === 'missingWiki') {
+    const wiki = WIKI_SEO_STRINGS[lang];
+    const own = wiki.sections[target.section];
+    return {
+      ...common,
+      title: `${own.title}${strings.sep}${wiki.wiki}${strings.sep}${strings.brand}`,
+      socialTitle: own.title,
+      description: own.description,
+      path: wikiPagePath(target.section, target.kind === 'missingWiki' ? target.path : [], base),
+      image: wikiSectionCardPath(target.section, lang),
+      imageAlt: `${wiki.cardAlt}: ${own.title}`,
+      type: 'website',
+      // A section is a page of links to every page in it, which is how a
+      // crawler reaches them; a missing page has nothing on it.
+      noindex: target.kind === 'missingWiki',
+    };
+  }
+
   if (target.kind === 'missingItem') {
     return {
       ...site,
@@ -484,17 +534,6 @@ export function pageMeta(target: MetaTarget, lang: SeoLang, base = '/'): PageMet
         socialTitle: strings.routes.browse.title,
         description: strings.routes.browse.description,
         path: base,
-        noindex: false,
-      };
-    case 'items':
-      return {
-        ...site,
-        title: `${strings.routes.items.title}${strings.sep}${strings.brand}`,
-        socialTitle: strings.routes.items.title,
-        description: strings.routes.items.description,
-        path: at('items'),
-        // Indexed, unlike the private routes: it is a page of links to every
-        // item page, which is the only way a crawler reaches them at all.
         noindex: false,
       };
     case 'tracker':
