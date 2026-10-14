@@ -61,7 +61,15 @@ jobs:
 
       - run: pnpm --filter aow5-tracker test
       - run: pnpm --filter aow5-tracker build
-      - run: pnpm --filter aow5-tracker release
+      # The release is titled with its tag, `tracker-v0.3.0-beta`, as every
+      # earlier one was renamed to be. electron-builder's default title is the
+      # bare version, and `releaseName` takes no macros, so it is passed here;
+      # pnpm appends it to the script's last command, which is electron-builder.
+      - name: Release
+        shell: bash
+        run: |
+          version=$(node -p "require('./apps/tracker/package.json').version")
+          pnpm --filter aow5-tracker release "-c.releaseInfo.releaseName=tracker-v$version"
         env:
           # electron-builder reads GH_TOKEN, not GITHUB_TOKEN.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
