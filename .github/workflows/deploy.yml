@@ -1,0 +1,109 @@
+name: Deploy site
+
+# Ships the web app and the API to the VPS. Never runs on a plain push.
+#
+# Two ways to start it:
+#
+#   * by hand — Actions → "Deploy site" → Run workflow, on `master`;
+#   * by a tag — `git tag web-v2026.10.14 && git push origin web-v2026.10.14`,
+#     on a commit that is already in `master`.
+#
+# The tag is prefixed for the same reason the tracker's is (see
+# release-tracker.yml): the tracker ships on its own schedule under
+# `tracker-v*`, and the two must never trigger each other. No GitHub release is
+# cut for the site — the tag is a marker of what went out, nothing more.
+#
+# The job runs in the `production` environment. Its secrets are visible only
+# to runs on `master` or a `web-v*` tag (the environment's deployment rules),
+# and the environment can require a reviewer's approval before it starts — so
+# a collaborator's branch cannot reach the server key by editing this file.
+#
+# What it does is what `infra/remote-deploy.sh` does from a laptop, with every
+# answer supplied up front: build both images here, stream them to the server
+# as the `deploy` user, swap the containers, wait for /api/health. The server's
+# own `/srv/aow5/.env` — the Discord and Steam secrets — is kept as it is and
+# never passes through GitHub.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['web-v*']
+
+permissions:
+  contents: read
+
+# One deploy at a time, and a second one waits rather than cancelling the
+# first: a container swap cut off halfway is worse than a short queue.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The whole history, to check the commit is in master.
+          fetch-depth: 0
+
+      - name: Only master ships
+        run: |
+          git fetch --quiet origin master
+          if [ "$GITHUB_REF_TYPE" = branch ] && [ "$GITHUB_REF_NAME" != master ]; then
+            echo "::error::Run this on master, not on $GITHUB_REF_NAME."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor HEAD origin/master; then
+            echo "::error::$GITHUB_REF_NAME points at a commit that is not in master."
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4 # the version comes from `packageManager`
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # The same gate as CI, here rather than trusted from an earlier run: a
+      # tag can point at any commit in master, including one CI never saw green.
+      - run: pnpm check-types
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm --filter aow5-utils-api smoke
+
+      - name: SSH key and host
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/aow5_deploy
+          chmod 600 ~/.ssh/aow5_deploy
+          # Pinned, not scanned: a scan here would trust whatever answered.
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Deploy
+        env:
+          AOW5_SSH: ${{ vars.AOW5_SSH }}
+          AOW5_SSH_PORT: ${{ vars.AOW5_SSH_PORT }}
+          AOW5_REMOTE_DIR: ${{ vars.AOW5_REMOTE_DIR }}
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+          ACME_EMAIL: ${{ vars.ACME_EMAIL }}
+          AOW5_SSH_KEY: ~/.ssh/aow5_deploy
+          AOW5_DNS: own
+          # Built on the runner, which has the memory the VPS does not.
+          AOW5_BUILD: local
+          # Run above, step by step, so a failure names the step.
+          AOW5_SKIP_CHECKS: '1'
+        run: bash infra/remote-deploy.sh < /dev/null
+
+      - name: Forget the key
+        if: always()
+        run: rm -f ~/.ssh/aow5_deploy
