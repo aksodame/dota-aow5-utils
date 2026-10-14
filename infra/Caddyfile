@@ -235,7 +235,13 @@ aow5-helper.com, www.aow5-helper.com, aow5-helper.duckdns.org {
 		# without the 404 status. Unlike a redirect it leaves the URL untouched,
 		# which matters here because a planner link carries the entire board in
 		# its fragment.
-		try_files {path} /index.html
+		#
+		# Pages only. A missing file under /assets, /icons or /data is a 404,
+		# not the app: answering an <img> or a fetch with index.html and a 200
+		# made a stale data file's renamed picture look like a redirect to the
+		# front page, and told every cache the HTML was the image.
+		@spa not path /assets/* /icons/* /data/*
+		try_files @spa {path} /index.html
 		file_server
 	}
 

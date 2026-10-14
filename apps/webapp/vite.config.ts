@@ -24,15 +24,28 @@ const sharedPublicDir = path.join(path.dirname(require.resolve('aow5-shared/pack
  *
  * `/data/*` is cached for an hour under one URL while the bundle that reads it
  * is content-hashed — so new code could run against old data until the cache
- * expired. This hashes `meta.json`, which carries every table's hash and the
- * time the data was generated, and `loadData` puts it on each data URL. Same
- * data, same URL, and the hour of caching still applies between deploys.
+ * expired. This hashes every file under `data/`, the wiki's included, and the
+ * loaders put it on each data URL. Same data, same URL, and the hour of caching
+ * still applies between deploys.
+ *
+ * Every file rather than `meta.json`, which it used to be: `meta.json` only
+ * moves when the builder's tables do, and a wiki-only change — the room maps
+ * renamed from `.png` to `.webp` in `locations.json` — shipped under the old
+ * URL, so browsers kept asking for pictures that no longer existed.
  */
-const dataVersion = crypto
-  .createHash('sha256')
-  .update(fs.readFileSync(path.join(sharedPublicDir, 'data', 'meta.json')))
-  .digest('hex')
-  .slice(0, 12);
+const dataVersion = (() => {
+  const hash = crypto.createHash('sha256');
+  const walk = (dir: string): void => {
+    const entries = fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else hash.update(entry.name).update(fs.readFileSync(full));
+    }
+  };
+  walk(path.join(sharedPublicDir, 'data'));
+  return hash.digest('hex').slice(0, 12);
+})();
 
 /**
  * The two files a static host needs and a bundler does not produce.
