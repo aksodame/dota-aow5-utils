@@ -1,0 +1,336 @@
+{
+  "_comment": "Exact expected values for a handful of items. These pin the parts of the pipeline where a subtle regression would otherwise pass every count-based check.",
+  "items": {
+    "item_0425": {
+      "_why": "Pins the %% rule. The source string is '...movement speed by %ability_self_movespeed_pct%%%', which must render as one percent sign, not two and not a swallowed digit.",
+      "name_en": "Ancestral: Shattered Axe",
+      "type": "equip",
+      "quality": 6,
+      "level": 9,
+      "cost": 3900,
+      "playable": true,
+      "iconSource": "vpk",
+      "descPlain_en": "Active: ClumsyWhen activated, reduces your own movement speed by 25%, but grants 50% of maximum attack damage and 30% max health for 10 seconds.",
+      "descFirstNode": {
+        "t": "el",
+        "tag": "h1",
+        "text": "Active: Clumsy"
+      },
+      "dismantle": {
+        "outputs": [
+          {
+            "count": 4,
+            "id": "item_M507"
+          }
+        ],
+        "rule": "dismantle_equip_q6"
+      }
+    },
+    "item_0100": {
+      "_why": "Pins CDN icon resolution and recipe parsing, including the implicit count of 1 on an ingredient written without a ':n' suffix.",
+      "name_en": "Magic Wand",
+      "type": "equip",
+      "quality": 2,
+      "level": 1,
+      "cost": 120,
+      "playable": true,
+      "icon": "magic_wand.png",
+      "iconSource": "cdn",
+      "needs": [
+        {
+          "id": "item_0101",
+          "count": 1
+        },
+        {
+          "id": "item_M001",
+          "count": 3
+        },
+        {
+          "id": "item_M109",
+          "count": 1
+        }
+      ],
+      "dismantle": {
+        "outputs": [
+          {
+            "count": 1,
+            "id": "item_M009"
+          }
+        ],
+        "rule": "dismantle_equip_low_quality"
+      }
+    },
+    "item_G001": {
+      "_why": "Pins gem_value pair parsing and lore extraction.",
+      "name_en": "Glyph: Assault I",
+      "type": "gem",
+      "quality": 2,
+      "level": 1,
+      "cost": 200,
+      "playable": true,
+      "iconSource": "vpk",
+      "gemKind": "tag",
+      "gemValues": {
+        "tag_gem_damage": 10,
+        "tag_gem_mana_cost": 25
+      },
+      "tags": [
+        "active",
+        "damage"
+      ],
+      "dismantle": {
+        "outputs": [
+          {
+            "count": 2,
+            "id": "item_M010"
+          }
+        ],
+        "rule": "dismantle_gem"
+      }
+    },
+    "item_s_0305": {
+      "_why": "Fate stone: pins the 'item_s_' id shape surviving lowercased token lookup.",
+      "name_en": "Fate Stone: Shattered Axe",
+      "type": "stone",
+      "quality": 6,
+      "level": 9,
+      "playable": true,
+      "dismantle": {
+        "outputs": [
+          {
+            "count": 1,
+            "id": "item_M507"
+          }
+        ],
+        "rule": "dismantle_stone"
+      }
+    },
+    "item_P203": {
+      "_why": "Pins multi-ingredient recipes with explicit counts.",
+      "name_en": "Shadow Thief's Moonshine",
+      "type": "special",
+      "quality": 4,
+      "level": 6,
+      "playable": true,
+      "needs": [
+        {
+          "id": "item_M308",
+          "count": 1
+        },
+        {
+          "id": "item_M210",
+          "count": 3
+        },
+        {
+          "id": "item_M007",
+          "count": 1
+        }
+      ]
+    },
+    "item_M001": {
+      "_why": "Base material, the most-referenced ingredient in the crafting graph.",
+      "name_en": "Gnarled Branch",
+      "type": "material",
+      "quality": 1,
+      "level": 1,
+      "cost": 10,
+      "playable": true,
+      "iconSource": "vpk"
+    },
+    "item_tango": {
+      "_why": "The one vanilla Dota item in the table. Its ItemQuality is the string 'consumable' rather than a number, and it is not in the game — it must be excluded from the playable index without crashing the normalizer.",
+      "playable": false,
+      "quality": 0
+    },
+    "item_0200": {
+      "_why": "Dismantle: quality-6 treasure. Yields Legendary Essence outright plus Mythic at 25% — the only rule with two outputs of different certainty.",
+      "name_en": "Refresher Orb",
+      "type": "equip",
+      "quality": 6,
+      "level": 8,
+      "cost": 11260,
+      "playable": true,
+      "dismantle": {
+        "outputs": [
+          {
+            "count": 8,
+            "id": "item_M009"
+          },
+          {
+            "count": 4,
+            "id": "item_M315"
+          },
+          {
+            "chance": 25,
+            "count": 4,
+            "id": "item_M507"
+          }
+        ],
+        "rule": "dismantle_treasure_q6"
+      }
+    },
+    "item_0102": {
+      "_why": "Dismantle: quality-5 treasure at level 1, the branch where the addon splits 50/50 between Legendary and plain Equipment Essence.",
+      "name_en": "Shattered Vest",
+      "type": "equip",
+      "quality": 5,
+      "level": 1,
+      "cost": 700,
+      "playable": true,
+      "dismantle": {
+        "outputs": [
+          {
+            "count": 1,
+            "id": "item_M009"
+          }
+        ],
+        "rule": "dismantle_treasure_q5"
+      }
+    },
+    "item_0099": {
+      "_why": "Dismantle: quality-5 treasure above level 1, which drops the 50/50 split for a guaranteed Legendary Essence.",
+      "name_en": "Arcane Bracelet",
+      "type": "equip",
+      "quality": 5,
+      "level": 2,
+      "cost": 640,
+      "playable": true,
+      "dismantle": {
+        "outputs": [
+          {
+            "count": 2,
+            "id": "item_M009"
+          }
+        ],
+        "rule": "dismantle_treasure_q5"
+      }
+    },
+    "item_0157": {
+      "_why": "Dismantle: quality-5 equipment that is not a treasure — pins the treasure test itself, since quality and level alone would not separate it from item_0099.",
+      "name_en": "Boots of Travel",
+      "type": "equip",
+      "quality": 5,
+      "level": 10,
+      "cost": 8060,
+      "playable": true,
+      "dismantle": {
+        "outputs": [
+          {
+            "count": 10,
+            "id": "item_M315"
+          }
+        ],
+        "rule": "dismantle_equip_q5"
+      }
+    }
+  },
+  "graph": {
+    "_why": "Every ingredient of this recipe must carry a reverse usedBy link.",
+    "recipe": "item_0100",
+    "usedByMustContain": [
+      "item_0101",
+      "item_M001",
+      "item_M109"
+    ]
+  },
+  "abilities": {
+    "_comment": "Hero abilities come from a different source than items — a CSV translation table rather than the KeyValues locale files — and their icons resolve through three paths. These pin all of it.",
+    "axe_003": {
+      "_why": "Pins the CSV locale join end to end: name, substituted description and per-value labels, plus a stock ability icon fetched by plain name.",
+      "hero": "npc_dota_hero_axe",
+      "slot": "w",
+      "texture": "axe_counter_helix",
+      "icon": "axe_counter_helix.png",
+      "iconSource": "cdn",
+      "name_en": "Counter Helix",
+      "name_ru": "Контрспираль",
+      "descPlain_en": "When attacked, has a 25% chance to trigger Counter Helix, dealing physical damage equal to 30% of your max health and max shield to enemy units within a 275 radius.",
+      "valueLabels_en": {
+        "max_health_damage_pct": "Damage %",
+        "radius": "Radius",
+        "trigger_chance_pct": "Trigger Chance"
+      }
+    },
+    "axe_004": {
+      "_why": "The addon ships its own art for this one, so it must come out of resource/flash3/images/spellicons rather than the CDN.",
+      "slot": "d",
+      "texture": "axe_05",
+      "icon": "axe_05.png",
+      "iconSource": "vpk",
+      "name_en": "Berserker's Rush"
+    },
+    "drow_004": {
+      "_why": "A pathed texture name. The CDN only answers to the basename, so path stripping must happen before the fetch.",
+      "texture": "drow_ranger/immortal_gold/drow_ranger_wave_of_silence",
+      "icon": "drow_ranger_wave_of_silence.png",
+      "iconSource": "cdn",
+      "name_en": "Backstep"
+    },
+    "lina_009": {
+      "_why": "Names a cosmetic Phoenix texture that the CDN does not carry and whose stock counterpart is a different spell, so it is pinned to the hand-supplied override rather than an alias.",
+      "texture": "phoenix/phoenix_ti10_immortal_ability_icon/phoenix_ti10_immortal_launch_fire_spirit",
+      "icon": "phoenix_ti10_immortal_launch_fire_spirit.png",
+      "iconSource": "vpk",
+      "name_en": "Explosive Fireball"
+    },
+    "ak_hero_heal": {
+      "_why": "The shared f heal: no profession gates it, every hero equips it, and it is the only candidate for its key — so it is attached to all five heroes and preselected. Its texture is published nowhere, so this also pins the hand-supplied override in assets/ability-icons.",
+      "hero": null,
+      "slot": "f",
+      "texture": "forest_troll_high_priest_heal_amp_aura",
+      "icon": "forest_troll_high_priest_heal_amp_aura.png",
+      "iconSource": "vpk",
+      "name_en": "Emergency Heal"
+    }
+  },
+  "heroes": {
+    "_comment": "Roster positions are baked into every shared guide, and the unfinished-ability filter decides what a hero may be built around.",
+    "npc_dota_hero_axe": {
+      "_why": "Pins the frozen roster index and the grouping of abilities by the key they bind to — several candidates per key is the whole build decision.",
+      "idx": 1,
+      "profession": "axe",
+      "icon": "axe.png",
+      "unfinished": 0,
+      "bySlot": {
+        "q": [
+          "axe_001",
+          "axe_005"
+        ],
+        "w": [
+          "axe_003",
+          "axe_011"
+        ],
+        "e": [
+          "axe_012"
+        ],
+        "d": [
+          "axe_004"
+        ],
+        "r": [
+          "axe_006",
+          "axe_008"
+        ],
+        "passive": [
+          "axe_002",
+          "axe_007",
+          "axe_009",
+          "axe_010"
+        ],
+        "f": [
+          "ak_hero_heal"
+        ]
+      }
+    },
+    "npc_dota_hero_crystal_maiden": {
+      "_why": "Every one of her own abilities is still a 'To be filled.' placeholder upstream, so she must be rostered offering nothing but the shared heal, rather than five spells that do not exist.",
+      "idx": 5,
+      "profession": "crystal_maiden",
+      "unfinished": 5,
+      "bySlot": {
+        "f": [
+          "ak_hero_heal"
+        ]
+      }
+    }
+  }
+}

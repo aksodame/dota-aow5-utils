@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "description": "Everything about the Age of Weapons 5 custom map that an app consumes: the extracted data and icons, the frozen id tables, the types they are emitted against, and the share-link codec built on them",
   "exports": {
     "./types": "./src/types/index.ts",
@@ -16,7 +17,9 @@
     "./ability-table.json": "./data/ability-table.json",
     "./map-table.json": "./data/map-table.json",
     "./package.json": "./package.json",
-    "./wiki": "./src/wiki/index.ts"
+    "./wiki": "./src/wiki/index.ts",
+    "./content/*": "./content/*",
+    "./wiki/*": "./src/wiki/*"
   },
   "scripts": {
     "test": "node --test \"src/*/*.test.ts\"",

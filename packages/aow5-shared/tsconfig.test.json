@@ -30,5 +30,5 @@
   // Node. Checking them only under tsconfig.src.json — which is configured for
   // the browser, down to the DOM lib — would check them against the one
   // environment neither of their two consumers runs in.
-  "include": ["src/**/*.test.ts", "src/types", "src/build", "src/data", "src/seo", "src/format", "src/overlay"]
+  "include": ["src/**/*.test.ts", "src/types", "src/build", "src/data", "src/seo", "src/format", "src/overlay", "src/wiki"]
 }

@@ -1,0 +1,1 @@
+{"currencies":{"ancientCoins":"远古币","bountyGold":"{cost} 悬赏金币","gold":"金币","points":"积分兑换"},"labels":{"needsShopLevel":"需要 {level} 级商店","restockEvery":"每 {minutes} 分钟刷新库存","shopLevel":"商店等级 {level}"},"lang":"zh","orderLevels":{"1":"普通","2":"进阶","3":"稀有","4":"大师"},"schema":1,"vendors":{"ancient":"远古商贩","guild":"会馆商人","regular":"黑心商贩"}}

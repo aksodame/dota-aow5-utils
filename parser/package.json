@@ -1,0 +1,26 @@
+{
+  "name": "aow5-parser",
+  "private": true,
+  "type": "module",
+  "description": "Extraction pipeline for the Age of Weapons 5 workshop VPK. Untracked and outside the pnpm workspace: it only runs on a machine with the game installed, and everything it produces is committed in packages/aow5-shared",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "extract": "node tools/run-all.ts",
+    "extract:index": "node tools/01-vpk-index.ts",
+    "extract:raw": "node tools/02-extract-raw.ts",
+    "extract:locales": "node tools/03-parse-locales.ts",
+    "extract:items": "node tools/04-build-items.ts",
+    "extract:heroes": "node tools/04b-build-heroes.ts",
+    "extract:rolls": "node tools/04d-build-rolls.ts",
+    "extract:icons": "node tools/05-icons-vpk.ts && node tools/05b-icons-ui.ts && node tools/06-icons-cdn.ts",
+    "extract:emit": "node tools/07-emit.ts",
+    "verify": "node tools/verify.ts",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.0"
+  }
+}

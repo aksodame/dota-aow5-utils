@@ -7,3 +7,16 @@
  */
 
 export { loadWikiFile, loadWikiLocale, wikiDataUrl } from './load.ts';
+export * from './pools.ts';
+export * from './items-extra.ts';
+export * from './craft.ts';
+export * from './faq.ts';
+export * from './consumables.ts';
+export * from './sky.ts';
+export * from './vendors.ts';
+export * from './sources.ts';
+export * from './progression.ts';
+export * from './monsters.ts';
+export * from './item-page.ts';
+export * from './itemroll.ts';
+export * from './itemeffects.ts';

@@ -13,9 +13,13 @@ shot*.png
 # capturing account's SteamID.
 apps/tracker/capture/
 
-# The data mining pipeline. Runs only on a machine with the game installed, and
-# everything it emits is committed under packages/aow5-shared/ instead.
-/parser/
+# The data pipeline's scratch space. The pipeline itself is committed — it is
+# how the shipped data is made, wiki included — but it runs only on a machine
+# with the game installed, and its raw extracts and run reports are that
+# machine's. Everything it emits is committed under packages/aow5-shared/.
+/parser/cache/
+/parser/reports/
+/parser/node_modules/
 
 # Correspondence with the addon developer, and the moderator's relay of it:
 # private messages, a Drive link and a third party's internal decision. The

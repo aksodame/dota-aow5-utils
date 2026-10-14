@@ -1,0 +1,236 @@
+{
+  "vpkPath": "C:/Program Files (x86)/Steam/steamapps/workshop/content/570/3462334284/3462334284.vpk",
+  "languages": [
+    "en",
+    "ru",
+    "zh"
+  ],
+  "_baseLanguageComment": "The language the addon is authored in. It ships the original text into every locale file it has not translated yet, so Chinese in an en/ru string means 'not translated' rather than 'named in Chinese' — which is what lets step 04 recover a Life Soul's name from its own translated description.",
+  "baseLanguage": "zh",
+  "localeFiles": {
+    "en": "resource/addon_english.txt",
+    "ru": "resource/addon_russian.txt",
+    "zh": "resource/addon_schinese.txt"
+  },
+  "itemsPayloadPath": "panorama/layout/custom_game/vendor/data/npc_items_custom.vjs_c",
+  "hudScriptPath": "panorama/layout/custom_game/hud/script.vjs_c",
+  "heroPayloads": {
+    "heroes": {
+      "path": "panorama/layout/custom_game/vendor/data/ak_heroes.vjs_c",
+      "json": "@/json/ak_heroes.json",
+      "file": "ak_heroes.payload.json"
+    },
+    "abilities": {
+      "path": "panorama/layout/custom_game/vendor/data/ak_abilities.vjs_c",
+      "json": "@/json/ak_abilities.json",
+      "file": "ak_abilities.payload.json"
+    },
+    "professions": {
+      "path": "panorama/layout/custom_game/vendor/data/ak_profession.vjs_c",
+      "json": "@/json/ak_profession.json",
+      "file": "ak_profession.payload.json"
+    }
+  },
+  "rulesets": {
+    "_comment": "The addon's per-season tree. The manifest names the seasons, their maps and which rows each season overrides; each season then ships its own compiled copy of every table. Only ak_life_souls is read: it is the addon's own answer to which items are Life Souls, and S1's copy being empty is what makes the Life Soul slot a second-season slot rather than a hardcoded list of ids.",
+    "dir": "panorama/layout/custom_game/vendor/data/rulesets",
+    "manifestPath": "panorama/layout/custom_game/vendor/data/rulesets/manifest.vjs_c",
+    "tables": [
+      "ak_life_souls"
+    ],
+    "_seasonKeys": "Ruleset id -> the season number seasons.ts uses. A ruleset the addon adds and this does not name fails step 04 rather than being guessed at.",
+    "seasonKeys": {
+      "s1": 1,
+      "s2": 2,
+      "s3": 3
+    }
+  },
+  "abilityLocaleCsv": "resource/localization_overrides/professional.csv",
+  "abilityLocaleColumns": {
+    "en": "English",
+    "ru": "Russian",
+    "zh": "SChineseBaseline"
+  },
+  "_greedCaveComment": "Where the endless Greed Cave hands out its boss rewards and stocks its merchants. It is the only table in the pak that says where a fate stone comes from — they are ItemPurchasable with no drop entry anywhere else — and it names equipment too, so the same parse answers both.",
+  "greedCavePath": "scripts/npc/ak_greed_cave_endless_config.txt",
+  "roomsPath": "scripts/npc/ak_rooms.txt",
+  "roomDifficultyPath": "scripts/npc/ak_room_difficulty_modes.txt",
+  "mapImageDir": "panorama/images/custom_game/maps",
+  "mapImagePattern": "{id}_png.vtex_c",
+  "mapRoster": {
+    "_comment": "Frozen and append-only, exactly like data/id-table.json and the hero roster: a map's position here is what an encoded build carries. Never reorder, never remove. The pipeline appends new rooms at the end and fails if the published prefix moves.",
+    "_tierComment": "A map's tier is parsed from its localized lv_name_* token rather than taken from ak_rooms.txt's Level field. The three DLC rooms disagree — M014 is Level 5 in KV but is Lv. 8 in every language, and M010 and M013 each show one tier above their KV level — and the displayed number is the one guide authors mean.",
+    "hidden": [
+      "M016",
+      "M019",
+      "M020"
+    ],
+    "_hiddenComment": "Rooms that are not places anyone plays: M016 is the tutorial, M019 and M020 are test rooms. Excluded from the emitted table entirely. M015, M021, M022 and G001 also carry IsShow 0 but are real destinations, so they are emitted with visible:false and the site decides."
+  },
+  "uiIcons": {
+    "_comment": "Chrome the site draws itself, as opposed to an item, a spell or a room: those are resolved through the icon manifest, these are named one by one because there is no table to join them to. A .png source is copied out verbatim; a .vtex_c is decoded.",
+    "_goldComment": "The BGRA8888 copy, not the flash3 PNG or the DXT5 texture beside it. Both of those are opaque — flash3 ships gold.png with no alpha channel at all, and the addon’s DXT5 packing spends alpha on luminance — so either one paints a black rectangle behind the coin. This one is uncompressed with a real alpha channel, square, and the coin fills it. The DXT5 twin at panorama/images/custom_game/items/gold_png.vtex_c stays the golden fixture in lib/vtex.test.ts; the same art in three formats is what makes that test meaningful.",
+    "gold": "panorama/images/custom_game/asset/gold_png.vtex_c"
+  },
+  "flash3IconDir": "resource/flash3/images/items",
+  "spellIconDir": "resource/flash3/images/spellicons",
+  "panoramaIconDir": "panorama/images/custom_game/items",
+  "kvCrossCheckGlobs": [
+    "scripts/npc/ak_items.txt",
+    "scripts/npc/ak_items_potion.txt",
+    "scripts/npc/ak_items_equip.txt",
+    "scripts/npc/ak_items_formula.txt",
+    "scripts/npc/ak_items_change.txt",
+    "scripts/npc/ak_items_stone.txt",
+    "scripts/npc/ak_gems.txt"
+  ],
+  "cdnBases": [
+    "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/{short}.png",
+    "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/{short}_png.png",
+    "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/items/{short}_lg.png"
+  ],
+  "heroCdnBases": [
+    "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/{short}.png"
+  ],
+  "cdnConcurrency": 6,
+  "heroRoster": {
+    "_comment": "Frozen and append-only, exactly like data/id-table.json: a hero's position here is what a shared link encodes. Never reorder, never remove. The pipeline fails if the game gains a profession that is not listed.",
+    "order": [
+      "npc_dota_hero_axe",
+      "npc_dota_hero_lina",
+      "npc_dota_hero_phantom_assassin",
+      "npc_dota_hero_drow_ranger",
+      "npc_dota_hero_crystal_maiden",
+      "npc_dota_hero_void_spirit"
+    ],
+    "_namesComment": "Hero display names are NOT in the addon. It reuses stock Dota heroes, whose names live in Valve's base-game localization rather than in this VPK — the addon only localizes its own profession tier titles. These are the official Dota 2 names for each language, kept here as reviewable data rather than invented at runtime.",
+    "names": {
+      "npc_dota_hero_axe": {
+        "en": "Axe",
+        "ru": "Акс",
+        "zh": "斧王"
+      },
+      "npc_dota_hero_lina": {
+        "en": "Lina",
+        "ru": "Лина",
+        "zh": "莉娜"
+      },
+      "npc_dota_hero_phantom_assassin": {
+        "en": "Phantom Assassin",
+        "ru": "Фантом Ассасин",
+        "zh": "幻影刺客"
+      },
+      "npc_dota_hero_drow_ranger": {
+        "en": "Drow Ranger",
+        "ru": "Дроу Рейнджер",
+        "zh": "卓尔游侠"
+      },
+      "npc_dota_hero_crystal_maiden": {
+        "en": "Crystal Maiden",
+        "ru": "Кристал Мейден",
+        "zh": "水晶室女"
+      },
+      "npc_dota_hero_void_spirit": {
+        "en": "Void Spirit",
+        "ru": "Войд Спирит",
+        "zh": "虚无之灵"
+      },
+      "npc_dota_hero_dragon_knight": {
+        "en": "Dragon Knight",
+        "ru": "Драгон Найт",
+        "zh": "龙骑士"
+      }
+    },
+    "_professionsComment": "Heroes whose abilities name a profession that ak_profession has no ladder rows for. Void Spirit arrived in pak 3011606331 with a full kit gated on void_spirit and nothing in the profession table. Marci is deliberately absent: two abilities are not a hero.",
+    "professions": {
+      "npc_dota_hero_void_spirit": "void_spirit"
+    }
+  },
+  "knownDataIssues": {
+    "_comment": "Bugs in the addon's own data, verified against the raw KV sources. Listed so the pipeline fails on NEW breakage rather than on these.",
+    "danglingNeedIds": [
+      "item_M041",
+      "item_M046",
+      "item_M051",
+      "tem_M308"
+    ],
+    "danglingNeedNote": "item_M041/M046/M051 are referenced by equip recipes but never defined in any KV file. 'tem_M308' is a literal typo for 'item_M308' in ak_items_potion.txt (item_P037).",
+    "unresolvedAbilityTokens": {
+      "drow_008": [
+        "attack_speed_threshold"
+      ],
+      "void_spirit_006": [
+        "swing_intelligence_damage_pct"
+      ]
+    },
+    "unresolvedAbilityTokensNote": "The addon's own English and Russian text for drow_008 references %attack_speed_threshold%, a value the ability never defines — its AbilityValues carry only attack_speed_per_bonus, base_interval, frequency_bonus_pct and search_radius. The Chinese baseline does not reference it at all, so this is a translation written against a stat that was removed or renamed. Nothing the pipeline can substitute; listed so verify fails on a NEW unresolved token. void_spirit_006 (Sigil Slash, pak 3011606331) is the same bug in all three languages: its text references %swing_intelligence_damage_pct% for the three opening slashes, and its AbilityValues define only seal_intelligence_damage_pct, knockback_distance, knockback_duration and vulnerable_duration."
+  },
+  "expected": {
+    "vpkBytes": 1072796995,
+    "treeSize": 766110,
+    "entryCount": 18397,
+    "archiveIndex": 32767,
+    "itemsPayloadOffset": 917307706,
+    "itemsPayloadLength": 1613360,
+    "flash3ItemPngCount": 2161,
+    "panoramaItemVtexCount": 830,
+    "itemCount": 2118,
+    "inGameCount": 2021,
+    "playableCount": 1981,
+    "hiddenCount": 41,
+    "withNeedsCount": 336,
+    "itemTypeHistogram": {
+      "blueprint": 392,
+      "change": 1,
+      "equip": 722,
+      "gem": 413,
+      "identity": 4,
+      "material": 217,
+      "potion": 97,
+      "special": 101,
+      "stone": 169,
+      "unknown": 2
+    },
+    "dismantleRuleHistogram": {
+      "dismantle_equip_low_quality": 255,
+      "dismantle_equip_q5": 270,
+      "dismantle_equip_q6": 97,
+      "dismantle_gem": 413,
+      "dismantle_stone": 169,
+      "dismantle_treasure_q5": 80,
+      "dismantle_treasure_q6": 20
+    },
+    "enTokens": {
+      "names": 2116,
+      "descriptions": 1607,
+      "lore": 307,
+      "values": 362
+    },
+    "heroCount": 6,
+    "abilityCount": 67,
+    "selectableAbilityCount": 56,
+    "abilitiesPerHero": {
+      "axe": 13,
+      "lina": 13,
+      "phantom_assassin": 13,
+      "drow_ranger": 10,
+      "crystal_maiden": 1,
+      "void_spirit": 11
+    }
+  },
+  "abilityCdnBases": [
+    "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/abilities/{short}.png"
+  ],
+  "abilityIconAliases": {
+    "_comment": "Cosmetic reskins (persona, immortal) that Valve does not publish on the CDN under their own name. Each maps to the stock ability it reskins, so the art shown is the same spell's. Verified one by one against the CDN; never guess a mapping here. Anything that is not a true reskin belongs in abilityIconOverrides instead.",
+    "phantom_assassin_coup_de_grace_persona2": "phantom_assassin_coup_de_grace",
+    "phantom_assassin_fan_of_knives_persona1": "phantom_assassin_fan_of_knives",
+    "pa_fall20_immortal_blur": "phantom_assassin_blur",
+    "void_spirit_void_step": "void_spirit_astral_step"
+  },
+  "abilityIconOverrides": {
+    "_comment": "Hand-supplied art, copied verbatim from assets/ability-icons/ and beating every other source. For textures Valve publishes nowhere and that no stock icon honestly stands in for: the f heal's texture is unpublished, and Lina's Explosive Fireball names a cosmetic Phoenix icon whose stock counterpart is a different spell. Captured from the game itself.",
+    "forest_troll_high_priest_heal_amp_aura": "emergency_heal.png",
+    "phoenix/phoenix_ti10_immortal_ability_icon/phoenix_ti10_immortal_launch_fire_spirit": "lina_explosive_fireball.png"
+  }
+}
