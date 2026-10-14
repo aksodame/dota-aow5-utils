@@ -195,6 +195,11 @@
      rather than lift one. */
   --scrim: rgb(3 6 16 / 0.72);
 
+  /* The ground under the game's minimap art (the wiki's room maps). Dark in
+     both themes and so not restated for light: the art is drawn with
+     transparency meant for the HUD's dark, and on white it washes out. */
+  --map-ground: #0b1020;
+
   /*
    * The inverted pill: the active tab, and anything else that reads as the
    * page's colours swapped. In dark that is the text colour as a fill with a

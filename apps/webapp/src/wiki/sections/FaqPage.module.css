@@ -1,0 +1,145 @@
+/*
+ * The FAQ's blocks. Tables, notes, tags and the item grid are the kit's; what
+ * is here is the prose between them and the pool browser's own row.
+ */
+
+.nothing {
+  padding: var(--space-3);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.body {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.list {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Small tables side by side, wrapping under each other on a narrow screen. */
+.columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.column {
+  flex: 1 1 220px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.kv {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.kvRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.kvRow dt,
+.kvRow dd {
+  margin: 0;
+}
+
+.kvRow dd {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+/* --- the pool browser --- */
+
+.pools {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.poolPick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.poolSelect {
+  flex: 0 1 420px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.poolName {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.poolStat {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.poolItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-right: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--wash-2);
+}
+
+.poolItem > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.poolChance {
+  flex: none;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.poolPlain {
+  display: grid;
+  padding: 3px var(--space-2);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.poolPlain code {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.poolPlainName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

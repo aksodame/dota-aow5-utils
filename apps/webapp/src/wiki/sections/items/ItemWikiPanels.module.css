@@ -1,0 +1,271 @@
+/**
+ * The item page's wiki panels. The page's own stylesheet (`ItemPage.module.css`)
+ * supplies the shared pieces — section headings, notes, the table — so these
+ * panels read as more of the same page; this file only has what they add.
+ */
+
+.sub {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.dim {
+  color: var(--text-dim);
+}
+
+.strong {
+  font-weight: 700;
+}
+
+.line {
+  margin: 0 0 var(--space-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.line a,
+.offerName,
+.rowLabel + td a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.line a:hover,
+.offerName:hover,
+.rowLabel + td a:hover {
+  text-decoration: underline;
+}
+
+.refs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.arrow {
+  color: var(--text-dim);
+}
+
+/* --- "from the code" -------------------------------------------------- */
+
+.codeNote {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid var(--warn);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* --- soul ------------------------------------------------------------- */
+
+.rowLabel {
+  width: 45%;
+  color: var(--text-dim);
+  font-weight: 400 !important;
+  white-space: normal !important;
+}
+
+/* --- unlock ----------------------------------------------------------- */
+
+.unlockRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.talent {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 3px;
+  border-radius: var(--radius);
+  color: inherit;
+  text-decoration: none;
+}
+
+.talent:hover {
+  background: var(--panel-hover);
+}
+
+.talent:hover .talentName {
+  color: var(--accent);
+}
+
+.talentGlyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--accent);
+}
+
+.talentText {
+  display: grid;
+  min-width: 0;
+}
+
+.talentName {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* --- the drop grid ---------------------------------------------------- */
+
+/**
+ * Monsters as cells, two to a row where there is room. The left edge carries
+ * the unit's kind — the colour the rarity ramp already gives the grades a boss
+ * and an elite are usually spoken of in — so a column of bosses is visible
+ * without reading.
+ */
+.dropGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dropCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 100%;
+  padding: 4px var(--space-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: inherit;
+  text-decoration: none;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 40px;
+}
+
+.dropCell:hover {
+  background: var(--panel-hover);
+}
+
+.dropCell:hover .dropName {
+  color: var(--accent);
+}
+
+.elite {
+  border-left-color: var(--q3);
+}
+
+.miniboss {
+  border-left-color: var(--q5);
+}
+
+.boss {
+  border-left-color: var(--q6);
+}
+
+.building {
+  border-left-color: var(--text-dim);
+}
+
+.container {
+  border-left-color: var(--gold);
+}
+
+.dropText {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dropName {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropText .sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropChance {
+  flex: none;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* --- vendors ---------------------------------------------------------- */
+
+.offers {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--space-2);
+}
+
+.offerName {
+  font-weight: 700;
+}
+
+.offerPrice {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+}
+
+.offer .sub {
+  flex-basis: 100%;
+}
+
+/* --- the comparison --------------------------------------------------- */
+
+/** A five-column table on a phone: it scrolls inside itself rather than the page. */
+.scroll {
+  margin-top: var(--space-2);
+  overflow-x: auto;
+}
+
+.compare th[scope='row'] {
+  font-weight: 400;
+  white-space: normal;
+}
+
+.key {
+  display: block;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.delta {
+  color: var(--accent);
+  font-weight: 700;
+}
+

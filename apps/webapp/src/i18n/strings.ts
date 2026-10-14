@@ -511,6 +511,18 @@ export interface Strings {
     /** Puts this item's own address on the clipboard. */
     share: string;
     shared: string;
+    /** A recipe leaves every drop pool once it has dropped: a badge in the header. */
+    dropsOnce: string;
+    /**
+     * Which season's numbers the page shows, for an item a season's copy of
+     * the table changes. The label before the two chips, and what they mean.
+     */
+    seasonValues: string;
+    seasonValuesHint: string;
+    /** The stat panel's two views: the item's own numbers, or a copy dialled in. */
+    statsPlain: string;
+    statsCalc: string;
+    statsCalcHint: string;
   };
   tracker: {
     heading: string;
@@ -986,6 +998,12 @@ const en: Strings = {
     previewCard: 'Card ↗',
     share: 'Share item',
     shared: 'Copied',
+    dropsOnce: 'Drops once',
+    seasonValues: 'Values',
+    seasonValuesHint: 'This season changed the item’s numbers. Pick which season’s table the page shows.',
+    statsPlain: 'Stats',
+    statsCalc: 'Roll calculator',
+    statsCalcHint: 'Dial in a particular copy: where each stat rolled, divine forge, enhancement, fixed affix, reforge level.',
   },
   tracker: {
     heading: 'Farm tracker',
@@ -1453,6 +1471,12 @@ const ru: Strings = {
     previewCard: 'Карточка ↗',
     share: 'Поделиться',
     shared: 'Скопировано',
+    dropsOnce: 'Выпадает один раз',
+    seasonValues: 'Значения',
+    seasonValuesHint: 'В этом сезоне числа предмета другие. Выберите, по таблице какого сезона показывать страницу.',
+    statsPlain: 'Статы',
+    statsCalc: 'Калькулятор прокрутки',
+    statsCalcHint: 'Настройте конкретный экземпляр: прокрутку каждого стата, божественную ковку, усиление, фикс и уровень перековки.',
   },
   tracker: {
     heading: 'Фарм-трекер',
@@ -1915,6 +1939,12 @@ const zh: Strings = {
     previewCard: '卡片 ↗',
     share: '分享物品',
     shared: '已复制',
+    dropsOnce: '仅掉落一次',
+    seasonValues: '数值',
+    seasonValuesHint: '此赛季更改了该物品的数值。选择页面按哪个赛季的数据显示。',
+    statsPlain: '属性',
+    statsCalc: '随机属性计算器',
+    statsCalcHint: '设定某一件具体物品：每条属性的随机值、神铸、强化、固定词条和重铸等级。',
   },
   tracker: {
     heading: '刷图追踪器',

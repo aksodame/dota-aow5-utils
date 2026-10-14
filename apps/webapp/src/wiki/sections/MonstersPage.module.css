@@ -1,0 +1,617 @@
+/**
+ * The monsters section: the kit's three columns, with the middle one split
+ * into the item list and the room's map.
+ */
+
+/* --- columns ---------------------------------------------------------------- */
+
+/*
+ * Between 900 and 1200px the kit stacks the middle column under the sidebar.
+ * Two sticky panels in one grid column would slide over each other, so there
+ * the left one stops being sticky. Doubled for specificity over the kit's own
+ * rule, whatever order the two stylesheets load in.
+ */
+@media (max-width: 1200px) {
+  .sidebar.sidebar {
+    position: static;
+    height: auto;
+    max-height: 80svh;
+  }
+}
+
+/*
+ * The list and the map, stacked, in the page's own flow.
+ *
+ * Not one sticky box the height of the window: at a laptop's 900px the map
+ * took half of it and left the item list three rows tall. The list gets most
+ * of a window of its own and the map sits under it, a scroll away.
+ */
+.middle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.itemsPanel.itemsPanel {
+  position: static;
+  flex: none;
+  height: min(620px, calc(100svh - var(--topbar-h) - 44px - var(--footer-h, 84px) - var(--space-6)));
+  min-height: 360px;
+}
+
+@media (max-width: 1200px) {
+  .itemsPanel.itemsPanel {
+    height: auto;
+    min-height: 0;
+    max-height: 70svh;
+  }
+}
+
+.detail {
+  min-width: 0;
+}
+
+/* --- left filters ------------------------------------------------------------- */
+
+.locRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.locRow > select {
+  flex: 1;
+  min-width: 0;
+}
+
+.locRow > button {
+  flex: none;
+}
+
+.sortRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.sortRow > span {
+  flex: none;
+}
+
+.sortRow > select {
+  flex: 1;
+  min-width: 0;
+}
+
+.emptyList {
+  padding: var(--space-4) var(--space-2);
+  font-size: 13px;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.rowBadges {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.hunterMark {
+  font-size: 13px;
+  cursor: help;
+}
+
+/* --- type badges -------------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.badge_boss {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 50%, transparent);
+  color: var(--danger);
+}
+
+.badge_miniboss {
+  background: color-mix(in srgb, var(--warn) 16%, transparent);
+  border-color: color-mix(in srgb, var(--warn) 50%, transparent);
+  color: var(--warn);
+}
+
+.badge_elite {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+}
+
+.badge_container {
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+  border-color: color-mix(in srgb, var(--ok) 40%, transparent);
+  color: var(--ok);
+}
+
+/* --- middle column -------------------------------------------------------------- */
+
+.modeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.seg {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.picks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  min-height: 24px;
+  padding: 0 2px 0 var(--space-2);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pickX {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+}
+
+.pickX:hover {
+  color: var(--text);
+  background: var(--wash-2);
+}
+
+.pickClear {
+  padding: 0 var(--space-1);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-decoration: underline;
+}
+
+.pickClear:hover {
+  color: var(--text);
+}
+
+.itemList {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.itemRow {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 46px;
+}
+
+/* --- an item cell: the filter toggle and the link to its page ---------------------- */
+
+.cell {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+}
+
+.cell:hover {
+  background: var(--panel-hover);
+  border-color: var(--border);
+}
+
+.cellPicked,
+.cellPicked:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.cellUnknown {
+  opacity: 0.7;
+}
+
+.cellMain {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 4px var(--space-2) 4px 4px;
+  text-align: left;
+  color: inherit;
+}
+
+.cellMain:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--radius);
+}
+
+.cellArt {
+  flex: none;
+  display: block;
+  width: 34px;
+}
+
+.cellCompact .cellArt {
+  width: 26px;
+}
+
+.cellText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.cellName {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cellCompact .cellName {
+  font-size: 12px;
+}
+
+.cellSub {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cellValue {
+  flex: none;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.cellLink {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  color: var(--text-dim);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.cellLink:hover {
+  color: var(--accent);
+  background: var(--wash-2);
+}
+
+/* --- the map -------------------------------------------------------------------- */
+
+.mapPanel {
+  flex: none;
+}
+
+.mapPlaceholder {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-2);
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.mapPlaceholder small {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.mapCanvas {
+  position: relative;
+  margin-top: var(--space-3);
+  overflow: hidden;
+  background: var(--map-ground);
+  border-radius: var(--radius);
+  aspect-ratio: 1;
+  max-height: 34svh;
+  margin-inline: auto;
+}
+
+.mapImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.mapDot,
+.mapHunter {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 1px var(--map-ground);
+  cursor: help;
+}
+
+.mapHunter {
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  background: var(--gold);
+  box-shadow:
+    0 0 0 2px var(--map-ground),
+    0 0 0 3px var(--gold);
+}
+
+.mapSwitch {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  max-width: calc(100% - var(--space-4));
+  padding: 2px var(--space-2);
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mapSwitch:hover {
+  background: var(--panel-hover);
+}
+
+.mapCaption {
+  padding-top: var(--space-2);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* --- the card ------------------------------------------------------------------- */
+
+
+.lines {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.line {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .line {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.lineHead {
+  font-weight: 800;
+}
+
+.lineBody {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.lineNote {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.inlineLink {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.inlineLink:hover {
+  text-decoration: underline;
+}
+
+.dropGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 2px var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.dropBody {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.dropBody > .dropGrid {
+  margin-bottom: 0;
+}
+
+.dropHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.ratePill {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 var(--space-3);
+  background: var(--invert-bg);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--invert-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.rateNote {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.zoneCheck {
+  margin-left: auto;
+}
+
+/* --- the location view ----------------------------------------------------------------- */
+
+.monChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.monChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 28px;
+  padding: 0 var(--space-2) 0 3px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.monChip:hover {
+  border-color: var(--border-strong);
+  background: var(--panel-hover);
+}
+
+.monChipBoss {
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.gRows {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.gRow {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.gRow > .dropGrid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  margin-bottom: 0;
+}
+
+.gRowHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.lootWrap {
+  overflow-x: auto;
+  margin-bottom: var(--space-3);
+}
+
+.loot {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.loot th,
+.loot td {
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.loot th {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  background: var(--wash-2);
+}
+
+.loot td:first-child {
+  max-width: 360px;
+}
+
+.num,
+.loot th.num,
+.loot td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-top: var(--space-2);
+}
+
+.numStrong {
+  font-weight: 800;
+}
+
+.from {
+  padding: 0 var(--space-2) var(--space-1);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}

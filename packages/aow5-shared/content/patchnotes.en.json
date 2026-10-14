@@ -1,0 +1,97 @@
+{
+ "notes": [
+  {
+   "version": "v1.507",
+   "date": "13.10.2026",
+   "game": [
+    "\"Shattered Axe\" and its Ancestral version: pressing the active again no longer ramps up the bonus; the stat snapshot is now taken without its own buff (before, the value grew with every cast).",
+    "The battle pass screen was redone: the hero is built from layers and animated with \"wind\", and the season's title, motto and quote are now shown as text and translated into Russian."
+   ],
+   "wiki": [
+    "New \"Heroes\" tab: for every profession, its abilities (with numbers and descriptions), the tree node that unlocks them and the runes that boost them.",
+    "Runes and sigils now appear on the \"Items\" tab, with a \"Rune\" filter; clicking a rune on a hero card opens its card with the description.",
+    "The FAQ is now organised into sub-tabs (topics within a section are switched by a row at the top): \"Locations and activities\", \"Items: forging/sets/code vs. tooltip\", \"Season s3\", \"Battle pass\".",
+    "Added this patch notes tab; the calculator became a separate button in the header."
+   ]
+  },
+  {
+   "version": "v1.506",
+   "date": "12.10.2026",
+   "game": [
+    "New Phantom Assassin ability, \"Boomerang\" (pa_013): a dart flies to the target spot and comes back, dealing 400% of attack damage on each pass; it can stop and spin.",
+    "New Lina ability, \"Scorching Thunder\" (lina_014): 700% of intelligence to the target, then the discharge jumps up to 4 times between enemies within 450; +10% damage per 100 intelligence (up to +300%).",
+    "Four sigils for each of the two abilities: Phantom Assassin gets \"Whirl\", \"Sharpness\", \"Soul Chase\" and \"Burst\" (G216–G219), Lina gets \"Lingering Thunder\", \"Five Thunders\", \"Spirit Thunder\" and \"Thunder Embers\" (G317–G320).",
+    "Phantom Assassin's sigil \"Blade Fusion\" (G215) was removed; \"Burst\" works in its place.",
+    "Endless: team lobby, a queue with a leader; the roster can be locked, and the run can start from a chosen floor; skipped floors do not grant season contribution points.",
+    "\"Trade Expansion Scroll\" and its advanced version: permanently +1 and +2 selling slots on the Exchange.",
+    "Scripts cut in v1.503 are back: \"Shadow Strike Resonance\", boss phase summons, elite abilities."
+   ],
+   "wiki": [
+    "All eight new sigils were translated from scratch (in the Russian localisation they were in Chinese); \"Blade Fusion\" was removed.",
+    "The \"Shadow Strike Resonance\" card and a note about the team lobby in \"Sky\"; the \"Season s3\" FAQ section gained tables of the new abilities and sigils."
+   ]
+  },
+  {
+   "version": "v1.505",
+   "date": "10.10.2026",
+   "game": [
+    "Minor patch: three rewards (Mysterious Key, Guild Charter and Cube Special) are marked as non-dropping: they can only be granted directly and do not drop from chests.",
+    "Support for a third-party hosting platform for dedicated servers was prepared."
+   ],
+   "wiki": [
+    "No wiki sections changed: for players the patch changed nothing, the game data is the same as in v1.503."
+   ]
+  },
+  {
+   "version": "v1.503",
+   "date": "09.10.2026",
+   "game": [
+    "New room M025 \"Lava Mortar\": the task is to close the lava valves while the mortars flood the arena.",
+    "Shrine blessings (runes): at a shrine on the map the player picks one of three runes: haste, damage, arcane, regeneration, shield, purification or revive; each has stacks and a contract limit, and the \"Purification Rune\" removes erosion.",
+    "New s3 sigils: Axe: \"Second Strike\" (G115, repeats \"Mighty Strike\" within 6 seconds) and \"Rallying Roar\" (G116, armor for allies within 450); Phantom Assassin: \"Blade Fusion\" (G215).",
+    "s3 balance: Axe's \"Challenge Roar\" (armor 60 → 30%), \"Berserk Fury\" (damage reduction 20 → 10%) and \"Berserker's Suppression\" healing (5 → 3%) were nerfed; Void Spirit's \"Sigil Slash\" was buffed (slash 50 → 100%, mark 100 → 200%, flurry repeat 30 → 12 s).",
+    "\"Roulette Chain\" in s3 no longer crits with its extra hit.",
+    "Activation codes were cut down: two remain (SANCUNDEAI and LAOMODEAI).",
+    "New consumables: +25% speed for 60 seconds, +10 damage and +30% attack speed for 120 seconds, a warming potion, an evacuation scroll; \"Triumphant Vintage\" is s3 only."
+   ],
+   "wiki": [
+    "FAQ section on blessing runes (what each one does, stacks and limits) and a description of the new room.",
+    "Axe and Phantom Assassin sigils added, the \"Season s3\" section updated."
+   ]
+  },
+  {
+   "version": "v1.502",
+   "date": "08.10.2026",
+   "game": [
+    "Battle pass reworked (the \"v5\" UI): weekly tasks now give 2000 XP instead of 3000, seasonal ones 6000 instead of 2000, and tasks got goals.",
+    "Pass rewards recalculated, \"Eternal Recovery Cards\" added (Free at level 75, Premium at 15/45/75).",
+    "\"Triumphant Vintage\" (P274): +1 to all attributes PERMANENTLY (up to 30 bottles) and +10% movement speed for 10 minutes.",
+    "14 bosses got their own phase summons: at 60% health the boss goes into a transition and summons minions, then enters a second phase (+10% damage, +10% damage reduction, +20% speed and attack).",
+    "Elite monster abilities and the appearance system (hero looks), pet attributes, the \"cat\", the leaderboard, a fatigue indicator.",
+    "The UI is built from loadable \"groups\"; the shop got a \"Codex\", plus a pet modal."
+   ],
+   "wiki": [
+    "The pass section was rebuilt for v5 (tasks, rewards, tax-free levels); descriptions of phase summons and the UI were added."
+   ]
+  },
+  {
+   "version": "v1.500",
+   "date": "03.10.2026",
+   "game": [
+    "Dragon Knight, third pass: \"Sweeping Strike\" reworked: two charges, 6 s restore time, cast at a point, 350 cone (550 and 120° in Dragon Form).",
+    "New Dragon Knight sigils: G617 \"Long Breath\" (a 4-second \"Breathe Fire\" channel, one breath every 2/1.5/1 s) and G618 \"Dragon's Might Bash\" (two stacks: a ×1.3/1.6/2 shield bash and a shield of 5/8/10% of max health).",
+    "Sigil G602 \"Whelp\" reworked: summons 1/2/4 whelps with 50/80/120% damage, now \"Multibreath\".",
+    "\"Dragon Charge\" shortened: 950 → 500 (600 in Dragon Form).",
+    "Battle pass: rewards rewritten; some levels give a tax-free Exchange allowance (up to 100,000 / 1,000,000 gold and 2 / 5 contracts); XP for a successful evacuation is 200, no more than 6000 per week.",
+    "Shop: the \"Season Pass\" price went up from 590 to 1280, and pass levels can now be bought: only with Premium and no higher than level 80.",
+    "Exchange: the UI shows the tax-free limits for gold and contracts (the tax extension from v1.491).",
+    "Drow Ranger in s3: \"Arrow Hail\" (\"Ability 005\" in game) ×1.6 → ×2.6, \"Winter Array\" 300 → 225, \"Frost Volley\" got an attack speed threshold and cap (200/800).",
+    "Void Spirit in s3: \"Aether Remnant\" 280 → 380%, \"Sigil Slash\" rewritten (pushes and pulls by exactly 36), new runes G500/G507/G508."
+   ],
+   "wiki": [
+    "Dragon Knight sigils (G617/G618, reworked G602/G607/G609) and a section on the Exchange with tax-free limits.",
+    "Updated s3 hero cards (Drow, Void Spirit) in the \"Season s3\" section."
+   ]
+  }
+ ]
+}

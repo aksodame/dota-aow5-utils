@@ -1,0 +1,126 @@
+/*
+ * The vendors' shelves. Panels, notes, tags, tables and item refs are the
+ * kit's; what is here is the filter bar over each list and the item cell with
+ * its price on the right.
+ */
+
+.body {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+/* The candidate count under a shop level, small so ten chips still fit a phone row or two. */
+.chipCount {
+  margin-left: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.search {
+  flex: 1 1 200px;
+  max-width: 320px;
+  min-width: 0;
+}
+
+.nothing {
+  margin: 0;
+  padding: var(--space-2) 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-1) var(--space-2);
+}
+
+@media (max-width: 420px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-right: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 48px;
+}
+
+.cell > a {
+  flex: 1 1 auto;
+}
+
+/* An order row: the level's hue as a stripe and a wash, so the same material on two levels reads as two rows. */
+.toned {
+  border-left: 3px solid var(--tone);
+  background: color-mix(in srgb, var(--tone) 9%, var(--surface-sunken));
+}
+
+.tail {
+  flex: none;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.coin {
+  color: var(--warn);
+}
+
+.level {
+  display: inline-block;
+  padding-left: var(--space-2);
+  border-left: 3px solid var(--tone);
+  font-weight: 700;
+}
+
+.refs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.snapshot {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.star {
+  margin-left: 2px;
+  color: var(--warn);
+  font-weight: 800;
+  text-decoration: none;
+  cursor: help;
+}

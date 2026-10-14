@@ -1,0 +1,5618 @@
+{
+ "sections": [
+  {
+   "key": "locations",
+   "title": "Locations and activities",
+   "blocks": [],
+   "subs": [
+    {
+     "key": "difficulty",
+     "title": "Difficulty",
+     "blocks": [
+      {
+       "type": "table",
+       "head": [
+        "Difficulty",
+        "Drop count",
+        "Monster damage",
+        "Damage taken by monsters"
+       ],
+       "rows": [
+        [
+         "Easy",
+         "-40 %",
+         "×0.65",
+         "×1.32 (32 %)"
+        ],
+        [
+         "Normal",
+         "-10 %",
+         "×1.00",
+         "×1.00 (0 %)"
+        ],
+        [
+         "Hard",
+         "50 %",
+         "×3.00",
+         "×0.42 (-58 %)"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Difficulty changes monster damage, not monster health: on Hard, monsters hit three times as hard and take only 42% of damage, which is roughly ×2.4 to their effective health. Easy is the reverse: monsters hit 35% weaker and take 35% more."
+      },
+      {
+       "type": "text",
+       "text": "On Hard, an extra drop pool is added to the normal one (weights of identical items add up), so the chances and the \"average per clear\" on the Monsters tab are calculated for Hard."
+      }
+     ]
+    },
+    {
+     "key": "stability",
+     "title": "Stability",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "A location can have **stability** from 1% to 100%. It is not a property of the map but a function of real time: each room has a scheduled \"stable opening\" moment (`stableOpenAtUnix`), and the earlier you enter, the lower the stability. By the scheduled time it reaches 100%."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Time left until stable opening",
+        "Stability",
+        "Monsters hit",
+        "Damage to monsters"
+       ],
+       "rows": [
+        [
+         "7 d",
+         "1 %",
+         "×100",
+         "×0.010"
+        ],
+        [
+         "6 d",
+         "8.2 %",
+         "×12",
+         "×0.082"
+        ],
+        [
+         "5 d",
+         "19.2 %",
+         "×5.20",
+         "×0.192"
+        ],
+        [
+         "4 d",
+         "32.5 %",
+         "×3.07",
+         "×0.325"
+        ],
+        [
+         "3 d",
+         "47.5 %",
+         "×2.10",
+         "×0.475"
+        ],
+        [
+         "2 d",
+         "63.9 %",
+         "×1.57",
+         "×0.639"
+        ],
+        [
+         "1 d",
+         "81.4 %",
+         "×1.23",
+         "×0.814"
+        ],
+        [
+         "12 h",
+         "90.6 %",
+         "×1.10",
+         "×0.906"
+        ],
+        [
+         "6 h",
+         "95.3 %",
+         "×1.05",
+         "×0.953"
+        ],
+        [
+         "1 h",
+         "99.2 %",
+         "×1.01",
+         "×0.992"
+        ],
+        [
+         "time reached",
+         "100 %",
+         "×1",
+         "×1"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "The curve uses a **168-hour** window (7 days) and an exponent of `1.35`: `stability = 1 + 99 × (1 − min(168, hours_left) / 168)^1.35`. While the opening is more than a week away, stability stays at the 1% minimum, and entering is nearly pointless: monsters hit a hundred times harder and take a hundred times less damage."
+      },
+      {
+       "type": "text",
+       "text": "The server turns stability into **damage multipliers**: monsters hit `100 / stability` times harder and take that many times less damage. The filter is applied when a player enters the room and removed when the room is destroyed; at 100% it does nothing."
+      },
+      {
+       "type": "text",
+       "text": "Entering an unstable room is **not forbidden**: the game asks for confirmation (\"Unstable Room\", \"The room's environment is unstable, the monster threat will rise significantly\") and waits 20 seconds for an answer, after which the request closes by itself."
+      },
+      {
+       "type": "note",
+       "text": "Always 100%: the base M000, the tutorial (M016) and the Cat Challenge (M021), which count as \"base\" rooms."
+      }
+     ]
+    },
+    {
+     "key": "dda",
+     "title": "Dynamic difficulty",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "A hidden \"pity system\": dying makes the player stronger, successful runs cut the bonus. The stack goes from 0 to 5 and changes when you leave a room."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Event",
+        "Change"
+       ],
+       "rows": [
+        [
+         "Successful evacuation",
+         "stack −1"
+        ],
+        [
+         "Death or failure",
+         "stack +2"
+        ]
+       ]
+      },
+      {
+       "type": "table",
+       "head": [
+        "Stack",
+        "Damage dealt",
+        "Damage taken"
+       ],
+       "rows": [
+        [
+         "1",
+         "+3 %",
+         "−5 %"
+        ],
+        [
+         "3",
+         "+9 %",
+         "−15 %"
+        ],
+        [
+         "5",
+         "+15 %",
+         "−25 %"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "The modifier does not change monster health or damage, only the hero's own stats. It is hidden, is not removed by death and cannot be dispelled."
+      }
+     ]
+    },
+    {
+     "key": "fatigue",
+     "title": "Fatigue",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "Fatigue is the daily limit on runs. It is spent on entering and on successful evacuation, and when it runs low it cuts the amount of loot."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Parameter",
+        "Value"
+       ],
+       "rows": [
+        [
+         "Daily limit",
+         "600; +100 for the shop's Monthly Card, +200 for the Permanent Card (up to 900)"
+        ],
+        [
+         "Cost",
+         "1 for entering a map + 2 for a successful evacuation (death costs only 1)"
+        ],
+        [
+         "Tutorial (M016)",
+         "does not spend fatigue"
+        ],
+        [
+         "Reset",
+         "19:00 MSK (midnight UTC+8)"
+        ]
+       ]
+      },
+      {
+       "type": "table",
+       "head": [
+        "Fatigue left",
+        "Drop count multiplier"
+       ],
+       "rows": [
+        [
+         "0 or less",
+         "×0.5 (−50 %)"
+        ],
+        [
+         "1…299",
+         "×0.8 (−20 %)"
+        ],
+        [
+         "300 or more",
+         "×1.0 (no penalty)"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "Buying a card raises the limit but does not refund what is already spent: the remainder is the new limit minus what you have spent."
+      }
+     ]
+    },
+    {
+     "key": "minigames",
+     "title": "Mini-games",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "Mini-games (MG001–MG005) take place in room M019. The game launches them by itself from time to time: a player can be pulled into a mini-game straight out of a run, to make sure they are playing themselves."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Parameter",
+        "Value"
+       ],
+       "rows": [
+        [
+         "Minimum for a check",
+         "hero level 10"
+        ],
+        [
+         "Frequency",
+         "depends on \"suspicion\": 120 min / 45 evacuations when low, down to 15 min / 16 evacuations when high"
+        ],
+        [
+         "Chance the check is MG002",
+         "100% while suspicion < 40; after that it drops to ~5%"
+        ],
+        [
+         "Exceptions",
+         "M019 (the room itself), G001 (Skyfall Realm), M022 (Magic Tower), M016 (tutorial)"
+        ],
+        [
+         "Completion limits",
+         "MG003: 5 per window, MG004 and MG005: 2 each"
+        ],
+        [
+         "Reward",
+         "gold (hero level² × 15/20) and Daily Luck, no more than once an hour"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "The game list and rewards come from the game data; some numbers may have changed in patches."
+      },
+      {
+       "type": "text",
+       "text": "**Jumping task (MG001)**"
+      },
+      {
+       "type": "list",
+       "items": [
+        "Jump all the way to the end",
+        "Open the chest",
+        "Open the treasure"
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Victory: Game won."
+      },
+      {
+       "type": "text",
+       "text": "**Maze (MG002)**: Collect all rewards"
+      },
+      {
+       "type": "list",
+       "items": [
+        "Respawns"
+       ]
+      },
+      {
+       "type": "table",
+       "head": [
+        "Stage",
+        "Threshold",
+        "Gold",
+        "Daily Luck"
+       ],
+       "rows": [
+        [
+         "Stage 1",
+         "16.67% of score",
+         "hero level² × 15",
+         "×1"
+        ],
+        [
+         "Stage 2",
+         "50% of score",
+         "hero level² × 15",
+         "×2"
+        ],
+        [
+         "Stage 3",
+         "83.33% of score",
+         "hero level² × 20",
+         "×2"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**Billiards (MG003)**: Challenge: Billiards"
+      },
+      {
+       "type": "list",
+       "items": [
+        "Balls potted",
+        "Pot all {group}: {current}/{total}",
+        "Pot the black 8 ball into the marked pocket",
+        "Black 8 ball potted before the goal was met",
+        "Opponent potted all {group} first: {current}/{total}",
+        "Hit any ball",
+        "Skull balls",
+        "Fire balls",
+        "Undefined"
+       ]
+      },
+      {
+       "type": "table",
+       "head": [
+        "Stage",
+        "Threshold",
+        "Gold",
+        "Daily Luck"
+       ],
+       "rows": [
+        [
+         "Stage 1",
+         "16.67% of score",
+         "hero level² × 15",
+         "×1"
+        ],
+        [
+         "Stage 2",
+         "50% of score",
+         "hero level² × 15",
+         "×2"
+        ],
+        [
+         "Stage 3",
+         "83.33% of score",
+         "hero level² × 20",
+         "×2"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Victory: Billiards challenge complete; Game won; Reward unlocked."
+      },
+      {
+       "type": "text",
+       "text": "Creatures: [[monster:monster_mg003_billiards_ball|Billiard Ball]]."
+      },
+      {
+       "type": "text",
+       "text": "**Facing direction (MG004)**"
+      },
+      {
+       "type": "list",
+       "items": [
+        "Pick the monster facing you",
+        "Pick the monster with its back to you",
+        "Pick the attacking monster",
+        "Pick the running monster"
+       ]
+      },
+      {
+       "type": "table",
+       "head": [
+        "Stage",
+        "Threshold",
+        "Gold",
+        "Daily Luck"
+       ],
+       "rows": [
+        [
+         "Stage 1",
+         "100% of score",
+         "100 gold",
+         "×1"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Victory: Direction recognition complete; Three rounds without mistakes; Challenge passed."
+      },
+      {
+       "type": "text",
+       "text": "**Speed recognition (MG005)**"
+      },
+      {
+       "type": "list",
+       "items": [
+        "Pick the monster whose attack got faster",
+        "Pick the monster whose attack got slower",
+        "Pick the monster that started running faster",
+        "Pick the monster that started running slower"
+       ]
+      },
+      {
+       "type": "table",
+       "head": [
+        "Stage",
+        "Threshold",
+        "Gold",
+        "Daily Luck"
+       ],
+       "rows": [
+        [
+         "Stage 1",
+         "100% of score",
+         "100 gold",
+         "×1"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Victory: Speed recognition complete; Speed recognition; Three rounds passed."
+      }
+     ]
+    },
+    {
+     "key": "cat",
+     "title": "Cat",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "In regular forest rooms (M001–M014) a **cat** can appear: an NPC at a random spawn point. It does not attack and cannot be killed, and if you talk to it, it teleports you to the hidden room M021 \"Cat Challenge\"."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Parameter",
+        "Value"
+       ],
+       "rows": [
+        [
+         "Spawn chance",
+         "2% per room (rolled when the room is created)"
+        ],
+        [
+         "Cooldown",
+         "1 hour, shared by all players and rooms (from the moment it appears)"
+        ],
+        [
+         "Where it appears",
+         "forest rooms M001–M014, at a random SpawnPoint"
+        ],
+        [
+         "Patrol",
+         "walks around the room in 400-unit steps every 3 s"
+        ],
+        [
+         "Room M021",
+         "boss \"Panda Brewmaster\": 800,000 HP, 220 armor, 95% magic resistance"
+        ],
+        [
+         "Reward",
+         "first drop is \"Crimson Heart\" (item_M504), plus 2 items at 100% chance"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "Pet cats (Curious Kitten, Evil Kitten, Sly Kitten and Cat God) are something else: auto-loot companions from the item_pet_cat_* items. The Cat God is crafted from three kittens."
+      }
+     ]
+    },
+    {
+     "key": "towers",
+     "title": "Signal Towers",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "Every location M001–M015 has a Signal Tower. To switch it on you have to bring materials; the list is shown below. Towers M001–M015 cover all regular rooms of the first circle."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Tower",
+        "Location",
+        "Name",
+        "Level",
+        "Materials",
+        "Active",
+        "Creatures in location"
+       ],
+       "rows": [
+        [
+         "ST_M001",
+         "M001",
+         "Abandoned Mine",
+         "1",
+         "[[item:item_M001|Gnarled Branch]] ×10, [[item:item_M002|Sandy Soil]] ×10",
+         "yes",
+         "19 kinds"
+        ],
+        [
+         "ST_M002",
+         "M002",
+         "Damp Cemetery",
+         "2",
+         "[[item:item_M011|Old Plank]] ×3, [[item:item_M113|Iron Ore]] ×2",
+         "yes",
+         "25 kinds"
+        ],
+        [
+         "ST_M003",
+         "M003",
+         "Frozen Tundra",
+         "3",
+         "[[item:item_M008|Wooden Plank]] ×5, [[item:item_M103|Frostbloom]] ×5, [[item:item_M227|Frostproof Fur]] ×3",
+         "yes",
+         "25 kinds"
+        ],
+        [
+         "ST_M004",
+         "M004",
+         "Poison Ivy Courtyard",
+         "4",
+         "[[item:item_M200|Amber]] ×8, [[item:item_M229|Chlorophyte Ore]] ×5",
+         "yes",
+         "20 kinds"
+        ],
+        [
+         "ST_M005",
+         "M005",
+         "Temple Square",
+         "5",
+         "[[item:item_M331|Ancient Hide]] ×5, [[item:item_M205|Glimmer Essence]] ×5",
+         "yes",
+         "19 kinds"
+        ],
+        [
+         "ST_M006",
+         "M006",
+         "Shadowy Thicket",
+         "4",
+         "[[item:item_M225|Life Pod]] ×8, [[item:item_M200|Amber]] ×5",
+         "yes",
+         "20 kinds"
+        ],
+        [
+         "ST_M007",
+         "M007",
+         "Underground Temple",
+         "6",
+         "[[item:item_M425|Fel Fur]] ×5, [[item:item_M232|Mystic Rune Stone]] ×5",
+         "yes",
+         "24 kinds"
+        ],
+        [
+         "ST_M008",
+         "M008",
+         "Void Outskirts",
+         "6",
+         "[[item:item_M321|Void Ore]] ×10, [[item:item_M219|Void Essence]] ×10",
+         "yes",
+         "18 kinds"
+        ],
+        [
+         "ST_M009",
+         "M009",
+         "Sanctum of Fading Shadows",
+         "7",
+         "[[item:item_M535|Abyssal Dust]] ×8, [[item:item_M328|Strange Scale]] ×5, [[item:item_M423|Nether Ore]] ×5",
+         "yes",
+         "19 kinds"
+        ],
+        [
+         "ST_M010",
+         "M010",
+         "Ender Shrine",
+         "7",
+         "[[item:item_M538|Dread Ore]] ×10, [[item:item_M339|Dread Fur]] ×10, [[item:item_M307|End Powder]] ×10",
+         "yes",
+         "27 kinds"
+        ],
+        [
+         "ST_M011",
+         "M011",
+         "Frost Rift",
+         "5",
+         "[[item:item_M324|Polar Ice Ore]] ×5, [[item:item_M218|Four-Leaf Snow Lotus]] ×5",
+         "yes",
+         "22 kinds"
+        ],
+        [
+         "ST_M012",
+         "M012",
+         "Mine Ruins",
+         "3",
+         "[[item:item_M008|Wooden Plank]] ×5, [[item:item_M112|Glimmerbloom]] ×5, [[item:item_M201|Mithril Ore]] ×3",
+         "yes",
+         "21 kinds"
+        ],
+        [
+         "ST_M013",
+         "M013",
+         "Shrine of Desire",
+         "8",
+         "[[item:item_M307|End Powder]] ×10, [[item:item_M319|Ender Hide]] ×10, [[item:item_M211|Glimmer Plank]] ×10",
+         "yes",
+         "23 kinds"
+        ],
+        [
+         "ST_M014",
+         "M014",
+         "Ender Thunder Mountain",
+         "5",
+         "[[item:item_M222|Mutated Fur]] ×4, [[item:item_M223|Thunder Grass]] ×4, [[item:item_M330|Thunder Core]] ×4",
+         "yes",
+         "20 kinds"
+        ],
+        [
+         "ST_M015",
+         "M015",
+         "Enchanted Forest",
+         "8",
+         "[[item:item_M308|Ender Essence]] ×4, [[item:item_M312|Dragonbreath Charcoal]] ×1",
+         "yes",
+         "—"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "The \"Creatures in location\" column is how many monster kinds the map data lists for the location: once the tower is on, the room spawns from the location's normal pool."
+      }
+     ]
+    },
+    {
+     "key": "dispatch",
+     "title": "Dispatch",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "A dispatch is an \"off-screen\" run of a map: the player sends a hero out and gets the loot when collecting the result at the base. Unlocked by talent T231 \"Dispatch\"."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Parameter",
+        "Value"
+       ],
+       "rows": [
+        [
+         "How many at once",
+         "one dispatch per unlocked class and per map"
+        ],
+        [
+         "Cost",
+         "30 fatigue for any map (not refunded on cancel)"
+        ],
+        [
+         "Duration",
+         "30 minutes"
+        ],
+        [
+         "Requirement",
+         "the map has been cleared solo on Hard, with a Hunting Score at or above the map's threshold"
+        ],
+        [
+         "Loot",
+         "17–36 items from the map's pool + gold"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "The amount depends on your best clear time: `multiplier = reference_time / your_time`, clamped to 0.7…1.5. The reference time is 600 seconds, so **1.0 is exactly 10 minutes**, the 1.5 maximum is at 400 seconds or faster, and the 0.7 minimum at ~857 seconds or slower. Since a regular location is cleared in about a minute, in practice the multiplier is almost always capped at 1.5. Items are \"found\" gradually: if you cancel a dispatch early, you only get what has already been found."
+      },
+      {
+       "type": "text",
+       "text": "**Dispatch maps**: the requirement is a Hunting Score; the higher it is, the richer the pool. Fatigue, duration and multipliers are the same for every map."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Map",
+        "Level",
+        "Hunting Score",
+        "Pool",
+        "Materials",
+        "Gold",
+        "Conditions",
+        "Efficiency"
+       ],
+       "rows": [
+        [
+         "M001 · Abandoned Mine",
+         "Lv. 1",
+         "235",
+         "dispatch_M001 (52 items)",
+         "24",
+         "500",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M002 · Damp Cemetery",
+         "Lv. 2",
+         "1970",
+         "dispatch_M002 (110 items)",
+         "24",
+         "1000",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M012 · Mine Ruins",
+         "Lv. 3",
+         "3953",
+         "dispatch_M012 (108 items)",
+         "24",
+         "1500",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M003 · Frozen Tundra",
+         "Lv. 3",
+         "4127",
+         "dispatch_M003 (134 items)",
+         "24",
+         "1500",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M004 · Poison Ivy Courtyard",
+         "Lv. 4",
+         "5633",
+         "dispatch_M004 (141 items)",
+         "24",
+         "2000",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M006 · Shadowy Thicket",
+         "Lv. 4",
+         "7486",
+         "dispatch_M006 (128 items)",
+         "24",
+         "2000",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M005 · Temple Square",
+         "Lv. 5",
+         "9053",
+         "dispatch_M005 (145 items)",
+         "24",
+         "2500",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M014 · Ender Thunder Mountain",
+         "Lv. 5",
+         "9660",
+         "dispatch_M014 (96 items)",
+         "24",
+         "2500",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M011 · Frost Rift",
+         "Lv. 5",
+         "12917",
+         "dispatch_M011 (148 items)",
+         "24",
+         "2500",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M007 · Underground Temple",
+         "Lv. 6",
+         "16948",
+         "dispatch_M007 (103 items)",
+         "24",
+         "3000",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M010 · Ender Shrine",
+         "Lv. 7",
+         "19576",
+         "dispatch_M010 (109 items)",
+         "24",
+         "3500",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M008 · Void Outskirts",
+         "Lv. 6",
+         "20135",
+         "dispatch_M008 (82 items)",
+         "24",
+         "3000",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M009 · Sanctum of Fading Shadows",
+         "Lv. 7",
+         "27127",
+         "dispatch_M009 (73 items)",
+         "24",
+         "3500",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ],
+        [
+         "M013 · Shrine of Desire",
+         "Lv. 8",
+         "30253",
+         "dispatch_M013 (72 items)",
+         "24",
+         "4000",
+         "30 min, 30 fatigue",
+         "×0.70…×1.50"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "key": "hunters",
+     "title": "Hunters",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "Some monsters arrive as \"hunters\": they do not stand on the map but appear next to the player."
+      },
+      {
+       "type": "list",
+       "items": [
+        "Checked every 16 seconds after a start delay.",
+        "Requires a living hero within WatchRange.",
+        "With RandomProbability chance, a group of MinCount…MaxCount monsters appears.",
+        "Hunters get extra health and damage (about +10% per room level) and are marked 🎯 in the creature list."
+       ]
+      },
+      {
+       "type": "note",
+       "text": "Which monsters can be hunters and in which locations is shown on the creature's card on the Monsters tab."
+      }
+     ]
+    },
+    {
+     "key": "runes",
+     "title": "Blessings (runes)",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "Maps have **shrines**: when you approach one, the server offers you **one of three** runes (in the UI: \"Choose a Shrine Blessing\" / \"Three powers, you can only pick one\"). Each rune has **stacks** (\"Current Stacks: N\"), and once a rune's stacks hit the contract limit the option becomes unavailable (\"Contract limit reached\"); you have limited time to choose, and a \"Picked up rune: …\" notification confirms it. The dump of map **M010 \"Lv. 7: Ender Shrine\"** shows two \"Rune\" shrine points (and one on M005)."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Rune",
+        "What it gives"
+       ],
+       "rows": [
+        [
+         "Haste Rune",
+         "+100 movement speed and +100 attack speed."
+        ],
+        [
+         "Damage Rune",
+         "+80% base attack damage and +15% spell amplification."
+        ],
+        [
+         "Arcane Rune",
+         "25% cooldown reduction and −30% mana cost."
+        ],
+        [
+         "Regeneration Rune",
+         "Restores 5% health and 5% mana per second."
+        ],
+        [
+         "Shield Rune",
+         "+200 energy shield capacity."
+        ],
+        [
+         "Purification Rune",
+         "Immunity to \"erosion\" effects (see below); nothing else can remove it."
+        ],
+        [
+         "Revive Rune",
+         "A lethal hit while it is active: 3 seconds, then revival with 50% health and mana."
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "There is also a separate **\"Light Rune\"**, which is not in the choice list: it creates a light source inside which darkness is suppressed, \"dark gaze\" stacks fall off quickly and monsters' dark buffs are removed."
+      },
+      {
+       "type": "text",
+       "text": "**Erosion (M010 only).** The \"Ender Shrine\" environment applies the debuff `modifier_env_m010_erosion`: every second you lose **1% of current health + 1% of max mana** per stack. A stack is added every 3 s, up to 10 (so up to 10% per second). Erosion cannot be dispelled or removed by items; the only escape is the Purification Rune. The damage cannot kill: health is clamped to 1. The effect disappears on death."
+      },
+      {
+       "type": "note",
+       "text": "**In v1.503** five runes (haste, damage, arcane, regeneration, shield) were rewritten: in the new version haste gives +100% movement speed instead of +100 flat, and shield gives 100 and fills the shield immediately. This version is not hooked up in the game yet (it is not in the rune list), so the old version is what applies in game."
+      }
+     ]
+    },
+    {
+     "key": "tour",
+     "title": "Magic Tower",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "The Magic Tower (room M022) is a floor-by-floor run: its chests hold equipment, fate stones and essences. There are three towers: Mine, Forest, Shadow."
+      },
+      {
+       "type": "text",
+       "text": "**Tower chests**: three levels per tower. Each chest comes in three difficulty variants: **Easy**, **Normal** and **Hard**. They differ only in how many items are drawn from the pool: Easy gets 70% of Normal, Hard 150% (rounded). The variant is set by the difficulty of the run in which the chest was obtained."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Tower · level",
+        "Variants",
+        "Drop pool",
+        "Items (Easy / Normal / Hard)",
+        "Extra"
+       ],
+       "rows": [
+        [
+         "Mine · Lv. 1",
+         "[[item:item_MTB001_easy|Easy]], [[item:item_MTB001|Normal]], [[item:item_MTB001_hard|Hard]]",
+         "MT_CHEST_mine_1",
+         "4 / 5 / 8",
+         "equipment ×5, fate stones ×1"
+        ],
+        [
+         "Mine · Lv. 2",
+         "[[item:item_MTB002_easy|Easy]], [[item:item_MTB002|Normal]], [[item:item_MTB002_hard|Hard]]",
+         "MT_CHEST_mine_2",
+         "6 / 8 / 12",
+         "equipment ×10, fate stones ×2"
+        ],
+        [
+         "Mine · Lv. 3",
+         "[[item:item_MTB003_easy|Easy]], [[item:item_MTB003|Normal]], [[item:item_MTB003_hard|Hard]]",
+         "MT_CHEST_mine_3",
+         "9 / 13 / 20",
+         "equipment ×20, fate stones ×4"
+        ],
+        [
+         "Forest · Lv. 1",
+         "[[item:item_MTB004_easy|Easy]], [[item:item_MTB004|Normal]], [[item:item_MTB004_hard|Hard]]",
+         "MT_CHEST_forest_1",
+         "4 / 5 / 8",
+         "equipment ×5, fate stones ×1"
+        ],
+        [
+         "Forest · Lv. 2",
+         "[[item:item_MTB005_easy|Easy]], [[item:item_MTB005|Normal]], [[item:item_MTB005_hard|Hard]]",
+         "MT_CHEST_forest_2",
+         "6 / 8 / 12",
+         "equipment ×10, fate stones ×2"
+        ],
+        [
+         "Forest · Lv. 3",
+         "[[item:item_MTB006_easy|Easy]], [[item:item_MTB006|Normal]], [[item:item_MTB006_hard|Hard]]",
+         "MT_CHEST_forest_3",
+         "9 / 13 / 20",
+         "equipment ×20, fate stones ×4"
+        ],
+        [
+         "Shadow · Lv. 1",
+         "[[item:item_MTB007_easy|Easy]], [[item:item_MTB007|Normal]], [[item:item_MTB007_hard|Hard]]",
+         "MT_CHEST_shadow_1",
+         "4 / 5 / 8",
+         "equipment ×5, fate stones ×1"
+        ],
+        [
+         "Shadow · Lv. 2",
+         "[[item:item_MTB008_easy|Easy]], [[item:item_MTB008|Normal]], [[item:item_MTB008_hard|Hard]]",
+         "MT_CHEST_shadow_2",
+         "6 / 8 / 12",
+         "equipment ×10, fate stones ×2"
+        ],
+        [
+         "Shadow · Lv. 3",
+         "[[item:item_MTB009_easy|Easy]], [[item:item_MTB009|Normal]], [[item:item_MTB009_hard|Hard]]",
+         "MT_CHEST_shadow_3",
+         "9 / 13 / 20",
+         "equipment ×20, fate stones ×4"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Inside the tower, chests lie **unsealed** (`item_MTC00N`): you pick them up during the run, and they can only be opened at the base. On a **successful evacuation** an unsealed chest turns into a Normal, Easy or Hard chest according to the run's difficulty; on failure it is lost."
+      },
+      {
+       "type": "text",
+       "text": "Opening a chest is not one item but **N draws from the pool**: each draw independently picks an item by the pool weights (the \"Items\" column)."
+      },
+      {
+       "type": "text",
+       "text": "**The in-run merchant** has three levels with three goods each: \"Stone of Attack\", \"Stone of Guarding\" and \"Purifying Potion\" of the matching level. He takes **Mana Coins** (`item_M541`), a currency that only works inside the tower: when you leave, each coin turns into gold (16 / 48 / 160 per coin in the Mine / Forest / Shadow tower)."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Level",
+        "Goods",
+        "First purchase"
+       ],
+       "rows": [
+        [
+         "Level 1",
+         "[[item:item_M543|Stone of Attack II]], [[item:item_M547|Stone of Guarding II]], [[item:item_M550|Purifying Potion I]]",
+         "50 Mana Coins"
+        ],
+        [
+         "Level 2",
+         "[[item:item_M544|Stone of Attack III]], [[item:item_M548|Stone of Guarding III]], [[item:item_M551|Purifying Potion II]]",
+         "50 Mana Coins"
+        ],
+        [
+         "Level 3",
+         "[[item:item_M545|Stone of Attack IV]], [[item:item_M549|Stone of Guarding IV]], [[item:item_M552|Purifying Potion III]]",
+         "50 Mana Coins"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**The price grows with every purchase: after each purchase prices double**: 50, 100, 200, 400… The counter is shared across the whole run, so you cannot \"wait it out\" and buy cheaper on another floor: everything you bought from any tower merchant in this run makes the next purchases more expensive."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "pets",
+   "title": "Pets",
+   "blocks": [
+    {
+     "type": "text",
+     "text": "Pets are companions that fly after the hero and help collect loot (they have auto-pickup). Their look is cosmetic; they do not affect combat."
+    },
+    {
+     "type": "table",
+     "head": [
+      "Pet",
+      "Source"
+     ],
+     "rows": [
+      [
+       "[[item:item_pet_001|Zinogre]]",
+       "Support Shop: WOLF DRAGON"
+      ],
+      [
+       "[[item:item_pet_002|Blue Dragon Egg]]",
+       "gacha: chest 1"
+      ],
+      [
+       "[[item:item_pet_003|Red Dragon]]",
+       "gacha: chest 1"
+      ],
+      [
+       "[[item:item_pet_004|★Alternate Dimension Roshan]]",
+       "gacha: chest 1"
+      ],
+      [
+       "[[item:item_pet_005|Little Rabbit Hero]]",
+       "drops from: [[monster:monster_12003|Void Spirit]] (Hard); drops from: [[monster:monster_12016|Warlock]] (Hard)"
+      ],
+      [
+       "[[item:item_pet_cat_curious|Curious Kitten]]",
+       "source not specified in the configs"
+      ],
+      [
+       "[[item:item_pet_cat_evil|Evil Kitten]]",
+       "source not specified in the configs"
+      ],
+      [
+       "[[item:item_pet_cat_sly|Sly Kitten]]",
+       "source not specified in the configs"
+      ],
+      [
+       "[[item:item_pet_cat_god|Cat God]]",
+       "needs: [[item:item_pet_cat_curious|Curious Kitten]] ×1, [[item:item_pet_cat_evil|Evil Kitten]] ×1, [[item:item_pet_cat_sly|Sly Kitten]] ×1"
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "text": "The \"Little Rabbit Hero\" drops only from bosses on Hard, and the \"Cat God\" does not drop at all: it is crafted from three kittens."
+    }
+   ]
+  },
+  {
+   "key": "drop",
+   "title": "Loot: mechanics, luck, pools",
+   "blocks": [],
+   "subs": [
+    {
+     "key": "drop",
+     "title": "Drop mechanics",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "Drops are calculated on the server as a chain of filters: difficulty → fatigue → luck → item and contract bonuses → global coefficient. Below are all the multipliers in the order they apply."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Step",
+        "Rule"
+       ],
+       "rows": [
+        [
+         "Chance",
+         "each monster has its own (the `DropRate` field): 10% — 8, 12% — 4, 15% — 10, 20% — 7, 25% — 22, 30% — 23, 35% — 4, 40% — 5, 50% — 38, 60% — 9, 65% — 4, 70% — 1, 80% — 9, 90% — 3, 100% — 188. If the field is not set, the server uses 15%."
+        ],
+        [
+         "Count",
+         "random between `DropMin` and `DropMax` (1 and 1 for most monsters), then multiplied by the multipliers below."
+        ],
+        [
+         "Difficulty",
+         "Easy ×0.60, Normal ×0.90, Hard ×1.50 (`DropCountBonusPct` −40 / −10 / +50)."
+        ],
+        [
+         "Fatigue",
+         "×0.5 with 0 left, ×0.8 at 1…299, ×1.0 from 300."
+        ],
+        [
+         "First boss",
+         "the first, second and third kill of a boss give ×1.3, ×1.2, ×1.1 (×1.0 after that). Only for the \"boss\" type."
+        ],
+        [
+         "Luck",
+         "one roll per kill; on a proc the number of pool rolls is ×2 (`count = count × 2`, before items are drawn, so it is twice as many new rolls, not a copy of what dropped). Chance `min(60%, luck / (luck + 500) − 5%)`; P221 multiplies the chance."
+        ],
+        [
+         "Contract M013",
+         "up to ×1.5, and with two stacks up to ×2.2 (raises the upper bound of the count)."
+        ],
+        [
+         "[[item:item_P221|Champion's Blessing]]",
+         "double-drop chance multiplier ×2."
+        ],
+        [
+         "Global",
+         "×0.82, the very last step. For a count of 1 this means \"82% it stays 1, 18% it becomes 0\"."
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Multipliers from different steps are multiplied together. A fractional count is rolled: the integer part is kept and the remainder is compared with a random number."
+      },
+      {
+       "type": "text",
+       "text": "**Allies within 1300** of the killer get `max(1, floor(count × 0.45 + 0.5))`, i.e. usually 45%, but at least one item. The killer gets the full count."
+      },
+      {
+       "type": "text",
+       "text": "**The pool weight drops** by ×0.85 if the same pool drops again from the same source, but the repeat counter resets after 8 drops. This protects against getting \"stuck\" on one item; it is not a permanent penalty."
+      }
+     ]
+    },
+    {
+     "key": "luck",
+     "title": "Luck",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "Luck gives a chance for the drop to fire twice: **one roll per kill**, and on a proc the number of pool rolls doubles (6 slots → 12). Items are then drawn **anew** from the same pool, so it means twice as many independent rolls, not a second copy of what already dropped (and not \"+1 item\"). It is made of two stats: `item_drop_luck` (flat) and `item_drop_luck_pct` (percent); together they give `total_item_drop_luck = luck + luck × percent / 100`."
+      },
+      {
+       "type": "text",
+       "text": "Double-drop chance: `min(60%, luck / (luck + 500) − 5%)`. So the first ~25 points of luck do nothing, after that the return grows, and at 929 luck it hits the 60% cap. Order in the engine: the number of rolls is calculated and multiplied by \"×2\" **before** items are drawn (`count = count × 2`, then the global ×0.82), which is why the doubling gives new rolls and the drop contents change."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Luck",
+        "Double-drop chance"
+       ],
+       "rows": [
+        [
+         "0",
+         "0 %"
+        ],
+        [
+         "50",
+         "4.1 %"
+        ],
+        [
+         "100",
+         "11.7 %"
+        ],
+        [
+         "150",
+         "18.1 %"
+        ],
+        [
+         "200",
+         "23.6 %"
+        ],
+        [
+         "300",
+         "32.5 %"
+        ],
+        [
+         "500",
+         "45 %"
+        ],
+        [
+         "929",
+         "60 %"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "The chance is capped at 60%. The rest of your luck comes from Daily Luck (up to +300), mini-games and the Potion of Luck (+20 for 2 minutes)."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Source",
+        "Flat luck",
+        "Luck percent"
+       ],
+       "rows": [
+        [
+         "Talents",
+         "29 (7 nodes)",
+         "+4% (2 nodes)"
+        ],
+        [
+         "[[item:item_0857|Ancestral: Adventurer's Compass]]",
+         "11 → 15.2",
+         "11 → 15.2 %"
+        ],
+        [
+         "[[item:item_0389|Jungle Backpack]]",
+         "8 → 11",
+         "0 → 0 %"
+        ],
+        [
+         "[[item:item_0156|Hand of Midas]]",
+         "5 → 6.9",
+         "0 → 0 %"
+        ],
+        [
+         "[[item:item_0867|Ancestral: Void Backpack]]",
+         "0 → 0",
+         "5 → 6.9 %"
+        ],
+        [
+         "Shop cards (Monthly + Permanent)",
+         "+60",
+         "—"
+        ],
+        [
+         "[[item:item_P151|Lucky Sunshine]]",
+         "+1 each, up to 30 → +30 (permanent)",
+         "—"
+        ],
+        [
+         "[[item:item_P152|Fortune Goddess Vintage]]",
+         "+1% each, up to 5 → +5% (permanent)",
+         "+5 %"
+        ],
+        [
+         "[[item:item_P221|Champion's Blessing]]",
+         "+1 each, up to 10 → +10 (permanent)",
+         "—"
+        ],
+        [
+         "[[item:item_P222|Ender Special]]",
+         "+1 each, up to 5 → +5 (permanent)",
+         "—"
+        ],
+        [
+         "[[item:item_P273|Cube Special]]",
+         "+1 each, up to 5 → +5 (permanent)",
+         "—"
+        ],
+        [
+         "Account badges (medals)",
+         "+1% per level, 4 badges in total → no more than +50% (permanent)",
+         "+50 %"
+        ],
+        [
+         "[[item:item_P047|Potion of Luck]]",
+         "+20 for 4 min",
+         "—"
+        ],
+        [
+         "Daily Luck (not counted)",
+         "up to +300",
+         "—"
+        ]
+       ]
+      },
+      {
+       "type": "table",
+       "head": [
+        "Talent",
+        "Tree",
+        "Gives"
+       ],
+       "rows": [
+        [
+         "[[talent:tree1/T087|Luck Boost]] (T087)",
+         "Main",
+         "Luck: +5"
+        ],
+        [
+         "[[talent:tree1/T088|Luck Boost]] (T088)",
+         "Main",
+         "Luck: +5"
+        ],
+        [
+         "[[talent:tree1/T094|Luck Boost]] (T094)",
+         "Main",
+         "Luck: +3"
+        ],
+        [
+         "[[talent:tree1/T095|Luck Boost]] (T095)",
+         "Main",
+         "Luck: +5"
+        ],
+        [
+         "[[talent:tree1/T051|Ring of Luck]] (T051)",
+         "Main",
+         "%Luck Percentage: +2"
+        ],
+        [
+         "[[talent:tree9/T825|Lucky Streak]] (T825)",
+         "Ender Talents",
+         "%Luck Percentage: +2"
+        ],
+        [
+         "[[talent:tree10/T901|Four-Leaf Clover]] (T901)",
+         "Ancient Talent",
+         "Luck: +3"
+        ],
+        [
+         "[[talent:tree10/T904|Crystal Ball]] (T904)",
+         "Ancient Talent",
+         "Luck: +3"
+        ],
+        [
+         "[[talent:tree10/T913|Mido's Blessing]] (T913)",
+         "Ancient Talent",
+         "Luck: +5"
+        ]
+       ]
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item",
+        "Luck"
+       ],
+       "rows": [
+        [
+         "[[item:item_0156|Hand of Midas]]",
+         "+5 (with a perfect seed: +6.9)"
+        ],
+        [
+         "Dormant Treasure",
+         " (with a perfect seed: )"
+        ],
+        [
+         "Weighted Dice",
+         " (with a perfect seed: )"
+        ],
+        [
+         "[[item:item_0376|Adventurer's Compass]]",
+         "+10, +6% (with a perfect seed: +13.8, +8.3%)"
+        ],
+        [
+         "[[item:item_0389|Jungle Backpack]]",
+         "+8 (with a perfect seed: +11)"
+        ],
+        [
+         "[[item:item_0426|Void Backpack]]",
+         "+5% (with a perfect seed: +6.9%)"
+        ],
+        [
+         "[[item:item_0857|Ancestral: Adventurer's Compass]]",
+         "+11, +11% (with a perfect seed: +15.2, +15.2%)"
+        ],
+        [
+         "[[item:item_0867|Ancestral: Void Backpack]]",
+         "+5% (with a perfect seed: +6.9%)"
+        ],
+        [
+         "[[item:item_P047|Potion of Luck]]",
+         " (with a perfect seed: )"
+        ],
+        [
+         "[[item:item_s_0376|Fate Stone: Adventurer's Compass]]",
+         "+10, +10% (with a perfect seed: +13.8, +13.8%)"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "Daily Luck resets together with fatigue, at 19:00 MSK, and is earned from mini-games and tasks. It is temporary: it burns off at the daily reset."
+      }
+     ]
+    },
+    {
+     "key": "pools",
+     "title": "Drop pools",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "A pool is a list of \"item : weight\". An item's chance = its weight / the sum of the pool's weights. There are 65 pools in the game."
+      },
+      {
+       "type": "pools",
+       "pools": [
+        {
+         "id": "dispatch_M001",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M002",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M003",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M004",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M005",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M006",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M007",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M008",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M009",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M010",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M011",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M012",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M013",
+         "use": "dispatch"
+        },
+        {
+         "id": "dispatch_M014",
+         "use": "dispatch"
+        },
+        {
+         "id": "MT_CHEST_forest_1",
+         "use": "Magic Tower chest"
+        },
+        {
+         "id": "MT_CHEST_forest_2",
+         "use": "Magic Tower chest"
+        },
+        {
+         "id": "MT_CHEST_forest_3",
+         "use": "Magic Tower chest"
+        },
+        {
+         "id": "MT_CHEST_mine_1",
+         "use": "Magic Tower chest"
+        },
+        {
+         "id": "MT_CHEST_mine_2",
+         "use": "Magic Tower chest"
+        },
+        {
+         "id": "MT_CHEST_mine_3",
+         "use": "Magic Tower chest"
+        },
+        {
+         "id": "MT_CHEST_shadow_1",
+         "use": "Magic Tower chest"
+        },
+        {
+         "id": "MT_CHEST_shadow_2",
+         "use": "Magic Tower chest"
+        },
+        {
+         "id": "MT_CHEST_shadow_3",
+         "use": "Magic Tower chest"
+        },
+        {
+         "id": "P600",
+         "use": "opened from \"Level 1 Treasure Chest\""
+        },
+        {
+         "id": "P601",
+         "use": "opened from \"Level 2 Treasure Chest\""
+        },
+        {
+         "id": "P602",
+         "use": "opened from \"Level 3 Treasure Chest\""
+        },
+        {
+         "id": "P603",
+         "use": "opened from \"Level 4 Treasure Chest\""
+        },
+        {
+         "id": "P604",
+         "use": "opened from \"Level 5 Treasure Chest\""
+        },
+        {
+         "id": "P605",
+         "use": "opened from \"Level 6 Treasure Chest\""
+        },
+        {
+         "id": "P610",
+         "use": null
+        },
+        {
+         "id": "P636",
+         "use": "opened from \"Warrior Rune Pouch (Tier 1)\""
+        },
+        {
+         "id": "P636_2",
+         "use": "opened from \"Warrior Rune Pouch (Tier 2)\""
+        },
+        {
+         "id": "P636_3",
+         "use": "opened from \"Warrior Rune Pouch (Tier 3)\""
+        },
+        {
+         "id": "P637",
+         "use": "opened from \"Assassin Rune Pouch (Tier 1)\""
+        },
+        {
+         "id": "P637_2",
+         "use": "opened from \"Assassin Rune Pouch (Tier 2)\""
+        },
+        {
+         "id": "P637_3",
+         "use": "opened from \"Assassin Rune Pouch (Tier 3)\""
+        },
+        {
+         "id": "P638",
+         "use": "opened from \"Mage Rune Pouch (Tier 1)\""
+        },
+        {
+         "id": "P638_2",
+         "use": "opened from \"Mage Rune Pouch (Tier 2)\""
+        },
+        {
+         "id": "P638_3",
+         "use": "opened from \"Mage Rune Pouch (Tier 3)\""
+        },
+        {
+         "id": "P701",
+         "use": null
+        },
+        {
+         "id": "P702",
+         "use": null
+        },
+        {
+         "id": "P703",
+         "use": null
+        },
+        {
+         "id": "P704",
+         "use": "opened from \"Common Equipment Chest (Tier 1)\""
+        },
+        {
+         "id": "P705",
+         "use": "opened from \"Advanced Equipment Chest (Tier 1)\""
+        },
+        {
+         "id": "P706",
+         "use": "opened from \"Luxury Equipment Chest (Tier 1)\""
+        },
+        {
+         "id": "P707",
+         "use": "opened from \"Material Chest (Tier 1)\""
+        },
+        {
+         "id": "P708",
+         "use": "opened from \"Common Equipment Chest (Tier 2)\""
+        },
+        {
+         "id": "P709",
+         "use": "opened from \"Advanced Equipment Chest (Tier 2)\""
+        },
+        {
+         "id": "P710",
+         "use": "opened from \"Luxury Equipment Chest (Tier 2)\""
+        },
+        {
+         "id": "P711",
+         "use": "opened from \"Common Equipment Chest (Tier 3)\""
+        },
+        {
+         "id": "P712",
+         "use": "opened from \"Advanced Equipment Chest (Tier 3)\""
+        },
+        {
+         "id": "P713",
+         "use": "opened from \"Luxury Equipment Chest (Tier 3)\""
+        },
+        {
+         "id": "P714",
+         "use": "opened from \"Material Chest (Tier 2)\""
+        },
+        {
+         "id": "P715",
+         "use": "opened from \"Material Chest (Tier 3)\""
+        },
+        {
+         "id": "P716",
+         "use": "opened from \"Rune Pouch (Tier 1)\""
+        },
+        {
+         "id": "P717",
+         "use": "opened from \"Rune Pouch (Tier 2)\""
+        },
+        {
+         "id": "P718",
+         "use": "opened from \"Rune Pouch (Tier 3)\""
+        },
+        {
+         "id": "P801",
+         "use": null
+        },
+        {
+         "id": "P802",
+         "use": null
+        },
+        {
+         "id": "P803",
+         "use": "Sky reward chest 1"
+        },
+        {
+         "id": "P804",
+         "use": "Sky reward chest 2"
+        },
+        {
+         "id": "P805",
+         "use": "Sky reward chest 3"
+        },
+        {
+         "id": "P806",
+         "use": null
+        },
+        {
+         "id": "P807",
+         "use": null
+        },
+        {
+         "id": "P808",
+         "use": null
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Monsters and destructibles keep their pool right in the `DropPoolId` field (items with weights directly, not a reference to a pool), so look up their pools on the creature card on the \"Monsters & drops\" tab."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "items",
+   "title": "Items: forging, sets, code vs. tooltip",
+   "blocks": [],
+   "subs": [
+    {
+     "key": "forge",
+     "title": "Forging",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "Every item instance has a seed. The stat roll is calculated from it, while \"Enhanced\" and Divine Forged are rolled on the server."
+      },
+      {
+       "type": "table",
+       "head": [
+        "What",
+        "Rule"
+       ],
+       "rows": [
+        [
+         "Stat spread",
+         "value = base × (1 + roll × percent / 100), roll from −50% to +50%"
+        ],
+        [
+         "Fixed stat",
+         "one stat per item, +30%, chosen from the seed"
+        ],
+        [
+         "\"Enhanced\"",
+         "one random stat, +20…38%, kicks in from reforge level 4…9"
+        ],
+        [
+         "Divine Forged",
+         "needs item quality 5 or higher; 32% chance; reforge level 7 (25%), 8 (30%), 9 (45%); bonus +20%, +14% for effect properties"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "The stat roll and the \"fixed\" stat are derived from the seed under any rules, so the exact values can be computed from the seed. \"Enhanced\" and Divine Forged are handed out by the game for each instance, so they cannot be predicted from the seed alone."
+      },
+      {
+       "type": "text",
+       "text": "**How much Legendary Equipment Essence a reforge takes.** Each step costs Legendary Equipment Essence (`item_M315`) and gold. The base is item level × 3, each next step costs 1.15 times the previous one, and from the 7th step on there are 5 more essence on top."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item lv.",
+        "1st",
+        "2nd",
+        "3rd",
+        "4th",
+        "5th",
+        "6th",
+        "7th",
+        "8th",
+        "9th",
+        "Total"
+       ],
+       "rows": [
+        [
+         "1",
+         "3",
+         "3",
+         "3",
+         "4",
+         "5",
+         "6",
+         "11",
+         "12",
+         "14",
+         "61"
+        ],
+        [
+         "2",
+         "6",
+         "6",
+         "7",
+         "9",
+         "10",
+         "12",
+         "18",
+         "20",
+         "23",
+         "111"
+        ],
+        [
+         "3",
+         "9",
+         "10",
+         "11",
+         "13",
+         "15",
+         "18",
+         "25",
+         "28",
+         "32",
+         "161"
+        ],
+        [
+         "4",
+         "12",
+         "13",
+         "15",
+         "18",
+         "20",
+         "24",
+         "32",
+         "36",
+         "41",
+         "211"
+        ],
+        [
+         "5",
+         "15",
+         "17",
+         "19",
+         "22",
+         "26",
+         "30",
+         "39",
+         "44",
+         "50",
+         "262"
+        ],
+        [
+         "6",
+         "18",
+         "20",
+         "23",
+         "27",
+         "31",
+         "36",
+         "46",
+         "52",
+         "60",
+         "313"
+        ],
+        [
+         "7",
+         "21",
+         "24",
+         "27",
+         "31",
+         "36",
+         "42",
+         "53",
+         "60",
+         "69",
+         "363"
+        ],
+        [
+         "8",
+         "24",
+         "27",
+         "31",
+         "36",
+         "41",
+         "48",
+         "60",
+         "68",
+         "78",
+         "413"
+        ],
+        [
+         "9",
+         "27",
+         "31",
+         "35",
+         "41",
+         "47",
+         "54",
+         "67",
+         "76",
+         "87",
+         "465"
+        ],
+        [
+         "10",
+         "30",
+         "34",
+         "39",
+         "45",
+         "52",
+         "60",
+         "74",
+         "84",
+         "96",
+         "514"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**Mythic items** (quality 6 and up) also need Mythic Gear Essence (`item_M507`) for each step. Its base is item level − 3, so items below level 4 do not need it (dashes in the table), and the Legendary Equipment Essence cost is the same as in the table above."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item lv.",
+        "1st",
+        "2nd",
+        "3rd",
+        "4th",
+        "5th",
+        "6th",
+        "7th",
+        "8th",
+        "9th",
+        "Total"
+       ],
+       "rows": [
+        [
+         "1",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—"
+        ],
+        [
+         "2",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—"
+        ],
+        [
+         "3",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—",
+         "—"
+        ],
+        [
+         "4",
+         "1",
+         "1",
+         "1",
+         "1",
+         "1",
+         "2",
+         "7",
+         "7",
+         "8",
+         "29"
+        ],
+        [
+         "5",
+         "2",
+         "2",
+         "2",
+         "3",
+         "3",
+         "4",
+         "9",
+         "10",
+         "11",
+         "46"
+        ],
+        [
+         "6",
+         "3",
+         "3",
+         "3",
+         "4",
+         "5",
+         "6",
+         "11",
+         "12",
+         "14",
+         "61"
+        ],
+        [
+         "7",
+         "4",
+         "4",
+         "5",
+         "6",
+         "6",
+         "8",
+         "14",
+         "15",
+         "17",
+         "79"
+        ],
+        [
+         "8",
+         "5",
+         "5",
+         "6",
+         "7",
+         "8",
+         "10",
+         "16",
+         "18",
+         "20",
+         "95"
+        ],
+        [
+         "9",
+         "6",
+         "6",
+         "7",
+         "9",
+         "10",
+         "12",
+         "18",
+         "20",
+         "23",
+         "111"
+        ],
+        [
+         "10",
+         "7",
+         "8",
+         "9",
+         "10",
+         "12",
+         "14",
+         "21",
+         "23",
+         "26",
+         "130"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "The columns are the reforge number: from level zero to nine there are nine of them, and \"Total\" is the whole way to reforge level 9. For mythic items the Legendary Equipment Essence follows the first table (level × 3), i.e. every step spends both, mythic and legendary. **Neutral** items (the ones worn in the neutral slot, e.g. \"Kobold Goblet\") need half as much Legendary Equipment Essence (level × 2), so all numbers in the first table are halved for them; for quality-6 equipment the base is level × 3 again. Items below quality 5 need neither legendary nor mythic essence: their reforges use the regular Equipment Essence (`item_M009`). Gold is counted separately: 1000 × item level, then likewise × 1.15 per step."
+      },
+      {
+       "type": "text",
+       "text": "**How much essence it costs to apply a fate stone (ascension).** Ascension pays the difference: the game calculates what a reforge would cost for a **level 8** item and subtracts what it would cost for an item of your level. So **items of level 8 and above need no essence for a fate stone at all**, and the lower the level, the larger the surcharge. No gold is needed, only essence."
+      },
+      {
+       "type": "text",
+       "text": "Regular items: Legendary Equipment Essence (`item_M315`):"
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item lv.",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+       ],
+       "rows": [
+        [
+         "1",
+         "0",
+         "21",
+         "45",
+         "73",
+         "105",
+         "141",
+         "183",
+         "232",
+         "288",
+         "352"
+        ],
+        [
+         "2",
+         "0",
+         "18",
+         "39",
+         "63",
+         "90",
+         "121",
+         "157",
+         "199",
+         "247",
+         "302"
+        ],
+        [
+         "3",
+         "0",
+         "15",
+         "32",
+         "52",
+         "75",
+         "101",
+         "131",
+         "166",
+         "206",
+         "252"
+        ],
+        [
+         "4",
+         "0",
+         "12",
+         "26",
+         "42",
+         "60",
+         "81",
+         "105",
+         "133",
+         "165",
+         "202"
+        ],
+        [
+         "5",
+         "0",
+         "9",
+         "19",
+         "31",
+         "45",
+         "60",
+         "78",
+         "99",
+         "123",
+         "151"
+        ],
+        [
+         "6",
+         "0",
+         "6",
+         "13",
+         "21",
+         "30",
+         "40",
+         "52",
+         "66",
+         "82",
+         "100"
+        ],
+        [
+         "7",
+         "0",
+         "3",
+         "6",
+         "10",
+         "15",
+         "20",
+         "26",
+         "33",
+         "41",
+         "50"
+        ],
+        [
+         "8",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Neutral items (neutral slot): the base is half as large (level × 2), so the surcharge is smaller too:"
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item lv.",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+       ],
+       "rows": [
+        [
+         "1",
+         "0",
+         "14",
+         "30",
+         "49",
+         "70",
+         "94",
+         "122",
+         "155",
+         "192",
+         "234"
+        ],
+        [
+         "2",
+         "0",
+         "12",
+         "26",
+         "42",
+         "60",
+         "81",
+         "105",
+         "133",
+         "165",
+         "201"
+        ],
+        [
+         "3",
+         "0",
+         "10",
+         "22",
+         "36",
+         "51",
+         "68",
+         "88",
+         "112",
+         "139",
+         "169"
+        ],
+        [
+         "4",
+         "0",
+         "8",
+         "17",
+         "28",
+         "40",
+         "54",
+         "70",
+         "89",
+         "110",
+         "134"
+        ],
+        [
+         "5",
+         "0",
+         "6",
+         "13",
+         "21",
+         "30",
+         "40",
+         "52",
+         "66",
+         "82",
+         "100"
+        ],
+        [
+         "6",
+         "0",
+         "4",
+         "9",
+         "15",
+         "21",
+         "28",
+         "36",
+         "46",
+         "57",
+         "69"
+        ],
+        [
+         "7",
+         "0",
+         "2",
+         "4",
+         "7",
+         "10",
+         "13",
+         "17",
+         "22",
+         "27",
+         "33"
+        ],
+        [
+         "8",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Mythic items (quality 6) also need Mythic Gear Essence (`item_M507`) on top:"
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item lv.",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+       ],
+       "rows": [
+        [
+         "1",
+         "0",
+         "5",
+         "10",
+         "16",
+         "23",
+         "31",
+         "41",
+         "57",
+         "75",
+         "95"
+        ],
+        [
+         "2",
+         "0",
+         "5",
+         "10",
+         "16",
+         "23",
+         "31",
+         "41",
+         "57",
+         "75",
+         "95"
+        ],
+        [
+         "3",
+         "0",
+         "5",
+         "10",
+         "16",
+         "23",
+         "31",
+         "41",
+         "57",
+         "75",
+         "95"
+        ],
+        [
+         "4",
+         "0",
+         "4",
+         "8",
+         "13",
+         "19",
+         "26",
+         "34",
+         "43",
+         "54",
+         "66"
+        ],
+        [
+         "5",
+         "0",
+         "3",
+         "6",
+         "10",
+         "14",
+         "19",
+         "25",
+         "32",
+         "40",
+         "49"
+        ],
+        [
+         "6",
+         "0",
+         "2",
+         "4",
+         "7",
+         "10",
+         "13",
+         "17",
+         "22",
+         "28",
+         "34"
+        ],
+        [
+         "7",
+         "0",
+         "1",
+         "2",
+         "3",
+         "4",
+         "6",
+         "8",
+         "10",
+         "13",
+         "16"
+        ],
+        [
+         "8",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "How to read it: the row is the item level, the column is its forge level (0 means no reforges, so no surcharge). Example: \"Kobold Goblet\" (level 1, neutral, forge 9) needs **234** Legendary Equipment Essence; a regular level 1 item with the same forge would cost 352. Mythic items of levels 1–3 need a fixed 95 Mythic Gear Essence for any forge level: the mythic group only appears from level 4, so it is paid in full. Items below quality 5 need no essence for a fate stone."
+      }
+     ]
+    },
+    {
+     "key": "sets",
+     "title": "Sets",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "Sets are not a separate item type but \"schools\": a set has a list of member items, and an item's ability counts how many set items are worn in the main slots and multiplies its effect. That is why a set has no shared panel: the bonus shows in the item tooltip."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Set",
+        "Items",
+        "How it counts",
+        "Members",
+        "What it gives"
+       ],
+       "rows": [
+        [
+         "Lionheart",
+         "12",
+         "per item, no limit",
+         "[[item:item_0329|Lionheart War Armor]], [[item:item_0385|Lionheart Backpack]], [[item:item_0396|Stone Golem's Hand]], [[item:item_0460|Lionheart Hammer]], [[item:item_0527|Lionheart Crown]], [[item:item_0536|Lionheart Battleaxe]], [[item:item_0714|Ancestral: Lionheart War Armor]], [[item:item_0726|Ancestral: Lionheart Hammer]], [[item:item_0766|Ancestral: Lionheart Crown]], [[item:item_0787|Ancestral: Lionheart Battleaxe]], [[item:item_0808|Ancestral: Stone Golem's Hand]], [[item:item_0858|Ancestral: Lionheart Backpack]]",
+         "+10 armor per item, the biggest set; the core \"Awakening\" (0530) counts itself separately"
+        ],
+        [
+         "Sage",
+         "10",
+         "per item, no multiplier",
+         "[[item:item_0336|Sage's Boots]], [[item:item_0384|Sage's Backpack]], [[item:item_0442|Sage's Cloak]], [[item:item_0456|Robe of the Sage]], [[item:item_0526|Sage's Proof]], [[item:item_0716|Ancestral: Sage's Boots]], [[item:item_0724|Ancestral: Robe of the Sage]], [[item:item_0765|Ancestral: Sage's Proof]], [[item:item_0807|Ancestral: Sage's Backpack]], [[item:item_0839|Ancestral: Sage's Cloak]]",
+         "no numeric multiplier: the items' bonuses only check whether set partners are present"
+        ],
+        [
+         "Shadow",
+         "10",
+         "per item, max 3",
+         "[[item:item_0360|Pursuit Boots]], [[item:item_0404|Shadow Armor]], [[item:item_0445|Swift Shadow Backpack]], [[item:item_0523|Swift Shadow Gloves]], [[item:item_0651|Swift Shadow Pendant]], [[item:item_0718|Ancestral: Pursuit Boots]], [[item:item_0764|Ancestral: Swift Shadow Gloves]], [[item:item_0837|Ancestral: Shadow Armor]], [[item:item_0860|Ancestral: Swift Shadow Backpack]], [[item:item_0879|Ancestral: Swift Shadow Pendant]]",
+         "+8% attack speed and +8% movement speed per item"
+        ],
+        [
+         "Bleed",
+         "6",
+         "per item, max 3 (no further counting)",
+         "[[item:item_0467|Demon God Axe]], [[item:item_0502|Demon God Armor]], [[item:item_0516|Demon God Gloves]], [[item:item_0761|Ancestral: Demon God Gloves]], [[item:item_0841|Ancestral: Demon God Axe]], [[item:item_0847|Ancestral: Demon God Armor]]",
+         "+13% attack damage and +5% physical lifesteal per item (up to +39% / +15%)"
+        ],
+        [
+         "Swift Shadow",
+         "2",
+         "hard condition: second item worn",
+         "[[item:item_0404|Shadow Armor]], [[item:item_0562|Swift Shadow Gloves]]",
+         "a second, \"small\" set of the same school: counts only its own pair of items"
+        ],
+        [
+         "Equilibrium",
+         "2",
+         "hard condition: second item worn",
+         "Left of Equilibrium, Right of Equilibrium",
+         "cross mana tracking: mana stored by one item powers up the other"
+        ],
+        [
+         "Deliverance",
+         "2",
+         "hard condition: second item worn",
+         "[[item:item_0580|Deliverance Bell]], [[item:item_0581|Eye of Judgment]]",
+         "more debuffs are reflected back to the attacker"
+        ],
+        [
+         "Curse",
+         "2",
+         "hard condition: second item worn",
+         "[[item:item_0576|Crown of Cursed Fire]], [[item:item_0577|Tome of Soul Erosion]]",
+         "extra ability damage per stack of \"soul erosion\""
+        ],
+        [
+         "World Burning",
+         "2",
+         "per item, max 3",
+         "World Incineration, [[item:item_0565|Burning Starfire]]",
+         "\"World Flame\" gets +30% chance to add a burn stack per set item (up to 100%)"
+        ],
+        [
+         "Four Forms",
+         "2",
+         "hard condition: second item worn",
+         "[[item:item_0578|Inducement of Myriad Forms]], [[item:item_0579|Seal of Four Plagues]]",
+         "higher chance to level up damage over time"
+        ],
+        [
+         "Echo",
+         "2",
+         "hard condition: second item worn",
+         "[[item:item_0571|Blade of Echoing]], Sigil of Echoing",
+         "echo damage grows: \"Blade Echo\" 40% → 60%, \"Sigil Echo\" 30% → 50%; cap 300% agility / 600% intelligence, echo delay 0.3 / 0.5 s"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "There is no \"2 / 3 / full\" threshold system: sets have either a hard \"second item worn\" condition or a cumulative per-item bonus capped at 3 (Lionheart has no cap)."
+      }
+     ]
+    },
+    {
+     "key": "mismatch",
+     "title": "Code vs. tooltip",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "Some items do not work the way their tooltip says. Below are the mismatches found by comparing the item code with the tooltips. Numbers are for the current season (s2/s3); in s1 some values were different. This is a code review, not tested in combat. Where the tooltip is plainly wrong, the item card already shows corrected text; where the mechanic is simply not described, it is marked \"Per code\". The wiki does not change the in-game tooltip."
+      },
+      {
+       "type": "text",
+       "text": "**Does more than written.**"
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item",
+        "In tooltip",
+        "In code"
+       ],
+       "rows": [
+        [
+         "[[item:item_0650|Tome of the Grand Magus]] / [[item:item_0878|Ancestral: Tome of the Grand Magus]]",
+         "\"1400% of intelligence\", step \"+1% per 3 mana\"",
+         "damage is based on **max mana**, step **+2%** per 3 mana"
+        ],
+        [
+         "[[item:item_0856|Ancestral: Force Boots]] / [[item:item_0728|Ancestral: Hammer of Ruin]]",
+         "\"damage based on the **target's** max health\"",
+         "uses the **owner's** max health"
+        ],
+        [
+         "[[item:item_0468|Thor's Wrath]] / [[item:item_0842|Ancestral: Thor's Wrath]]",
+         "— (a hit limit exists only in the data: `ability_storm_max_hits = 10`)",
+         "no script reads the key: lightning strikes on every attack with no counter"
+        ],
+        [
+         "[[item:item_0523|Swift Shadow Gloves]] / [[item:item_0764|Ancestral: Swift Shadow Gloves]]",
+         "\"+1% per 3 movement speed\"",
+         "\"+2 %\""
+        ],
+        [
+         "[[item:item_0367|Shadow Boots]]",
+         "\"up to +250 attack damage\"",
+         "the real cap is +300"
+        ],
+        [
+         "[[item:item_0361|Phantom Spike]] / [[item:item_0453|Stygian Spike]] / [[item:item_0840|Ancestral: Stygian Spike]]",
+         "\"per point of **bonus** attack speed\"",
+         "uses all attack speed, including the base (~100)"
+        ],
+        [
+         "[[item:item_0318|Ghost Cloak]]",
+         "\"damage taken reduced by 30%\"",
+         "40% (the number is not in the config, only in the code)"
+        ],
+        [
+         "[[item:item_0471|Thunder Pendant]]",
+         "not a word about lightning damage",
+         "lightning deals 5% of the target's **current** health as pure damage (to monsters with a \"blue\" spell charge)"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "\"Thunder Pendant\" ([[item:item_0471|Thunder Pendant]]) works **only in room M014 \"Ender Thunder Mountain\"**: the condition in the code is literally \"player's current room = M014\" (thunder grass has the same check). In any other location the cast does nothing and does not even go on cooldown. Also, the \"blue charge\" of the spell that the lightning hits is a mechanic of those particular monsters."
+      },
+      {
+       "type": "text",
+       "text": "**Minus into plus.** Several items turn a penalty or a lost resource into a bonus:"
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item",
+        "What it converts"
+       ],
+       "rows": [
+        [
+         "[[item:item_0561|Quenched Doom Armor]]",
+         "each debuff on yourself → +5% damage dealt and +5% damage reduction (no cap); the item itself puts three curses on its owner"
+        ],
+        [
+         "[[item:item_0612|Overflow Rotation]] / [[item:item_0798|Ancestral: Overflow Rotation]]",
+         "cooldown reduction above 30% → +2% spell amplification per 1% (no cap)"
+        ],
+        [
+         "[[item:item_0610|Critical Overflow]] / [[item:item_0820|Ancestral: Critical Overflow]]",
+         "physical crit above 100% → +3% crit damage per 2% over the limit"
+        ],
+        [
+         "[[item:item_0599|Shadow Dancer's Sash]] / [[item:item_0797|Ancestral: Shadow Dancer's Sash]]",
+         "evasion above 35% → +1% damage dealt per 1% (in s1 it was 50%/1.5%)"
+        ],
+        [
+         "[[item:item_0246|Boots of Oblivion]]",
+         "excess movement speed → +1% crit per 10 points"
+        ],
+        [
+         "[[item:item_0550|Desperate Fury]] / [[item:item_0770|Ancestral: Desperate Fury]]",
+         "lost health → up to +50% final damage"
+        ],
+        [
+         "[[item:item_0298|Swamp Shield]]",
+         "each −1% speed → +1% damage reduction (cap 25%); **the bonus is not reset when the slow ends**"
+        ],
+        [
+         "[[item:item_0240|Unyielding Cuirass]] / [[item:item_0705|Ancestral: Unyielding Cuirass]]",
+         "speed below the threshold → damage resistance (but the owner cannot crit)"
+        ],
+        [
+         "[[item:item_0368|Endless Blade]]",
+         "crit damage from the sum of crit chances, and \"omni crit\" is counted twice"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**Cooldowns and repeats.**"
+      },
+      {
+       "type": "list",
+       "items": [
+        "Cooldown reduction also cuts items' **internal** cooldowns that the description lists as fixed seconds: [[item:item_0346|Nightraven Cloak]] (0.7 s → 0.14 at cap), [[item:item_0564|Psionic Continuance]] (3 s → 0.6), [[item:item_0409|Ashmark Ring]], [[item:item_0412|Bloodmist Mask]], [[item:item_0308|★Aghanim's Scepter]].",
+        "If the cooldown is shorter than the buff duration, the effect never drops: [[item:item_0471|Thunder Pendant]] (CD 16 s, form 6 s), [[item:item_0646|Celestial Feather Pendant]], [[item:item_0289|Vicious Horn]], [[item:item_0251|Tadpole Charm]], [[item:item_0422|Royal Standard]].",
+        "[[item:item_0200|Refresher Orb]] and [[item:item_0801|Ancestral: Refresher Orb]] (Refresher Orb and its Ancestral version) are the same class with a shared cooldown group, and the reset in the code only excludes itself: each one resets the other."
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**Slots.** There are up to nine legal stat slots: 6 main + neutral + pet + soul. The neutral slot only accepts items without a restriction; among the \"damage\" Ancestral items these are [[item:item_0862|Ancestral: Grievous Dagger]], [[item:item_0863|Ancestral: Satanic]], [[item:item_0868|Ancestral: Blood Abyss Devourer]], [[item:item_0869|Ancestral: Eye of Judgment]] and [[item:item_0876|Ancestral: Transmutation Prism]] (11–15% \"%All Attack Damage\")."
+      },
+      {
+       "type": "note",
+       "text": "Checked and not confirmed: the bag gives no stats; a duplicate item is impossible (the base and its Ancestral version are one \"group\"); ascension is strictly 1:1 (no second time, no moving to another item); one soul and one pet; mail, chests and permanent bonuses do not give duplicates; external cooldown resets are blocked for boss and soul abilities."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "vendors",
+   "title": "Merchants and fragments",
+   "blocks": [
+    {
+     "type": "table",
+     "head": [
+      "Merchant",
+      "Base refresh",
+      "Minimum",
+      "Stock"
+     ],
+     "rows": [
+      [
+       "Regular merchant",
+       "20 min",
+       "10 min (discount no more than −50%)",
+       "up to 31 slots"
+      ],
+      [
+       "Ancient Merchant",
+       "5 h",
+       "2.5 h (discount no more than −50%)",
+       "min(32, 27 + ancient_shop_count): eight permanent entries, the rest random"
+      ],
+      [
+       "Guild: Point Exchange",
+       "manually, for a \"Guild Charter\"",
+       "3 times a day",
+       "10 → 25 exchanges a day"
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "text": "**What gets into the shop.** The merchant fills the random entries from a common set, and what is in that set depends on what **has dropped for you**. Each player has a personal drop counter for every item; it is kept in the save and does not reset between runs. What counts is the item dropping for you (you do not have to pick it up), and any items count except equipment and gold. Once an item has dropped for you **4 times**, it enters the trade set with double weight, i.e. **from the fourth drop the item can start appearing in the shop**. Before that it will not be there at all, unless it is on the permanent list or is equipment. Example: \"Temple Core\" (item_M523) is not on the shop's base list, so without 4 drops it will not show up in the window."
+    },
+    {
+     "type": "text",
+     "text": "**Regular merchant slots.** The number of entries is `min(32, min(10, ⌊unlocked / 3⌋) + 10 + shop_count)`, where \"unlocked\" are items that have dropped for you 4+ times. Every three such items give +1 slot (but no more than +10), and shop_count talents add up to +11 more slots; so the maximum is 31 slots, and the hard cap in the code is 32. With no unlocked items and no upgrades the window has 10 random entries, plus 5 permanent ones and up to 2 blueprints. The stack size of an entry also grows with the counter: `1 + min(4, ⌊drops / 3⌋)`, from 1 to 5 pieces (`⌊4/3⌋+1 = 2` already on the fourth drop, 5 pieces from the twelfth)."
+    },
+    {
+     "type": "text",
+     "text": "**Equipment and blueprints.** Equipment is not tracked by the counter: it enters the set by shop level (shop level = 1 + shop_level talents; the tree currently goes up to level 7): the higher the level, the more equipment can show up in the window. On top of that, up to two random entries of the regular shop are taken by blueprints (recipes) you have not unlocked yet; buying such a blueprint unlocks the recipe. At the Ancient Merchant a blueprint can also land in a random entry, but its level must not exceed the ancient shop level (ancient_shop_level)."
+    },
+    {
+     "type": "text",
+     "text": "**The Ancient Merchant** fills random entries the same way as the regular one, only by its own flag: the set includes basic consumables and items flagged \"sold by the Ancient Merchant\" that have dropped for you 4+ times (weight 2). The ancient shop level does not affect these entries: it unlocks permanent entries and blueprints. He sells materials in stacks of 10, \"precious\" ones in stacks of 3, everything else by the usual counter formula."
+    },
+    {
+     "type": "text",
+     "text": "**Guild merchant orders** use the same counter: a material gets into an order only after it has dropped for you at least once (\"precious\" materials are exempt from this rule; they are always in orders)."
+    },
+    {
+     "type": "text",
+     "text": "**Refresh cooldown: the shop never refreshes more than twice as fast.** Timer = `base time × (100 − shop_time) / 100`, where `shop_time` is the refresh speed-up talents (the tree has 2 of them at +10% = −20%), and the percent itself is clamped to 0…50. So even fully upgraded the discount is −20%, and the −50% cap is beyond that: the regular merchant's minimum is 10 min, the Ancient Merchant's 2.5 h. There are no other ways to speed up the refresh."
+    },
+    {
+     "type": "text",
+     "text": "**Fragment Shop.**"
+    },
+    {
+     "type": "text",
+     "text": "Fragments (given for duplicate items) are spent in the Fragment Shop; 10 exchanges are enabled."
+    },
+    {
+     "type": "text",
+     "text": "**What you can get**, each item with its own price:"
+    },
+    {
+     "type": "table",
+     "head": [
+      "Item",
+      "Count",
+      "Price",
+      "From chest"
+     ],
+     "rows": [
+      [
+       "[[item:item_P257|Advanced Trade Expansion Scroll]]",
+       "×1",
+       "30 frag.",
+       "chest #1"
+      ],
+      [
+       "Sunken Mana Emblem",
+       "×1",
+       "5000 frag.",
+       "chest #2"
+      ],
+      [
+       "[[item:item_M508|Mythic Reforge Stone]]",
+       "×1",
+       "30 frag.",
+       "chest #1"
+      ],
+      [
+       "Sacred Armor Emblem",
+       "×1",
+       "5000 frag.",
+       "chest #2"
+      ],
+      [
+       "[[item:item_M315|Legendary Equipment Essence]]",
+       "×1",
+       "10 frag.",
+       "chest #1"
+      ],
+      [
+       "Overgrowth Crit Emblem",
+       "×1",
+       "5000 frag.",
+       "chest #2"
+      ],
+      [
+       "[[item:item_P252|Cosmic Slate]]",
+       "×1",
+       "50 frag.",
+       "chest #1"
+      ],
+      [
+       "Crystalline Lifesteal Emblem",
+       "×1",
+       "5000 frag.",
+       "chest #2"
+      ],
+      [
+       "[[item:item_P251|Greater Expansion Crate]]",
+       "×1",
+       "50 frag.",
+       "chest #1"
+      ],
+      [
+       "[[item:item_P270|Lionheart's Secret Brew]]",
+       "×1",
+       "30 frag.",
+       "chest #1"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "key": "season",
+   "title": "Experience and season",
+   "blocks": [
+    {
+     "type": "text",
+     "text": "**A hero has 30 levels.** The game hands the XP table to the engine at startup (`SetCustomXPRequiredToReachNextLevel`), so it does not depend on monster or location level. The published data contains a different, \"long\" table `ak_experience` with 500 levels (values are identical after the 25th); it has nothing to do with hero level."
+    },
+    {
+     "type": "columns",
+     "cols": [
+      {
+       "head": [
+        "Lv.",
+        "Total XP",
+        "Per level"
+       ],
+       "rows": [
+        [
+         "1",
+         "0",
+         "—"
+        ],
+        [
+         "2",
+         "100",
+         "100"
+        ],
+        [
+         "3",
+         "300",
+         "200"
+        ],
+        [
+         "4",
+         "500",
+         "200"
+        ],
+        [
+         "5",
+         "800",
+         "300"
+        ],
+        [
+         "6",
+         "1300",
+         "500"
+        ],
+        [
+         "7",
+         "1800",
+         "500"
+        ],
+        [
+         "8",
+         "9894",
+         "8094"
+        ],
+        [
+         "9",
+         "14215",
+         "4321"
+        ],
+        [
+         "10",
+         "19335",
+         "5120"
+        ]
+       ]
+      },
+      {
+       "head": [
+        "Lv.",
+        "Total XP",
+        "Per level"
+       ],
+       "rows": [
+        [
+         "11",
+         "25384",
+         "6049"
+        ],
+        [
+         "12",
+         "32526",
+         "7142"
+        ],
+        [
+         "13",
+         "40968",
+         "8442"
+        ],
+        [
+         "14",
+         "50968",
+         "10000"
+        ],
+        [
+         "15",
+         "62855",
+         "11887"
+        ],
+        [
+         "16",
+         "77040",
+         "14185"
+        ],
+        [
+         "17",
+         "94044",
+         "17004"
+        ],
+        [
+         "18",
+         "114521",
+         "20477"
+        ],
+        [
+         "19",
+         "139296",
+         "24775"
+        ],
+        [
+         "20",
+         "169409",
+         "30113"
+        ]
+       ]
+      },
+      {
+       "head": [
+        "Lv.",
+        "Total XP",
+        "Per level"
+       ],
+       "rows": [
+        [
+         "21",
+         "206169",
+         "36760"
+        ],
+        [
+         "22",
+         "251227",
+         "45058"
+        ],
+        [
+         "23",
+         "306662",
+         "55435"
+        ],
+        [
+         "24",
+         "375094",
+         "68432"
+        ],
+        [
+         "25",
+         "459824",
+         "84730"
+        ],
+        [
+         "26",
+         "565012",
+         "105188"
+        ],
+        [
+         "27",
+         "695900",
+         "130888"
+        ],
+        [
+         "28",
+         "859090",
+         "163190"
+        ],
+        [
+         "29",
+         "1062904",
+         "203814"
+        ],
+        [
+         "30",
+         "1317826",
+         "254922"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "text": "Hero professions unlock in tiers **every 5 levels**: 5, 10, 15, 20, 25 (`HERO_LEVEL_CONFIG = {maxLevel: 30, professionLevelStep: 5, firstTierInitialLevel: 5}`), which is why there are five profession tiers."
+    },
+    {
+     "type": "text",
+     "text": "XP from a monster depends on the level difference: monsters above you give more, weaker ones give less:"
+    },
+    {
+     "type": "columns",
+     "cols": [
+      {
+       "head": [
+        "Level difference",
+        "Multiplier"
+       ],
+       "rows": [
+        [
+         "monster 10 lv. higher",
+         "×1.5"
+        ],
+        [
+         "monster 9 lv. higher",
+         "×1.45"
+        ],
+        [
+         "monster 8 lv. higher",
+         "×1.4"
+        ],
+        [
+         "monster 7 lv. higher",
+         "×1.35"
+        ],
+        [
+         "monster 6 lv. higher",
+         "×1.3"
+        ],
+        [
+         "monster 5 lv. higher",
+         "×1.25"
+        ],
+        [
+         "monster 4 lv. higher",
+         "×1.2"
+        ],
+        [
+         "monster 3 lv. higher",
+         "×1.15"
+        ],
+        [
+         "monster 2 lv. higher",
+         "×1.1"
+        ],
+        [
+         "monster 1 lv. higher",
+         "×1.05"
+        ],
+        [
+         "same level",
+         "×1"
+        ]
+       ]
+      },
+      {
+       "head": [
+        "Level difference",
+        "Multiplier"
+       ],
+       "rows": [
+        [
+         "monster 1 lv. lower",
+         "×0.9"
+        ],
+        [
+         "monster 2 lv. lower",
+         "×0.8"
+        ],
+        [
+         "monster 3 lv. lower",
+         "×0.7"
+        ],
+        [
+         "monster 4 lv. lower",
+         "×0.6"
+        ],
+        [
+         "monster 5 lv. lower",
+         "×0.5"
+        ],
+        [
+         "monster 6 lv. lower",
+         "×0.4"
+        ],
+        [
+         "monster 7 lv. lower",
+         "×0.3"
+        ],
+        [
+         "monster 8 lv. lower",
+         "×0.2"
+        ],
+        [
+         "monster 9 lv. lower",
+         "×0.1"
+        ],
+        [
+         "monster 10 lv. lower",
+         "×0.1"
+        ],
+        [
+         "10 or more levels lower",
+         "×0.1"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "text": "**Season.**"
+    },
+    {
+     "type": "text",
+     "text": "The season gives two **personal combat buffs**, independent damage multipliers that work in every run while the season is open: **personal contribution level** (up to 20) and **server-wide construction level** (world level, up to 10). Each level of either one is **+2% damage dealt and −2% damage taken**; together at max that is ×1.68 to damage and ×0.48 to damage taken. Both multipliers multiply with each other and with the other damage boosts, and they do not affect \"HP loss\" (burn, bleed, ignite)."
+    },
+    {
+     "type": "text",
+     "text": "**Contribution** comes from donations in \"Season Progress\": you donate gold or [[item:item_M512|Ancient Coin]], each donation brings contribution points (200 to 300 points for donations of the same resource), and the price of the next donation goes up. Personal contribution accumulates per player, world level from the total contribution of all players; with a new season the levels reset, and \"Season Settlement\" awards coins by level."
+    },
+    {
+     "type": "text",
+     "text": "**The season shop** has 8 goods bought with contribution, some with a limit and a rising price:"
+    },
+    {
+     "type": "table",
+     "head": [
+      "Goods",
+      "Gives",
+      "Price",
+      "Limit",
+      "Requirement",
+      "Price growth"
+     ],
+     "rows": [
+      [
+       "Guild Contract Book Pack",
+       "[[item:item_M408|Guild Charter]] ×10",
+       "25",
+       "10",
+       "—",
+       "×1.25 per purchase"
+      ],
+      [
+       "Mysterious Key Pack",
+       "[[item:item_M318|Mysterious Key]] ×2",
+       "100",
+       "3",
+       "—",
+       "×1.25 per purchase"
+      ],
+      [
+       "Warehouse Expansion Box",
+       "[[item:item_P250|Expansion Crate]] ×1",
+       "300",
+       "1",
+       "from lv. 3",
+       "×1.25 per purchase"
+      ],
+      [
+       "Season Gold Supply",
+       "",
+       "40",
+       "5",
+       "from lv. 4",
+       "×1.25 per purchase"
+      ],
+      [
+       "Eternal Points Pool Expansion",
+       "",
+       "300",
+       "5",
+       "from lv. 5",
+       "×1.25 per purchase"
+      ],
+      [
+       "Season 2 Commemorative Badge",
+       "",
+       "800",
+       "1",
+       "from lv. 6",
+       "×1.25 per purchase"
+      ],
+      [
+       "Eternal Recovery Card",
+       "",
+       "300",
+       "5",
+       "—",
+       "×1.50 per purchase"
+      ],
+      [
+       "Season Pass",
+       "",
+       "1500",
+       "1",
+       "—",
+       "—"
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "text": "Contribution levels (even ones only, the table is long; \"Buff\" is damage dealt / damage taken):"
+    },
+    {
+     "type": "table",
+     "head": [
+      "Level",
+      "Contribution needed",
+      "Settlement currency",
+      "Buff"
+     ],
+     "rows": [
+      [
+       "0",
+       "0",
+       "0",
+       "—"
+      ],
+      [
+       "2",
+       "100",
+       "70",
+       "+4% / −4%"
+      ],
+      [
+       "4",
+       "350",
+       "180",
+       "+8% / −8%"
+      ],
+      [
+       "6",
+       "1000",
+       "330",
+       "+12% / −12%"
+      ],
+      [
+       "8",
+       "2700",
+       "520",
+       "+16% / −16%"
+      ],
+      [
+       "10",
+       "5500",
+       "750",
+       "+20% / −20%"
+      ],
+      [
+       "12",
+       "10000",
+       "1020",
+       "+24% / −24%"
+      ],
+      [
+       "14",
+       "16500",
+       "1330",
+       "+28% / −28%"
+      ],
+      [
+       "16",
+       "26500",
+       "1680",
+       "+32% / −32%"
+      ],
+      [
+       "18",
+       "40000",
+       "2070",
+       "+36% / −36%"
+      ],
+      [
+       "20",
+       "60000",
+       "2500",
+       "+40% / −40%"
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "text": "World levels:"
+    },
+    {
+     "type": "table",
+     "head": [
+      "World level",
+      "Contribution needed",
+      "Settlement bonus",
+      "Buff"
+     ],
+     "rows": [
+      [
+       "0",
+       "0",
+       "0 %",
+       "—"
+      ],
+      [
+       "1",
+       "10000",
+       "5 %",
+       "+2% / −2%"
+      ],
+      [
+       "2",
+       "20000",
+       "10 %",
+       "+4% / −4%"
+      ],
+      [
+       "3",
+       "40000",
+       "20 %",
+       "+6% / −6%"
+      ],
+      [
+       "4",
+       "80000",
+       "35 %",
+       "+8% / −8%"
+      ],
+      [
+       "5",
+       "160000",
+       "50 %",
+       "+10% / −10%"
+      ],
+      [
+       "6",
+       "320000",
+       "50 %",
+       "+12% / −12%"
+      ],
+      [
+       "7",
+       "640000",
+       "50 %",
+       "+14% / −14%"
+      ],
+      [
+       "8",
+       "1280000",
+       "50 %",
+       "+16% / −16%"
+      ],
+      [
+       "9",
+       "2560000",
+       "50 %",
+       "+18% / −18%"
+      ],
+      [
+       "10",
+       "5120000",
+       "50 %",
+       "+20% / −20%"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "key": "s3",
+   "title": "Season s3: differences, DK and the battle pass",
+   "blocks": [],
+   "subs": [
+    {
+     "key": "s3",
+     "title": "How s3 differs",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "The game has a second rule set, **s3** (map `s3-1`). Players are still on s2, so the whole wiki is built on s2; here is how s3 differs in the data:"
+      },
+      {
+       "type": "table",
+       "head": [
+        "What",
+        "In s2",
+        "In s3"
+       ],
+       "rows": [
+        [
+         "Souls",
+         "30 — [[item:item_H0001|Waterfowl Dance]]…[[item:item_H0030|Sonic Wave of Agony]]",
+         "empty"
+        ],
+        [
+         "Boss abilities",
+         "15 — `tiny_ab6`, `tide_hunter_ab2`…`phantome_ab4`",
+         "empty"
+        ],
+        [
+         "Professions",
+         "6 heroes",
+         "6 + Dragon Knight"
+        ],
+        [
+         "Items, monsters, drop pools",
+         "—",
+         "same as s2; profession sigils are allowed only in s3: Dragon Knight (G601–G618), Axe (G115/G116), Phantom Assassin (G216–G219) and Lina (G317–G320)"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "It looks like groundwork for the next season: souls and boss abilities are not filled in yet, while the new profession **Dragon Knight** is set up in full: five tiers (at hero level 5/10/15/20/25) and its own talent tree `tree14` with 88 nodes. The wiki has it: \"Progression\" → \"Hero professions\" → Dragon Knight."
+      },
+      {
+       "type": "note",
+       "text": "Dragon Knight tiers: hero lv. 5 for [[item:item_2004|Warrior Notes (Tier 1)]] ×1; hero lv. 10 for [[item:item_2011|Warrior Notes (Tier 2)]] ×3; hero lv. 15 for [[item:item_2021|Warrior Notes (Tier 3)]] ×3; hero lv. 20 for [[item:item_2031|Warrior Notes (Tier 4)]] ×3; hero lv. 25 for [[item:item_2041|Warrior Notes (Tier 5)]] ×3. A detailed breakdown of the profession is in the \"Dragon Knight\" section."
+      },
+      {
+       "type": "text",
+       "text": "**How s3 differs in numbers**: the comparison of s2 and s3 rules is computed from the game data, so the tables update themselves with every patch. v1.503 tuned exactly these values: Axe, Void Spirit and Drow's \"Frost Volley\", and on items with \"Roulette Chain\" the chained extra hit no longer crits."
+      },
+      {
+       "type": "text",
+       "text": "**In v1.506** two professions got new basic abilities, plus eight sigils for them (tiers I–IV; allowed only in s3, they do not drop in s2). The abilities themselves are in the data under all rule sets: \"Boomerang\" (`pa_013`) for Phantom Assassin and \"Scorching Thunder\" (`lina_014`) for Lina, both in the Q slot with two charges. The Russian localisation still has Chinese text for them; the wiki uses its own translation."
+      },
+      {
+       "type": "table",
+       "head": [
+        "New ability (Q slot, 2 charges)",
+        "Per code"
+       ],
+       "rows": [
+        [
+         "\"Boomerang\" (`pa_013`), Phantom Assassin",
+         "Throws a dart to the target point (up to 900): it flies there and comes back, dealing 400% of attack damage as physical damage to enemies in its path on each leg; each enemy takes damage once per leg. It does not pass through walls: on the way out it stops in front of a wall, on the way back it disappears. Charge restore 6 s."
+        ],
+        [
+         "\"Scorching Thunder\" (`lina_014`), Lina",
+         "Hits the target with magic for 700% of intelligence (range 800), then jumps to the nearest enemy not yet hit (radius 450, up to 4 jumps; each enemy takes damage once). Every 100 intelligence adds 10% damage, up to +300%. Charge restore 5 s."
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**Sigils for the new abilities**: four per profession, like Dragon Knight's: each one boosts a specific move, and the tiers differ only in numbers (in the Russian localisation the sigils have Chinese names and text)."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Sigil (I–IV)",
+        "What it does"
+       ],
+       "rows": [
+        [
+         "[[item:item_G216|Whirl]] (G216)",
+         "On reaching the end of its range the dart does not come back: it spins for 4 s in a 300 radius, dealing **30 / 50 / 75 / 100%** of the dart's damage (1 to 3 times per second depending on attack speed). Up to 4 darts can spin at once."
+        ],
+        [
+         "[[item:item_G217|Sharpness]] (G217)",
+         "Per 100 agility: dart damage **+2 / 3 / 4 / 5%**, and the hit radius by the same amount; caps: +50 / 80 / 110 / 140% damage and +30 / 50 / 75 / 100% radius."
+        ],
+        [
+         "[[item:item_G218|Soul Chase]] (G218)",
+         "A hit leaves a mark on the enemy for 6 s; a second hit detonates it: an extra attack goes off immediately for **40 / 60 / 90 / 120%** of that hit's damage (with all attack effects)."
+        ],
+        [
+         "[[item:item_G219|Burst]] (G219)",
+         "Every \"Stifling Dagger\" hit explodes: all enemies within 250 / 275 / 300 / 350 (including the target) take **30 / 50 / 75 / 100%** of attack damage as physical damage."
+        ],
+        [
+         "[[item:item_G317|Lingering Thunder]] (G317)",
+         "When a flame zone deals damage, a \"Scorching Thunder\" discharge bounces into the enemy for **30 / 50 / 75 / 100%** of its damage, no more than once per second per enemy (cooldown reduction speeds it up to 3 times per second). The bounced thunder leaves no flame zones."
+        ],
+        [
+         "[[item:item_G318|Five Thunders]] (G318)",
+         "Every \"Scorching Thunder\" hit gives a stack (6 s); at 5 stacks lightning strikes for **200 / 300 / 450 / 700%** of its damage and the stacks reset. The lightning has its own 1 s cooldown per enemy (sped up by cooldown reduction)."
+        ],
+        [
+         "[[item:item_G319|Spirit Thunder]] (G319)",
+         "When \"Scorching Thunder\" is cast or bounces, it has a **15 / 30 / 55 / 80%** chance to fire once more."
+        ],
+        [
+         "[[item:item_G320|Thunder Embers]] (G320)",
+         "A flame zone (radius 150) stays under an enemy that was hit for 2 s: every second it deals magic damage equal to **100 / 150 / 200 / 250%** of intelligence."
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "Phantom Assassin's sigil G215 \"Blade Fusion\" was removed, and \"Burst\" (G219) replaced it. The flame zone that Lina's sigils refer to is the same mechanic as \"Flame Dash\" (`lina_004`)."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Ability",
+        "Property",
+        "In s2",
+        "In s3"
+       ],
+       "rows": [
+        [
+         "Challenge Roar (`axe_005`)",
+         "Base armor bonus %",
+         "60",
+         "30"
+        ],
+        [
+         "Berserk Fury (`axe_006`)",
+         "Incoming damage reduction, %",
+         "20",
+         "10"
+        ],
+        [
+         "Berserker's Suppression (`axe_012`)",
+         "Health and shield restore, %",
+         "5",
+         "3"
+        ],
+        [
+         "Aether Remnant (`void_spirit_001`)",
+         "Damage from intelligence",
+         "280",
+         "380"
+        ],
+        [
+         "Astral Step (`void_spirit_004`)",
+         "Slash damage %",
+         "50",
+         "100"
+        ],
+        [
+         "Astral Step (`void_spirit_004`)",
+         "Mark damage %",
+         "100",
+         "200"
+        ],
+        [
+         "Astral Step (`void_spirit_004`)",
+         "Flurry repeat, s",
+         "30",
+         "12"
+        ],
+        [
+         "Frost Volley (`drow_008`)",
+         "Attack speed threshold",
+         "—",
+         "200"
+        ],
+        [
+         "Frost Volley (`drow_008`)",
+         "Attack speed cap",
+         "—",
+         "800"
+        ]
+       ]
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item",
+        "Property",
+        "In s2",
+        "In s3"
+       ],
+       "rows": [
+        [
+         "[[item:item_0218|Divine Rapier]]",
+         "`ability_chain_no_crit`",
+         "crits",
+         "does not crit"
+        ],
+        [
+         "[[item:item_0232|★Blade of Fleeting Shadow]]",
+         "`ability_chain_no_crit`",
+         "crits",
+         "does not crit"
+        ],
+        [
+         "[[item:item_0323|Focus Bow]]",
+         "`ability_value_extra_target_count`",
+         "2 targets",
+         "1.22 (1 in game: the script takes the integer part)"
+        ],
+        [
+         "[[item:item_0648|Demon Sword]]",
+         "`ability_chain_no_crit`",
+         "crits",
+         "does not crit"
+        ],
+        [
+         "[[item:item_0774|Ancestral: Divine Rapier]]",
+         "`ability_chain_no_crit`",
+         "crits",
+         "does not crit"
+        ],
+        [
+         "[[item:item_0874|Ancestral: Demon Sword]]",
+         "`ability_chain_no_crit`",
+         "crits",
+         "does not crit"
+        ]
+       ]
+      },
+      {
+       "type": "table",
+       "head": [
+        "Rune",
+        "Difference"
+       ],
+       "rows": [
+        [
+         "[[item:item_G413|Rune: Downpour]]",
+         "`drow_010_rain_multi_hit` — III: 1 → —"
+        ],
+        [
+         "[[item:item_G413|Rune: Downpour]]",
+         "`drow_010_rain_extra_hits_per_wave` — III: — → 2"
+        ],
+        [
+         "[[item:item_G500|Rune: Shadow Puppet]]",
+         "`void_spirit_001_puppet_damage_pct` (new): — / — / — → 10 / 20 / 30"
+        ],
+        [
+         "[[item:item_G501|Rune: Split Shadows]]",
+         "`tag_gem_charge_restore_time` — I: 25 → —; II: 20 → —"
+        ],
+        [
+         "[[item:item_G507|Rune: Dual Realm Shift]]",
+         "`void_spirit_001_dual_shift_damage_pct`: 200 / 250 / 300 → 300 / 500 / 700"
+        ],
+        [
+         "[[item:item_G507|Rune: Dual Realm Shift]]",
+         "`void_spirit_001_dual_shift_damage_tagged` (new): — / — / — → 1 / 1 / 1"
+        ],
+        [
+         "[[item:item_G507|Rune: Dual Realm Shift]]",
+         "`tag_gem_charge_restore_time`: -10 / -20 / -30 → — / — / —"
+        ],
+        [
+         "[[item:item_G507|Rune: Dual Realm Shift]]",
+         "`tag_gem_charge_count`: 1 / 1 / 1 → — / — / —"
+        ],
+        [
+         "[[item:item_G507|Rune: Dual Realm Shift]]",
+         "`tag_gem_cooldown` (new): — / — / — → -5 / -8 / -12"
+        ],
+        [
+         "[[item:item_G508|Rune: Shadow Refraction]]",
+         "`void_spirit_001_chase_pct_per_stack` (new): — / — / — → 8 / 10 / 12"
+        ],
+        [
+         "[[item:item_G508|Rune: Shadow Refraction]]",
+         "`void_spirit_001_chase_max_stacks` (new): — / — / — → 10 / 10 / 10"
+        ],
+        [
+         "[[item:item_G508|Rune: Shadow Refraction]]",
+         "`void_spirit_001_chase_duration` (new): — / — / — → 6 / 6 / 6"
+        ],
+        [
+         "[[item:item_G508|Rune: Shadow Refraction]]",
+         "`void_spirit_001_chase_multiplicative` (new): — / — / — → 1 / 1 / 1"
+        ],
+        [
+         "[[item:item_G514|Rune: Void Depletion]]",
+         "`void_spirit_009_cast_burst_max_count` — I: 10 → 12; III: 10 → 8"
+        ],
+        [
+         "[[item:item_G514|Rune: Void Depletion]]",
+         "`void_spirit_009_cast_burst_trigger_count` (new): — / — / — → 12 / 10 / 8"
+        ],
+        [
+         "[[item:item_G514|Rune: Void Depletion]]",
+         "`tag_gem_damage` (new): — / — / — → 10 / 20 / 40"
+        ],
+        [
+         "[[item:item_G514|Rune: Void Depletion]]",
+         "`tag_gem_mana_cost` (new): — / — / — → 80 / 110 / 150"
+        ],
+        [
+         "[[item:item_G518|Rune: Ancestral Astral Step]]",
+         "`void_spirit_004_flurry_multiplier`: 1 / 1.5 / 2 → 1.5 / 2.25 / 3"
+        ],
+        [
+         "[[item:item_G518|Rune: Ancestral Astral Step]]",
+         "`void_spirit_004_flurry_side_cap_pct` (new): — / — / — → 100 / 100 / 100"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "**Items by rule set.** Only in s3: profession sigils (Dragon Knight G601–G618, Axe G115/G116, Phantom Assassin G216–G219, Lina G317–G320) and \"Triumphant Vintage\": 93 in total. Only in s2: 65 items: all souls (H0001–H0030) and their fate stones, the higher tiers of Drow's runes (G410_4/G410_5, G413_4/G413_5), P272/P273, the Skyfall Realm \"Ancestral\" items (item_0880–item_0887), the Magic Tower DLC items (item_0652, item_0654–item_0658, MT001–MT006 with fate stones) and rune essence (M012). On the cards such items are marked \"s2 only\" / \"s3 only\"."
+      }
+     ]
+    },
+    {
+     "key": "dk",
+     "title": "Dragon Knight",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "**Dragon Knight** is the game's seventh profession and the only one set up exclusively in the **s3** rules (map `s3-1`). A melee strength hero: five profession tiers, his own talent tree `tree14` and special abilities unlocked by its nodes. The profession and the tree appeared in v1.488, v1.491 completed the set (three dragon elements, 11 abilities and 14 sigils), and v1.500 added two more sigils (G617, G618) and reworked \"Sweeping Strike\" and \"Dragon Charge\". In v1.502 ability 002 got its name \"Dragon Tail\" back, and all 14 sigils G603–G616 received official Russian text (before that it was Chinese and the wiki kept its own translation). In v1.503 sigils G601 and G602 were renamed (\"Multicast\" and \"Multibreath\"), and the G602 text describes a rework that has not shipped yet (see the table)."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Profession tier",
+        "Hero level",
+        "Unlock",
+        "Stat growth"
+       ],
+       "rows": [
+        [
+         "Apprentice Dragon Knight (1)",
+         "5",
+         "[[item:item_2004|Warrior Notes (Tier 1)]] ×1",
+         "strength +0"
+        ],
+        [
+         "Elite Dragon Knight (2)",
+         "10",
+         "[[item:item_2011|Warrior Notes (Tier 2)]] ×3",
+         "strength +0.8, agility +0.2, intelligence +0.3"
+        ],
+        [
+         "Royal Dragon Knight (3)",
+         "15",
+         "[[item:item_2021|Warrior Notes (Tier 3)]] ×3",
+         "strength +1.3, agility +0.35, intelligence +0.25"
+        ],
+        [
+         "Templar Dragon Knight (4)",
+         "20",
+         "[[item:item_2031|Warrior Notes (Tier 4)]] ×3",
+         "strength +2, agility +0.5, intelligence +0.4"
+        ],
+        [
+         "Legendary Dragon Knight (5)",
+         "25",
+         "[[item:item_2041|Warrior Notes (Tier 5)]] ×3",
+         "strength +2.8, agility +0.7, intelligence +0.5"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Abilities are not granted by tiers: they are unlocked by nodes of the `tree14` tree (see \"Progression\" → \"Hero professions\" → Dragon Knight; each node has its own cost in gold and materials). The hero starts with three abilities: Q \"Breathe Fire\", W \"Enchanted Blade\" and D \"Dragon Charge\"; the rest (\"Dragon Form\" [R], alternatives for Q/W/E and the elemental passives) are unlocked in the tree."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Slot",
+        "Ability",
+        "Type",
+        "CD · mana",
+        "What it does"
+       ],
+       "rows": [
+        [
+         "Q",
+         "Breathe Fire (`dragon_knight_001`)",
+         "active · area",
+         "CD 13 s · mana 25",
+         "Breathes fire at the target point (range 950): 300% of attack damage as physical damage along the path (up to 600% in Dragon Form), triggers attack effects, knocks back and stuns for 0.3 s, slows by 25% for 4 s."
+        ],
+        [
+         "Q",
+         "Dragon Tail (`dragon_knight_002`)",
+         "active · area · charges",
+         "CD 0.5 s · mana 25",
+         "Dragon Tail (called \"Sweeping Strike\" in v1.500, renamed back in v1.502) at the target point (radius 350, 90° cone): 400% of attack damage to enemies in the area. In Dragon Form: radius 550, 120° cone, damage up to 800%. Two charges, charge restore 6 s. Unlocked in place of \"Breathe Fire\"."
+        ],
+        [
+         "W",
+         "Enchanted Blade (`dragon_knight_003`)",
+         "active · self",
+         "CD 25 s",
+         "Costs 30% of current health. For 7 s attacks deal an extra 45% of attack damage as magic damage; each attack on the same target raises the bonus by 1% (switching targets resets it)."
+        ],
+        [
+         "W",
+         "Dragon's Majesty (`dragon_knight_004`)",
+         "active · self",
+         "CD 25 s · mana 30",
+         "7 s: movement speed −60%, armor and health regen doubled; each hit taken gives +5 armor and +20 health regen until the effect ends. Unlocked in place of \"Enchanted Blade\"."
+        ],
+        [
+         "E",
+         "Dragon's Roar (`dragon_knight_005`)",
+         "passive",
+         "—",
+         "Gives a base shield capacity of 10% of max health (the shield is filled when the ability is acquired). Each time you take damage, the shield is restored by 30% of the actual health lost; the shield never goes above its capacity."
+        ],
+        [
+         "E",
+         "Dragon's Wrath (`dragon_knight_006`)",
+         "passive",
+         "—",
+         "+5% attack and movement speed per 10% of health lost. Unlocked in place of \"Dragon's Roar\"."
+        ],
+        [
+         "R",
+         "Dragon Form (`dragon_knight_007`)",
+         "ultimate",
+         "CD 180 s · mana 50",
+         "Turns into a dragon of your element for 20 s: attack range +180, restores 35% health and refreshes Q/W/E/D/F. The element is set by the innate passive."
+        ],
+        [
+         "D",
+         "Dragon Charge (`dragon_knight_008`)",
+         "active · dash",
+         "CD 4 s · mana 10",
+         "Dashes to the target point up to 500 away (0.4 s) and restores 5% of max health; in Dragon Form the range is 600."
+        ],
+        [
+         "P",
+         "Red Dragon's Might (`dragon_knight_009`)",
+         "passive · fire element",
+         "—",
+         "Basic attacks (and every \"Breathe Fire\" hit) deal an extra 4% of max health as magic damage. Sets the hero's element to **fire**."
+        ],
+        [
+         "P",
+         "Frost Dragon's Breath (`dragon_knight_010`)",
+         "passive · ice element",
+         "—",
+         "For every 1 point of movement speed the target has lost to slows, you deal 1% more damage to it. Sets the hero's element to **ice**."
+        ],
+        [
+         "P",
+         "Poison Dragon's Fang (`dragon_knight_011`)",
+         "passive · poison element",
+         "—",
+         "The number of poison stacks you apply is doubled, and each stack deals an extra 5% of attack damage as magic damage per second (shared decay). Sets the hero's element to **poison**."
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Six abilities have **three versions: fire, ice and poison**. The element is set by one of three mutually exclusive innate passives (\"Red Dragon's Might\" / \"Frost Dragon's Breath\" / \"Poison Dragon's Fang\"): it also decides which dragon \"Dragon Form\" turns into (each element has its own model, color, icons and effects). Read the variants as additions to the base text:"
+      },
+      {
+       "type": "table",
+       "head": [
+        "Ability",
+        "Fire",
+        "Ice",
+        "Poison"
+       ],
+       "rows": [
+        [
+         "001 · Breathe Fire",
+         "Raises the attack coefficient by a further 45 p.p. and applies burn to targets.",
+         "Slow raised to 40%.",
+         "Applies 5 poison stacks on hit."
+        ],
+        [
+         "002 · Dragon Tail",
+         "Raises the attack coefficient by a further 100 p.p. and applies burn to enemies hit.",
+         "Freezes enemies hit for 1 s.",
+         "Applies 1 poison stack to enemies hit."
+        ],
+        [
+         "003 · Enchanted Blade",
+         "Extra damage per stack grows by another 5%, but the stacks reset if you do not attack for 4 s.",
+         "The target gets a chill effect equal to the current number of combo stacks. Each stack reduces movement and attack speed by 1%.",
+         "Each attack applies 1 poison stack."
+        ],
+        [
+         "004 · Dragon's Majesty",
+         "Every second deals physical damage equal to 3% of max health to enemies within 300.",
+         "For every 10% of max health lost, deals physical damage equal to 10% of max health to enemies within 400, applying freeze and vulnerability.",
+         "When taking damage from enemies, applies 1 poison stack to the attacker."
+        ],
+        [
+         "006 · Dragon's Wrath",
+         "For every 5% of max health lost, gives an extra 1% attack damage.",
+         "For every 5% of max health lost, gives an extra 1% total damage.",
+         "For every 5% of max health lost, gives an extra 1% lifesteal."
+        ],
+        [
+         "007 · Dragon Form",
+         "Health +30%, armor +10%, max barrier +10%; attacks deal 45% physical cleave damage.",
+         "Attack damage +30%, attack speed +10%, movement speed +10%; attacks apply a 1% movement and attack speed slow (up to 20 stacks). Duration: 5 s.",
+         "Attack crit chance and spell crit chance +7.5%, crit damage +50%, extra damage +20%; attacks apply 1 poison stack and deal 10% more damage to poisoned targets."
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**Sigils** are profession runes (type `gem`, allowed only in s3). There are eighteen of them: two old ones (G601, G602), fourteen from v1.491 (G603–G616; with official Russian text since v1.502) and two from v1.500: G617 \"Long Breath\" and G618 \"Dragon's Might Bash\". Each has three tiers, I/II/III (priced 600 / 1600 / 4000 gold), and each boosts a specific hero ability."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Sigil (tiers)",
+        "What it does"
+       ],
+       "rows": [
+        [
+         "[[item:item_G601|Sigil: Multicast I]] ([[item:item_G601_2|II]], [[item:item_G601_3|III]])",
+         "Each cast of \"Breathe Fire\" has a **30 / 40 / 50%** chance to breathe fire again at no resource cost."
+        ],
+        [
+         "[[item:item_G602|Sigil: Multibreath I]] ([[item:item_G602_2|II]], [[item:item_G602_3|III]])",
+         "In v1.503 the sigil was renamed \"Multibreath\": per the description, \"Breathe Fire\" breathes straight ahead and 80° to the left and right (three streams, 160° total angle), and an enemy takes damage once per wave. But in the build's code and data the mechanic is still the old one, summoning a whelp (the `dragon_knight_001_whelp*` keys have not changed), so the text is ahead of the implementation."
+        ],
+        [
+         "[[item:item_G603|Rune: Fire Swamp I]] ([[item:item_G603_2|II]], [[item:item_G603_3|III]])",
+         "Creates a fire area with radius 300 at the target point for 4 s. Every second it deals physical damage equal to 45% / 90% / 135% of Breathe Fire's base damage. The area damage does not trigger attack effects or a repeat breath."
+        ],
+        [
+         "[[item:item_G604|Rune: Frost Dragon's Breath I]] ([[item:item_G604_2|II]], [[item:item_G604_3|III]])",
+         "On hit, Breathe Fire applies 1 / 2 / 3 Freeze stack(s) and numbness for 2 s. Reapplying refreshes the duration. While frozen, each stack increases all damage taken by 15%. Freeze has a shared limit of 10 stacks."
+        ],
+        [
+         "[[item:item_G605|Rune: Absolute Zero I]] ([[item:item_G605_2|II]], [[item:item_G605_3|III]])",
+         "If after Dragon Tail's damage the target's health drops below 4% / 6% / 8% of max, the target dies instantly."
+        ],
+        [
+         "[[item:item_G606|Rune: Giant Strength I]] ([[item:item_G606_2|II]], [[item:item_G606_3|III]])",
+         "When Breathe Fire hits, its damage increases by 1% / 2% / 3% for every 1% of the target's missing max health."
+        ],
+        [
+         "[[item:item_G607|Rune: Frostfire Spray I]] ([[item:item_G607_2|II]], [[item:item_G607_3|III]])",
+         "Dragon Tail is cast in the target direction, damaging enemies in a 60-degree cone up to 450 / 650 / 850 away and applying 1 Freeze stack. You cannot move while it is active. Base duration: 1.5 s, +1 s in Frost Dragon form. The attack damage multiplier is reduced by 120%. / 90%. / 60%."
+        ],
+        [
+         "[[item:item_G608|Rune: Ice Storm I]] ([[item:item_G608_2|II]], [[item:item_G608_3|III]])",
+         "Before Dragon Tail hits, each Freeze stack on the target increases the ability's damage by 10% / 20% / 30% (up to 100%). / 150%). / 200%)."
+        ],
+        [
+         "[[item:item_G609|Rune: Paralyzing Potion I]] ([[item:item_G609_2|II]], [[item:item_G609_3|III]])",
+         "When Dragon Tail stuns, each poison stack on the target extends the stun by 0.1 / 0.2 / 0.3 s (up to 1 / 2 / 3 s). Does not extend freeze."
+        ],
+        [
+         "[[item:item_G610|Rune: Grievous Wounds I]] ([[item:item_G610_2|II]], [[item:item_G610_3|III]])",
+         "An Enchanted Blade attack hit applies Grievous Wounds based on the current number of negative effect stacks on the target: each stack increases all damage taken by 5% / 10% / 15% for 2 s (up to 50 stacks). Repeated hits recount the stacks and refresh the duration. Grievous Wounds itself is not counted in the total stacks."
+        ],
+        [
+         "[[item:item_G611|Rune: Indomitable I]] ([[item:item_G611_2|II]], [[item:item_G611_3|III]])",
+         "When Enchanted Blade is cast, its duration increases by 1 / 2 / 3 s for every 10% of missing max health."
+        ],
+        [
+         "[[item:item_G612|Rune: Dragon Blood Reflux I]] ([[item:item_G612_2|II]], [[item:item_G612_3|III]])",
+         "When Enchanted Blade's extra damage deals damage, restores 2% / 3% / 4% of max health and grants a barrier of 2% / 3% / 4% of max barrier. Does not raise the max barrier itself."
+        ],
+        [
+         "[[item:item_G613|Rune: Dragon's Roar I]] ([[item:item_G613_2|II]], [[item:item_G613_3|III]])",
+         "Dragon's Roar base max barrier increases to 15% / 20% / 25% of max health. Taking damage still only restores the barrier without raising its max."
+        ],
+        [
+         "[[item:item_G614|Rune: Ancient Black Dragon I]] ([[item:item_G614_2|II]], [[item:item_G614_3|III]])",
+         "Stats gained in Dragon Form increase by 50%, / 100%, / 150%, including the extra stats from Twin. Does not boost the abilities' extra effects."
+        ],
+        [
+         "[[item:item_G615|Rune: Eternity I]] ([[item:item_G615_2|II]], [[item:item_G615_3|III]])",
+         "Dragon Form duration increases by 25% / 50% / 75% (an extra 5 / 10 / 15 s on the base 20 s)."
+        ],
+        [
+         "[[item:item_G616|Rune: Twin I]] ([[item:item_G616_2|II]], [[item:item_G616_3|III]])",
+         "Each time you turn into a dragon, you randomly get 30% / 60% / 90% of the stats of another dragon form until the transformation ends. The other form's model, attacks and ability effects are not carried over."
+        ],
+        [
+         "[[item:item_G617|Sigil: Long Breath I]] ([[item:item_G617_2|II]], [[item:item_G617_3|III]])",
+         "\"Breathe Fire\" becomes a 4 s channel: the hero does not move or attack, the breath no longer knocks back or stuns, and only \"Dragon Charge\" can interrupt it. Breaths: **I**: one every 2 s; **II**: one every 1.5 s (one more breath at 500 strength, up to two); **III**: one every second (one more breath per 500 strength, up to three)."
+        ],
+        [
+         "[[item:item_G618|Sigil: Dragon's Might Bash I]] ([[item:item_G618_2|II]], [[item:item_G618_3|III]])",
+         "\"Sweeping Strike\" hits give a \"Dragon's Might\" stack; at 2 stacks the next strike becomes a shield bash: **×1.3 / ×1.6 / ×2** damage, +10 / 20 / 30% per 300 strength (cap +100 / 200 / 300%), a 1 s stun, dragon effects and a shield of **5 / 8 / 10%** of max health for 6 s."
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "`tree14` nodes that unlock abilities (the other 80 nodes are pure stats):"
+      },
+      {
+       "type": "table",
+       "head": [
+        "Node",
+        "Unlocks",
+        "Cost"
+       ],
+       "rows": [
+        [
+         "[[talent:tree14/T1405|Red Dragon's Might [P]]]",
+         "Red Dragon's Might (`dragon_knight_009`)",
+         "[[item:item_2004|Warrior Notes (Tier 1)]] ×3 + [[item:item_M213|Cheese Block]] ×1 + 5000 gold"
+        ],
+        [
+         "[[talent:tree14/T1410|Dragon's Majesty [W]]]",
+         "Dragon's Majesty (`dragon_knight_004`)",
+         "[[item:item_2011|Warrior Notes (Tier 2)]] ×5 + [[item:item_M427|Shadowvine Ginseng]] ×3 + 10000 gold"
+        ],
+        [
+         "[[talent:tree14/T1416|Dragon's Roar [E]]]",
+         "Dragon's Roar (`dragon_knight_005`)",
+         "[[item:item_2021|Warrior Notes (Tier 3)]] ×5 + [[item:item_M400|Ethereal Substance]] ×1 + 50000 gold"
+        ],
+        [
+         "[[talent:tree14/T1418|Dragon Tail [Q]]]",
+         "Dragon Tail (`dragon_knight_002`)",
+         "[[item:item_2004|Warrior Notes (Tier 1)]] ×5 + [[item:item_M325|Wildbison Horn]] ×1 + 3000 gold"
+        ],
+        [
+         "[[talent:tree14/T1422|Dragon Form [R]]]",
+         "Dragon Form (`dragon_knight_007`)",
+         "[[item:item_2021|Warrior Notes (Tier 3)]] ×5 + [[item:item_M509|Primordial Crystal]] ×1 + 150000 gold"
+        ],
+        [
+         "[[talent:tree14/T1433|Dragon's Wrath [E]]]",
+         "Dragon's Wrath (`dragon_knight_006`)",
+         "[[item:item_2041|Warrior Notes (Tier 5)]] ×5 + [[item:item_M517|Source Crystal]] ×10 + 200000 gold"
+        ],
+        [
+         "[[talent:tree14/T1434|Poison Dragon's Fang [P]]]",
+         "Poison Dragon's Fang (`dragon_knight_011`)",
+         "[[item:item_2021|Warrior Notes (Tier 3)]] ×5 + [[item:item_M518|Frozen Core]] ×1 + 50000 gold"
+        ],
+        [
+         "[[talent:tree14/T1436|Frost Dragon's Breath [P]]]",
+         "Frost Dragon's Breath (`dragon_knight_010`)",
+         "[[item:item_2021|Warrior Notes (Tier 3)]] ×3 + [[item:item_M405|Destruction Shard]] ×1 + 50000 gold"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "`tree14` has 88 nodes in total; the full tree is under \"Progression\" → \"Hero professions\" → Dragon Knight. The profession's starting gear is cosmetic: \"Dragon Knight's Starting Weapon/Helmet/Armor/Shield/Skirt\" (`item_S487`–`item_S491`). The hero's base stats: strength 4 (+2 per level), agility 2 (+1.5), intelligence 2 (+1), 100 health, 100 mana, 4 damage, 1 armor, 250 movement speed, attack range 200."
+      }
+     ]
+    },
+    {
+     "key": "pass",
+     "title": "Battle pass",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "The Season Pass (battle pass) has **80 levels** of **1000 XP** each. Starting XP is 1000, the weekly XP limit is 8000, and there are 2 catch-up weeks (you can complete tasks from past weeks)."
+      },
+      {
+       "type": "text",
+       "text": "XP comes from tasks: four weekly ones worth 8000 XP in total and six seasonal ones worth 36000 in total. Besides tasks, a successful evacuation (extraction from a run) gives XP: 200 each time, no more than 6000 per week."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Task",
+        "Period",
+        "What to do",
+        "Goal",
+        "XP"
+       ],
+       "rows": [
+        [
+         "weekly_kill",
+         "week",
+         "kills",
+         "300 (by week: 300 / 360 / 240 / 300)",
+         "2000"
+        ],
+        [
+         "weekly_boss",
+         "week",
+         "bosses",
+         "5 (by week: 5 / 4 / 6 / 5)",
+         "2000"
+        ],
+        [
+         "weekly_extract",
+         "week",
+         "extraction from a run",
+         "5 (by week: 5 / 6 / 5 / 4)",
+         "2000"
+        ],
+        [
+         "weekly_craft",
+         "week",
+         "crafting",
+         "5 (by week: 5 / 4 / 5 / 6)",
+         "2000"
+        ],
+        [
+         "season_login_10",
+         "season",
+         "login days",
+         "10",
+         "6000"
+        ],
+        [
+         "season_login_20",
+         "season",
+         "login days",
+         "20",
+         "6000"
+        ],
+        [
+         "season_kill",
+         "season",
+         "kills",
+         "3000",
+         "6000"
+        ],
+        [
+         "season_boss",
+         "season",
+         "bosses",
+         "50",
+         "6000"
+        ],
+        [
+         "season_extract",
+         "season",
+         "extraction from a run",
+         "30",
+         "6000"
+        ],
+        [
+         "season_craft",
+         "season",
+         "crafting",
+         "30",
+         "6000"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "Rewards come in two tracks on every level: Free and Premium. Premium is unlocked by the \"Season Pass\" item from the shop ([[item:item_M318|Mysterious Key]]: mysterious keys, [[item:item_M408|Guild Charter]]: guild charters, [[item:item_M315|Legendary Equipment Essence]] / [[item:item_M507|Mythic Gear Essence]]: equipment essences; all of these are spent in shops and on the Exchange). On levels 1, 10, 25, 40, 55, 70 both tracks also give a \"tax-free\" allowance for the Exchange: gold and contracts that are spent on listings without tax (the remainder is shown in the Exchange UI). On levels 15, 45, 75 the tracks give an \"Eternal Recovery Card\": the reward is granted after the save is confirmed and goes to the account assets."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Level",
+        "Free",
+        "Premium"
+       ],
+       "rows": [
+        [
+         "1",
+         "tax-free: 100000 gold and 2 contracts",
+         "tax-free: 1000000 gold and 5 contracts"
+        ],
+        [
+         "2",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "3",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "4",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "5",
+         "[[item:item_M408|Guild Charter]] ×5, [[item:item_M315|Legendary Equipment Essence]] ×1, [[item:item_M318|Mysterious Key]] ×1",
+         "[[item:item_M408|Guild Charter]] ×10, [[item:item_M315|Legendary Equipment Essence]] ×2, [[item:item_M318|Mysterious Key]] ×1"
+        ],
+        [
+         "6",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "7",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "8",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "9",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "10",
+         "tax-free: 100000 gold and 2 contracts",
+         "tax-free: 1000000 gold and 5 contracts"
+        ],
+        [
+         "11",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "12",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "13",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "14",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "15",
+         "[[item:item_M318|Mysterious Key]] ×1",
+         "[[item:item_M318|Mysterious Key]] ×1, [[item:item_P274|Triumphant Vintage]] ×1; Eternal Recovery Card ×1"
+        ],
+        [
+         "16",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "17",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "18",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "19",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "20",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1, [[item:item_P274|Triumphant Vintage]] ×1",
+         "[[item:item_M318|Mysterious Key]] ×1, [[item:item_P274|Triumphant Vintage]] ×1, [[item:item_M412|Legendary Reforge Stone]] ×1"
+        ],
+        [
+         "21",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "22",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "23",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "24",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "25",
+         "tax-free: 150000 gold and 3 contracts",
+         "tax-free: 1500000 gold and 8 contracts"
+        ],
+        [
+         "26",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "27",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "28",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "29",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "30",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1, [[item:item_M318|Mysterious Key]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2, [[item:item_M318|Mysterious Key]] ×1, [[item:item_P274|Triumphant Vintage]] ×1"
+        ],
+        [
+         "31",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "32",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "33",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "34",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "35",
+         "[[item:item_M318|Mysterious Key]] ×1",
+         "[[item:item_M318|Mysterious Key]] ×1, [[item:item_P274|Triumphant Vintage]] ×1"
+        ],
+        [
+         "36",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "37",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "38",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "39",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "40",
+         "tax-free: 200000 gold and 4 contracts",
+         "tax-free: 2000000 gold and 10 contracts"
+        ],
+        [
+         "41",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "42",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "43",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "44",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "45",
+         "[[item:item_M318|Mysterious Key]] ×1",
+         "[[item:item_M318|Mysterious Key]] ×1, [[item:item_P274|Triumphant Vintage]] ×1; Eternal Recovery Card ×1"
+        ],
+        [
+         "46",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "47",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "48",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "49",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "50",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1, [[item:item_P274|Triumphant Vintage]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2, [[item:item_M318|Mysterious Key]] ×2, [[item:item_P274|Triumphant Vintage]] ×1"
+        ],
+        [
+         "51",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "52",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "53",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "54",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "55",
+         "tax-free: 200000 gold and 4 contracts",
+         "tax-free: 2000000 gold and 10 contracts"
+        ],
+        [
+         "56",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "57",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "58",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "59",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "60",
+         "[[item:item_M507|Mythic Gear Essence]] ×1",
+         "[[item:item_M318|Mysterious Key]] ×1, [[item:item_M507|Mythic Gear Essence]] ×1, [[item:item_M412|Legendary Reforge Stone]] ×1"
+        ],
+        [
+         "61",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "62",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "63",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "64",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "65",
+         "[[item:item_M318|Mysterious Key]] ×1",
+         "[[item:item_M318|Mysterious Key]] ×1, [[item:item_P274|Triumphant Vintage]] ×1"
+        ],
+        [
+         "66",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "67",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "68",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "69",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "70",
+         "tax-free: 250000 gold and 5 contracts",
+         "tax-free: 2500000 gold and 12 contracts"
+        ],
+        [
+         "71",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "72",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "73",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "74",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "75",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1; Eternal Recovery Card ×1",
+         "[[item:item_M318|Mysterious Key]] ×1, [[item:item_P274|Triumphant Vintage]] ×1; Eternal Recovery Card ×1"
+        ],
+        [
+         "76",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "77",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1",
+         "[[item:item_M315|Legendary Equipment Essence]] ×2"
+        ],
+        [
+         "78",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "79",
+         "[[item:item_M408|Guild Charter]] ×5",
+         "[[item:item_M408|Guild Charter]] ×10"
+        ],
+        [
+         "80",
+         "[[item:item_M315|Legendary Equipment Essence]] ×1, [[item:item_M507|Mythic Gear Essence]] ×1, [[item:item_M412|Legendary Reforge Stone]] ×1",
+         "[[item:item_M318|Mysterious Key]] ×1, [[item:item_M507|Mythic Gear Essence]] ×3, [[item:item_M508|Mythic Reforge Stone]] ×1"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "In v1.502 the pass was reworked (the \"v5\" UI): weekly task XP went down 3000 → 2000, seasonal went up 2000 → 6000, and weekly tasks now have their own goals for each week. The rewards gained a consumable, \"Triumphant Vintage\" ([[item:item_P274|Triumphant Vintage]]): each bottle permanently gives +1 to all attributes (up to 30 bottles) and temporarily speeds up movement."
+      },
+      {
+       "type": "note",
+       "text": "In v1.500 the shop started selling pass levels: only with an active Premium and no higher than level 80 (the \"pass level\" item; each level adds XP from the config and does not take away XP already earned)."
+      },
+      {
+       "type": "note",
+       "text": "For all 80 levels: Free: [[item:item_M315|Legendary Equipment Essence]] ×30, [[item:item_M408|Guild Charter]] ×200, [[item:item_M318|Mysterious Key]] ×6, [[item:item_P274|Triumphant Vintage]] ×2, [[item:item_M507|Mythic Gear Essence]] ×2, [[item:item_M412|Legendary Reforge Stone]] ×1; Premium: [[item:item_M315|Legendary Equipment Essence]] ×54, [[item:item_M408|Guild Charter]] ×400, [[item:item_M318|Mysterious Key]] ×12, [[item:item_P274|Triumphant Vintage]] ×8, [[item:item_M412|Legendary Reforge Stone]] ×2, [[item:item_M507|Mythic Gear Essence]] ×4, [[item:item_M508|Mythic Reforge Stone]] ×1."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "debuffs",
+   "title": "Debuffs",
+   "blocks": [
+    {
+     "type": "text",
+     "text": "A **debuff** is any negative effect (modifier) on a target. Some mechanics count them: for example, [[item:item_0581|Eye of Judgment]] gives **+8% damage per debuff** on the target, with no cap. Stacks of one effect count as one debuff."
+    },
+    {
+     "type": "text",
+     "text": "**The basic set**, used by both abilities and items:"
+    },
+    {
+     "type": "table",
+     "head": [
+      "Debuff",
+      "What it does",
+      "Applied by"
+     ],
+     "rows": [
+      [
+       "Freeze",
+       "Movement and attack speed −3% per stack, up to 10 stacks (up to −30%). Item descriptions call it \"freeze\".",
+       "Dragon Knight, Drow Ranger, [[item:item_0296|Frost Fang]], [[item:item_0344|Amorous Scourge]], [[item:item_0564|Psionic Continuance]], [[item:item_0620|Army Breaker Blade]]"
+      ],
+      [
+       "Stun",
+       "The target cannot move or attack.",
+       "Axe, boss transformation, Dragon Knight, Drow Ranger, Lina, Phantom Assassin, Void Spirit, [[item:item_0411|Frost Rift Pauldrons]]"
+      ],
+      [
+       "Vulnerability",
+       "Damage taken +15%, each stack adds +2%, max +25%.",
+       "Axe, Phantom Assassin, Void Spirit, [[item:item_0196|★Orchid Malevolence]], [[item:item_0217|Monkey King Bar]], [[item:item_0344|Amorous Scourge]], [[item:item_0363|Cursed Hand]], [[item:item_0396|Stone Golem's Hand]], [[item:item_0415|Nether Visage]], [[item:item_0420|Bloodthorn Blade]], [[item:item_0503|Charge Blade]], [[item:item_0622|Star-Shatter Battle Axe]]"
+      ],
+      [
+       "Poison",
+       "Periodic magic damage based on the caster's attributes; stacks add up into one damage total.",
+       "Dragon Knight, Phantom Assassin, [[item:item_0166|Orb of Venom]], [[item:item_0238|Gloom Armor]], [[item:item_0270|Giddy Pollen Sack]], [[item:item_0303|Viper Ring]], [[item:item_0319|Carnage Spike]], [[item:item_0344|Amorous Scourge]], [[item:item_0365|Cobra Blade]], [[item:item_0382|Fire Venom Scepter]], [[item:item_0578|Inducement of Myriad Forms]], [[item:item_0644|Tome of the Poison Sect]]"
+      ],
+      [
+       "Bleed",
+       "Periodic damage based on the final damage of the hit that caused the bleed; reapplying strengthens it.",
+       "Axe, Phantom Assassin, [[item:item_0243|Skinning Knife]], [[item:item_0309|Tempest Pike]], [[item:item_0394|Sacred Armor]], [[item:item_0398|Bloodbreaker Heavy Blade]], [[item:item_0420|Bloodthorn Blade]], [[item:item_0467|Demon God Axe]], [[item:item_0578|Inducement of Myriad Forms]], [[item:item_P039|Unyielding Elixir]]"
+      ],
+      [
+       "Burn",
+       "Pure damage every 0.5 s: normal targets 15% of current health per second, elites 7.5%, bosses 1.5%; healing −25%.",
+       "Axe, Lina, [[item:item_0216|Radiance]], [[item:item_0273|Flame Cloak]], [[item:item_0344|Amorous Scourge]], [[item:item_0407|Emberfire Ring]], [[item:item_0409|Ashmark Ring]], [[item:item_0524|Infernal Boots]], [[item:item_0550|Desperate Fury]], [[item:item_0578|Inducement of Myriad Forms]]"
+      ],
+      [
+       "Ignite",
+       "Periodic pure damage from the source item; stacks add up, the duration is not refreshed.",
+       "[[item:item_0534|Blazing Sky Crest]], [[item:item_0578|Inducement of Myriad Forms]]"
+      ]
+     ]
+    },
+    {
+     "type": "note",
+     "text": "**Poison has counters**: [[item:item_0282|Dandelion Amulet]] and [[item:item_P052|Poison Resistance Potion]] cut poison damage by 99%, [[item:item_P051|Nature's Elixir]] and [[item:item_0144|★Shadow Amulet]] remove poison and give immunity to new applications, and [[item:item_M225|Life Pod]] simply removes the stacks. What exactly they cut and what they do not is covered in the \"Damage and its multipliers\" section."
+    },
+    {
+     "type": "note",
+     "text": "**Freeze is what item descriptions call \"freeze\"** (same thing). On enemies it builds up to 10 stacks, and at max some effects trigger separately: for example, \"Army Breaker Blade\" removes all stacks and applies \"Frostbite\" (periodic magic damage). Some effects also put freeze on the hero himself, and there it gives bonuses: Drow Ranger's passive \"Frost Mist\" gives you a Freeze stack for freezing an enemy (and evasion with movement speed per own stack), and \"Army Breaker Blade\" under your own freeze gives −30% damage taken and +30% attack speed."
+    },
+    {
+     "type": "text",
+     "text": "**Item debuffs** (by id):"
+    },
+    {
+     "type": "table",
+     "head": [
+      "Item",
+      "Effect",
+      "What it does"
+     ],
+     "rows": [
+      [
+       "[[item:item_0124|Blight Orb]]",
+       "Armor Break",
+       "Reduces the target's armor."
+      ],
+      [
+       "[[item:item_0125|Frost Orb]]",
+       "Frost",
+       "Movement slow."
+      ],
+      [
+       "[[item:item_0178|Sange]]",
+       "Maim",
+       "Reduces attack damage and movement speed."
+      ],
+      [
+       "[[item:item_0197|Gleipnir]]",
+       "Root",
+       "The target cannot move."
+      ],
+      [
+       "[[item:item_0198|Ethereal Blade]]",
+       "Ethereal",
+       "The target takes more magic damage; physical damage against it is weakened."
+      ],
+      [
+       "[[item:item_0209|Witch Blade]]",
+       "Doom",
+       "Each stack increases magic damage taken; stacks drain over time."
+      ],
+      [
+       "[[item:item_0209|Witch Blade]]",
+       "Spellblade Combo",
+       "Magic damage every second based on the sum of the caster's attributes; reapplying hits immediately."
+      ],
+      [
+       "[[item:item_0216|Radiance]]",
+       "Scorched",
+       "Periodic magic damage around the carrier."
+      ],
+      [
+       "[[item:item_0217|Monkey King Bar]]",
+       "Armor Break",
+       "Armor is reduced per stack."
+      ],
+      [
+       "[[item:item_0221|Bloodthorn]]",
+       "Soul Rend",
+       "When it ends, the target takes part of the damage it received during the effect."
+      ],
+      [
+       "[[item:item_0233|★Eye of Skadi]]",
+       "Gaze",
+       "Attack speed reduction in an aura."
+      ],
+      [
+       "[[item:item_0234|Corrosive Spine]]",
+       "Decay",
+       "Weakening from \"Corrosive Spine\"."
+      ],
+      [
+       "[[item:item_0234|Corrosive Spine]]",
+       "Armor Break",
+       "Armor reduction."
+      ],
+      [
+       "[[item:item_0270|Giddy Pollen Sack]]",
+       "Dizzying Pollen",
+       "Some of the target's attacks miss."
+      ],
+      [
+       "[[item:item_0275|Storm Vessel]]",
+       "Bottled Lightning",
+       "Movement slow."
+      ],
+      [
+       "[[item:item_0286|Oblivion]]",
+       "Corroding Armor",
+       "Armor reduction."
+      ],
+      [
+       "[[item:item_0287|Skyfall]]",
+       "Seismic Slow",
+       "Movement slow."
+      ],
+      [
+       "[[item:item_0300|Night Banquet]]",
+       "Rot",
+       "Weakening from \"Night Banquet\"."
+      ],
+      [
+       "[[item:item_0300|Night Banquet]]",
+       "Armor Break",
+       "Armor reduction."
+      ],
+      [
+       "[[item:item_0307|Vortex Gloves]]",
+       "Whirl",
+       "Slow and periodic magic damage."
+      ],
+      [
+       "[[item:item_0340|Hammer of Ruin]]",
+       "Shatter",
+       "Attack damage reduction, stacks."
+      ],
+      [
+       "[[item:item_0341|Black Eagle Crossbow]]",
+       "Frozen",
+       "Movement slow."
+      ],
+      [
+       "[[item:item_0348|Buddha Slash]]",
+       "Slaughter",
+       "The target takes more damage from the mark's owner, the more so the lower its health."
+      ],
+      [
+       "[[item:item_0365|Cobra Blade]]",
+       "Erosion",
+       "Each poison stack increases magic damage taken."
+      ],
+      [
+       "[[item:item_0371|Corrosion Blade]]",
+       "Corrosion",
+       "Armor reduction per stack."
+      ],
+      [
+       "[[item:item_0375|Ring of Lethargy]]",
+       "Slow",
+       "Movement speed reduction."
+      ],
+      [
+       "[[item:item_0379|Curse Ribbon]]",
+       "Doom",
+       "Magic resistance reduction."
+      ],
+      [
+       "[[item:item_0391|Frost Pack]]",
+       "Biting Cold",
+       "Attack and movement speed reduction."
+      ],
+      [
+       "[[item:item_0409|Ashmark Ring]]",
+       "Embers",
+       "Ember stacks build up; when enough are collected, the \"Ashmark Ring\" effect triggers."
+      ],
+      [
+       "[[item:item_0420|Bloodthorn Blade]]",
+       "Blood Moon",
+       "The mark's owner applies vulnerability with their attacks."
+      ],
+      [
+       "[[item:item_0532|Grievous Dagger]]",
+       "Mortal Wound",
+       "Reduces healing and regeneration received."
+      ],
+      [
+       "[[item:item_0536|Lionheart Battleaxe]]",
+       "Armor Shred",
+       "Increases damage taken; the carrier gets a final damage bonus from its own armor."
+      ],
+      [
+       "[[item:item_0540|Soulfire Brand]]",
+       "Ignition",
+       "Armor reduction and higher magic damage taken; amplified by ignite stacks."
+      ],
+      [
+       "[[item:item_0544|Heaven's Halberd]]",
+       "Judgment",
+       "Attack damage reduction and no healing."
+      ],
+      [
+       "[[item:item_0551|Mystic Spring]]",
+       "Clear Spring Spirit",
+       "Attack and movement speed reduction."
+      ],
+      [
+       "[[item:item_0561|Quenched Doom Armor]]",
+       "Foul Nourishment",
+       "Reduces healing effects."
+      ],
+      [
+       "[[item:item_0561|Quenched Doom Armor]]",
+       "Mind Fracture",
+       "Magic resistance reduction."
+      ],
+      [
+       "[[item:item_0561|Quenched Doom Armor]]",
+       "Stagger",
+       "Movement speed reduction."
+      ],
+      [
+       "[[item:item_0563|Shadow Swift Blade]]",
+       "Cave Curse",
+       "The target's evasion does not work; attacks deal extra physical damage (evasion × agility)."
+      ],
+      [
+       "[[item:item_0566|Molten Armor Ember]]",
+       "Melting Armor",
+       "Armor reduction and higher magic damage taken."
+      ],
+      [
+       "[[item:item_0567|Hunter's Mark]]",
+       "Hunting Mark",
+       "The target takes more damage from the mark's owner; at max stacks the effect doubles."
+      ],
+      [
+       "[[item:item_0569|Time-Lag Blood Pact]]",
+       "Blood Pact",
+       "Part of the damage taken is deferred and slowly catches up with the target."
+      ],
+      [
+       "[[item:item_0577|Tome of Soul Erosion]]",
+       "Soul Erosion",
+       "Slow; with the second set item it also raises the carrier's ability damage."
+      ],
+      [
+       "[[item:item_0580|Deliverance Bell]]",
+       "Shared Misfortune",
+       "The negative effects of the \"Deliverance Bell\" owner are transferred to the target."
+      ],
+      [
+       "[[item:item_0598|Soul Link]]",
+       "Soul Link",
+       "The target is linked to the caster and takes reflected physical damage."
+      ],
+      [
+       "[[item:item_0607|Curse Brand]]",
+       "Cursebind",
+       "The target takes more ability damage from the mark's owner; grows with stacks."
+      ],
+      [
+       "[[item:item_0609|Paladin's Armor]]",
+       "Pact of Chaos",
+       "Part of max health is taken away and turned into a shield."
+      ],
+      [
+       "[[item:item_0620|Army Breaker Blade]]",
+       "Frostbite",
+       "Magic damage every second based on the caster's attributes."
+      ],
+      [
+       "[[item:item_0644|Tome of the Poison Sect]]",
+       "World Erosion Curse",
+       "While above 50% health, the carrier is poisoned (reduced poison damage); its poison can crit."
+      ],
+      [
+       "[[item:item_0658|Crystal of Essence]]",
+       "Essence: Erosion",
+       "Part of the physical crit chance is converted into magic crit chance (a technical effect on the owner)."
+      ],
+      [
+       "[[item:item_0229|Battle Fury]]",
+       "Armor Break",
+       "Armor reduction when the \"Shatter\" passive triggers (example: \"Battle Fury\")."
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "text": "**Hero ability debuffs**:"
+    },
+    {
+     "type": "table",
+     "head": [
+      "Hero",
+      "Effect",
+      "What it does"
+     ],
+     "rows": [
+      [
+       "Dragon Knight",
+       "Dragonblaze Burn",
+       "1% of max health per second as physical damage, 6 s, does not stack."
+      ],
+      [
+       "Dragon Knight",
+       "Frost Dragon Chill",
+       "Each stack reduces movement and attack speed by 1%."
+      ],
+      [
+       "Dragon Knight",
+       "Frost Dragon Vulnerability",
+       "While frozen, each Freeze stack adds +15% damage taken."
+      ],
+      [
+       "Dragon Knight",
+       "Grievous Wounds",
+       "Increases all damage taken by the number of negative effects (up to 50 stacks are counted)."
+      ],
+      [
+       "Dragon Knight",
+       "Frost Dragon Freeze",
+       "The target cannot move."
+      ],
+      [
+       "Dragon Knight",
+       "Dragon Breath Slow",
+       "Movement speed reduction."
+      ]
+     ]
+    },
+    {
+     "type": "note",
+     "text": "The reference lists 154 debuff effects; monsters and bosses have their own 71 debuffs (applied to the player), which are not in the tables."
+    }
+   ]
+  },
+  {
+   "key": "damage",
+   "title": "Damage and its multipliers",
+   "blocks": [
+    {
+     "type": "text",
+     "text": "Damage is a pipeline: first a base number is taken, then it is multiplied and cut step by step. The steps are the same for any damage, from a basic attack to poison."
+    },
+    {
+     "type": "text",
+     "text": "**A worked example.** Attack on the panel: **1000**. You have \"Damage Bonus\" +30%, \"Final Damage\" +10%, \"Physical Damage\" +50%. You hit a boss with 100 armor that has 1 stack of vulnerability (+15%), and you have contribution level 2 and world level 2 in the season (+4% each):"
+    },
+    {
+     "type": "list",
+     "items": [
+      "**1000**: the base number (the \"Attack\" line on the panel)",
+      "**1800**: crit: ×1.8",
+      "**3861**: boosts: ×1.3 × 1.1 × 1.5",
+      "**813**: armor cut 79% (100 armor = 100 ÷ (26.66 + 100)), then rounded up",
+      "**935**: vulnerability +15% (applied at the very end, after armor)",
+      "**1011**: season buffs: ×1.04 × 1.04"
+     ]
+    },
+    {
+     "type": "text",
+     "text": "The same hit on a boss with **300 armor** would deal **393** (same attack, a third of the damage): armor cuts harder than anything else."
+    },
+    {
+     "type": "text",
+     "text": "What each step does, in plain words:"
+    },
+    {
+     "type": "table",
+     "head": [
+      "Step",
+      "In plain words"
+     ],
+     "rows": [
+      [
+       "1. Miss",
+       "the damage may not land at all: only for basic attacks, from your blindness or the target's evasion. A miss = zero"
+      ],
+      [
+       "2. Crit",
+       "basic attacks crit with a **5%** chance plus everything you wear (\"%Crit Chance\"); abilities have their own chance (\"%Ability Crit Chance\"). A crit multiplies damage: **×1.8** by default (the \"%Crit Damage\" panel). Poison and damage over time never crit"
+      ],
+      [
+       "3. Your boosts",
+       "everything that raises your damage: \"Damage Bonus\", \"Final Damage\", \"Physical/Magical Damage\", \"Spell Amplify\", \"%DoT damage\", \"%Poison/Bleed Damage\", \"% vs. target type\". They multiply with each other"
+      ],
+      [
+       "4. Target's defense",
+       "the target has its own \"damage reduction\" and \"damage resistance\": they add up into one multiplier that divides your damage"
+      ],
+      [
+       "5. Armor / magic resistance",
+       "physical damage is cut by **armor** (the more, the harder: 100 armor ≈ −79%, 300 ≈ −92%; monsters have 70–270). Magic damage is cut by **magic resistance** in percent (75–96% on big bosses)"
+      ],
+      [
+       "6. Block",
+       "some targets have flat block: it simply subtracts a fixed amount of damage"
+      ],
+      [
+       "7. Vulnerability and season",
+       "the very last multipliers: vulnerability on the target (up to +25%) and your season buffs. They apply **after** armor, so nothing cuts their percentages"
+      ],
+      [
+       "8. Rounding",
+       "at the end the damage is rounded to an integer (half rounds up)"
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "text": "The five boosts from the hero panel (the \"Attack\" column) multiply with each other: \"Damage Bonus\" +19% and \"Final Damage\" +10% give **×1.19 × 1.10 = +30.9%**, not +29%. The same stat from different sources adds up (10% + 9% = 19%), and the sum then works as one multiplier."
+    },
+    {
+     "type": "table",
+     "head": [
+      "Panel line",
+      "Stat key",
+      "What it boosts"
+     ],
+     "rows": [
+      [
+       "**Damage Bonus**",
+       "`outgoing_damage_pct`",
+       "all damage: basic attacks, abilities, active items, damage over time"
+      ],
+      [
+       "**Final Damage**",
+       "`outgoing_damage_pct_2`",
+       "also all damage, but as a separate multiplier: it multiplies with \"Damage Bonus\" rather than adding to it"
+      ],
+      [
+       "**Physical Damage**",
+       "`physical_damage_add_pct`",
+       "physical damage only, including basic attacks"
+      ],
+      [
+       "**Magical Damage**",
+       "`magical_damage_add_pct`",
+       "magic damage only, including poison"
+      ],
+      [
+       "**Spell Amplify**",
+       "`spell_amplify_pct`",
+       "all damage that is not from basic attacks: abilities, active items, damage over time"
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "text": "Next to them, the other boosts multiply in the same way:"
+    },
+    {
+     "type": "table",
+     "head": [
+      "Stat",
+      "Key",
+      "What it boosts"
+     ],
+     "rows": [
+      [
+       "%Normal Attack Damage",
+       "`normal_attack_damage_amp_pct`",
+       "basic attacks only"
+      ],
+      [
+       "%DoT damage",
+       "`dot_outgoing_damage_pct`",
+       "periodic damage tagged DOT: poison and most DoT effects; bleed uses it in its own formula, and it does not affect burn or ignite"
+      ],
+      [
+       "%Poison Damage",
+       "`poison_outgoing_damage_pct`",
+       "only damage applied by poison"
+      ],
+      [
+       "%Bleed Damage",
+       "`bleed_outgoing_damage_pct`",
+       "bleed ticks"
+      ],
+      [
+       "%Extra Damage to creeps / elites / bosses / chieftains",
+       "`extra_damage_pct_1…4`",
+       "all damage against the matching target type"
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "text": "**What boosts and what cuts each damage type.** \"Poison is not boosted by crit\", \"bleed is not cut by armor\": all of that goes here:"
+    },
+    {
+     "type": "table",
+     "head": [
+      "Damage type",
+      "Where the number comes from",
+      "What it boosts",
+      "What cuts it",
+      "What does not work"
+     ],
+     "rows": [
+      [
+       "**Basic attack** (physical)",
+       "from the \"Attack\" panel: base + bonuses from items and talents, all multiplied by the attack percentages",
+       "crit, \"Damage Bonus/Final Damage\", \"Physical Damage\", \"%Normal Attack Damage\", \"% vs. target type\", vulnerability",
+       "armor (reduced by armor penetration), the target's \"damage reduction\"",
+       "miss and evasion: no damage at all"
+      ],
+      [
+       "**Ability, active item** (physical or magic)",
+       "the number from the ability description: usually a percentage of your attributes or a fixed value",
+       "ability crit, \"Damage Bonus/Final Damage\", \"Spell Amplify\", \"Physical/Magical Damage\", vulnerability",
+       "armor or magic resistance, by damage type",
+       "\"%Normal Attack Damage\" and \"% basic crit\""
+      ],
+      [
+       "**Poison** (magic, ticks)",
+       "the sum of your attributes (STR+AGI+INT) at the moment of application, then it grows with the number of stacks",
+       "stacks (all poisons on the target count), \"%DoT damage\", \"%Poison Damage\", general multipliers",
+       "magic resistance: against tanky bosses with 90%+ poison barely gets through",
+       "crit. And poison on you works differently: it is based on your health, not on the monster's stats"
+      ],
+      [
+       "**Bleed** (ticks)",
+       "70% of the damage of the hit that caused it, already after armor",
+       "\"%Bleed Damage\" and \"%DoT damage\": they are built straight into the tick formula",
+       "nothing: neither armor, nor magic resistance, nor \"damage reduction\"",
+       "crit, general multipliers (\"Damage Bonus/Final Damage\"), vulnerability, season buffs"
+      ],
+      [
+       "**Burn** (ticks)",
+       "15% of the **target's current health** per second (elites 7.5%, bosses and chieftains 1.5%), but no more than 10 × the sum of your stats per tick",
+       "only your attributes: that very cap, 10 × (STR+AGI+INT)",
+       "nothing",
+       "the whole pipeline: no crit, no boosts, no armor (it does not need it)"
+      ],
+      [
+       "**Ignite** (ticks)",
+       "the sum of your attributes: 20% per stack per second, up to 10 stacks",
+       "stacks",
+       "nothing",
+       "the whole pipeline"
+      ],
+      [
+       "**Pure damage**",
+       "the number from the ability or item",
+       "general multipliers: \"Damage Bonus/Final Damage\", \"Spell Amplify\"",
+       "nothing: armor and magic resistance do not touch it",
+       "crit (usually). But see \"HP loss\" below"
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "text": "**More on each type**: what exactly boosts it, what cuts it, and the fine points."
+    },
+    {
+     "type": "text",
+     "text": "**Basic attack.** The number comes from the \"Attack\" line on the panel: `base_attack_damage` plus everything items give (`bonus_attack_damage`), all multiplied by the \"attack percentages\" (base and general). Then: miss chance (evasion and blindness cancel the hit entirely), crit, then the boosts (\"Damage Bonus\", \"Final Damage\", \"Physical Damage\", \"%Normal Attack Damage\", \"% vs. target type\"), and only then the target's armor. None of the \"magic\" boosts apply here: \"Magical Damage\" and \"Spell Amplify\" do not touch basic attacks."
+    },
+    {
+     "type": "text",
+     "text": "**Ability and active item.** Damage follows the ability's own formula: usually a percentage of your attributes (\"500% of agility\"), sometimes a fixed number; that is the base, and everything else is the same pipeline. Their crit is separate: \"%Ability Crit Chance\" (0% by default) plus the physical/magic chance by damage type and \"%Omni Crit Chance\", but the crit multiplier is shared with attacks (the \"%Crit Damage\" panel, ×1.8 by default). They are boosted by \"Spell Amplify\", which also works on damage over time (so on poison too), while \"%Normal Attack Damage\" and the base 5% crit do not apply."
+    },
+    {
+     "type": "text",
+     "text": "**Poison: how it grows with stacks (the \"stack curve\").** The base is locked in at the moment of application: the sum of your attributes (STR + AGI + INT) at that moment; take off items later and the damage will not change. After that the damage grows **non-linearly**, along a flattening curve: each next stack adds less than the previous one, up to a cap of ×81:"
+    },
+    {
+     "type": "table",
+     "head": [
+      "Poison stacks",
+      "Damage multiplier"
+     ],
+     "rows": [
+      [
+       "1",
+       "×1"
+      ],
+      [
+       "2",
+       "×1.6"
+      ],
+      [
+       "3",
+       "×2.3"
+      ],
+      [
+       "5",
+       "×3.5"
+      ],
+      [
+       "10",
+       "×6.4"
+      ],
+      [
+       "20",
+       "×11.6"
+      ],
+      [
+       "50",
+       "×23.5"
+      ],
+      [
+       "100",
+       "×36.4"
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "text": "On top of that there is a second, shared multiplier for the **total stacks of all poisons on the target** (each hero or item has its own poison); it grows very slowly: with 10 of your own stacks and 30 total it gives about ×1.3. A tick happens every **0.25 s** and is sped up by the \"% poison damage speed\" stat (the interval is divided by 1 + %/100, but no more often than 0.03 s). Stacks decay constantly: **−20% every 3 s** (at least one stack), and when no stacks are left the poison ends. Of the defenses, poison only goes through magic resistance; neither armor nor \"damage reduction\" applies to it, and it does not crit. The game's glossary stresses that **all stacks** count toward total poison damage."
+    },
+    {
+     "type": "text",
+     "text": "**Poison on the player works differently.** When a monster poisons you, each tick (every 0.25 s) has two parts that react to defense differently. The **magic** part is `0.026 × stacks × monster attack damage` (a snapshot of its attack at the time of application): it is cut by your magic resistance, reductions and block. The **health-based** part is `0.0975% × stacks × (0.7 + 0.025 × monster level)` of (max health + current energy shield): it is added **after all multipliers**, and neither magic resistance, nor reductions, nor block cut it. 10 stacks on you already hurt."
+    },
+    {
+     "type": "text",
+     "text": "**How to defend against poison.** \"Cutting the damage\" and \"not getting poisoned\" are different things. [[item:item_0282|Dandelion Amulet]] and its Ancestral version [[item:item_0710|Ancestral: Dandelion Amulet]] (both −99% poison damage), as well as [[item:item_P052|Poison Resistance Potion]] (−99% for 160 s, also removes all stacks on use), cut **only the magic part**; they do not touch the second, health-based one. **Application** is fully blocked by [[item:item_P051|Nature's Elixir]] (180 s, +25% base health) and [[item:item_0144|★Shadow Amulet]] (5 s): on use they remove the current stacks and grant immunity, and while the effect lasts a monster cannot poison you at all. [[item:item_M225|Life Pod]] (active \"Purify\") just removes stacks without immunity."
+    },
+    {
+     "type": "text",
+     "text": "**But a \"poisonous\" mechanic is not always poison.** For example, [[monster:monster_10102|Hugging Treant]] leaves a poison puddle after death: every 0.3 s it deals ordinary magic damage of `0.4 × the treant's attack at the time of death`. This damage is **not tagged as poison**, and neither the amulet, nor the potions, nor the elixir stop it (only magic resistance cuts it); on top of that it applies 1 stack of normal poison. So the elixir can honestly block the poison itself while the puddle damage still goes through. Another nuance: poison from puddles and traps is applied \"on behalf\" of the room's dummy, not the monster; its attack is the attack of a random monster in that room, and in the Skyfall Realm (room G001) there is no such list, so puddle poison there ticks almost only with the \"health-based part\"."
+    },
+    {
+     "type": "note",
+     "text": "**Two traps.** (1) No more than five potions can be active at once: every sixth one removes the oldest, so \"Nature's Elixir\" is easily knocked off early by other potions. (2) In Endless (\"Sky\") the poison affix **\"Realm Venom\"** is a separate effect: immunity does not block it, it cannot be removed, and it hits as \"HP loss\" past the whole pipeline (1.2% health per stack per second, but it cannot kill: the damage is clamped at 1 HP). Neither the amulet nor the potions work against it."
+    },
+    {
+     "type": "text",
+     "text": "By the way, the second, \"health-based\" part is cut only by shields and items at the very last damage step: [[item:item_0343|Jaina's Pendant]] and [[item:item_0443|Ring of Blessing]] cut the excess above a health-based threshold, and [[item:item_0291|Phantom Prism]] blocks a hit entirely if it would take more than 8% of current health (using up a charge). That is the real \"poison protection\" when the percentage part is bigger than the magic one."
+    },
+    {
+     "type": "note",
+     "text": "**In Endless, poison works differently.** Its monsters are always level 6, but their attack grows with the floor: floor 1 ~530, floor 10 ~4,000, floor 25 ~31,000, floor 50 ~340,000, then another ×1.1 per floor and +30% outgoing damage for every floor after the 50th. Poison on the player is calculated from that same attack (`0.026 × stacks × attack`), so there it is almost entirely the magic part: on high floors without the amulet or a potion it wipes your health in a few ticks, and with them (−99%) only a small \"health-based\" part remains."
+    },
+    {
+     "type": "text",
+     "text": "**Bleed.** You land a hit, and the game takes **70% of the damage that already went through** (after armor, reductions and block) and puts it into a bleed \"pool\". The pool is not stacks: repeated applications **add up**, and the window is reset to 5 s. Every 0.5 s a tenth of the remainder is paid out, multiplied by \"%Bleed Damage\" and \"%DoT damage\" (these two stats are part of the tick formula). \"%Bleed Tick Rate\" speeds it up: there are still 10 ticks, but the pool drains faster. Until the pool runs out, the bleed bypasses the whole damage pipeline: armor and magic resistance do not cut it, but crit, \"Damage Bonus/Final Damage\", vulnerability and season buffs do not boost it either."
+    },
+    {
+     "type": "text",
+     "text": "**Burn.** Every 0.5 s the target loses 15% of its **current** health (normal monsters), 7.5% (elites), 1.5% (bosses and chieftains) per second. But there is a cap: no more than `10 × (STR + AGI + INT)` of your stats per tick, so on tanky bosses burn quickly hits it. It lasts 3 s, the target heals 25% worse, and if you set yourself on fire the damage is 65% weaker. Nothing boosts it: it is \"HP loss\"."
+    },
+    {
+     "type": "text",
+     "text": "**Ignite.** Like burn, but based on your attributes: 20% of the sum (STR + AGI + INT) per stack per second, up to 10 stacks, 4 s (reapplying adds stacks but does not refresh the duration). Ignite sources also cut the target's armor and magic resistance, but the ignite damage itself bypasses the pipeline."
+    },
+    {
+     "type": "text",
+     "text": "**Pure damage.** Bypasses armor and magic resistance; used mostly by monsters and some abilities. It does not crit, but the general multipliers (\"Damage Bonus\", \"Final Damage\", \"Spell Amplify\") work, and so do vulnerability and the season. If the damage is tagged \"HP loss\", nothing works at all (see below)."
+    },
+    {
+     "type": "text",
+     "text": "**Exact formulas**, for those who want to check the numbers themselves:"
+    },
+    {
+     "type": "table",
+     "head": [
+      "What",
+      "Formula"
+     ],
+     "rows": [
+      [
+       "Basic attack: base (`total_attack_damage`)",
+       "`(base_attack_damage × (1 + base_attack_damage_percent/100) + bonus_attack_damage) × (1 + all_attack_damage_percent/100)`: \"base + bonuses\" × \"attack percentages\""
+      ],
+      [
+       "Crit: chance",
+       "`100 × (1 − (1 − base/100) × (1 − typed/100)) + omni`: base is 5% for attacks, typed is physical or magic by damage type, omni is added on top"
+      ],
+      [
+       "Crit: multiplier",
+       "`crit damage ÷ 100`: 180 by default, i.e. ×1.8"
+      ],
+      [
+       "Armor",
+       "`1 − armor ÷ (26.66 + |armor|)`; armor penetration removes its percentage from positive armor only"
+      ],
+      [
+       "Magic resistance",
+       "`1 − MR/100` (MR is a percentage, no higher than 99%; an irreducible 0.1% of damage remains)"
+      ],
+      [
+       "Damage resistance",
+       "`damage ÷ (1 + resistance/100)`"
+      ],
+      [
+       "Poison (on monsters)",
+       "`Σ(caster's STR+AGI+INT) × 0.325` × stack curve `0.4n/(0.4n + 50) × 80 + 1` × the shared stack multiplier of all poisons (up to ×5); tick 0.25 s, another ×0.5 per tick"
+      ],
+      [
+       "Poison on the player",
+       "two parts per tick (0.25 s): magic `0.026 × stacks × monster attack` (cut by MR, reductions, block, amulet/potion) and `0.0975 % × stacks × (0.7 + 0.025 × monster level)` of (max HP + energy shield): added after all multipliers and cut by nothing except shields and final-step effects"
+      ],
+      [
+       "Bleed",
+       "`pool = 70% of the hit's final damage`; `tick = pool ÷ ticks left × (1 + %bleed/100) × (1 + %dot/100)`, a tick every 0.5 s (sped up by \"%Bleed Tick Rate\")"
+      ],
+      [
+       "Burn",
+       "`min(target's current HP × 15% × 0.5 × factor, 10 × (STR+AGI+INT))` per tick; factor: normal 1, elite 0.5, bosses and chieftains 0.1; your own burn is 65% weaker"
+      ],
+      [
+       "Ignite",
+       "`(STR+AGI+INT) × 20% × stacks × 0.5` per tick, up to 10 stacks, 4 s"
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "text": "**Vulnerability** is a debuff on the target: it takes **15% more** damage, each further stack adds another **2%**, max **25%** (stacks from different sources add up, but never go above 25%). It applies **at the very end**, after armor, so nothing cuts its percentage and it stacks with everything else. It does not affect burn, ignite or bleed. Applied by: Axe, Phantom Assassin, Void Spirit, and among items [[item:item_0196|★Orchid Malevolence]], [[item:item_0217|Monkey King Bar]], [[item:item_0344|Amorous Scourge]], [[item:item_0363|Cursed Hand]], [[item:item_0396|Stone Golem's Hand]], [[item:item_0415|Nether Visage]], [[item:item_0420|Bloodthorn Blade]], [[item:item_0503|Charge Blade]], [[item:item_0622|Star-Shatter Battle Axe]] (stacks and durations are in the \"Debuffs\" reference)."
+    },
+    {
+     "type": "text",
+     "text": "**Season buffs** (personal contribution level and world level, +2% damage dealt per level), like vulnerability, apply **at the very end, after armor**: each level is a separate ×1.02 multiplier, and they multiply with each other and with everything else. They do not affect \"HP loss\". Do not confuse them with \"Damage Bonus\" and \"Final Damage\" from the panel: those are applied earlier, before armor."
+    },
+    {
+     "type": "note",
+     "text": "**A special case: \"HP loss\".** Burn, ignite and bleed (and some abilities and items) go **past the whole pipeline**: the damage is tagged as \"HP loss\", and it is not affected by crit, boosts, physical/magic damage, armor and magic resistance, vulnerability or season buffs. So burn is boosted only by your stats (cap `10 × (STR + AGI + INT)` per tick) and the target's health, and bleed has its boosts built right into the tick (\"%Bleed Damage\" and \"%DoT damage\"). Poison is not \"HP loss\": it is ordinary magic damage and gets all the general multipliers."
+    },
+    {
+     "type": "text",
+     "text": "**What to boost it with: talents and items for each key.** \"Talents\" are progression nodes, \"Items\" are how many items have the stat and how much the strongest one gives. Item values are base values: the seed, \"Enhanced\" and the forge add on top."
+    },
+    {
+     "type": "table",
+     "head": [
+      "What it boosts",
+      "Key",
+      "Talents",
+      "Items"
+     ],
+     "rows": [
+      [
+       "Damage: all",
+       "`outgoing_damage_pct`",
+       "[[talent:tree1/T033|Damage Boost]] +2%, [[talent:tree1/T045|Damage Amplification]] +1%, [[talent:tree1/T072|Damage Boost]] +3%, [[talent:tree1/T073|Damage Boost]] +3%, [[talent:tree2/T106|Damage Boost]] +1%, [[talent:tree2/T125|Armor Break]] +2%, [[talent:tree4/T389|Damage Bonus +3%]] +3%, [[talent:tree4/T375|+4% Bonus Damage]] +4%, [[talent:tree5/T444|Damage Bonus +3%]] +3%, [[talent:tree5/T476|Damage Bonus +4%]] +4%, [[talent:tree6/T577|Damage Bonus +4%]] +4%, [[talent:tree7/T644|+3% Bonus Damage]] +3%, [[talent:tree7/T675|+4% Bonus Damage]] +4%, [[talent:tree10/T922|Ancient Power]] +1%, [[talent:tree12/T1167|+4% Bonus Damage]] +4%, [[talent:tree13/T1230|Will of the Cube]] +1%, [[talent:tree14/T1489|Damage Bonus +3%]] +3%, [[talent:tree14/T1475|Damage Bonus +4%]] +4%",
+       "57 items, max +36% ([[item:item_0737|Ancestral: Crown of Paranoia]], [[item:item_0608|Crown of Paranoia]], [[item:item_0202|Scythe of Vyse]], [[item:item_0802|Ancestral: Scythe of Vyse]] and more)"
+      ],
+      [
+       "Damage: final multiplier",
+       "`outgoing_damage_pct_2`",
+       "—",
+       "38 items, max +21% ([[item:item_0883|Ancestral: Hourglass of Lingering Time]], [[item:item_0415|Nether Visage]], [[item:item_0813|Ancestral: Nether Visage]], [[item:item_0612|Overflow Rotation]] and more)"
+      ],
+      [
+       "Physical damage",
+       "`physical_damage_add_pct`",
+       "[[talent:tree2/T151|Crossbow Strike]] +2%, [[talent:tree13/T1224|Shadow Edge Forging]] +1%",
+       "133 items, max +32% ([[item:item_0882|Ancestral: Blade of Essence]], [[item:item_0787|Ancestral: Lionheart Battleaxe]], [[item:item_0424|Thorncrown Aegis]], [[item:item_0610|Critical Overflow]] and more)"
+      ],
+      [
+       "Magic damage",
+       "`magical_damage_add_pct`",
+       "[[talent:tree2/T171|Echo]] +2%, [[talent:tree8/T710|Frost Resonance]] +10%, [[talent:tree13/T1209|Mystic Initiate]] +1%, [[talent:tree13/T1227|Shadow Ascension]] +1%",
+       "136 items, max +36% ([[item:item_0740|Ancestral: Curse Brand]], [[item:item_0736|Ancestral: Ring of Ebb and Flow]], [[item:item_0739|Ancestral: Overheat Core]], [[item:item_0881|Ancestral: Hunter's Chain]] and more)"
+      ],
+      [
+       "Ability and item damage",
+       "`spell_amplify_pct`",
+       "—",
+       "57 items, max +32% ([[item:item_0740|Ancestral: Curse Brand]], [[item:item_0607|Curse Brand]], [[item:item_0617|Settlement Pact: Blade]], [[item:item_0618|Settlement Pact: Balance]] and more)"
+      ],
+      [
+       "Basic attack damage",
+       "`normal_attack_damage_amp_pct`",
+       "—",
+       "—"
+      ],
+      [
+       "Damage over time",
+       "`dot_outgoing_damage_pct`",
+       "—",
+       "37 items, max +26% ([[item:item_0886|Ancestral: Duskroot Siphon]], [[item:item_0734|Ancestral: Toxin Convergence]], [[item:item_0578|Inducement of Myriad Forms]], [[item:item_0579|Seal of Four Plagues]] and more)"
+      ],
+      [
+       "Poison damage",
+       "`poison_outgoing_damage_pct`",
+       "—",
+       "22 items, max +48% ([[item:item_0382|Fire Venom Scepter]], [[item:item_0780|Ancestral: Fire Venom Scepter]], [[item:item_0704|Ancestral: Gloom Armor]], [[item:item_0719|Ancestral: Cobra Blade]] and more)"
+      ],
+      [
+       "Bleed damage",
+       "`bleed_outgoing_damage_pct`",
+       "—",
+       "16 items, max +34% ([[item:item_0784|Ancestral: Bloodthorn Blade]], [[item:item_0841|Ancestral: Demon God Axe]], [[item:item_0403|Ripper Gauntlets]], [[item:item_0420|Bloodthorn Blade]] and more)"
+      ],
+      [
+       "Damage to creeps",
+       "`extra_damage_pct_1`",
+       "[[talent:tree9/T828|Carnage]] +3%",
+       "—"
+      ],
+      [
+       "Damage to elites",
+       "`extra_damage_pct_2`",
+       "[[talent:tree9/T829|Sunder]] +1%, [[talent:tree13/T1226|Elite Hunter]] +1%",
+       "—"
+      ],
+      [
+       "Damage to bosses",
+       "`extra_damage_pct_3`",
+       "[[talent:tree9/T829|Sunder]] +1%, [[talent:tree13/T1229|Kingslayer Arts]] +1%",
+       "—"
+      ],
+      [
+       "Damage to chieftains",
+       "`extra_damage_pct_4`",
+       "—",
+       "—"
+      ],
+      [
+       "Physical crit chance",
+       "`physical_crit_chance_pct`",
+       "[[talent:tree2/T108|Critical Strike]] +1%, [[talent:tree2/T159|Hurricane]] +2%, [[talent:tree2/T169|Star Shatter]] +3%, [[talent:tree4/T372|+2% Physical Crit Chance]] +2%, [[talent:tree5/T469|Physical Critical Chance +2%]] +2%, [[talent:tree7/T668|+2% Physical Crit Chance]] +2%, [[talent:tree9/T805|Lethal Strike]] +2%, [[talent:tree13/T1206|Flaw Insight]] +1%, [[talent:tree14/T1472|Physical Crit Chance +2%]] +2%",
+       "69 items, max +24% ([[item:item_0610|Critical Overflow]], [[item:item_0820|Ancestral: Critical Overflow]], [[item:item_0853|Ancestral: Monkey King Bar]], [[item:item_0770|Ancestral: Desperate Fury]] and more)"
+      ],
+      [
+       "Magic crit chance",
+       "`magical_crit_chance_pct`",
+       "[[talent:tree2/T112|Spell Critical Strike]] +1%, [[talent:tree2/T154|Meteor]] +2%, [[talent:tree2/T174|Army Breaker]] +3%, [[talent:tree6/T571|Magic Crit Chance +2%]] +2%, [[talent:tree12/T1162|+2% Magic Crit]] +2%, [[talent:tree13/T1219|Mystic Insight]] +1%",
+       "40 items, max +23% ([[item:item_0739|Ancestral: Overheat Core]], [[item:item_0219|Soul Scatter Blade]], [[item:item_0865|Ancestral: Soul Scatter Blade]], [[item:item_0725|Ancestral: Spirit Crown]] and more)"
+      ],
+      [
+       "Omni crit chance (all damage)",
+       "`omni_crit_chance_pct`",
+       "—",
+       "18 items, max +19% ([[item:item_0779|Ancestral: Endless Blade]], [[item:item_0837|Ancestral: Shadow Armor]], [[item:item_0859|Ancestral: Ring of Blessing]], [[item:item_0368|Endless Blade]] and more)"
+      ],
+      [
+       "Crit multiplier",
+       "`crit_damage_pct`",
+       "[[talent:tree2/T110|Critical Damage Enhancement]] +2%, [[talent:tree2/T120|Rampage]] +3%, [[talent:tree2/T163|Wraith]] +4%, [[talent:tree2/T173|Absolute Shadow]] +5%, [[talent:tree2/T128|Critical Damage Refinement]] +2%, [[talent:tree9/T826|Critical Damage]] +3%, [[talent:tree13/T1215|Fatal Rift]] +2%",
+       "52 items, max +39% ([[item:item_0735|Ancestral: Crown of Curses]], [[item:item_0884|Ancestral: Crystal of Essence]], [[item:item_0570|Crown of Curses]], [[item:item_0770|Ancestral: Desperate Fury]] and more)"
+      ],
+      [
+       "Armor penetration",
+       "`physical_armor_penetration_pct`",
+       "—",
+       "2 items, max +15% ([[item:item_0217|Monkey King Bar]], [[item:item_0853|Ancestral: Monkey King Bar]])"
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "text": "**Target's defense: what to boost on your side.** The same table, but for survival:"
+    },
+    {
+     "type": "table",
+     "head": [
+      "What it protects",
+      "Key",
+      "Talents",
+      "Items"
+     ],
+     "rows": [
+      [
+       "Armor",
+       "`bonus_armor`",
+       "—",
+       "126 items, max +30 ([[item:item_0705|Ancestral: Unyielding Cuirass]], [[item:item_0787|Ancestral: Lionheart Battleaxe]], [[item:item_0714|Ancestral: Lionheart War Armor]], [[item:item_0770|Ancestral: Desperate Fury]] and more)"
+      ],
+      [
+       "Armor (base)",
+       "`base_armor`",
+       "[[talent:tree1/T005|Armor Boost]] +1, [[talent:tree1/T010|Armor Proficiency]] +1, [[talent:tree1/T018|Armor Proficiency]] +1, [[talent:tree1/T055|Armor]] +1, [[talent:tree1/T081|Armor]] +1, [[talent:tree1/T024|Armor]] +3, [[talent:tree2/T103|Armor Boost]] +1, [[talent:tree2/T123|Unyielding]] +2, [[talent:tree2/T133|Battle-Hardened Body]] +2, [[talent:tree4/T301|Armor +1]] +1, [[talent:tree4/T306|Armor +2]] +2, [[talent:tree4/T312|Armor +1]] +1, [[talent:tree4/T329|Armor +1]] +1, [[talent:tree4/T332|Armor +2]] +2, [[talent:tree4/T351|Armor +2]] +2, [[talent:tree4/T356|Armor +3]] +3, [[talent:tree4/T367|+4 Armor]] +4, [[talent:tree4/T369|Armor +3]] +3, [[talent:tree5/T430|Armor +1]] +1, [[talent:tree5/T432|Armor +1]] +1, [[talent:tree5/T456|+2 Armor]] +2, [[talent:tree5/T461|Armor +1]] +1, [[talent:tree5/T464|Armor +2]] +2, [[talent:tree5/T474|Armor +3]] +3, [[talent:tree6/T505|Armor +1]] +1, [[talent:tree6/T532|Armor +1]] +1, [[talent:tree6/T549|Armor +1]] +1, [[talent:tree7/T630|+1 Armor]] +1, [[talent:tree7/T632|+1 Armor]] +1, [[talent:tree7/T656|+2 Armor]] +2, [[talent:tree7/T661|+1 Armor]] +1, [[talent:tree7/T664|+2 Armor]] +2, [[talent:tree7/T673|+3 Armor]] +3, [[talent:tree9/T812|Defensive Training]] +2, [[talent:tree10/T918|Hardened Skin]] +1, [[talent:tree12/T1110|+1 Armor]] +1, [[talent:tree12/T1132|+1 Armor]] +1, [[talent:tree12/T1147|+1 Armor]] +1, [[talent:tree13/T1202|Bedrock Armor]] +1, [[talent:tree14/T1401|Armor +1]] +1, [[talent:tree14/T1406|Armor +2]] +2, [[talent:tree14/T1412|Armor +1]] +1, [[talent:tree14/T1429|Armor +1]] +1, [[talent:tree14/T1432|Armor +2]] +2, [[talent:tree14/T1451|Armor +2]] +2, [[talent:tree14/T1456|Armor +3]] +3, [[talent:tree14/T1467|Armor +4]] +4, [[talent:tree14/T1469|Armor +3]] +3",
+       "10 items, max +25 ([[item:item_0609|Paladin's Armor]], [[item:item_0819|Ancestral: Paladin's Armor]], [[item:item_0346|Nightraven Cloak]], [[item:item_0399|Blood Pact Cleaver]] and more)"
+      ],
+      [
+       "Magic resistance",
+       "`base_magic_resistance`",
+       "[[talent:tree2/T170|Divine]] +3%, [[talent:tree2/T127|Magic Resistance Boost]] +1%, [[talent:tree4/T313|Magic Resistance +3%]] +3%, [[talent:tree4/T385|Magic Resistance +3%]] +3%, [[talent:tree5/T429|Magic Resistance +3%]] +3%, [[talent:tree5/T454|Magic Resistance +3%]] +3%, [[talent:tree6/T507|Magic Resistance +3%]] +3%, [[talent:tree6/T534|Magic Resistance +3%]] +3%, [[talent:tree7/T629|+3% Magic Resistance]] +3%, [[talent:tree7/T654|+3% Magic Resistance]] +3%, [[talent:tree8/T704|Chill Infusion]] +5%, [[talent:tree8/T711|Everfrost Heart]] +8%, [[talent:tree12/T1112|+3% Magic Resistance]] +3%, [[talent:tree12/T1134|+3% Magic Resistance]] +3%, [[talent:tree14/T1413|Magic Resistance +3%]] +3%, [[talent:tree14/T1485|Magic Resistance +3%]] +3%",
+       "96 items, max +29% ([[item:item_0853|Ancestral: Monkey King Bar]], [[item:item_0883|Ancestral: Hourglass of Lingering Time]], [[item:item_0739|Ancestral: Overheat Core]], [[item:item_0704|Ancestral: Gloom Armor]] and more)"
+      ],
+      [
+       "Damage resistance (÷ (1 + %/100), to everything)",
+       "`damage_resistance_pct`",
+       "[[talent:tree1/T019|Iron Wall]] +1%, [[talent:tree1/T059|Damage Resistance]] +1%, [[talent:tree1/T070|Damage Resistance]] +1%, [[talent:tree1/T071|Damage Resistance]] +3%, [[talent:tree2/T118|Ironclad]] +1%, [[talent:tree2/T160|Eternity]] +2%, [[talent:tree4/T338|+1% Damage Resistance]] +1%, [[talent:tree5/T479|Damage Resistance +2%]] +2%, [[talent:tree6/T570|Damage Resistance +1%]] +1%, [[talent:tree7/T678|+2% Damage Resistance]] +2%, [[talent:tree9/T811|Iron Will]] +2%, [[talent:tree10/T923|Shield Armor]] +1%, [[talent:tree12/T1161|+1% Damage Resistance]] +1%, [[talent:tree13/T1213|Core Will]] +1%, [[talent:tree13/T1223|Unyielding Tower Heart]] +1%, [[talent:tree14/T1438|Damage Resistance +1%]] +1%",
+       "60 items, max +27% ([[item:item_0705|Ancestral: Unyielding Cuirass]], [[item:item_0611|Crown of All Benefits]], [[item:item_0816|Ancestral: Thorncrown Aegis]], [[item:item_0821|Ancestral: Crown of All Benefits]] and more)"
+      ],
+      [
+       "Evasion",
+       "`evasion_pct`",
+       "[[talent:tree20/T109|Evasion Mastery]] +1%",
+       "52 items, max +30% ([[item:item_0220|Butterfly]], [[item:item_0563|Shadow Swift Blade]], [[item:item_0775|Ancestral: Butterfly]], [[item:item_0731|Ancestral: Vortex Gloves]] and more)"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "key": "where",
+   "title": "Where to find things in the wiki",
+   "blocks": [
+    {
+     "type": "list",
+     "items": [
+      "Drop chances, spawns, location maps: the \"Monsters & drops\" tab.",
+      "Stat spread and exact stat values: the \"Items\" tab.",
+      "Potions, drinks and all container chests (including the Magic Tower chests): the \"Consumables\" tab.",
+      "Endless and the rest of the Skyfall Realm drops: the \"Sky\" tab.",
+      "Crafting recipes and item dismantling: the \"Crafting\" tab.",
+      "Talents, their cost, hero professions: the \"Progression\" tab.",
+      "Hero abilities and the runes that boost them: the \"Heroes\" tab.",
+      "Merchant stock, prices and limits, the Fragment Shop: the \"Vendors\" tab.",
+      "Character panel calculation from items and talents: the \"Calculator\" tab.",
+      "What changed in updates: the \"Patch notes\" tab.",
+      "Mini-game rules and rewards: in this FAQ section, the \"Mini-games\" sub-tab."
+     ]
+    }
+   ]
+  }
+ ]
+}

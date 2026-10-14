@@ -533,3 +533,56 @@
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
+
+/* --- season and view switches ----------------------------------------- */
+
+/**
+ * Two small chips that pick one of two views: which season's numbers the page
+ * shows, and the stat panel's plain list or its calculator. The pill shape of
+ * the badges beside them, so the row still reads as facts about the item.
+ */
+.seasonSwitch,
+.viewSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.seasonLabel {
+  margin-right: var(--space-1);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.seasonChip {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.seasonChip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.seasonChipOn {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.seasonChipOn:hover {
+  color: var(--accent-ink);
+}
+
+/* A section after a note or a sentence, in the wiki panels. */
+.note + .section,
+p + .section {
+  margin-top: var(--space-4);
+}

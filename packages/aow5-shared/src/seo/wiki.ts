@@ -141,7 +141,7 @@ export const WIKI_SEO_STRINGS: Record<SeoLang, WikiSeoStrings> = {
       },
       craft: {
         title: 'Crafting',
-        description: 'Recipe trees for every craftable item in Age of Weapons 5, priced against the auction so you know whether to buy or build.',
+        description: 'Recipe trees for every craftable item in Age of Weapons 5, priced against the Exchange so you know whether to buy or build.',
       },
       progression: {
         title: 'Progression',
@@ -242,7 +242,7 @@ export const WIKI_SEO_STRINGS: Record<SeoLang, WikiSeoStrings> = {
       },
       craft: {
         title: '合成',
-        description: '《兵器时代5》所有可合成物品的配方树，并按交易行价格比较买与造哪个更划算。',
+        description: '《兵器时代5》所有可合成物品的配方树，并按交易所价格比较买与造哪个更划算。',
       },
       progression: {
         title: '天赋成长',
@@ -281,5 +281,7 @@ export function wikiPageDescription(page: WikiPageFacts, lang: SeoLang): string 
   const prose = oneLine(page.description);
   const fallback = WIKI_SEO_STRINGS[lang].sections[page.section].description;
   const body = prose === '' ? fallback : prose;
-  return clampWidth(facts === '' ? body : `${facts}. ${body}`, BUDGET);
+  // A full stop in the reader's script: `。` closes a Chinese sentence, and needs no space after it.
+  const stop = lang === 'zh' ? '。' : '. ';
+  return clampWidth(facts === '' ? body : `${facts}${stop}${body}`, BUDGET);
 }

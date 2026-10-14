@@ -1,0 +1,521 @@
+/**
+ * The wiki's page grid and parts.
+ *
+ * Built on the catalogue's numbers — the same gutter, the same panel, the same
+ * chip — so a section and the item grid sit on one rhythm. See
+ * `routes/ItemsPage.module.css` and `components/Filters.module.css`, which are
+ * where these values were decided.
+ */
+
+.page {
+  display: grid;
+  align-items: start;
+  gap: var(--space-4);
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5) var(--space-7);
+}
+
+.colsList {
+  grid-template-columns: 300px minmax(0, 1fr);
+}
+
+.colsThree {
+  grid-template-columns: 300px 300px minmax(0, 1fr);
+}
+
+.colsSingle {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 1100px;
+}
+
+@media (max-width: 1200px) {
+  .colsThree {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  /* The middle list drops under the sidebar rather than squeezing the detail. */
+  .colsThree > :nth-child(2) {
+    grid-column: 1;
+  }
+
+  .colsThree > :nth-child(3) {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
+
+@media (max-width: 900px) {
+  .colsList,
+  .colsThree {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .colsThree > :nth-child(3) {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .page {
+    padding: var(--space-3) var(--space-3) var(--space-6);
+  }
+}
+
+/* --- the sidebar ------------------------------------------------------------ */
+
+/**
+ * Sticky and exactly as tall as the room under the header, like the
+ * catalogue's filter panel — so the list inside scrolls on its own and the
+ * filters above it stay put.
+ */
+.sidebar {
+  position: sticky;
+  top: var(--space-4);
+  height: calc(100svh - var(--topbar-h) - 44px - var(--footer-h, 84px) - var(--space-6));
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    position: static;
+    height: auto;
+    max-height: 70svh;
+  }
+}
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.searchIcon {
+  position: absolute;
+  left: 11px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.searchInput {
+  padding-left: 36px;
+}
+
+.filters {
+  display: grid;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+
+.group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--wash-2);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.chip {
+  min-width: 32px;
+  height: 28px;
+  padding: 0 var(--space-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.chip:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.chipOn,
+.chipOn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.check:hover {
+  color: var(--text);
+}
+
+.check input {
+  accent-color: var(--accent);
+}
+
+.count {
+  min-height: 18px;
+  margin-bottom: var(--space-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  margin: 0 calc(-1 * var(--space-2));
+  padding: 0 var(--space-2);
+}
+
+.footer {
+  flex: none;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+/* --- list rows -------------------------------------------------------------- */
+
+.list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rowItem {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 48px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: inherit;
+  text-decoration: none;
+}
+
+.row:hover {
+  background: var(--panel-hover);
+  border-color: var(--border);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.rowActive,
+.rowActive:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.tone_boss .rowTitle {
+  color: var(--warn);
+}
+
+.tone_elite .rowTitle {
+  color: var(--accent);
+}
+
+.tone_dim {
+  opacity: 0.6;
+}
+
+.rowIcon {
+  flex: none;
+  display: inline-flex;
+}
+
+.rowText {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.rowTitle {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowMeta {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowBadge {
+  flex: none;
+}
+
+/* --- the detail column -------------------------------------------------------- */
+
+.detail {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.header {
+  /* The heading panel needs no title bar of its own. */
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+}
+
+.headerIcon {
+  flex: none;
+  display: inline-flex;
+}
+
+.headerText {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1;
+}
+
+.headerTitle {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.headerActions {
+  flex: none;
+  display: flex;
+  gap: var(--space-2);
+}
+
+.code {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tagLink:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.tag_accent {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+}
+
+.tag_warn {
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+  color: var(--warn);
+}
+
+/* --- in-section tabs ------------------------------------------------------- */
+
+.subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 32px;
+  padding: 0 var(--space-3);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.subtab:hover {
+  color: var(--text);
+  background: var(--panel-hover);
+  border-color: var(--border-strong);
+}
+
+.subtabOn,
+.subtabOn:hover {
+  background: var(--invert-bg);
+  border-color: var(--invert-bg);
+  color: var(--invert-ink);
+}
+
+.subtabBadge {
+  color: inherit;
+  opacity: 0.7;
+}
+
+/* --- facts and tables ---------------------------------------------------------- */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.fact {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.fact dt {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.fact dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  background: var(--wash-2);
+}
+
+.table tbody tr:hover {
+  background: var(--panel-hover);
+}
+
+.tableCompact th,
+.tableCompact td {
+  padding: 4px var(--space-2);
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.table th.num,
+.table td.num {
+  text-align: right;
+}
+
+.note {
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--border-strong);
+  background: var(--wash-2);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.empty {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.empty strong {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.dataFooter {
+  font-size: 11px;
+  color: var(--text-dim);
+}

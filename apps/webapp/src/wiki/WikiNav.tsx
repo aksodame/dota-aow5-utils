@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Badge, Tab, Tabs } from '@/ui';
 import { useApp } from '@/data/AppData';
 import { intercept } from '@/components/TopBar';
@@ -18,9 +19,23 @@ import styles from './WikiNav.module.css';
 export function WikiNav({ section }: { section: WikiSection }) {
   const { strings } = useApp();
   const t = strings.wikiNav;
+  const row = useRef<HTMLDivElement>(null);
+
+  /*
+   * On a phone the row scrolls sideways, and a section past the fold would be
+   * lit where nobody can see it. Bring the lit one into view — within the row
+   * only: `scrollIntoView` would also scroll the page.
+   */
+  useEffect(() => {
+    const nav = row.current?.querySelector('nav');
+    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (nav == null || active == null) return;
+    const left = active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
+    nav.scrollTo({ left: Math.max(0, left), behavior: 'instant' });
+  }, [section]);
 
   return (
-    <div className={styles.row}>
+    <div className={styles.row} ref={row}>
       <Tabs className={styles.nav} aria-label={t.label}>
         {WIKI_SECTIONS.map((key) => (
           <Tab

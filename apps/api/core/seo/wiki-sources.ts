@@ -8,4 +8,11 @@
  * its own landing page, with no links — and every page under it is a 404.
  */
 
-export {};
+import './wiki/consumables.ts';
+import './wiki/faq.ts';
+import './wiki/heroes.ts';
+import './wiki/vendors.ts';
+import './wiki/sky.ts';
+import './wiki/progression.ts';
+import './wiki/monsters.ts';
+import './wiki/craft.ts';

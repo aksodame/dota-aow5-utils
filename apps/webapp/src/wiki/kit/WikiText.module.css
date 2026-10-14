@@ -1,0 +1,24 @@
+.code {
+  padding: 0 4px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.92em;
+}
+
+/* An item inside a sentence: the ref, lifted onto the line rather than breaking it. */
+.item {
+  display: inline-flex;
+  vertical-align: middle;
+  max-width: 100%;
+}
+
+.link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.link:hover {
+  text-decoration: underline;
+}

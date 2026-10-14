@@ -1,5 +1,6 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { iconUrl, type ItemSummary } from 'aow5-shared/data';
+import { SLOT_KIND } from 'aow5-shared/types';
 import { Icon, Input, Panel } from '@/ui';
 import { useApp } from '@/data/AppData';
 import { qualityVar } from '@/components/Tile';
@@ -49,7 +50,16 @@ export function ItemsPage() {
   const items = core?.items ?? [];
 
   /** The categories this table actually has, in the order the chips draw them. */
-  const types = useMemo(() => [...new Set(items.map((i) => i.type))].sort(), [items]);
+  const types = useMemo(() => {
+    const own = [...new Set(items.map((i) => i.type))].sort();
+    /*
+     * Life Souls are typed `equip` in the item table, like everything worn, so
+     * no type chip finds them on their own — the original wiki gave them a
+     * filter entry of their own for that reason. A chip like the others, keyed
+     * on the slot kind the pipeline already computes.
+     */
+    return items.some(isSoul) ? [...own, SOUL_TYPE] : own;
+  }, [items]);
 
   const shown = useMemo(() => matching(items, deferred, filters), [items, deferred, filters]);
   const narrowed = deferred.trim() !== '' || isItemFiltered(filters);
@@ -122,11 +132,18 @@ function matching(items: ItemSummary[], query: string, filters: ItemFilterState)
   if (words.length === 0 && !isItemFiltered(filters)) return items;
 
   return items.filter((item) => {
-    if (types.length > 0 && !types.includes(item.type)) return false;
+    if (types.length > 0 && !types.includes(item.type) && !(types.includes(SOUL_TYPE) && isSoul(item))) return false;
     if (tiers.length > 0 && !tiers.includes(item.level)) return false;
     if (qualities.length > 0 && !qualities.includes(item.quality)) return false;
     return words.every((word) => item.search.includes(word));
   });
+}
+
+/** The type chip for Life Souls: `strings.itemTypes.soul` is the game's own name for them. */
+const SOUL_TYPE = 'soul';
+
+function isSoul(item: ItemSummary): boolean {
+  return (item.kinds & SLOT_KIND.SOUL) !== 0;
 }
 
 /**

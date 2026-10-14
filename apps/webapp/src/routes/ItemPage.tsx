@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState, type ComponentType } from 'react';
 import {
   goldIconUrl,
   iconUrl,
@@ -9,6 +9,10 @@ import {
   type ReforgeCostRow,
 } from 'aow5-shared/data';
 import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
+// The two modules this page needs up front, by path rather than through the
+// wiki's barrel, which would pull every section's helpers into the main chunk.
+import { applySeasonalPatch, seasonalPatch, type ItemsExtraFile } from 'aow5-shared/wiki/items-extra.ts';
+import { newRollState, type RollState } from 'aow5-shared/wiki/itemroll.ts';
 import { Badge, Button, Icon, Panel, cx } from '@/ui';
 import { withLang } from '@/router';
 import { useApp } from '@/data/AppData';
@@ -20,6 +24,9 @@ import { splitDescription, type DescSection } from '@/lib/richDesc';
 import { rarityLabel } from '@/i18n/strings';
 import { itemPath, navigate, Link } from '@/router';
 import { dataVersion, factsOfItem, useDocumentMeta } from '@/lib/meta';
+import { useWikiData } from '@/wiki/kit/useWikiData';
+import { AuctionField } from '@/wiki/kit/Refs';
+import type { WikiPanelProps } from '@/wiki/sections/items/ItemWikiPanels';
 import styles from './ItemPage.module.css';
 
 /**
@@ -39,6 +46,30 @@ import styles from './ItemPage.module.css';
  * for all of it would be mostly empty on most items, so `sectionsFor` decides
  * what an item's *type* is about and the page draws that — see the note there.
  */
+/*
+ * The wiki's panels — drops, vendors, unlocks, fate stone, Life Soul — and the
+ * roll calculator, each its own lazy component over one shared chunk.
+ *
+ * The page is in the builder's main bundle; these bring the wiki's data files
+ * and three languages of explanation with them, so a reader who only ever
+ * hovers items in a build never downloads them. Each draws `null` until its
+ * data is in and when it has nothing to say, so the page around them is laid
+ * out exactly as it was before they existed.
+ */
+const panels = () => import('@/wiki/sections/items/ItemWikiPanels');
+function panel(name: 'SoulPanel' | 'UnlockPanel' | 'DropsPanel' | 'SourcesPanel' | 'FacetPanel' | 'CodeNote') {
+  return lazy(() => panels().then((m) => ({ default: m[name] as ComponentType<WikiPanelProps> })));
+}
+const SoulPanel = panel('SoulPanel');
+const UnlockPanel = panel('UnlockPanel');
+const DropsPanel = panel('DropsPanel');
+const SourcesPanel = panel('SourcesPanel');
+const FacetPanel = panel('FacetPanel');
+const CodeNote = panel('CodeNote');
+const ItemStatsEditor = lazy(() =>
+  import('@/wiki/sections/calc/ItemStatsEditor').then((m) => ({ default: m.ItemStatsEditor })),
+);
+
 export function ItemPage({ itemId }: { itemId: string }) {
   const { core, strings } = useApp();
   const store = useItemDetailsStore();
@@ -69,7 +100,8 @@ export function ItemPage({ itemId }: { itemId: string }) {
     );
   }
 
-  return <ItemBody item={item} />;
+  // Keyed, so the season picked and a copy dialled into the calculator belong to one item.
+  return <ItemBody key={item.id} item={item} />;
 }
 
 function ItemBody({ item }: { item: ItemSummary }) {
@@ -78,8 +110,31 @@ function ItemBody({ item }: { item: ItemSummary }) {
   const t = strings.itemPage;
   const ti = strings.item;
 
-  const full: ItemFull | undefined = store?.full?.[item.id];
+  const baseFull: ItemFull | undefined = store?.full?.[item.id];
   const text: LocaleDetail | undefined = store?.detail?.[item.id];
+
+  /*
+   * Which season's numbers the page shows.
+   *
+   * `items.full.json` is built from the base tables, which are the first
+   * season's; a season's own copy of the table changes a few dozen items —
+   * stats, a recipe, a soul's cooldown, a glyph's grade. The wiki describes the
+   * current season, so the page opens on it and offers the base table beside
+   * it, only for the items where the two actually differ.
+   */
+  const extra = useWikiData<[ItemsExtraFile]>(['items-extra.json']).data?.[0] ?? null;
+  const patch = extra !== null ? seasonalPatch(extra, item.id, 's2') : undefined;
+  const [season, setSeason] = useState<1 | 2>(2);
+  const shownSeason: 1 | 2 = patch === undefined ? 2 : season;
+  const full: ItemFull | undefined =
+    baseFull !== undefined && shownSeason === 2 ? applySeasonalPatch(baseFull, patch) : baseFull;
+  const quality = full?.quality ?? item.quality;
+  const level = full?.level ?? item.level;
+  const cost = full?.cost ?? item.cost;
+
+  /* The stat panel's view: the item's own numbers, or one copy dialled in. */
+  const [calc, setCalc] = useState(false);
+  const [roll, setRoll] = useState<RollState>(newRollState);
 
   /*
    * This page's own head, because the shell cannot write it: the title is the
@@ -90,7 +145,7 @@ function ItemBody({ item }: { item: ItemSummary }) {
   useDocumentMeta(
     {
       kind: 'item',
-      item: factsOfItem(item, text, full?.seasons),
+      item: factsOfItem(item, text, baseFull?.seasons),
       ...(core !== null ? { version: dataVersion(core.meta) } : {}),
     },
     lang,
@@ -102,7 +157,7 @@ function ItemBody({ item }: { item: ItemSummary }) {
   const behavior = named ? behaviorOf(full) : null;
   const affects = named ? affectsOf(full) : null;
   const sections = splitDescription(text?.desc);
-  const rarity = qualityVar(item.quality);
+  const rarity = qualityVar(quality);
   const layout = sectionsFor(item.type);
 
   /* Facts about using the thing rather than bonuses it grants. */
@@ -146,13 +201,19 @@ function ItemBody({ item }: { item: ItemSummary }) {
   const REFORGE_MIN_QUALITY = 5;
   const reforgeable =
     (item.type === 'equip' || item.type === 'stone' || full?.isSoul === true) &&
-    item.level >= REFORGE_MIN_TIER &&
-    item.quality >= REFORGE_MIN_QUALITY;
-  const reforgeRows = reforgeable ? reforgeCost(store?.rolls, item) : [];
+    level >= REFORGE_MIN_TIER &&
+    quality >= REFORGE_MIN_QUALITY;
+  const reforgeRows = reforgeable ? reforgeCost(store?.rolls, { ...item, level, quality }) : [];
   const hasAbout = sections.length > 0 || meta.length > 0 || behavior !== null || affects !== null;
   // What making it costs in time, drawn with the recipe rather than the skill.
   const craftTime = full?.timeCost !== undefined && full.timeCost > 0 ? full.timeCost : null;
   const hasStats = stats.length > 0 || gems.length > 0;
+  /*
+   * The calculator is for things that roll: worn equipment, fate stones,
+   * souls. A glyph's numbers are fixed and a material has none.
+   */
+  const rollable = stats.length > 0 && (item.type === 'equip' || item.type === 'stone' || full?.isSoul === true);
+  const wiki: WikiPanelProps = { item, full, season: shownSeason };
   const hasObtain =
     full !== undefined &&
     (full.needs.length > 0 || full.usedBy.length > 0 || full.produces !== undefined || full.upgradesFrom !== undefined);
@@ -171,10 +232,15 @@ function ItemBody({ item }: { item: ItemSummary }) {
 
           <div className={styles.badges}>
             <span className={styles.rarity} style={{ backgroundColor: rarity }}>
-              {rarityLabel(strings, item.quality)}
+              {rarityLabel(strings, quality)}
             </span>
-            {item.level > 0 && <Badge tone="tier">T{item.level}</Badge>}
-            <span className={styles.type}>{strings.itemTypes[item.type] ?? item.type}</span>
+            {level > 0 && <Badge tone="tier">T{level}</Badge>}
+            {/* A soul is typed `equip` in the table; the game calls it a soul. */}
+            <span className={styles.type}>
+              {full?.isSoul === true ? strings.itemTypes.soul : (strings.itemTypes[item.type] ?? item.type)}
+            </span>
+            {/* A recipe leaves every drop pool once it has dropped. */}
+            {full?.isRecipe === true && <span className={styles.season}>{t.dropsOnce}</span>}
             {/* Only when the pak actually restricts it — most items have no
                 season and saying "every season" on all of them is noise. */}
             {full?.seasons !== undefined && full.seasons.length > 0 && (
@@ -182,15 +248,34 @@ function ItemBody({ item }: { item: ItemSummary }) {
                 {t.seasonOnly(full.seasons.map((s) => seasonLabel(s as 1 | 2)).join(', '))}
               </span>
             )}
+            {patch !== undefined && (
+              <span className={styles.seasonSwitch} role="group" aria-label={t.seasonValues} title={t.seasonValuesHint}>
+                <span className={styles.seasonLabel}>{t.seasonValues}</span>
+                {([1, 2] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={cx(styles.seasonChip, shownSeason === s && styles.seasonChipOn)}
+                    aria-pressed={shownSeason === s}
+                    onClick={() => setSeason(s)}
+                  >
+                    {seasonLabel(s)}
+                  </button>
+                ))}
+              </span>
+            )}
           </div>
 
           <div className={styles.facts}>
-            {item.cost > 0 && (
+            {cost > 0 && (
               <span className={styles.cost}>
                 <img src={goldIconUrl()} alt="" />
-                {item.cost.toLocaleString()}
+                {cost.toLocaleString()}
               </span>
             )}
+            {/* What it sells for on the Exchange, the reader's own figure — the
+                wiki's crafting pages weigh buying against crafting with it. */}
+            <AuctionField id={item.id} />
             <code className={styles.id}>{item.id}</code>
             {/*
               The card this page would be shared as, in development only.
@@ -251,10 +336,47 @@ function ItemBody({ item }: { item: ItemSummary }) {
         )}
 
         {hasStats && (
-          <Panel title={<PanelTitle icon={<Icon.Crosshair size={15} />} text={t.stats} />}>
-            {gems.length > 0 && <StatList rows={gems} />}
-            {gems.length > 0 && stats.length > 0 && <hr className={styles.rule} />}
-            {stats.length > 0 && <StatList rows={stats} />}
+          <Panel
+            title={<PanelTitle icon={<Icon.Crosshair size={15} />} text={t.stats} />}
+            action={
+              rollable ? (
+                /*
+                  The item's own numbers stay the default: they are what the
+                  game's card says. The calculator is for a particular copy —
+                  the partner wiki's stat editor — and opens on request.
+                */
+                <span className={styles.viewSwitch} role="group" title={t.statsCalcHint}>
+                  <button
+                    type="button"
+                    className={cx(styles.seasonChip, !calc && styles.seasonChipOn)}
+                    aria-pressed={!calc}
+                    onClick={() => setCalc(false)}
+                  >
+                    {t.statsPlain}
+                  </button>
+                  <button
+                    type="button"
+                    className={cx(styles.seasonChip, calc && styles.seasonChipOn)}
+                    aria-pressed={calc}
+                    onClick={() => setCalc(true)}
+                  >
+                    {t.statsCalc}
+                  </button>
+                </span>
+              ) : undefined
+            }
+          >
+            {calc && rollable ? (
+              <Suspense fallback={<p className={styles.loading}>{ti.loadingDetails}</p>}>
+                <ItemStatsEditor itemId={item.id} state={roll} onChange={setRoll} />
+              </Suspense>
+            ) : (
+              <>
+                {gems.length > 0 && <StatList rows={gems} />}
+                {gems.length > 0 && stats.length > 0 && <hr className={styles.rule} />}
+                {stats.length > 0 && <StatList rows={stats} />}
+              </>
+            )}
           </Panel>
         )}
 
@@ -281,12 +403,33 @@ function ItemBody({ item }: { item: ItemSummary }) {
             {sections.length > 0 && <Description sections={sections} />}
             {meta.length > 0 && <p className={styles.meta}>{meta.join(' · ')}</p>}
             {text?.lore !== undefined && text.lore !== '' && <p className={styles.lore}>{text.lore}</p>}
+            <Suspense fallback={null}>
+              <CodeNote {...wiki} />
+            </Suspense>
           </Panel>
         )}
+
+        {/* Facts particular to this kind of item: a soul's transformation, an
+            Ancestral item's fate stone. After what it does, before where it comes from. */}
+        <Suspense fallback={null}>
+          <SoulPanel {...wiki} />
+          <FacetPanel {...wiki} />
+        </Suspense>
 
         {layout.lead !== 'obtain' && hasObtain && (
           <Obtain full={full} nameOf={nameOf} strings={strings} craftTime={craftTime} />
         )}
+
+        {/*
+          Where it comes from, after what it is for: what unlocks the craft,
+          then the drops, then everything else — vendors, the Sky, the paid
+          shops. The order the original wiki read in.
+        */}
+        <Suspense fallback={null}>
+          <UnlockPanel {...wiki} />
+          <DropsPanel {...wiki} />
+          <SourcesPanel {...wiki} />
+        </Suspense>
 
         {/*
           What a reforge costs, level by level.
@@ -450,7 +593,7 @@ function ItemLink({ id, name }: { id: string; name: string }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+export function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className={styles.section}>
       <h3 className={styles.sectionTitle}>{title}</h3>
@@ -565,7 +708,7 @@ function ReforgeTable({
  * cards, and nothing told them apart until you read them. A glyph is what the
  * eye lands on first.
  */
-function PanelTitle({ icon, text }: { icon: React.ReactNode; text: string }) {
+export function PanelTitle({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <span className={styles.panelTitle}>
       <span className={styles.panelIcon} aria-hidden>

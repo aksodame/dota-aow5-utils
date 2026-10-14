@@ -397,7 +397,9 @@ export class SeoService {
       ...icons.map((icon) => this.cards.icon(icon)),
     ]);
 
-    const facts = page === null ? own.description : [page.facts.facts, oneLine(page.facts.description)].filter(Boolean).join(' — ');
+    // The facts line alone when there is one: a page's prose usually opens by
+    // restating it, and the card has room for one line, not both.
+    const facts = page === null ? own.description : page.facts.facts !== '' ? page.facts.facts : oneLine(page.facts.description);
     return renderCard({
       lang,
       logo,

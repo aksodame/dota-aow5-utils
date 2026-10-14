@@ -1,0 +1,320 @@
+.emptyList {
+  padding: var(--space-4);
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/*
+ * The builder's portraits are 16:9 hero art, so the box is that shape and
+ * `cover` crops nothing; the list's row icon is the same art, smaller.
+ */
+.portrait {
+  display: block;
+  flex: none;
+  width: 128px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.portraitSmall {
+  width: 64px;
+}
+
+.portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portraitFallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.heroDesc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.abilities {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.ability {
+  min-width: 0;
+}
+
+.abilityTop {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.abilityIcon,
+.abilityIconFallback {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+.abilityIcon {
+  object-fit: cover;
+}
+
+.abilityIconFallback {
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.abilityHead {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.abilityName {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+/* A season-difference mark: a small outlined pill that is a link when it goes to the FAQ. */
+.differs {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--warn);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+a.differs:hover {
+  background: var(--panel-hover);
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: baseline;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+}
+
+.gameName {
+  font-style: italic;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.stat {
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.unlock {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.unlock:hover {
+  text-decoration: underline;
+}
+
+.abilityDesc {
+  margin: var(--space-3) 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.runes {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.runesTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.noRunes {
+  margin: var(--space-3) 0 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.rune {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  cursor: pointer;
+}
+
+.rune:hover {
+  background: var(--panel-hover);
+}
+
+.runeBody {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  flex: 1;
+}
+
+.runeHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.runeName {
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.runeName:hover {
+  color: var(--accent);
+}
+
+.tiers {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.tier {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  min-width: 28px;
+  justify-content: center;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.tier:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tierSeason {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.runeDesc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+/*
+ * The game's markup, as `RichText` draws it. Its heading (`h1`) is a lead-in
+ * line of its own; and the addon highlights terms in white, which is a colour
+ * for its dark tooltip, so here a highlight is the text colour, made bolder.
+ */
+.abilityDesc [data-rich='h1'],
+.runeDesc [data-rich='h1'] {
+  display: block;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.abilityDesc [style*='255, 255, 255'],
+.abilityDesc [style*='#ffffff'],
+.abilityDesc [style*='#FFFFFF'],
+.runeDesc [style*='255, 255, 255'],
+.runeDesc [style*='#ffffff'],
+.runeDesc [style*='#FFFFFF'] {
+  color: var(--text) !important;
+  font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  .portrait {
+    width: 96px;
+  }
+
+  .portraitSmall {
+    width: 56px;
+  }
+
+  .abilityIcon,
+  .abilityIconFallback {
+    width: 44px;
+    height: 44px;
+  }
+
+  .tiers {
+    margin-left: 0;
+  }
+}
