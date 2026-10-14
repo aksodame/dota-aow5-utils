@@ -38,6 +38,15 @@
 }
 
 /** A panel whose body is a grid of tiles, which supplies its own padding. */
+/*
+ * A panel with no header bar has nothing above its body to space it from the
+ * edge, so the body brings its own top padding — the same step the sides have.
+ * Without it the first line sat against the border.
+ */
+.headless > .body {
+  padding-top: var(--space-4);
+}
+
 .flush .body {
   padding: 0;
 }

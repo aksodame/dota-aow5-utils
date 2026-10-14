@@ -73,7 +73,16 @@ export function Panel({
   };
 
   return (
-    <section className={cx(styles.panel, flush && styles.flush, fill && styles.fill, className)} {...rest}>
+    <section
+      className={cx(
+        styles.panel,
+        flush && styles.flush,
+        fill && styles.fill,
+        title === undefined && action === undefined && styles.headless,
+        className,
+      )}
+      {...rest}
+    >
       {(title !== undefined || action !== undefined) && (
         <header className={styles.header}>
           {collapsible ? (
