@@ -86,6 +86,12 @@ publish:
   # the updater only ever looks at /releases/latest, and a release marked
   # "pre-release" on GitHub is invisible to both it and the site.
   releaseType: release
+  # The release goes on the tag that was pushed, `tracker-v0.3.0-beta`, rather
+  # than on a `v0.3.0-beta` electron-builder would otherwise create beside it —
+  # which is how every version used to carry two tags. The updater does not
+  # read the version from the tag (it reads latest.yml), so the prefix costs
+  # it nothing.
+  tagNamePrefix: tracker-v
 
 # What the release page says the build contains. `private/actualize.mjs` writes
 # this file on every data refresh — the newest changelog entry and only that,

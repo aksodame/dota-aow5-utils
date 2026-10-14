@@ -86,7 +86,10 @@ function pickAsset(assets: ApiAsset[]): ReleaseAsset | null {
 function parse(body: ApiRelease): Release | null {
   if (typeof body.tag_name !== 'string' || typeof body.html_url !== 'string') return null;
   return {
-    tag: body.tag_name,
+    // The tag is `tracker-v0.3.0-beta` — prefixed so the tracker's tags never
+    // collide with the site's `web-v*` — and the page shows the version, not
+    // the bookkeeping: `v0.3.0-beta`.
+    tag: body.tag_name.replace(/^tracker-/, ''),
     url: body.html_url,
     publishedAt: typeof body.published_at === 'string' ? body.published_at : null,
     asset: Array.isArray(body.assets) ? pickAsset(body.assets as ApiAsset[]) : null,
