@@ -240,9 +240,18 @@ aow5-helper.com, www.aow5-helper.com, aow5-helper.duckdns.org {
 		# not the app: answering an <img> or a fetch with index.html and a 200
 		# made a stale data file's renamed picture look like a redirect to the
 		# front page, and told every cache the HTML was the image.
-		@spa not path /assets/* /icons/* /data/*
-		try_files @spa {path} /index.html
-		file_server
+		#
+		# Two nested handles rather than a matcher on `try_files`, which takes
+		# none: written `try_files @spa …` it reads `@spa` as a file name,
+		# validates, and falls back exactly as before.
+		@static path /assets/* /icons/* /data/*
+		handle @static {
+			file_server
+		}
+		handle {
+			try_files {path} /index.html
+			file_server
+		}
 	}
 
 	header {
