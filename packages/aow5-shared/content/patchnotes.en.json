@@ -1,6 +1,21 @@
 {
  "notes": [
   {
+   "version": "v1.508",
+   "date": "15.10.2026",
+   "game": [
+    "The pak's open data did not change: items, monsters, talents, sigils and drops are the same as in v1.506–1.507.",
+    "Endless (the Sky): the build carries modules for item ownership after a run, settling and persisting that run's reward, and a leaderboard. Their rules live in encrypted code, so the wiki describes them by file name.",
+    "Paid treasure chests (the gacha): the internal logic was reworked — the one large change in this patch.",
+    "Smaller code changes: talent-tree availability, the rules for transferring paid items on the Exchange, and the save-data cache.",
+    "Battle pass screen: the animated hero gained a smoke layer, continuing v1.507's \"wind\" animation."
+   ],
+   "wiki": [
+    "No section changed: the game data is the same as in v1.506–1.507, so no numbers had to be rebuilt.",
+    "The pak is about 42 MB lighter: unused particles were pruned, and some service files come from the author's other working copy. Neither touches the wiki's data."
+   ]
+  },
+  {
    "version": "v1.507",
    "date": "13.10.2026",
    "game": [
