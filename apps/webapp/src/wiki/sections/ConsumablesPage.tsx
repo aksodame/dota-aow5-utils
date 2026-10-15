@@ -176,10 +176,14 @@ export default function ConsumablesPage({ path }: SectionProps) {
   };
 
   return (
-    <WikiShell columns="list">
+    /* The same shape the catalogue and the original wiki draw: filters, then
+       the search that narrows what they left, then the list — with the item's
+       card beside it at the width the card earns. */
+    <WikiShell columns="detail">
       <WikiSidebar
         title={t.title}
         search={{ value: q, onChange: setQ, placeholder: t.searchPlaceholder }}
+        searchAt="bottom"
         filters={
           <>
             <FilterGroup label={t.category}>

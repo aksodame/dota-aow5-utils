@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState, type ComponentType } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ComponentType } from 'react';
 import {
   goldIconUrl,
   iconUrl,
@@ -25,6 +25,7 @@ import { rarityLabel } from '@/i18n/strings';
 import { itemPath, navigate, Link } from '@/router';
 import { dataVersion, factsOfItem, useDocumentMeta } from '@/lib/meta';
 import { useWikiData } from '@/wiki/kit/useWikiData';
+import { useStatNamer } from '@/wiki/kit';
 import { AuctionField } from '@/wiki/kit/Refs';
 import type { WikiPanelProps } from '@/wiki/sections/items/ItemWikiPanels';
 import styles from './ItemPage.module.css';
@@ -66,11 +67,32 @@ const DropsPanel = panel('DropsPanel');
 const SourcesPanel = panel('SourcesPanel');
 const FacetPanel = panel('FacetPanel');
 const CodeNote = panel('CodeNote');
+/**
+ * The grade from which the game rolls an item's stats, and therefore the grade
+ * from which the card draws them as a calculator.
+ *
+ * The same floor the reforge table uses below — one statement of "this is
+ * where a copy starts to differ from the table's numbers", not two.
+ */
+const ROLL_MIN_QUALITY = 5;
+
 const ItemStatsEditor = lazy(() =>
   import('@/wiki/sections/calc/ItemStatsEditor').then((m) => ({ default: m.ItemStatsEditor })),
 );
 
-export function ItemPage({ itemId }: { itemId: string }) {
+export function ItemPage({
+  itemId,
+  /**
+   * Drawn inside the catalogue's detail column rather than as a page of its
+   * own: the column sets the width and the page already has its padding, so
+   * the card drops its own cap, centring and padding rather than nesting
+   * margins inside them.
+   */
+  embedded = false,
+}: {
+  itemId: string;
+  embedded?: boolean;
+}) {
   const { core, strings } = useApp();
   const store = useItemDetailsStore();
   const t = strings.itemPage;
@@ -101,10 +123,10 @@ export function ItemPage({ itemId }: { itemId: string }) {
   }
 
   // Keyed, so the season picked and a copy dialled into the calculator belong to one item.
-  return <ItemBody key={item.id} item={item} />;
+  return <ItemBody key={item.id} item={item} embedded={embedded} />;
 }
 
-function ItemBody({ item }: { item: ItemSummary }) {
+function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: boolean }) {
   const { core, strings, lang } = useApp();
   const store = useItemDetailsStore();
   const t = strings.itemPage;
@@ -132,8 +154,7 @@ function ItemBody({ item }: { item: ItemSummary }) {
   const level = full?.level ?? item.level;
   const cost = full?.cost ?? item.cost;
 
-  /* The stat panel's view: the item's own numbers, or one copy dialled in. */
-  const [calc, setCalc] = useState(false);
+  /* What the stat panel's calculator is dialled to. */
   const [roll, setRoll] = useState<RollState>(newRollState);
 
   /*
@@ -211,15 +232,36 @@ function ItemBody({ item }: { item: ItemSummary }) {
   /*
    * The calculator is for things that roll: worn equipment, fate stones,
    * souls. A glyph's numbers are fixed and a material has none.
+   *
+   * And only from `ROLL_MIN_QUALITY` up, which is where the game starts
+   * rolling: below it a stat is the number it says, so the block is a plain
+   * list and shows no span either — a range over a number that never moves
+   * invites a reader to look for a spread that is not there.
    */
-  const rollable = stats.length > 0 && (item.type === 'equip' || item.type === 'stone' || full?.isSoul === true);
+  const statName = useStatNamer();
+  const rolls = quality >= ROLL_MIN_QUALITY;
+  const rollable = rolls && stats.length > 0 && (item.type === 'equip' || item.type === 'stone' || full?.isSoul === true);
+  /**
+   * What the plain list draws: the namer's label for each stat, and no range
+   * when nothing rolls. The namer is the calculator's, so both views call a
+   * stat the same thing — the game's own label where it gives one, the wiki's
+   * table where it does not.
+   */
+  const plainStats = useMemo(
+    () =>
+      (rolls ? stats : stats.map(({ span, ...row }) => row)).map((row) => ({
+        ...row,
+        label: statName(row.key, item.id).text,
+      })),
+    [stats, rolls, statName, item.id],
+  );
   const wiki: WikiPanelProps = { item, full, season: shownSeason };
   const hasObtain =
     full !== undefined &&
     (full.needs.length > 0 || full.usedBy.length > 0 || full.produces !== undefined || full.upgradesFrom !== undefined);
 
   return (
-    <div className={styles.page}>
+    <div className={cx(styles.page, embedded && styles.pageEmbedded)}>
       <header className={styles.head}>
         {/* The same fixed square the card uses, twice the size: the frame stays
             square whatever the source ratio is. */}
@@ -336,46 +378,29 @@ function ItemBody({ item }: { item: ItemSummary }) {
         )}
 
         {hasStats && (
-          <Panel
-            title={<PanelTitle icon={<Icon.Crosshair size={15} />} text={t.stats} />}
-            action={
-              rollable ? (
-                /*
-                  The item's own numbers stay the default: they are what the
-                  game's card says. The calculator is for a particular copy —
-                  the partner wiki's stat editor — and opens on request.
-                */
-                <span className={styles.viewSwitch} role="group" title={t.statsCalcHint}>
-                  <button
-                    type="button"
-                    className={cx(styles.seasonChip, !calc && styles.seasonChipOn)}
-                    aria-pressed={!calc}
-                    onClick={() => setCalc(false)}
-                  >
-                    {t.statsPlain}
-                  </button>
-                  <button
-                    type="button"
-                    className={cx(styles.seasonChip, calc && styles.seasonChipOn)}
-                    aria-pressed={calc}
-                    onClick={() => setCalc(true)}
-                  >
-                    {t.statsCalc}
-                  </button>
-                </span>
-              ) : undefined
-            }
-          >
-            {calc && rollable ? (
+          <Panel title={<PanelTitle icon={<Icon.Crosshair size={15} />} text={t.stats} />}>
+            {/*
+              The numbers are drawn editable, as the wiki this replaces drew
+              them: the item's own values are the calculator's resting state,
+              and dialling a particular copy into them is what the block is for.
+              There is no read-only view beside it — a second list of the same
+              stats was one list too many.
+
+              A glyph's numbers are the exception: they do not roll, and the
+              editor has no column for them, so they are listed above it.
+            */}
+            {gems.length > 0 && (
+              <>
+                <StatList rows={gems} />
+                {rollable && <hr className={styles.rule} />}
+              </>
+            )}
+            {rollable ? (
               <Suspense fallback={<p className={styles.loading}>{ti.loadingDetails}</p>}>
-                <ItemStatsEditor itemId={item.id} state={roll} onChange={setRoll} />
+                <ItemStatsEditor itemId={item.id} state={roll} onChange={setRoll} heading={false} />
               </Suspense>
             ) : (
-              <>
-                {gems.length > 0 && <StatList rows={gems} />}
-                {gems.length > 0 && stats.length > 0 && <hr className={styles.rule} />}
-                {stats.length > 0 && <StatList rows={stats} />}
-              </>
+              plainStats.length > 0 && <StatList rows={plainStats} />
             )}
           </Panel>
         )}

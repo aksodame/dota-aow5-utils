@@ -1,10 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { ItemFull, LocaleDetail, RichNode } from 'aow5-shared/types';
-import { seasonalPatch, stoneLinks, type ItemsExtraFile, type ProgressionLocale } from 'aow5-shared/wiki';
-import { prettifyKey } from '@/lib/itemStats';
-import { useItemDetailsStore } from '@/data/ItemDetailsProvider';
-import { useWikiStrings } from '../../i18n';
-import { CALC } from '../../i18n/calc';
+import { useEffect, useState } from 'react';
+import type { ItemFull, RichNode } from 'aow5-shared/types';
+import { seasonalPatch, stoneLinks, type ItemsExtraFile } from 'aow5-shared/wiki';
 import { useWikiData } from '../../kit';
 
 /**
@@ -63,50 +59,6 @@ export function plainText(nodes: readonly RichNode[] | undefined): string {
   return out.replace(/\s+/g, ' ').trim();
 }
 
-export interface StatName {
-  text: string;
-  /** Printed with `%` after the number. */
-  percent: boolean;
-}
-
-const unionCache = new WeakMap<object, Map<string, string>>();
-
-/** Every label any item's locale gives a stat key — most items carry none of their own. */
-function labelUnion(detail: Record<string, LocaleDetail>): Map<string, string> {
-  let hit = unionCache.get(detail);
-  if (hit === undefined) {
-    hit = new Map();
-    for (const d of Object.values(detail)) for (const [k, v] of Object.entries(d.values ?? {})) if (!hit.has(k)) hit.set(k, v);
-    unionCache.set(detail, hit);
-  }
-  return hit;
-}
-
-/**
- * Names a stat: the item's own label, any item's label for the key, the
- * wiki's own table for the keys the game leaves unnamed, and the key made
- * readable as the last resort. The game marks a percentage by starting the
- * label with `%`; a key ending in `_pct` / `_percent` says the same.
- */
-export function useStatNamer(): (key: string, itemId?: string) => StatName {
-  const t = useWikiStrings(CALC);
-  const store = useItemDetailsStore();
-  const detail = store?.detail ?? null;
-  // The character panel's own labels (`AK_Attr_*`), for keys no item labels.
-  const { data } = useWikiData<[ProgressionLocale]>(['locale.{lang}.progression.json']);
-  const panel = data?.[0].panel ?? null;
-  return useMemo(() => {
-    const union = detail !== null ? labelUnion(detail) : null;
-    return (key: string, itemId?: string): StatName => {
-      const raw = (itemId !== undefined ? detail?.[itemId]?.values?.[key] : undefined) ?? union?.get(key) ?? panel?.[key] ?? t.statNames[key];
-      const percentKey = /_(pct|percent)(_\d+)?$/.test(key);
-      if (raw === undefined) return { text: prettifyKey(key), percent: percentKey };
-      const percent = raw.trim().startsWith('%') || percentKey;
-      return { text: raw.replace(/^[\s%+]+/, '').trim() || prettifyKey(key), percent };
-    };
-  }, [detail, panel, t]);
-}
-
 /**
  * Bags and backpacks, which the game marks by nothing but their name.
  *
@@ -150,3 +102,10 @@ export function useBagIds(): ReadonlySet<string> | null {
   }, []);
   return ids;
 }
+
+/*
+ * The namer itself lives in the kit: the card's plain stat list draws the same
+ * names, and must not pull this module's calculator strings in to do it.
+ */
+export { useStatNamer, type StatName } from '../../kit/statNames';
+

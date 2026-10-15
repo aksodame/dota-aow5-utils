@@ -11,7 +11,7 @@ import { BuildPage } from '@/routes/BuildPage';
 import { EditorPage } from '@/routes/EditorPage';
 import { MyCreationsPage } from '@/routes/MyCreationsPage';
 import { SettingsPage } from '@/routes/SettingsPage';
-import { ItemPage } from '@/routes/ItemPage';
+import { ItemsPage } from '@/routes/ItemsPage';
 import { ViewPage } from '@/routes/ViewPage';
 import { TrackerPage } from '@/routes/TrackerPage';
 import { legacyRedirect, navigateTo, pathOf, useMatch, useScrollReset, useSearch } from '@/router';
@@ -181,7 +181,10 @@ function Shell() {
         {match.id === 'wiki' && match.section !== undefined && (
           <WikiPage section={match.section} path={match.path ?? []} />
         )}
-        {match.id === 'item' && match.itemId !== undefined && <ItemPage itemId={match.itemId} />}
+        {/* An item's own address is the catalogue with that item open — the
+            same screen, one row picked, so the link names the item and lands
+            on it. */}
+        {match.id === 'item' && match.itemId !== undefined && <ItemsPage itemId={match.itemId} />}
       </main>
 
       <SiteFooter />
