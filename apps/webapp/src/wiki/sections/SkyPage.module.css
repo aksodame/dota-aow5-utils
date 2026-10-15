@@ -43,10 +43,26 @@
   min-width: 0;
 }
 
+/*
+ * The section's prose, in a page that is otherwise as wide as the window.
+ *
+ * A paragraph run to 2 500px is a paragraph nobody finishes: the eye loses the
+ * line on the way back. The same cap the catalogue's card reads at, so the
+ * sentences here break where the sentences there do — and only the prose takes
+ * it, so the drop tables and monster cards beside it keep the room.
+ */
+.prose {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  max-width: 92ch;
+}
+
 .text {
   margin: 0;
   font-size: 14px;
   line-height: 1.6;
+  max-width: 92ch;
 }
 
 .chips {
@@ -70,6 +86,7 @@
 
 .footnote {
   margin: 0;
+  max-width: 92ch;
   font-size: 12px;
   color: var(--text-dim);
 }

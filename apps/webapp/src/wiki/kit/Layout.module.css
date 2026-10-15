@@ -49,6 +49,18 @@
   max-width: none;
 }
 
+/*
+ * One column with the reading cap off, for a section that is grids of data
+ * rather than an article: the sky's panels are drop tables, spawn pools and
+ * monster cards, and the 1100px cap left three fifths of a 2560px screen
+ * empty. Prose inside those panels caps itself (`.prose`, `SkyPage.module.css`),
+ * so an uncapped column widens the grids without stretching the sentences.
+ */
+.colsWide {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: none;
+}
+
 @media (max-width: 1200px) {
   .colsThree {
     grid-template-columns: 280px minmax(0, 1fr);
