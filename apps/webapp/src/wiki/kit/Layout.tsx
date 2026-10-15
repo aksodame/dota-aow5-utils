@@ -38,8 +38,15 @@ const COLUMNS: Record<Columns, string | undefined> = {
 
 interface SidebarProps {
   title?: ReactNode;
-  /** The search box at the top of the panel. */
+  /** The search box of the panel — above the filters, or under them. */
   search?: { value: string; onChange: (value: string) => void; placeholder?: string; label?: string };
+  /**
+   * Where the search box sits. 'top' (the default) is the catalogue's order and
+   * what every other section keeps; the monsters section wants it last, right
+   * above the list it filters — there the search narrows what the filters left,
+   * rather than opening the panel.
+   */
+  searchAt?: 'top' | 'bottom';
   /** Filter groups, above the list. */
   filters?: ReactNode;
   /** The count line under the filters: `12 of 340`. */
@@ -55,26 +62,29 @@ interface SidebarProps {
  * The left-hand panel: search, filters, a count, and a list that scrolls on its
  * own so the filters never scroll away from the results they shape.
  */
-export function WikiSidebar({ title, search, filters, count, onReset, resetDisabled, children, className }: SidebarProps) {
+export function WikiSidebar({ title, search, searchAt = 'top', filters, count, onReset, resetDisabled, children, className }: SidebarProps) {
   const t = useWikiStrings(COMMON);
+  const searchBox =
+    search === undefined ? null : (
+      <form className={styles.search} role="search" onSubmit={(event) => event.preventDefault()}>
+        <Icon.Search size={16} className={styles.searchIcon} />
+        <Input
+          className={styles.searchInput}
+          type="search"
+          value={search.value}
+          placeholder={search.placeholder ?? t.search}
+          aria-label={search.label ?? search.placeholder ?? t.search}
+          autoComplete="off"
+          spellCheck={false}
+          onChange={(event) => search.onChange(event.target.value)}
+        />
+      </form>
+    );
   return (
     <Panel fill title={title} className={cx(styles.sidebar, className)}>
-      {search !== undefined && (
-        <form className={styles.search} role="search" onSubmit={(event) => event.preventDefault()}>
-          <Icon.Search size={16} className={styles.searchIcon} />
-          <Input
-            className={styles.searchInput}
-            type="search"
-            value={search.value}
-            placeholder={search.placeholder ?? t.search}
-            aria-label={search.label ?? search.placeholder ?? t.search}
-            autoComplete="off"
-            spellCheck={false}
-            onChange={(event) => search.onChange(event.target.value)}
-          />
-        </form>
-      )}
+      {searchAt === 'top' && searchBox}
       {filters !== undefined && <div className={styles.filters}>{filters}</div>}
+      {searchAt === 'bottom' && searchBox}
       {count !== undefined && <p className={styles.count}>{count}</p>}
       <div className={styles.scroll}>{children}</div>
       {onReset !== undefined && (

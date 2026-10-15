@@ -20,8 +20,17 @@
   grid-template-columns: 300px minmax(0, 1fr);
 }
 
+/*
+ * The three-column sections take the whole window: with the catalogue's 1440px
+ * cap a 2560px screen left ~380px of nothing on each side of the drop tables,
+ * and this section is a working tool rather than an article. The two lists
+ * keep the catalogue's 300px rhythm; the middle one is wider because it is the
+ * one that draws item names, and the detail — tables, grids, the map — takes
+ * whatever is left.
+ */
 .colsThree {
-  grid-template-columns: 300px 300px minmax(0, 1fr);
+  grid-template-columns: 300px 340px minmax(0, 1fr);
+  max-width: none;
 }
 
 .colsSingle {

@@ -212,6 +212,7 @@ export default function MonstersPage({ path }: SectionProps) {
         className={styles.sidebar}
         title={t.title}
         search={{ value: q, onChange: setQ, placeholder: t.searchMonster }}
+        searchAt="bottom"
         filters={
           <>
             <FilterGroup label={t.difficulty}>
