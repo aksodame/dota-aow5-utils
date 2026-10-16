@@ -171,6 +171,16 @@
   margin-bottom: var(--space-4);
 }
 
+/*
+ * The blocks the page is opened for — the numbers and what the item does —
+ * run the whole width of a card that is otherwise two columns: half a screen
+ * of stats beside half a screen of nothing is what the wiki's author asked to
+ * change on 16.10.2026. Everything below them still reads down two columns.
+ */
+.spanAll {
+  column-span: all;
+}
+
 /* One column once there is no room for two — a panel below ~19rem is unreadable. */
 @media (max-width: 44rem) {
   .grid {
@@ -515,6 +525,11 @@
 .level {
   color: var(--accent);
   font-variant-numeric: tabular-nums;
+}
+
+/** "Free" in the stone's column of the reforge table, and the dash in its total row. */
+.dim {
+  color: var(--text-dim);
 }
 
 /* --- the header's links ------------------------------------------------ */

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ComponentType } from 'react';
 import {
+  ascensionCost,
   goldIconUrl,
   iconUrl,
   reforgeCost,
@@ -225,6 +226,8 @@ function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: bo
     level >= REFORGE_MIN_TIER &&
     quality >= REFORGE_MIN_QUALITY;
   const reforgeRows = reforgeable ? reforgeCost(store?.rolls, { ...item, level, quality }) : [];
+  // What a fate stone would add on top at each of those levels, the same table.
+  const ascensionRows = reforgeable ? ascensionCost(store?.rolls, { ...item, level, quality }) : [];
   const hasAbout = sections.length > 0 || meta.length > 0 || behavior !== null || affects !== null;
   // What making it costs in time, drawn with the recipe rather than the skill.
   const craftTime = full?.timeCost !== undefined && full.timeCost > 0 ? full.timeCost : null;
@@ -374,10 +377,13 @@ function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: bo
           makes, because that is the only question anybody opens one to ask.
         */}
         {layout.lead === 'obtain' && hasObtain && (
-          <Obtain full={full} nameOf={nameOf} strings={strings} craftTime={craftTime} />
+          <div className={styles.spanAll}>
+            <Obtain full={full} nameOf={nameOf} strings={strings} craftTime={craftTime} />
+          </div>
         )}
 
         {hasStats && (
+          <div className={styles.spanAll}>
           <Panel title={<PanelTitle icon={<Icon.Crosshair size={15} />} text={t.stats} />}>
             {/*
               The numbers are drawn editable, as the wiki this replaces drew
@@ -403,9 +409,11 @@ function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: bo
               plainStats.length > 0 && <StatList rows={plainStats} />
             )}
           </Panel>
+          </div>
         )}
 
         {hasAbout && (
+          <div className={styles.spanAll}>
           <Panel title={<PanelTitle icon={<Icon.Play size={15} />} text={t.about} />}>
             {(behavior !== null || affects !== null) && (
               <div className={styles.factLines}>
@@ -432,6 +440,7 @@ function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: bo
               <CodeNote {...wiki} />
             </Suspense>
           </Panel>
+          </div>
         )}
 
         {/* Facts particular to this kind of item: a soul's transformation, an
@@ -465,7 +474,7 @@ function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: bo
         */}
         {full !== undefined && reforgeRows.length > 0 && (
           <Panel title={<PanelTitle icon={<Icon.Hourglass size={15} />} text={t.reforge} />}>
-            <ReforgeTable rows={reforgeRows} nameOf={nameOf} strings={strings} />
+            <ReforgeTable rows={reforgeRows} ascension={ascensionRows} nameOf={nameOf} strings={strings} />
           </Panel>
         )}
 
@@ -669,23 +678,29 @@ function Description({ sections }: { sections: DescSection[] }) {
 
 
 /**
- * What every reforge level costs, and the nine of them added up.
+ * What every reforge level costs, the nine of them added up, and what a fate
+ * stone would add on top at each level.
  *
  * A table rather than a list: the interesting reading is down a column — how
- * fast the gold climbs, when the second essence appears — and that is what a
- * table is for.
+ * fast the gold climbs, when the second essence appears, how the stone's
+ * surcharge falls away as the item is reforged — and that is what a table is
+ * for. The stone's column is a reading at each level, not a step, so the total
+ * row has nothing to add up there.
  */
 function ReforgeTable({
   rows,
+  ascension,
   nameOf,
   strings,
 }: {
   rows: readonly ReforgeCostRow[];
+  ascension: readonly { level: number; materials: Record<string, number> }[];
   nameOf: (id: string) => string;
   strings: ReturnType<typeof useApp>['strings'];
 }) {
   const t = strings.itemPage;
   const total = reforgeCostTotal(rows);
+  const stones = new Map(ascension.map((row) => [row.level, row.materials]));
 
   return (
     <>
@@ -695,20 +710,31 @@ function ReforgeTable({
             <th scope="col">{t.reforgeLevel}</th>
             <th scope="col">{t.reforgeGold}</th>
             <th scope="col">{t.reforgeMaterials}</th>
+            <th scope="col">{t.reforgeStone}</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={row.level}>
-              <th scope="row" className={styles.level}>
-                +{row.level}
-              </th>
-              <td className={styles.gold}>{row.gold.toLocaleString()}</td>
-              <td>
-                <Materials row={row} nameOf={nameOf} />
-              </td>
-            </tr>
-          ))}
+          {rows.map((row) => {
+            const stone = stones.get(row.level) ?? {};
+            return (
+              <tr key={row.level}>
+                <th scope="row" className={styles.level}>
+                  +{row.level}
+                </th>
+                <td className={styles.gold}>{row.gold.toLocaleString()}</td>
+                <td>
+                  <Materials row={row} nameOf={nameOf} />
+                </td>
+                <td>
+                  {Object.keys(stone).length > 0 ? (
+                    <Materials row={{ level: row.level, gold: 0, materials: stone }} nameOf={nameOf} />
+                  ) : (
+                    <span className={styles.dim}>{t.reforgeFree}</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
         <tfoot>
           <tr>
@@ -717,10 +743,14 @@ function ReforgeTable({
             <td>
               <Materials row={total} nameOf={nameOf} />
             </td>
+            <td>
+              <span className={styles.dim}>{t.reforgeDash}</span>
+            </td>
           </tr>
         </tfoot>
       </table>
       <p className={styles.note}>{t.reforgeNote}</p>
+      <p className={styles.note}>{t.reforgeStoneNote}</p>
     </>
   );
 }

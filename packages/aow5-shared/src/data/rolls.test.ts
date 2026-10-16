@@ -7,6 +7,7 @@ import type { RollTables } from '../types/rolls.ts';
 import { ESSENCE_IDS } from '../types/items.ts';
 import {
   affixPool,
+  ascensionCost,
   canBeAffix,
   canBeDivine,
   clampReforge,
@@ -258,6 +259,49 @@ test('a higher-level item costs more to reforge than a lower one', () => {
   const low = reforgeCost(tables, { level: 2, quality: 5 })[0]!;
   const high = reforgeCost(tables, { level: 9, quality: 5 })[0]!;
   assert.ok(high.gold > low.gold);
+});
+
+// The ladder, against the numbers the addon's own tables give: a level-10 item
+// burns 30, 34, 39, 45, 52, 60, 74, 84 and 96 legendary essence on its nine
+// steps — 514 in all. The steps scale by the level the item is *already* at
+// (`getReforgeLevelFromSeed`), so the first step is the base, not 15% above it.
+test('the reforge ladder steps from the item’s own level', () => {
+  const rows = reforgeCost(tables, { level: 10, quality: 5 });
+  assert.deepEqual(
+    rows.map((r) => r.materials[ESSENCE_IDS.LEGENDARY]),
+    [30, 34, 39, 45, 52, 60, 74, 84, 96],
+  );
+  assert.equal(reforgeCostTotal(rows).materials[ESSENCE_IDS.LEGENDARY], 514);
+  // 13 224, not 13 225: the addon's own arithmetic is `floor(base × 1.15^n)` on
+  // doubles, and 1.15² is 1.3224999999999998 there as it is here.
+  assert.deepEqual(
+    rows.map((r) => r.gold),
+    [10000, 11500, 13224, 15208, 17490, 20113, 23130, 26600, 30590],
+  );
+  // A level-1 item's mythic base is below one, so no mythic group exists for it
+  // and the surcharge never lands on one.
+  assert.ok(reforgeCost(tables, { level: 1, quality: 6 }).every((r) => !(ESSENCE_IDS.MYTHIC in r.materials)));
+});
+
+// Ascension — adding a fate stone — bills the difference between this item's
+// ladder and a level-8 item's, and only in the two main essences. The addon's
+// tables for a level-1 item read 21, 45, 73, 105, 141, 183, 232, 288 and 352
+// legendary essence, and a level-8 item pays nothing at any level.
+test('a fate stone bills the difference to a level-8 ladder', () => {
+  const rows = ascensionCost(tables, { level: 1, quality: 5 });
+  assert.deepEqual(
+    rows.map((r) => r.materials[ESSENCE_IDS.LEGENDARY]),
+    [21, 45, 73, 105, 141, 183, 232, 288, 352],
+  );
+  assert.ok(rows.every((r) => !(ESSENCE_IDS.EQUIPMENT in r.materials)));
+
+  const eighth = ascensionCost(tables, { level: 8, quality: 5 });
+  assert.ok(eighth.every((r) => Object.keys(r.materials).length === 0), JSON.stringify(eighth));
+
+  // A mythic item's surcharge is in the mythic essence too, and a level 1–3 one
+  // pays the same 95 at +9 — its own ladder has no mythic essence in it at all.
+  const mythic = ascensionCost(tables, { level: 1, quality: 6 });
+  assert.equal(mythic.at(-1)?.materials[ESSENCE_IDS.MYTHIC], 95);
 });
 
 test('the total is the nine levels added up', () => {

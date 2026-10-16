@@ -3,6 +3,7 @@ import { heroIconUrl } from 'aow5-shared/data';
 import {
   PROGRESSION_HERO_TAB,
   inSeason,
+  isShownRoom,
   locFarm,
   professionName,
   progressionPageFacts,
@@ -88,13 +89,15 @@ export default function ProgressionPage({ path }: SectionProps) {
   const farmParam = new URLSearchParams(search).get('farm') ?? '';
 
   // Rooms a monster lives in, by displayed level and then name: the only
-  // rooms a clear count means anything for.
+  // rooms a clear count means anything for. Hidden rooms (`HIDDEN_ROOMS` in
+  // the shared monsters module) are not offered — a farm count there is not a
+  // thing a reader can act on.
   const rooms = useMemo(() => {
     if (monsters === null || core === null) return [];
     const inhabited = new Set(monsters.monsters.flatMap((m) => m.locations));
     const byName = collate(lang);
     return core.maps.maps
-      .filter((room) => inhabited.has(room.id))
+      .filter((room) => inhabited.has(room.id) && isShownRoom(room.id))
       .sort((a, b) => a.tier - b.tier || byName(a.name, b.name));
   }, [monsters, core, lang]);
   // Trusted before the monsters arrive when the builder knows the room, so the

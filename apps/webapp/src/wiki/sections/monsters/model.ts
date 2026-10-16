@@ -1,6 +1,7 @@
 import type { CoreData } from 'aow5-shared/data';
 import {
   dropChance,
+  isShownRoom,
   monsterInSeason,
   monsterTypeGroup,
   monsterTypeRank,
@@ -63,6 +64,9 @@ export interface Model {
 export function buildModel(file: MonstersFile, locale: MonstersLocale, locations: LocationsFile, core: CoreData, lang: string): Model {
   const rooms = new Map<string, Room>();
   for (const map of core.maps.maps) {
+    // A hidden room is not the section's to show: no option, no location page,
+    // no room on a unit (`HIDDEN_ROOMS` in the shared monsters module).
+    if (!isShownRoom(map.id)) continue;
     rooms.set(map.id, { code: map.id, name: map.name, level: map.tier, dlc: map.isDlc, gold: map.gold, bosses: map.bosses });
   }
   const levelOf = (code: string) => rooms.get(code)?.level ?? 99;
@@ -72,7 +76,12 @@ export function buildModel(file: MonstersFile, locale: MonstersLocale, locations
   const monsters = file.monsters
     .map((m) => monsterInSeason(m))
     .filter((m) => monsterTypeGroup(m.type) !== undefined)
-    .map((m) => ({ ...m, locations: [...m.locations].sort((a, b) => levelOf(a) - levelOf(b) || (a < b ? -1 : 1)) }));
+    .map((m) => ({
+      ...m,
+      locations: [...m.locations]
+        .filter(isShownRoom)
+        .sort((a, b) => levelOf(a) - levelOf(b) || (a < b ? -1 : 1)),
+    }));
 
   const names = locale.names;
   const collator = new Intl.Collator(lang);
@@ -82,6 +91,7 @@ export function buildModel(file: MonstersFile, locale: MonstersLocale, locations
 
   const hunters = new Map<string, HunterAt[]>();
   for (const [code, loc] of Object.entries(locations.locations)) {
+    if (!isShownRoom(code)) continue;
     for (const hunter of loc.hunters) {
       const list = hunters.get(hunter.id) ?? [];
       list.push({ code, hunter });
@@ -90,7 +100,7 @@ export function buildModel(file: MonstersFile, locale: MonstersLocale, locations
   }
 
   const mapped = Object.values(locations.locations)
-    .filter((loc) => loc.overview !== undefined && loc.bounds !== null)
+    .filter((loc) => isShownRoom(loc.id) && loc.overview !== undefined && loc.bounds !== null)
     .map((loc) => loc.id)
     .sort();
 

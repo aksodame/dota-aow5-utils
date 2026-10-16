@@ -460,10 +460,8 @@ export const CALC: Localised<CalcStrings> = {
       stoneNote: (fixed) =>
         `Грань не куют: надбавок «улучшено», божественной ковки и перековки у неё нет — можно только отметить стат зафиксированным (+${fixed}% к прокрученному значению). Разброс — прокрутка −½…+½ от процента из игры, цвет — как в игре.`,
       note: ({ fixed, divine, ability, stone }) =>
-        `Диапазон — разброс при получении предмета (прокрутка −½…+½ от процента разброса из игры), цвет — как в игре: серый → белый → зелёный → фиолетовый → золотой → красный. «фикс» — зафиксированный стат даёт +${fixed}%, «усил» — «улучшено» даёт 20–38 % одному стату, «Божественная ковка» — +${divine}% ко всем свойствам и +${ability}% к свойствам эффекта (ability_value_*), причём у обратных свойств (перезарядка, пороги и т. п.) надбавка идёт в минус — это улучшение. Свойства эффекта предмета стоят отдельной группой внизу: их прокрутка квантована и даёт всего несколько значений (шаг 1/5), поэтому вместо ползунка у них кнопки-положения. Фиксировать и усиливать свойства эффекта нельзя: у них прокрутка идёт от начального сида. В игре надбавки открываются на уровне перековки 4–9 и только у предметов качества 5 и выше, а каждая перековка поднимает нижний край прокрутки на 3 % (до 27 %) — здесь показан свежий предмет.${
-          stone
-            ? ` Свойства грани — группой «Свойства грани (прибавляются)»: в колонке «Грань» — её вклад, в «Итоге» — сумма со свойством предмета (как в игре); у свойств, которых у предмета нет (например «% общего крита»), в «Предмете» прочерк. Ползунки и «фикс» грани (+${fixed}%) — в этой же группе. Перековка и «усил» предмета на грань не действуют: она ролится своим сидом.`
-            : ''
+        `Диапазон — разброс при получении предмета (прокрутка −½…+½ от процента из игры), цвет — как в игре. «фикс» даёт стату +${fixed}%, «усил» («улучшено») — +20–38 % одному стату, «Божественная ковка» — +${divine}% всем свойствам и +${ability}% свойствам эффекта (у обратных — в минус, это улучшение). Надбавки открываются на перековке 4–9 и только у качества 5 и выше. Свойства эффекта стоят отдельной группой внизу: прокрутка у них ступенями (шаг 1/5), «фикс» и «усил» к ним не применяются.${
+          stone ? ' Свойства грани — своей группой: «Грань» — её вклад, «Итог» — сумма со свойством предмета; перековка и «усил» на грань не действуют.' : ''
         }`,
     },
   },
@@ -647,10 +645,8 @@ export const CALC: Localised<CalcStrings> = {
       stoneNote: (fixed) =>
         `Fate stones are not forged: no "Enhanced", Divine Forged or reforge — you can only mark a stat as fixed (+${fixed}% to the rolled value). The range is a roll of −½…+½ of the game's percentage; colours are the game's.`,
       note: ({ fixed, divine, ability, stone }) =>
-        `The range is the spread when the item drops (a roll of −½…+½ of the game's spread percentage); colours are the game's: grey → white → green → purple → gold → red. "fixed" — the fixed stat gets +${fixed}%; "enh." — "Enhanced" gives one stat 20–38%; "Divine Forged" — +${divine}% to every stat and +${ability}% to effect values (ability_value_*), and on reverse stats (cooldowns, thresholds and the like) the bonus goes down — which is an improvement. Effect values are a group of their own at the bottom: their roll is quantised and gives only a few values (in fifths), hence step buttons instead of a slider. Effect values cannot be fixed or enhanced: they roll from the initial seed. In the game the bonuses unlock at reforge 4–9 and only on quality 5+ items, and every reforge lifts the bottom of the roll by 3% (up to 27%) — a fresh item is shown here.${
-          stone
-            ? ` Fate stone stats are the "Fate stone stats (added)" group: the "Stone" column is its share and "Total" the sum with the item's stat (as in the game); where the item lacks a stat (e.g. "% omni crit") its "Item" cell is a dash. The stone's sliders and "fixed" (+${fixed}%) are in the same group. The item's reforge and "enh." do not apply to the stone: it rolls from its own seed.`
-            : ''
+        `The range is the spread when the item drops (a roll of −½…+½ of the game's percentage); colours are the game's. "fixed" gives a stat +${fixed}%, "enh." ("Enhanced") one stat 20–38%, "Divine Forged" +${divine}% to every stat and +${ability}% to effect values (on reverse stats it goes down — which is the improvement). The bonuses unlock at reforge 4–9 and only on quality 5+ items. Effect values are a group of their own at the bottom: their roll is quantised (in fifths), and neither "fixed" nor "enh." applies to them.${
+          stone ? ' Fate stone stats are their own group: "Stone" is its share, "Total" the sum with the item\'s stat; the item\'s reforge and "enh." do not apply to the stone.' : ''
         }`,
     },
   },
@@ -823,10 +819,8 @@ export const CALC: Localised<CalcStrings> = {
       totalOwn: '合计等于物品自身属性：命石不增加此项',
       stoneNote: (fixed) => `命石不能锻造：没有「强化」、神铸与重铸——只能标记固定属性（随机值 +${fixed}%）。范围为游戏百分比的 −½…+½，颜色与游戏一致。`,
       note: ({ fixed, divine, ability, stone }) =>
-        `范围为获得物品时的随机范围（游戏随机百分比的 −½…+½），颜色与游戏一致：灰 → 白 → 绿 → 紫 → 金 → 红。「固定」——固定属性 +${fixed}%，「强化」——「强化」为一条属性提供 20–38%，「神铸」——所有属性 +${divine}%、效果数值（ability_value_*）+${ability}%，反向属性（冷却、阈值等）的加成为减少——即提升。物品效果数值单独列在下方：其随机值经过量化，只有几个取值（步长 1/5），因此用档位按钮代替滑块。效果数值不能固定或强化：它们由初始种子随机。游戏中这些加成在重铸 4–9 级、且仅在品质 5 及以上的物品上解锁，每次重铸将随机下限提高 3%（最多 27%）——这里显示的是新物品。${
-          stone
-            ? `命石属性见「命石属性（叠加）」组：「命石」列为其贡献，「合计」为与物品属性之和（与游戏一致）；物品本身没有的属性（如「% 全域暴击」）在「物品」列为横线。命石的滑块与「固定」（+${fixed}%）也在该组。物品的重铸与「强化」不作用于命石：命石由其自身种子随机。`
-            : ''
+        `范围为获得物品时的随机范围（游戏百分比的 −½…+½），颜色与游戏一致。「固定」使属性 +${fixed}%，「强化」为一条属性提供 20–38%，「神铸」为所有属性 +${divine}%、效果数值 +${ability}%（反向属性变小——正是提升）。这些加成在重铸 4–9 级、品质 5 及以上才开放。效果数值单独列在下方：随机为阶梯式（步长 1/5），「固定」与「强化」对其无效。${
+          stone ? ' 命石属性自成一组：「命石」列为贡献，「合计」为与物品属性之和；物品的重铸与「强化」不作用于命石。' : ''
         }`,
     },
   },
