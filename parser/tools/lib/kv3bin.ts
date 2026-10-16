@@ -347,6 +347,17 @@ export function decodeKv3(data: Buffer): Kv3Value {
         for (let i = 0; i < n; i++) out.push(auxValue(sub));
         return out;
       }
+      /*
+       * The two UInt32 constants — zero and one — that the newer maps carry.
+       * Neither takes a payload; the entity lump of the rebuilt M025 (v1.509)
+       * is where they turn up, on a `spawnflags` of 0 and the `1`s beside it.
+       * Names from Valve's own node-type enum (`BinaryKV3.NodeType.cs` in
+       * ValveResourceFormat: `UINT32_ZERO = 26`, `UINT32_ONE = 27`).
+       */
+      case 26:
+        return 0;
+      case 27:
+        return 1;
       default:
         throw new Error(`kv3: value type ${t} is not implemented`);
     }
