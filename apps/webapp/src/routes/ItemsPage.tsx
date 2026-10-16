@@ -1,6 +1,7 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { iconUrl, type ItemSummary } from 'aow5-shared/data';
 import { SLOT_KIND } from 'aow5-shared/types';
+import { inConsumables, type ItemsExtraFile } from 'aow5-shared/wiki';
 import { useApp } from '@/data/AppData';
 import { qualityVar } from '@/components/Tile';
 import {
@@ -11,7 +12,7 @@ import {
 } from '@/components/ItemFilters';
 import { itemPath } from '@/router';
 import { rarityLabel } from '@/i18n/strings';
-import { WikiEmpty, WikiList, WikiRow, WikiShell, WikiSidebar, collate } from '@/wiki/kit';
+import { WikiEmpty, WikiList, WikiRow, WikiShell, WikiSidebar, collate, useWikiData } from '@/wiki/kit';
 import { ItemPage } from './ItemPage';
 import styles from './ItemsPage.module.css';
 
@@ -47,7 +48,20 @@ export function ItemsPage({ itemId }: { itemId?: string }) {
    */
   const deferred = useDeferredValue(query);
 
-  const items = core?.items ?? [];
+  /*
+   * What the catalogue holds: the worn things. Potions, elixirs and the chests
+   * that open into pools are the Consumables section's list — the same rule
+   * decides both, so the two tabs cannot drift — and a recipe is a pointer at
+   * what it makes rather than a thing to read. Recipes keep their own address
+   * (`/wiki/items/<id>`), the monsters that drop one still link to it, and the
+   * card of the item it makes still names it.
+   */
+  const extra = useWikiData<[ItemsExtraFile]>(['items-extra.json']).data;
+  const items = useMemo(() => {
+    if (core === null || extra === null) return [];
+    const file = extra[0];
+    return core.items.filter((i) => i.type !== 'blueprint' && !inConsumables(file, { id: i.id, type: i.type }));
+  }, [core, extra]);
 
   /** The categories this table actually has, in the order the select draws them. */
   const types = useMemo(() => {

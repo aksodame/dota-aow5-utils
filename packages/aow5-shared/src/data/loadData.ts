@@ -29,6 +29,7 @@ import type { RollTables } from '../types/rolls.ts';
  */
 export {
   affixPool,
+  ascensionCost,
   canBeAffix,
   canBeDivine,
   clampReforge,

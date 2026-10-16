@@ -278,10 +278,13 @@ export function clampReforge(tables: RollTables, level: number): number {
 /**
  * What one reforge level costs, and therefore what a reforged item gives back.
  *
- * The addon prices a reforge from the item's own level and grade, scales it by
- * the level being reached, and adds a flat surcharge from level six. All of
- * that is `tables.reforgeCost`, transcribed out of the client — see the note
- * on the type and `extractReforgeCost` in the parser.
+ * The addon prices a reforge from the item's own level and grade and scales it
+ * by the level the item is *already* at — `getReforgeMaterialCosts(item,
+ * getReforgeLevelFromSeed(seed))` — so the step from +0 to +1 scales by 1.15⁰
+ * and the ninth step by 1.15⁸. Gold scales the same way but takes no surcharge;
+ * the essences take `surcharge` more from the seventh step on. The constants
+ * are `tables.reforgeCost`, transcribed out of the client — see the note on the
+ * type and `extractReforgeCost` in the parser.
  *
  * Returns an empty list when the tables predate the extraction, which is why
  * the field is optional: a page that shows no cost table is honest, and one
@@ -296,6 +299,47 @@ export interface ReforgeCostRow {
   materials: Record<string, number>;
 }
 
+/**
+ * The base amounts a reforge starts from, before any scaling. Two branches,
+ * exactly as the addon splits them: a mythic reforge burns Mythic Gear Essence
+ * and Legendary, anything below burns Legendary and Equipment.
+ */
+function reforgeBaseAt(
+  cost: NonNullable<RollTables['reforgeCost']>,
+  level: number,
+  quality: number,
+): Record<string, number> {
+  if (quality >= cost.materials.mythicThreshold) {
+    return {
+      [ESSENCE_IDS.MYTHIC]: Math.max(0, level + cost.materials.mythic.item_M507.offset),
+      [ESSENCE_IDS.LEGENDARY]: cost.materials.mythic.item_M315.perLevel * level,
+    };
+  }
+  return {
+    // `ceil(2 * lvl * 1.5)` in the addon, which is why this multiplier is
+    // fractional and the ceiling is applied here rather than to the product.
+    [ESSENCE_IDS.LEGENDARY]: Math.ceil(cost.materials.common.item_M315.perLevel * level),
+    [ESSENCE_IDS.EQUIPMENT]: cost.materials.common.item_M009.perLevel * level,
+  };
+}
+
+/**
+ * What one step costs: `floor(base × 1.15^step)`, plus the surcharge on
+ * essences from the seventh.
+ *
+ * A group whose base is zero is not charged at all — the addon builds no group
+ * for it, so the surcharge never lands on one. That is what keeps the mythic
+ * essence off items of level 1–3 (their base is level − 3, i.e. below one) and
+ * the legendary essence off anything the grade does not ask for.
+ */
+function reforgeStepAt(cost: NonNullable<RollTables['reforgeCost']>, amount: number, step: number, surcharge: boolean): number {
+  if (amount <= 0) return 0;
+  return (
+    Math.floor(amount * cost.levelScale ** Math.max(0, step)) +
+    (surcharge && step >= cost.surchargeFrom ? cost.surcharge : 0)
+  );
+}
+
 export function reforgeCost(
   tables: RollTables | null | undefined,
   item: { level: number; quality: number },
@@ -304,41 +348,71 @@ export function reforgeCost(
   if (!cost) return [];
 
   const lvl = Math.max(1, Math.trunc(item.level));
-  const mythic = item.quality >= cost.materials.mythicThreshold;
-
-  /*
-   * The base amounts, before the per-level scaling. Two branches, exactly as
-   * the addon splits them: a mythic reforge burns Mythic Gear Essence and
-   * Legendary, anything below burns Legendary and Equipment.
-   */
-  const base: Record<string, number> = mythic
-    ? {
-        [ESSENCE_IDS.MYTHIC]: Math.max(0, lvl + cost.materials.mythic.item_M507.offset),
-        [ESSENCE_IDS.LEGENDARY]: cost.materials.mythic.item_M315.perLevel * lvl,
-      }
-    : {
-        // `ceil(2 * lvl * 1.5)` in the addon, which is why this multiplier is
-        // fractional and the ceiling is applied here rather than to the product.
-        [ESSENCE_IDS.LEGENDARY]: Math.ceil(cost.materials.common.item_M315.perLevel * lvl),
-        [ESSENCE_IDS.EQUIPMENT]: cost.materials.common.item_M009.perLevel * lvl,
-      };
-
-  const scale = (value: number, level: number): number =>
-    Math.floor(value * cost.levelScale ** Math.max(0, level)) +
-    (level >= cost.surchargeFrom ? cost.surcharge : 0);
+  const base = reforgeBaseAt(cost, lvl, item.quality);
 
   const rows: ReforgeCostRow[] = [];
   for (let level = 1; level <= (tables?.maxReforgeLevel ?? 0); level += 1) {
+    const step = level - 1;
     const materials: Record<string, number> = {};
     for (const [id, amount] of Object.entries(base)) {
-      const need = scale(amount, level);
+      const need = reforgeStepAt(cost, amount, step, true);
       if (need > 0) materials[id] = need;
     }
     rows.push({
       level,
-      gold: scale(cost.goldPerLevel * lvl, level),
+      gold: reforgeStepAt(cost, cost.goldPerLevel * lvl, step, false),
       materials,
     });
+  }
+  return rows;
+}
+
+/**
+ * What adding a fate stone — the addon's ascension — costs on top, by reforge
+ * level.
+ *
+ * `getAscensionReforgeEssenceCosts` charges the difference between what
+ * reforging *this* item to that level costs and what the same reforging would
+ * have cost an item of level 8: the addon bills a level-8 ladder either way,
+ * and a low-level item reforges cheaper, so the difference grows with every
+ * step. Only the two main essences are charged — legendary and mythic — never
+ * gold or the equipment essence. Two things to read off the table: an item of
+ * level 8 or above pays nothing (its ladder *is* the level-8 one), and so does
+ * an unreforged item, since the addon returns no cost at reforge 0.
+ */
+export function ascensionCost(
+  tables: RollTables | null | undefined,
+  item: { level: number; quality: number },
+): { level: number; materials: Record<string, number> }[] {
+  const cost = tables?.reforgeCost;
+  const max = tables?.maxReforgeLevel ?? 0;
+  if (!cost) return [];
+
+  const lvl = Math.max(1, Math.trunc(item.level));
+
+  /** Reforging an item of `level` up to `reforge`, steps 0..reforge-1 added up. */
+  const cumulative = (level: number, reforge: number): Record<string, number> => {
+    const out: Record<string, number> = {};
+    const base = reforgeBaseAt(cost, level, item.quality);
+    for (let step = 0; step < Math.min(max, Math.max(0, reforge)); step += 1) {
+      for (const [id, amount] of Object.entries(base)) {
+        const need = reforgeStepAt(cost, amount, step, true);
+        if (need > 0) out[id] = (out[id] ?? 0) + need;
+      }
+    }
+    return out;
+  };
+
+  const rows: { level: number; materials: Record<string, number> }[] = [];
+  for (let level = 1; level <= max; level += 1) {
+    const own = cumulative(lvl, level);
+    const eighth = cumulative(8, level);
+    const materials: Record<string, number> = {};
+    for (const id of [ESSENCE_IDS.LEGENDARY, ESSENCE_IDS.MYTHIC]) {
+      const need = Math.max(0, (eighth[id] ?? 0) - (own[id] ?? 0));
+      if (need > 0) materials[id] = need;
+    }
+    rows.push({ level, materials });
   }
   return rows;
 }

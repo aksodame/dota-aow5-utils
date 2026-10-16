@@ -10,6 +10,7 @@ import {
   endlessFloorList,
   endlessMerchantSpans,
   gachaByItem,
+  isShownRoom,
   itemDropIndex,
   mallByItem,
   rewardChestTiers,
@@ -290,7 +291,10 @@ export function DropsPanel({ item, full }: WikiPanelProps) {
   const name = (id: string) => locale.names[id] ?? id;
   const typeLabel = (type: string) => locale.types[type] ?? tAll.monsterTypes[type] ?? type;
   const rooms = (m: Monster) =>
-    m.locations.map((room) => core?.maps.byId.get(room)?.label ?? room).join(', ');
+    m.locations
+      .filter(isShownRoom)
+      .map((room) => core?.maps.byId.get(room)?.label ?? room)
+      .join(', ');
 
   return (
     <Panel

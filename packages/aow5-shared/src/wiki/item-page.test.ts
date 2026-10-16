@@ -127,7 +127,7 @@ test('reward chest tiers read the partner pools', () => {
 });
 
 test('craft unlock: own talent, or a recipe borrows its product’s', () => {
-  assert.deepEqual(craftUnlockOf(craft, { id: 'item_M008' }).talents, [{ node: 'T201', tree: 'tree3' }]);
+  assert.deepEqual(craftUnlockOf(craft, { id: 'item_M008', needs: [] }).talents, [{ node: 'T201', tree: 'tree3' }]);
   const recipe = Object.values(items).find(
     (i) => i?.isRecipe === true && i.produces !== undefined && (craft.items[i.produces]?.talents?.length ?? 0) > 0,
   );
@@ -136,6 +136,24 @@ test('craft unlock: own talent, or a recipe borrows its product’s', () => {
     assert.equal(got.via, recipe.produces);
     assert.ok(got.talents.length > 0);
   }
+});
+
+// A blueprint whose product the pack leaves without components describes
+// nothing — and neither does its own card — so the product's card does not
+// offer it. The partner wiki listed it anyway, which is what a reader asked
+// about on 16.10.2026 (Священная Реликвия). Give the item components in the
+// data and its recipe comes back, which is the first half of the test.
+test('an item with nothing to make it from gets no recipe link', () => {
+  const craftable = Object.entries(craft.items).find(([id, e]) => (e.recipes?.length ?? 0) > 0 && (items[id]?.needs.length ?? 0) > 0);
+  assert.ok(craftable, 'the pack should have an item with both a recipe and components');
+  const [id, entry] = craftable!;
+  assert.deepEqual(craftUnlockOf(craft, items[id]!).recipes, entry.recipes);
+
+  const empty = Object.entries(craft.items).find(
+    ([id, e]) => (e.recipes?.length ?? 0) > 0 && (items[id]?.needs.length ?? 1) === 0,
+  );
+  assert.ok(empty, 'the pack should have items with a recipe and no components');
+  assert.deepEqual(craftUnlockOf(craft, items[empty![0]]!).recipes, []);
 });
 
 test('seasonal patch replaces only what it names', () => {

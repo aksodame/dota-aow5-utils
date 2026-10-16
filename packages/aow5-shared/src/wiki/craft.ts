@@ -1,6 +1,6 @@
 import type { Dismantle, ItemFull, ItemNeed } from '../types/items.ts';
 import type { SeasonalPatch } from './items-extra.ts';
-import { locFarm, type Difficulty, type LocationsFile, type Monster } from './monsters.ts';
+import { isShownRoom, locFarm, type Difficulty, type LocationsFile, type Monster } from './monsters.ts';
 import { PRIMARY_RULESET, type RulesetId } from './pools.ts';
 
 /**
@@ -397,7 +397,7 @@ export function dropSourceIndex(
   difficulty: Difficulty | undefined,
 ): Map<string, DropSource[]> {
   const rooms = new Set<string>();
-  for (const m of monsters) for (const room of m.locations) rooms.add(room);
+  for (const m of monsters) for (const room of m.locations) if (isShownRoom(room)) rooms.add(room);
   const index = new Map<string, DropSource[]>();
   for (const room of [...rooms].sort()) {
     for (const [id, rec] of locFarm(monsters, locations, room, difficulty).items) {

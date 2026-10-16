@@ -545,7 +545,7 @@
      "blocks": [
       {
        "type": "text",
-       "text": "Every location M001–M015 has a Signal Tower. To switch it on you have to bring materials; the list is shown below. Towers M001–M015 cover all regular rooms of the first circle."
+       "text": "Every location M001–M014 has a Signal Tower. To switch it on you have to bring materials; the list is shown below. Towers M001–M014 cover all regular rooms of the first circle."
       },
       {
        "type": "table",
@@ -684,15 +684,6 @@
          "[[item:item_M222|Mutated Fur]] ×4, [[item:item_M223|Thunder Grass]] ×4, [[item:item_M330|Thunder Core]] ×4",
          "yes",
          "20 kinds"
-        ],
-        [
-         "ST_M015",
-         "M015",
-         "Enchanted Forest",
-         "8",
-         "[[item:item_M308|Ender Essence]] ×4, [[item:item_M312|Dragonbreath Charcoal]] ×1",
-         "yes",
-         "—"
         ]
        ]
       },

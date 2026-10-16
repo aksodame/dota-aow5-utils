@@ -41,6 +41,24 @@ export type UnitType = string;
 /** Which table a row was read from. */
 export type MonsterSource = 'ak_monster' | 'ak_breakable' | 'ak_tree';
 
+/**
+ * Rooms the wiki leaves out.
+ *
+ * M015 «Магический лес» ships in the room table (`IsShow = 0`, level 8) but is
+ * not a room anybody plays: it has no bosses, its nine monsters are a subset of
+ * the level-2 room's, and its dispatch (вылазка) is the only one the config
+ * disables (`Enabled = 0`; every other room's is on). The map table cannot say
+ * "hidden" — `IsShow` also hides the cat challenge and the sky — so the list
+ * lives here instead, keyed by id, where a translation cannot touch it, and one
+ * entry is all it takes to bring a room back.
+ */
+export const HIDDEN_ROOMS: ReadonlySet<string> = new Set(['M015']);
+
+/** Whether the wiki shows a room: every room but `HIDDEN_ROOMS`. */
+export function isShownRoom(code: string): boolean {
+  return !HIDDEN_ROOMS.has(code);
+}
+
 /** The fields a season may change. Only the ones that differ are present. */
 export interface MonsterSeasonPatch {
   dropRatePct?: number;

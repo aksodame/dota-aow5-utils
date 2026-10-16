@@ -522,8 +522,16 @@ export interface Strings {
     reforgeGold: string;
     reforgeMaterials: string;
     reforgeTotal: string;
+    /** The table's last column: what a fate stone adds on top at each level. */
+    reforgeStone: string;
+    /** In that column, where the stone costs nothing extra. */
+    reforgeFree: string;
+    /** The dash in that column's total row — a reading per level, not a step. */
+    reforgeDash: string;
     /** Said under the table, because the numbers are derived rather than listed. */
     reforgeNote: string;
+    /** Said under the table about the stone's column. */
+    reforgeStoneNote: string;
     /** The addon's own name for the dismantle rule that applies. */
     dismantleRule: string;
     /** What the counts above are counts *of*. */
@@ -1014,7 +1022,12 @@ const en: Strings = {
     reforgeGold: 'Gold',
     reforgeMaterials: 'Materials',
     reforgeTotal: 'All nine',
+    reforgeStone: 'Stone',
+    reforgeFree: 'free',
+    reforgeDash: '—',
     reforgeNote: 'Computed from the item’s level and grade the way the game computes it, not read from a table.',
+    reforgeStoneNote:
+      'The “Stone” column is the essence a fate stone adds on top at that reforge level — ascension bills the difference between this item’s ladder and a level-8 item’s, so it grows with the level, and an item of level 8 or above pays nothing.',
     dismantleRule: 'Rule',
     dismantleNote: 'For one copy at +0. A reforged item also returns part of what the reforge cost.',
     previewCard: 'Card ↗',
@@ -1487,7 +1500,12 @@ const ru: Strings = {
     reforgeGold: 'Золото',
     reforgeMaterials: 'Материалы',
     reforgeTotal: 'Все девять',
+    reforgeStone: 'Грань',
+    reforgeFree: 'бесплатно',
+    reforgeDash: '—',
     reforgeNote: 'Считается из уровня и качества предмета так же, как это делает игра, а не берётся из таблицы.',
+    reforgeStoneNote:
+      'Столбец «Грань» — сколько эссенции сверху стоит наложить грань (вознесение) при такой перековке: игра считает разницу между перековкой этого предмета и перековкой предмета 8-го уровня, поэтому с ростом ковки доплата растёт, а у предметов 8-го уровня и выше её нет вовсе.',
     dismantleRule: 'Правило',
     dismantleNote: 'За одну копию на +0. Улучшенный предмет вернёт ещё и часть потраченного на перековку.',
     previewCard: 'Карточка ↗',
@@ -1955,7 +1973,12 @@ const zh: Strings = {
     reforgeGold: '金币',
     reforgeMaterials: '材料',
     reforgeTotal: '全部九级',
+    reforgeStone: '命石',
+    reforgeFree: '免费',
+    reforgeDash: '—',
     reforgeNote: '按游戏的算法从物品等级与品质推算，并非取自表格。',
+    reforgeStoneNote:
+      '「命石」列为该重铸等级下叠加命石（升华）需额外支付的精华：按 8 级物品的重铸账单补差额，因此随等级升高，而 8 级及以上物品免费。',
     dismantleRule: '规则',
     dismantleNote: '按 +0 的单件计算。已强化的物品还会返还部分重铸消耗。',
     previewCard: '卡片 ↗',

@@ -256,10 +256,18 @@ export function rewardChestTiers(
  * What unlocks crafting an item: its recipe items and talent nodes. For a
  * recipe item, the talents of what it crafts — the partner linked a recipe to
  * the talent behind its product, since a recipe has no talent of its own.
+ *
+ * An item the pack does not say how to make — no components at all — gets no
+ * recipe either: the blueprint would describe nothing, and its own card says
+ * nothing beyond what it makes. A hundred items are like this, Священная
+ * Реликвия and Кубок кобольда among them, and in the pack every one of their
+ * blueprints is sold by no vendor and sits in no drop or chest pool, so the
+ * chip led to a dead end in both senses. Add a component to such an item in the
+ * data and its recipe comes back on its own.
  */
 export function craftUnlockOf(
   craft: CraftFile,
-  item: Pick<ItemFull, 'id' | 'isRecipe' | 'produces'>,
+  item: Pick<ItemFull, 'id' | 'isRecipe' | 'produces' | 'needs'>,
   ruleset: RulesetId = PRIMARY_RULESET,
 ): { recipes: string[]; talents: TalentUnlock[]; via?: string } {
   const own = craft.items[item.id];
@@ -270,7 +278,7 @@ export function craftUnlockOf(
     const madeTalents = made === undefined ? [] : (craftInSeason(made, ruleset).talents ?? []);
     if (madeTalents.length > 0) return { recipes: [], talents: madeTalents, via: item.produces };
   }
-  return { recipes: unlock.recipes ?? [], talents };
+  return { recipes: item.needs.length > 0 ? (unlock.recipes ?? []) : [], talents };
 }
 
 // --- seasons and souls --------------------------------------------------------

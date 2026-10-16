@@ -44,18 +44,17 @@
 }
 
 /*
- * The section's prose, in a page that is otherwise as wide as the window.
- *
- * A paragraph run to 2 500px is a paragraph nobody finishes: the eye loses the
- * line on the way back. The same cap the catalogue's card reads at, so the
- * sentences here break where the sentences there do — and only the prose takes
- * it, so the drop tables and monster cards beside it keep the room.
+ * The section's prose: notes and the odd paragraph, in a page that is as wide
+ * as the window. It used to cap itself at a reading width (92ch) while the
+ * drop tables beside it took the whole row — the notes then read as half a
+ * screen of text with half a screen of nothing after it (the wiki's author
+ * asked for the full width on 16.10.2026). The paragraphs above tables keep
+ * their own `Note` styling; this is only the wrapper's width.
  */
 .prose {
   display: grid;
   gap: var(--space-3);
   min-width: 0;
-  max-width: 92ch;
 }
 
 .text {
