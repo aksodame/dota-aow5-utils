@@ -153,7 +153,13 @@ export default function SkyPage({ path }: SectionProps) {
   });
 
   return (
-    <WikiShell columns="single">
+    /*
+     * The full window: this section is drop tables, spawn pools and monster
+     * cards, and the reading cap left the grids in a column three fifths of the
+     * screen wide with nothing on either side. The prose inside the panels caps
+     * itself, so the width goes to the data.
+     */
+    <WikiShell columns="wide">
       <WikiDetail>
         <DetailHeader title={t.title} tags={<span className={styles.lead}>{t.lead}</span>} />
         <WikiSubTabs items={tabs} active={key ?? ''} label={t.tabsLabel} />
@@ -275,26 +281,29 @@ function TierPage({ ctx, tier }: { ctx: Ctx; tier: 1 | 2 | 3 }) {
         }
       >
         <div className={styles.stack}>
-          <p className={styles.text}>{t.chestText(num(cr.coinsPerDraw, lang), poolId, levels)}</p>
-          <Note>
-            {t.coinsNote({
-              normal: num(PARTNER_NORMAL_COIN_AMOUNT, lang) + '*',
-              luckyPct: num(c.normal.luckyPct, lang),
-              lucky: num(c.normal.lucky, lang),
-              bonusPct: num(c.normal.bonusPct, lang),
-              bonus: num(c.normal.bonus, lang),
-              elite: num(c.elite.amount, lang),
-              eliteLuckyPct: num(c.elite.luckyPct, lang),
-              eliteLucky: num(c.elite.lucky, lang),
-              boss: num(c.boss.amount, lang),
-              retain: pct(c.deathRetain, lang),
-              coinsPerDraw: num(cr.coinsPerDraw, lang) + '*',
-            })}
-          </Note>
-          <Note>
-            {t.expectedNote(run.floors, num(Math.round(run.crystals), lang), run.level, num(run.draws, lang), num(run.coins, lang))}
-          </Note>
-          <Note>{t.ancientNote(ancientName, cr.ancientItemId, num(cr.ancientPerCoin, lang) + '*', ancientTalents)}</Note>
+          {/* The rules read at their own width; the draws below take the rest. */}
+          <div className={styles.prose}>
+            <p className={styles.text}>{t.chestText(num(cr.coinsPerDraw, lang), poolId, levels)}</p>
+            <Note>
+              {t.coinsNote({
+                normal: num(PARTNER_NORMAL_COIN_AMOUNT, lang) + '*',
+                luckyPct: num(c.normal.luckyPct, lang),
+                lucky: num(c.normal.lucky, lang),
+                bonusPct: num(c.normal.bonusPct, lang),
+                bonus: num(c.normal.bonus, lang),
+                elite: num(c.elite.amount, lang),
+                eliteLuckyPct: num(c.elite.luckyPct, lang),
+                eliteLucky: num(c.elite.lucky, lang),
+                boss: num(c.boss.amount, lang),
+                retain: pct(c.deathRetain, lang),
+                coinsPerDraw: num(cr.coinsPerDraw, lang) + '*',
+              })}
+            </Note>
+            <Note>
+              {t.expectedNote(run.floors, num(Math.round(run.crystals), lang), run.level, num(run.draws, lang), num(run.coins, lang))}
+            </Note>
+            <Note>{t.ancientNote(ancientName, cr.ancientItemId, num(cr.ancientPerCoin, lang) + '*', ancientTalents)}</Note>
+          </div>
           <ItemGrid>
             {sorted.map(([id, weight], i) => (
               <div key={`${id}:${i}`} className={styles.dropCell} title={`${id}\n${t.share}: ${pct(total > 0 ? weight / total : 0, lang)}`}>
@@ -308,7 +317,9 @@ function TierPage({ ctx, tier }: { ctx: Ctx; tier: 1 | 2 | 3 }) {
 
       <Panel title={t.monstersTitle(monsters.length)}>
         <div className={styles.stack}>
-          <Note>{t.monstersNote}</Note>
+          <div className={styles.prose}>
+            <Note>{t.monstersNote}</Note>
+          </div>
           <div className={styles.cards}>
             {monsters.map((m) => {
               const mon = ctx.monsters.get(m.id);
@@ -440,19 +451,21 @@ function EndlessPage({ ctx }: { ctx: Ctx }) {
         </div>
       </Panel>
 
-      <Note>{t.endlessNoteChance}</Note>
-      {last !== undefined && (
-        <Note>
-          {t.endlessNoteDeep(
-            waves.map((w) => w.wave).join(' · '),
-            last.wave,
-            last.poolId,
-            last.level,
-          )}
-          <Partner t={t} />
-        </Note>
-      )}
-      <Note>{t.endlessNoteTeam}</Note>
+      <div className={styles.prose}>
+        <Note>{t.endlessNoteChance}</Note>
+        {last !== undefined && (
+          <Note>
+            {t.endlessNoteDeep(
+              waves.map((w) => w.wave).join(' · '),
+              last.wave,
+              last.poolId,
+              last.level,
+            )}
+            <Partner t={t} />
+          </Note>
+        )}
+        <Note>{t.endlessNoteTeam}</Note>
+      </div>
       <PartnerFootnote t={t} />
     </>
   );
@@ -540,7 +553,9 @@ function SpawnsPage({ ctx }: { ctx: Ctx }) {
             </div>
           </Panel>
         ))}
-      <Note>{t.spawnsNote}</Note>
+      <div className={styles.prose}>
+        <Note>{t.spawnsNote}</Note>
+      </div>
     </>
   );
 }
@@ -631,7 +646,9 @@ function CombosPage({ ctx }: { ctx: Ctx }) {
           ))}
         </div>
       </Panel>
-      <Note>{t.combosNote}</Note>
+      <div className={styles.prose}>
+        <Note>{t.combosNote}</Note>
+      </div>
     </>
   );
 }
@@ -651,7 +668,7 @@ function ScalingPage({ ctx }: { ctx: Ctx }) {
     <>
       <Panel>
         <Head title={t.scalingTitle} code={t.scalingCode(floorsN)} />
-        <div className={styles.stack}>
+        <div className={styles.prose}>
           <p className={styles.text}>{t.scalingIntro}</p>
           <Note>{t.scalingPlayers}</Note>
           <Note>{t.waveCounts(wc.normalTotal, wc.maxAlive, range.min, range.max, wc.eliteTotal, pctOf(wc.bossFollowupPct * 100, lang, 0))}</Note>
@@ -706,7 +723,7 @@ function ScalingPage({ ctx }: { ctx: Ctx }) {
       </Panel>
 
       <Panel title={t.growthTitle}>
-        <div className={styles.stack}>
+        <div className={styles.prose}>
           <p className={styles.text}>
             {t.growthText(
               s.endless.softStart - 1,

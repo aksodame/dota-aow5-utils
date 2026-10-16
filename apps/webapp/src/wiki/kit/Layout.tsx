@@ -17,7 +17,7 @@ import styles from './Layout.module.css';
  * than open them one at a time.
  */
 
-type Columns = 'list' | 'three' | 'single' | 'detail';
+type Columns = 'list' | 'three' | 'single' | 'detail' | 'wide';
 
 /**
  * The page grid.
@@ -26,7 +26,10 @@ type Columns = 'list' | 'three' | 'single' | 'detail';
  * the detail — the monsters section, where the middle column is the items the
  * left one drops. `single`: one wide column, for sections that are a document.
  * `detail`: a list and the record it opens, side by side and both full width —
- * the catalogue, where the record is a card that earns every pixel.
+ * the catalogue, where the record is a card that earns every pixel. `wide`:
+ * the same single reading column with the cap taken off — a section whose
+ * pages are grids of data rather than prose, and which the cap leaves half
+ * empty on a wide screen.
  */
 export function WikiShell({ columns = 'list', children }: { columns?: Columns; children: ReactNode }) {
   return <div className={cx(styles.page, COLUMNS[columns])}>{children}</div>;
@@ -37,6 +40,7 @@ const COLUMNS: Record<Columns, string | undefined> = {
   three: styles.colsThree,
   single: styles.colsSingle,
   detail: styles.colsDetail,
+  wide: styles.colsWide,
 };
 
 interface SidebarProps {
