@@ -307,6 +307,15 @@
   white-space: nowrap;
 }
 
+/* The line under the name: the id and level on the left, the value on the right. */
+.cellRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
 .cellValue {
   flex: none;
   font-size: 12px;
@@ -350,13 +359,22 @@
   color: var(--text-dim);
 }
 
+/*
+ * The maps are square (1200×1200), and the square is what a spawn dot's
+ * percentage position is measured against — so the picture is never stretched,
+ * and the panel around it is the column's width. The square is therefore the
+ * column's width too, and `max-height` only steps in on a short window, where
+ * the item list above it would otherwise be squeezed out. It is deliberately
+ * generous (40% of the window): on a normal window it does not bind at all,
+ * and the map sits flush in the column with no margins at its sides.
+ */
 .mapCanvas {
   position: relative;
   overflow: hidden;
   background: var(--map-ground);
   border-radius: var(--radius);
   aspect-ratio: 1;
-  max-height: 34svh;
+  max-height: 40svh;
   margin-inline: auto;
 }
 
@@ -418,6 +436,35 @@
 
 /* --- the card ------------------------------------------------------------------- */
 
+/*
+ * The unit's own numbers as one wrapped line: the tiles the kit draws for
+ * facts gave ten of them four rows of a wide column, which is space the drop
+ * tables below need more. One row when it fits, two when it does not.
+ */
+.statStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px var(--space-4);
+}
+
+.statItem {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.statLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.statValue {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
 
 .lines {
   display: grid;

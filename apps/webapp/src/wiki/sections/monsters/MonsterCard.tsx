@@ -16,7 +16,7 @@ import {
 } from 'aow5-shared/wiki';
 import { Panel } from '@/ui';
 import { Link } from '@/router';
-import { Check, DataFooter, DetailHeader, FactGrid, Note, Tag, WikiDetail, num, pct, pctOf } from '../../kit';
+import { Check, DataFooter, DetailHeader, Note, Tag, WikiDetail, num, pct, pctOf } from '../../kit';
 import { nameOf, qty, type Pools } from './model';
 import { ItemCell, TypeBadge, useItemName, waveText, type Ctx } from './parts';
 import styles from '../MonstersPage.module.css';
@@ -124,7 +124,14 @@ export function MonsterCard({ ctx, m, pools, diff, difficulty, diffLabel, noReci
       {t.notes[m.id] !== undefined && <Note>{t.notes[m.id]}</Note>}
 
       <Panel title={t.stats}>
-        <FactGrid rows={statRows} />
+        <div className={styles.statStrip}>
+          {statRows.map(([label, value], index) => (
+            <span key={index} className={styles.statItem}>
+              <span className={styles.statLabel}>{label}</span>
+              <span className={styles.statValue}>{value}</span>
+            </span>
+          ))}
+        </div>
       </Panel>
 
       {m.groups !== undefined && m.groups.length > 0 && (

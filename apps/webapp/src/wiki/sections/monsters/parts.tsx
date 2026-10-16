@@ -41,6 +41,11 @@ export function useItemName(): (id: string) => string {
  * One item in a drop table: a button that toggles it into the item filter, as
  * the original did on every drop cell — and beside it a link to the item's
  * own page, because ours carry everything else about it.
+ *
+ * The name gets a row of its own; the id and the level sit under it on the
+ * left, and the value — a chance, a share, a count of sources — under it on
+ * the right. Sharing one narrow line between the name and the value was what
+ * truncated the names; a name that spans its own column does not.
  */
 export function ItemCell({
   id,
@@ -74,9 +79,15 @@ export function ItemCell({
         <span className={styles.cellArt}>{item !== undefined && <ItemTile item={item} />}</span>
         <span className={styles.cellText}>
           <span className={styles.cellName}>{item?.name ?? id}</span>
-          {!compact && <span className={styles.cellSub}>{sub ?? id}</span>}
+          {compact ? (
+            value !== undefined && <span className={styles.cellValue}>{value}</span>
+          ) : (
+            <span className={styles.cellRow}>
+              <span className={styles.cellSub}>{sub ?? id}</span>
+              {value !== undefined && <span className={styles.cellValue}>{value}</span>}
+            </span>
+          )}
         </span>
-        {value !== undefined && <span className={styles.cellValue}>{value}</span>}
       </button>
       {item !== undefined && (
         <Link to={{ href: itemPath(id) }} className={styles.cellLink} title={ctx.t.openItem} aria-label={ctx.t.openItem}>
