@@ -1,6 +1,27 @@
 {
  "notes": [
   {
+   "version": "v1.509",
+   "date": "16.10.2026",
+   "game": [
+    "The Lava Mortar (M025) got its full fight: seven new monsters. The Fel Tombstone wakes when a hero comes near and keeps spitting out fire spiders (the spiders burst on death); waiting there are the Burning Plush Golem, the Devourer’s Servant, the mini-boss Devourer Warlord (800,000 health) and the Serpent-Tamer Shaman, who summons serpent guards, stacks the Serpent Curse and shackles the hero at ten stacks.",
+    "Nine new abilities for those monsters: Devouring Stride (six seconds of crushing steps), Flesh Bonds (all damage to the chained monsters is carried to one of them), Triple Shove, Lava Upheaval and more — every one of them described in the game’s own words.",
+    "Endless: the Infinity Commemorative Medal unlocks and upgrades an account badge that persists between seasons. Each level of any unlocked badge grants +1% luck, up to +50% from all badges; hiding a badge does not take the bonus away.",
+    "Endless: the Endless Special is a drink with ten uses. Every bottle permanently adds 0.5% global critical strike chance (up to +5%), and each drink also grants +5% for ten minutes — refreshed, not stacked.",
+    "The build carries the first pieces of a new room, M026: a map, two “flame spinner” models and twelve encrypted scripts. Nothing in the game announces it yet — not the room list, not the interface.",
+    "The game’s own translation now covers the Phantom Assassin’s Boomerang, Lina’s Burning Thunder, the sigils (G216 “Whirling Boomerang” among them) and the endless team lobby’s strings.",
+    "Numbers on existing content did not change: items, monsters, pools, fate stones and locations are additions only."
+   ],
+   "wiki": [
+    "Data refreshed to v1.509: the Monsters tab lists seven new M025 units and their nine abilities, Items has the Infinity Commemorative Medal, Consumables has the Endless Special, and the data knows rooms M025 and M026 with their spawn points.",
+    "The hand-written translations of Boomerang, Burning Thunder and the sigils are replaced by the pack’s own: where the game now speaks the reader’s language, the wiki uses its words.",
+    "Items: the catalogue is cleared of consumables and recipes (they have sections of their own, and a recipe’s card opens from a direct link or from the monsters that drop it), and an item with nothing to be made from no longer shows an empty recipe line.",
+    "The item card leads with two full-width blocks — the stats and what the item does — the range note under the stats is shorter, and the reforge table has a new “Stone” column: what a fate stone costs on top at each reforge level.",
+    "The reforge table itself was a step ahead of the game — every step and the total were about 15% over — and now matches it.",
+    "The hidden room M015 “Enchanted Forest” is gone from Monsters, Progression and the FAQ: the game has no such room."
+   ]
+  },
+  {
    "version": "v1.508",
    "date": "15.10.2026",
    "game": [

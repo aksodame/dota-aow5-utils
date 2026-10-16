@@ -39,9 +39,13 @@ test('a use cap makes an item single-use, the potions file makes it a consumable
   assert.equal(inConsumables(extra, { id: 'item_0218', type: 'equip' }), false);
 });
 
-test('the rule picks the partner wiki’s 189 in-game consumables', () => {
+// 189 when the partner counted them; v1.509's drink — item_P275 «Бесконечный
+// купаж» — makes 190. The number is the guard: it moves only when the pack gains
+// or loses a consumable, which is what a data refresh is for.
+test('the rule picks the partner wiki’s 190 in-game consumables', () => {
   const ids = Object.values(full).filter((item) => item.flags?.inGame === 1 && inConsumables(extra, item));
-  assert.equal(ids.length, 189);
+  assert.equal(ids.length, 190);
+  assert.ok(ids.some((item) => item.id === 'item_P275'), 'the v1.509 drink is one of them');
 });
 
 test('tower chest draws: easy 70 %, hard 150 %, rounded', () => {

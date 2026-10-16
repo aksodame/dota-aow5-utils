@@ -26,6 +26,6 @@ test('hidden tower chests resolve; non-consumables and deeper paths do not', () 
 
 test('the section lists every consumable the page lists', () => {
   const links = wikiSectionLinks('consumables', 'ru');
-  assert.equal(links.length, 189);
+  assert.equal(links.length, 190); // 189 before v1.509's drink
   assert.ok(links.some((link) => link.href === '/wiki/consumables/item_MTC001'));
 });

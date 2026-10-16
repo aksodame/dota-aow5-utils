@@ -1,7 +1,7 @@
 {
-"generatedAt":"2026-10-14T15:12:28.684Z",
-"idTableHash":"9bdd1c14065ae8c3592438513473289b8662495db989affbd1e4addfb7b6911a",
-"idTableLength":2121,
+"generatedAt":"2026-10-16T16:52:24.436Z",
+"idTableHash":"117c0b488513f7bc0a2d6b530e66f90642b56b36b6b010677f1b3e78e5f4832e",
+"idTableLength":2123,
 "schema":1,
 "rows":[
 [0,"item_0099","equip",5,2,640,"occult_bracelet.png",50],
@@ -1984,6 +1984,8 @@
 [2117,"item_G618","gem",3,3,600,"rune_dk_dragon_bash.png",36],
 [2118,"item_G618_2","gem",4,4,1600,"rune_dk_dragon_bash.png",36],
 [2119,"item_G618_3","gem",5,5,4000,"rune_dk_dragon_bash.png",36],
-[2120,"item_P274","special",6,6,2000,"icon_battle_pass_vintage.png",33]
+[2120,"item_P274","special",6,6,2000,"icon_battle_pass_vintage.png",33],
+[2121,"item_M555","identity",6,9,1000,"icon_endless_medal.png",32],
+[2122,"item_P275","special",6,6,2000,"icon_endless_special.png",33]
 ]
 }
