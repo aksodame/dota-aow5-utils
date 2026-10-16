@@ -370,16 +370,57 @@ export interface EndlessWave {
   stones: PoolEntry[];
   /** `[group, pct]` split between equipment and stones. */
   groups: [string, number][];
+  /** The last wave this pool is drawn on; null when it holds at any depth. */
+  to: number | null;
+}
+
+/**
+ * The floors a ladder's pools serve. The server draws the pool with the
+ * highest `Level` at or below `floor(floor / 3)`, so a pool of level L is
+ * dealt from wave `L × 3` until the wave before the next pool's — and the
+ * deepest pool holds to any depth.
+ */
+export interface EndlessSpan {
+  level: number;
+  /** The first wave the pool is drawn on (`level × 3`). */
+  from: number;
+  /** The last wave it is drawn on, or null when it holds at any depth. */
+  to: number | null;
+}
+
+export function endlessSpans(rows: readonly { level: number }[]): EndlessSpan[] {
+  const levels = [...new Set(rows.map((r) => r.level))].sort((a, b) => a - b);
+  return levels.map((level, i) => {
+    const next = levels[i + 1];
+    return { level, from: level * 3, to: next === undefined ? null : next * 3 - 1 };
+  });
+}
+
+/** The boss-reward ladder's spans. */
+export function endlessBossSpans(sky: SkyFile): EndlessSpan[] {
+  return endlessSpans(sky.endless.rows.filter((r) => r.kind === 'boss_reward'));
+}
+
+/** The merchant ladder's spans — one step shorter than the bosses'. */
+export function endlessMerchantSpans(sky: SkyFile): EndlessSpan[] {
+  return endlessSpans(sky.endless.rows.filter((r) => r.kind === 'merchant_base'));
+}
+
+/** `24–29`, or `48+` for a pool that holds at any depth (an en dash, as elsewhere in the wiki). */
+export function endlessSpanLabel(from: number, to: number | null): string {
+  return to === null ? `${from}+` : `${from}–${to}`;
 }
 
 /**
  * The endless boss-reward rows, one per boss ordinal (`Level`). Bosses come
  * every third floor (the config's floor map leaves floors 3, 6, … to the
- * boss), hence `wave = level * 3`.
+ * boss), hence `wave = level * 3` — and the row's pool serves further floors
+ * than its own wave (see `EndlessSpan`).
  */
 export function endlessBossWaves(sky: SkyFile): EndlessWave[] {
-  return sky.endless.rows
-    .filter((r) => r.kind === 'boss_reward')
+  const rows = sky.endless.rows.filter((r) => r.kind === 'boss_reward');
+  const to = new Map(endlessSpans(rows).map((s) => [s.level, s.to]));
+  return rows
     .map((r) => ({
       wave: r.level * 3,
       boss: r.level,
@@ -388,6 +429,7 @@ export function endlessBossWaves(sky: SkyFile): EndlessWave[] {
       equipment: r.lists['equipment'] ?? [],
       stones: r.lists['stone'] ?? [],
       groups: r.groups,
+      to: to.get(r.level) ?? null,
     }))
     .sort((a, b) => a.level - b.level);
 }
@@ -525,7 +567,7 @@ export function tierMonsters(sky: SkyFile, tier: 1 | 2 | 3): TierMonster[] {
 export interface EndlessDrop {
   id: string;
   kind: 'equipment' | 'stones';
-  waves: { wave: number; boss: number; weight: number; chance: number }[];
+  waves: { wave: number; boss: number; to: number | null; weight: number; chance: number }[];
   /** The best of `waves[].chance`. */
   best: number;
 }
@@ -549,7 +591,7 @@ export function endlessDrops(sky: SkyFile): EndlessDrop[] {
           rec = { id, kind, waves: [], best: 0 };
           byItem.set(id, rec);
         }
-        rec.waves.push({ wave: w.wave, boss: w.boss, weight, chance: weight / total });
+        rec.waves.push({ wave: w.wave, boss: w.boss, to: w.to, weight, chance: weight / total });
       }
     }
   }
@@ -756,7 +798,7 @@ export function skyPageFacts(
     return {
       name,
       facts: [s.bossPools(waves.length), s.items(endlessDrops(sky).length), s.everyThird].join(' · '),
-      description: s.endlessDesc(name, waves.map((w) => w.wave).join(', ')),
+      description: s.endlessDesc(name, waves.map((w) => endlessSpanLabel(w.wave, w.to)).join(', ')),
     };
   }
   if (key === 'spawns') {

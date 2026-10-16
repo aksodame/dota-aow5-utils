@@ -68,10 +68,10 @@ export interface SkyStrings {
   kindLabel: { equipment: string; stones: string };
   waveAll: string;
   dropTitle: (n: number) => string;
-  waveDropTitle: (wave: number, n: number) => string;
+  waveDropTitle: (waves: string, n: number) => string;
   bossLine: (bosses: string, waves: string, many: boolean, manyWaves: boolean) => string;
   dropTooltip: string;
-  dropTooltipLine: (boss: number, wave: number, chance: string) => string;
+  dropTooltipLine: (boss: number, waves: string, chance: string) => string;
   wavesTitle: (n: number) => string;
   boss: (n: number) => string;
   waveMeta: (poolId: string, equipment: number, stones: number) => string;
@@ -193,20 +193,20 @@ export const SKY: Localised<SkyStrings> = {
     kindLabel: { equipment: 'Equipment', stones: 'Fate stones' },
     waveAll: 'All waves',
     dropTitle: (n) => `Boss drops (${n})`,
-    waveDropTitle: (wave, n) => `Wave ${wave} — drops (${n})`,
+    waveDropTitle: (waves, n) => `Waves ${waves} — drops (${n})`,
     bossLine: (bosses, waves, many, manyWaves) => `from boss${many ? 'es' : ''} ${bosses} (wave${manyWaves ? 's' : ''} ${waves})`,
     dropTooltip: 'Drops from endless bosses:',
-    dropTooltipLine: (boss, wave, chance) => `boss ${boss}, wave ${wave}: ${chance}`,
+    dropTooltipLine: (boss, waves, chance) => `boss ${boss}, waves ${waves}: ${chance}`,
     wavesTitle: (n) => `Waves and bosses (${n})`,
     boss: (n) => `Boss ${n}`,
     waveMeta: (poolId, equipment, stones) => `${poolId} · ${equipment} equipment · ${stones} fate stones`,
     waveSplit: (split) => `a roll: ${split}`,
-    waveSet: 'Click to show this wave’s drops',
-    waveClear: 'Click to clear the wave filter',
+    waveSet: 'Click to show this pool’s drops',
+    waveClear: 'Click to clear the pool filter',
     endlessNoteChance:
-      'The chance is the item’s share of that wave’s reward list. Endless items drop only from bosses: under an item are the boss numbers, and their waves in brackets. Fate stones drop only here — normal monsters never drop them.',
+      'The chance is the item’s share of its pool’s reward list. Endless items drop only from bosses: under an item are the boss numbers, and in brackets the waves their pool is dealt on (24–29 means that the same list is dealt on waves 24, 27 and every floor up to the next step). Fate stones drop only here — normal monsters never drop them.',
     endlessNoteDeep: (waves, last, poolId, level) =>
-      `The reward pool changes only on waves ${waves} — and stays on the last one: from wave ${last} on, at any depth (54, 100 — any), the same pool drops (${poolId}, Level ${level}) as on wave ${last}, and quality has already hit its ceiling — from wave 18 a boss always drops quality 6 items. Deeper, only the monsters grow (from floor 50, the “extreme depth”: +30% damage and +20% damage resistance per floor, see Monster scaling) — the drops do not get better.`,
+      `The reward pool changes only on waves ${waves} — the waves a new pool opens on: “24” means the floors up to 29 hold the same list. On the last step it settles: from wave ${last} on, at any depth (54, 100 — any), the same pool drops (${poolId}, Level ${level}) as on wave ${last}, and quality has already hit its ceiling — from wave 18 a boss always drops quality 6 items. Deeper, only the monsters grow (from floor 50, the “extreme depth”: +30% damage and +20% damage resistance per floor, see Monster scaling) — the drops do not get better.`,
     endlessNoteTeam:
       'Since v1.506 endless runs are formed as a team: a queue with a leader, the roster can be locked, and the run can start on a chosen floor (“Starting at Floor N”). Skipped floors earn no season contribution points (which affects season progression).',
 
@@ -325,20 +325,20 @@ export const SKY: Localised<SkyStrings> = {
     kindLabel: { equipment: 'Снаряжение', stones: 'Грани' },
     waveAll: 'Все волны',
     dropTitle: (n) => `Дроп с боссов (${n})`,
-    waveDropTitle: (wave, n) => `Волна ${wave} — дроп (${n})`,
+    waveDropTitle: (waves, n) => `Волны ${waves} — дроп (${n})`,
     bossLine: (bosses, waves, many, manyWaves) => `${many ? 'с боссов' : 'с босса'} ${bosses} (${manyWaves ? 'волны' : 'волна'} ${waves})`,
     dropTooltip: 'Выпадает с боссов бесконечки:',
-    dropTooltipLine: (boss, wave, chance) => `с босса ${boss}, волна ${wave}: ${chance}`,
+    dropTooltipLine: (boss, waves, chance) => `с босса ${boss}, волны ${waves}: ${chance}`,
     wavesTitle: (n) => `Волны и боссы (${n})`,
     boss: (n) => `Босс ${n}`,
     waveMeta: (poolId, equipment, stones) => `${poolId} · ${equipment} снаряж. · ${stones} граней`,
     waveSplit: (split) => `ролл: ${split}`,
-    waveSet: 'Клик — показать дроп этой волны',
-    waveClear: 'Клик — снять фильтр по этой волне',
+    waveSet: 'Клик — показать дроп этого пула',
+    waveClear: 'Клик — снять фильтр по этому пулу',
     endlessNoteChance:
-      'Шанс — доля предмета в пуле награды конкретной волны. Предметы бесконечки падают только с боссов: в подписи под предметом — номера боссов, в скобках — их волны. Грани выпадают только здесь, с обычных монстров они не падают.',
+      'Шанс — доля предмета в пуле награды. Предметы бесконечки падают только с боссов: в подписи под предметом — номера боссов, в скобках — диапазон волн их пула (24–29 значит, что тот же список берётся и на 25–29-й). Грани выпадают только здесь, с обычных монстров они не падают.',
     endlessNoteDeep: (waves, last, poolId, level) =>
-      `Пул награды меняется только на волнах ${waves} — на последней он и фиксируется: с ${last}-й волны и на любой глубине дальше (54-я, 100-я — любая) падает тот же пул (${poolId}, Level ${level}), что на ${last}-й, а качество уже упёрлось в максимум — с 18-й волны босс всегда роняет предметы качества 6. Глубже растут только монстры (с 50-го этажа — «сверхглубина»: +30 % урона и +20 % сопротивления за каждый этаж, см. «Скейл монстров») — сам дроп глубже не улучшается.`,
+      `Пул награды меняется только на волнах ${waves} — это волны, на которых включается очередной пул: 24-я значит, что до следующей ступени (по 29-ю включительно) падает тот же список. На последней ступени он и фиксируется: с ${last}-й волны и на любой глубине дальше (54-я, 100-я — любая) падает тот же пул (${poolId}, Level ${level}), что на ${last}-й, а качество уже упёрлось в максимум — с 18-й волны босс всегда роняет предметы качества 6. Глубже растут только монстры (с 50-го этажа — «сверхглубина»: +30 % урона и +20 % сопротивления за каждый этаж, см. «Скейл монстров») — сам дроп глубже не улучшается.`,
     endlessNoteTeam:
       'С v1.506 бесконечка собирается командой: очередь с лидером, состав можно залочить, а старт — с выбранного этажа («Starting at Floor N»). За пропущенные этажи очки вклада сезона не начисляются (это влияет на «Развитие сезона»).',
 
@@ -455,20 +455,20 @@ export const SKY: Localised<SkyStrings> = {
     kindLabel: { equipment: '装备', stones: '命石' },
     waveAll: '全部波次',
     dropTitle: (n) => `首领掉落（${n}）`,
-    waveDropTitle: (wave, n) => `第 ${wave} 波——掉落（${n}）`,
+    waveDropTitle: (waves, n) => `第 ${waves} 波——掉落（${n}）`,
     bossLine: (bosses, waves) => `来自首领 ${bosses}（第 ${waves} 波）`,
     dropTooltip: '无尽首领掉落：',
-    dropTooltipLine: (boss, wave, chance) => `首领 ${boss}，第 ${wave} 波：${chance}`,
+    dropTooltipLine: (boss, waves, chance) => `首领 ${boss}，第 ${waves} 波：${chance}`,
     wavesTitle: (n) => `波次与首领（${n}）`,
     boss: (n) => `首领 ${n}`,
     waveMeta: (poolId, equipment, stones) => `${poolId} · 装备 ${equipment} · 命石 ${stones}`,
     waveSplit: (split) => `每次：${split}`,
-    waveSet: '点击查看该波掉落',
-    waveClear: '点击取消该波筛选',
+    waveSet: '点击查看该池掉落',
+    waveClear: '点击取消该池筛选',
     endlessNoteChance:
-      '概率指物品在该波奖励列表中的占比。无尽物品只由首领掉落：物品下方是首领编号，括号内为对应波次。命石只在这里掉落，普通怪物不会掉。',
+      '概率指物品在其奖励池中的占比。无尽物品只由首领掉落：物品下方是首领编号，括号内是该池生效的波次范围（24–29 表示第 25–29 波也抽取同一份列表）。命石只在这里掉落，普通怪物不会掉。',
     endlessNoteDeep: (waves, last, poolId, level) =>
-      `奖励池只在第 ${waves} 波变化，并停在最后一档：从第 ${last} 波起，无论多深（第 54、第 100 波都一样）掉落的都是与第 ${last} 波相同的池（${poolId}，Level ${level}），品质也已到顶——第 18 波起首领总是掉落 6 品质物品。更深处只有怪物变强（第 50 层起为「超深层」：每层 +30% 伤害、+20% 伤害抗性，见「怪物成长」）——掉落不会再变好。`,
+      `奖励池只在第 ${waves} 波更换——这些波开启新的池：第 24 波表示直到下一档（含第 29 波）都掉落同一份列表。到最后一档便固定下来：从第 ${last} 波起，无论多深（第 54、第 100 波都一样）掉落的都是与第 ${last} 波相同的池（${poolId}，Level ${level}），品质也已到顶——第 18 波起首领总是掉落 6 品质物品。更深处只有怪物变强（第 50 层起为「超深层」：每层 +30% 伤害、+20% 伤害抗性，见「怪物成长」）——掉落不会再变好。`,
     endlessNoteTeam:
       '自 v1.506 起无尽以组队方式进行：由队长组队排队，可锁定阵容，并可从指定层开始（「Starting at Floor N」）。跳过的层不计入赛季贡献点（影响赛季成长）。',
 

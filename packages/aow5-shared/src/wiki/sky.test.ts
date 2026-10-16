@@ -13,8 +13,11 @@ import {
   tierMonsters,
   SKY_SUBTABS,
   eliteComboRange,
+  endlessBossSpans,
   endlessBossWaves,
   endlessFloorStats,
+  endlessMerchantSpans,
+  endlessSpanLabel,
   isPoolRef,
   spawnShares,
   tierFloorStats,
@@ -74,6 +77,40 @@ test('endless boss waves come every third floor', () => {
   assert.ok(waves.length > 0);
   for (const w of waves) assert.equal(w.wave, w.level * 3);
   assert.ok(waves.every((w) => w.equipment.length > 0));
+});
+
+// The wiki prints a pool's span, not the single wave it opens on: the server
+// takes the highest `Level` at or below `floor(floor / 3)`, so level 8 is
+// dealt on waves 24 through 29 — the row the 24 marks. A drop on wave 27 is
+// therefore the same list, not a contradiction (16.10.2026).
+test('a reward pool serves every floor up to the next pool', () => {
+  const spans = endlessBossSpans(sky);
+  assert.deepEqual(spans[0], { level: 1, from: 3, to: 5 });
+  assert.deepEqual(
+    spans.find((s) => s.level === 8),
+    { level: 8, from: 24, to: 29 },
+  );
+  assert.deepEqual(spans.at(-1), { level: 16, from: 48, to: null });
+  // Each pool ends on the floor before the next begins — no gaps, no overlaps.
+  for (let i = 1; i < spans.length; i++) assert.equal(spans[i]!.from, spans[i - 1]!.to! + 1);
+});
+
+test('the merchant ladder stops a step shorter than the boss one', () => {
+  const spans = endlessMerchantSpans(sky);
+  assert.deepEqual(
+    spans.find((s) => s.level === 8),
+    { level: 8, from: 24, to: 29 },
+  );
+  assert.deepEqual(spans.at(-1), { level: 15, from: 45, to: null });
+  assert.ok(spans.length < endlessBossSpans(sky).length);
+});
+
+test('a wave carries the span of its pool, and the deepest span is open', () => {
+  const wave = endlessBossWaves(sky).find((w) => w.level === 8);
+  assert.equal(endlessSpanLabel(wave!.wave, wave!.to), '24–29');
+  assert.equal(endlessSpanLabel(48, null), '48+');
+  const drop = endlessDrops(sky).find((d) => d.waves.some((w) => w.wave === 24));
+  assert.ok(drop!.waves.some((w) => w.to === 29));
 });
 
 test('elite combos hold two to five monsters', () => {

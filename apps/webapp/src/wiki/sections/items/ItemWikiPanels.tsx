@@ -6,6 +6,9 @@ import {
   containersOf,
   craftUnlockOf,
   endlessAppearances,
+  endlessBossSpans,
+  endlessMerchantSpans,
+  endlessSpanLabel,
   gachaByItem,
   itemDropIndex,
   mallByItem,
@@ -17,6 +20,8 @@ import {
   stoneLinks,
   vendorOffersOf,
   type CraftFile,
+  type EndlessSpan,
+  type EndlessStage,
   type ItemDropRow,
   type ItemsExtraFile,
   type ItemsExtraLocale,
@@ -25,6 +30,7 @@ import {
   type MonstersLocale,
   type PoolsFile,
   type ProgressionLocale,
+  type SkyFile,
   type SourcesFile,
   type SourcesLocale,
   type VendorOffer,
@@ -385,11 +391,12 @@ function DropCell({
 export function SourcesPanel({ item, full }: WikiPanelProps) {
   const { lang } = useApp();
   const tAll = useWikiStrings(ITEMS);
-  const data = useFiles<[VendorsFile, PoolsFile, SourcesFile, SourcesLocale]>([
+  const data = useFiles<[VendorsFile, PoolsFile, SourcesFile, SourcesLocale, SkyFile]>([
     'vendors.json',
     'pools.json',
     'sources.json',
     'locale.{lang}.sources.json',
+    'sky.json',
   ]);
 
   const paid = useMemo(() => {
@@ -402,7 +409,7 @@ export function SourcesPanel({ item, full }: WikiPanelProps) {
   }, [data]);
 
   if (data === null || paid === null || full === undefined) return null;
-  const [vendors, pools, , sourcesLocale] = data;
+  const [vendors, pools, , sourcesLocale, sky] = data;
 
   const offers = vendorOffersOf(vendors, { id: item.id, type: full.type, cost: full.cost, quality: full.quality });
   // A fate stone's endless waves are drawn by its own panel, with the item it upgrades.
@@ -416,12 +423,25 @@ export function SourcesPanel({ item, full }: WikiPanelProps) {
 
   const t = tAll;
   const list = (xs: number[]) => joinList(lang, xs.map((x) => num(x, lang)));
+  // A pool is drawn on a span of waves, not on one: wave 24 is the pool that
+  // also covers 25–29, so a drop on 27 is that same list. The spans come from
+  // the endless ladder, the item only knows the pool it sits in.
+  const spans = (xs: EndlessStage[], byLevel: Map<number, EndlessSpan>) =>
+    joinList(
+      lang,
+      xs.map((x) => {
+        const span = byLevel.get(x.stage);
+        return span ? endlessSpanLabel(span.from, span.to) : num(x.wave, lang);
+      }),
+    );
+  const bossSpans = new Map(endlessBossSpans(sky).map((s) => [s.level, s]));
+  const merchantSpans = new Map(endlessMerchantSpans(sky).map((s) => [s.level, s]));
   const skyParts: string[] = [];
   if (endless.bosses.length > 0) {
-    skyParts.push(t.sky.bosses(list(endless.bosses.map((b) => b.stage)), list(endless.bosses.map((b) => b.wave))));
+    skyParts.push(t.sky.bosses(list(endless.bosses.map((b) => b.stage)), spans(endless.bosses, bossSpans)));
   }
   if (endless.merchants.length > 0) {
-    skyParts.push(t.sky.merchants(list(endless.merchants.map((b) => b.stage)), list(endless.merchants.map((b) => b.wave))));
+    skyParts.push(t.sky.merchants(list(endless.merchants.map((b) => b.stage)), spans(endless.merchants, merchantSpans)));
   }
 
   // One pack can sell an item in several portions: one chip per pack.
@@ -536,7 +556,7 @@ export function FacetPanel({ item, full, season }: WikiPanelProps) {
   const store = useItemDetailsStore();
   const all = useAllItems();
   const links = useMemo(() => (all === null ? null : stoneLinks(all)), [all]);
-  const extra = useFiles<[ItemsExtraFile]>(['items-extra.json']);
+  const extra = useFiles<[ItemsExtraFile, SkyFile]>(['items-extra.json', 'sky.json']);
   const [compare, setCompare] = useState(false);
 
   if (links === null || full === undefined || store?.full == null) return null;
@@ -566,7 +586,13 @@ export function FacetPanel({ item, full, season }: WikiPanelProps) {
   }
   if (stone === undefined) return null;
 
-  const waves = endlessAppearances(stone.sources).bosses;
+  // The pool a boss stage belongs to is drawn on a span of waves (see the sources panel).
+  const bosses = endlessAppearances(stone.sources).bosses;
+  const bossSpans = extra === null ? null : new Map(endlessBossSpans(extra[1]).map((s) => [s.level, s]));
+  const waves = bosses.map((w) => {
+    const span = bossSpans?.get(w.stage);
+    return span ? endlessSpanLabel(span.from, span.to) : num(w.wave, lang);
+  });
   const base = view(stone.upgradesFrom);
   const made = stone.produces;
 
@@ -595,7 +621,7 @@ export function FacetPanel({ item, full, season }: WikiPanelProps) {
       )}
       <p className={styles.line}>
         {waves.length > 0
-          ? t.waves(joinList(lang, waves.map((w) => num(w.wave, lang))), joinList(lang, waves.map((w) => num(w.stage, lang))))
+          ? t.waves(joinList(lang, waves), joinList(lang, bosses.map((b) => num(b.stage, lang))))
           : t.noWaves}{' '}
         {waves.length > 0 && (
           <Link to={{ href: wikiPath('sky', 'endless') }} className={styles.dim}>
