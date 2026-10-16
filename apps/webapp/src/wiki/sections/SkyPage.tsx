@@ -8,6 +8,7 @@ import {
   endlessBossWaves,
   endlessDrops,
   endlessFloorStats,
+  endlessSpanLabel,
   expectedRun,
   isSkySubtab,
   skyPageFacts,
@@ -379,6 +380,8 @@ function EndlessPage({ ctx }: { ctx: Ctx }) {
   }, [all, kind, wave, lang, core]);
 
   const last = waves.at(-1);
+  // The filter picks a pool by the wave it opens on; every label the page prints is that pool's span.
+  const waveSpan = wave === null ? null : waves.filter((w) => w.wave === wave).map((w) => endlessSpanLabel(w.wave, w.to)).join(', ');
   const groupName = (g: string) => (g === 'equipment' ? t.kindLabel.equipment : g === 'stone' ? t.kindLabel.stones : g);
 
   return (
@@ -403,18 +406,21 @@ function EndlessPage({ ctx }: { ctx: Ctx }) {
           </Chip>
           {waves.map((w) => (
             <Chip key={w.wave} on={wave === w.wave} onClick={() => setWave(w.wave)}>
-              {String(w.wave)}
+              {endlessSpanLabel(w.wave, w.to)}
             </Chip>
           ))}
         </div>
       </Panel>
 
-      <Panel title={wave === null ? t.dropTitle(list.length) : t.waveDropTitle(wave, list.length)}>
+      <Panel title={waveSpan === null ? t.dropTitle(list.length) : t.waveDropTitle(waveSpan, list.length)}>
         <ItemGrid>
           {list.map((r) => {
             const bosses = r.waves.map((w) => w.boss).join(', ');
-            const nums = r.waves.map((w) => w.wave).join(', ');
-            const tip = [t.dropTooltip, ...r.waves.map((w) => t.dropTooltipLine(w.boss, w.wave, pct(w.chance, lang)))].join('\n');
+            const nums = r.waves.map((w) => endlessSpanLabel(w.wave, w.to)).join(', ');
+            const tip = [
+              t.dropTooltip,
+              ...r.waves.map((w) => t.dropTooltipLine(w.boss, endlessSpanLabel(w.wave, w.to), pct(w.chance, lang))),
+            ].join('\n');
             return (
               <div key={r.id} className={styles.dropCell} title={tip}>
                 <ItemRef id={r.id} extra={t.bossLine(bosses, nums, r.waves.length > 1, r.waves.length > 1)} />
@@ -439,7 +445,7 @@ function EndlessPage({ ctx }: { ctx: Ctx }) {
                 onClick={() => setWave(active ? null : w.wave)}
                 title={`${w.poolId}\n${t.waveSplit(split)}\n\n${active ? t.waveClear : t.waveSet}`}
               >
-                <span className={styles.waveNum}>{w.wave}</span>
+                <span className={styles.waveNum}>{endlessSpanLabel(w.wave, w.to)}</span>
                 <span className={styles.waveText}>
                   <span className={styles.cardName}>{t.boss(w.boss)}</span>
                   <span className={styles.cardMeta}>{t.waveMeta(w.poolId, w.equipment.length, w.stones.length)}</span>
