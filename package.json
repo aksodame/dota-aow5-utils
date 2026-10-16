@@ -12,6 +12,7 @@
     "dev:site": "turbo run dev --filter=aow5-utils-webapp --filter=aow5-utils-api",
     "build": "turbo run build",
     "test": "turbo run test",
+    "test:parser": "pnpm --dir parser test",
     "check-types": "turbo run check-types",
     "preview": "turbo run preview",
     "bootstrap-deploy": "node scripts/bootstrap-deploy.ts"

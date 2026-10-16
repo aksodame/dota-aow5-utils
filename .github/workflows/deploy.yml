@@ -76,6 +76,7 @@ jobs:
       # tag can point at any commit in master, including one CI never saw green.
       - run: pnpm check-types
       - run: pnpm test
+      - run: pnpm test:parser
       - run: pnpm build
       - run: pnpm --filter aow5-utils-api smoke
 

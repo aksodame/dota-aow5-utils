@@ -77,4 +77,5 @@ knowingly left out. The overlay's guide also explains how to develop against a s
 game installed, which is what makes contributing to it possible without owning the map.
 
 What holds for both: branch off `master`, keep a PR to one coherent change, and run what CI runs —
-`pnpm check-types && pnpm test && pnpm build` — before pushing.
+`pnpm check-types && pnpm test && pnpm test:parser && pnpm build` — before pushing. `test:parser` is
+separate because `parser/` lives outside the workspace and Turborepo never reaches it.

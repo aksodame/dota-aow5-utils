@@ -24,6 +24,11 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
+      # `parser/` sits outside the pnpm workspace, so Turborepo never reaches
+      # it — its tests need their own step or they never run at all. They import
+      # only node built-ins, so nothing has to be installed for this one.
+      - run: pnpm test:parser
+
       # Boots the built API and checks its routes. `test` covers core/ and
       # `verify-bundle` covers what the bundle imports, but neither of them ever
       # starts the server — so a provider Nest cannot construct passes both and
