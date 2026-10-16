@@ -17,7 +17,7 @@ import styles from './Layout.module.css';
  * than open them one at a time.
  */
 
-type Columns = 'list' | 'three' | 'single';
+type Columns = 'list' | 'three' | 'single' | 'detail';
 
 /**
  * The page grid.
@@ -25,6 +25,8 @@ type Columns = 'list' | 'three' | 'single';
  * `list`: a 300px sidebar and the rest. `three`: sidebar, a second list, and
  * the detail — the monsters section, where the middle column is the items the
  * left one drops. `single`: one wide column, for sections that are a document.
+ * `detail`: a list and the record it opens, side by side and both full width —
+ * the catalogue, where the record is a card that earns every pixel.
  */
 export function WikiShell({ columns = 'list', children }: { columns?: Columns; children: ReactNode }) {
   return <div className={cx(styles.page, COLUMNS[columns])}>{children}</div>;
@@ -34,6 +36,7 @@ const COLUMNS: Record<Columns, string | undefined> = {
   list: styles.colsList,
   three: styles.colsThree,
   single: styles.colsSingle,
+  detail: styles.colsDetail,
 };
 
 interface SidebarProps {

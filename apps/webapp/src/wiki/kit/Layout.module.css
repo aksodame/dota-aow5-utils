@@ -38,6 +38,17 @@
   max-width: 1100px;
 }
 
+/*
+ * A list and the record it opens, both full width and no cap: this is the
+ * catalogue, where the record is an item's card — the same card that used to
+ * have a page of its own, and one that reads best with room rather than a
+ * column of 68rem in the middle of a wide screen.
+ */
+.colsDetail {
+  grid-template-columns: 320px minmax(0, 1fr);
+  max-width: none;
+}
+
 @media (max-width: 1200px) {
   .colsThree {
     grid-template-columns: 280px minmax(0, 1fr);
@@ -56,7 +67,8 @@
 
 @media (max-width: 900px) {
   .colsList,
-  .colsThree {
+  .colsThree,
+  .colsDetail {
     grid-template-columns: minmax(0, 1fr);
   }
 

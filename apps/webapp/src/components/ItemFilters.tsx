@@ -1,52 +1,49 @@
-import { memo, useMemo } from 'react';
-import { Button, Panel, cx } from '@/ui';
+import { memo } from 'react';
+import { Select, cx } from '@/ui';
 import { useApp } from '@/data/AppData';
 import { rarityLabel } from '@/i18n/strings';
 import { qualityVar } from './Tile';
 /*
- * The browse sidebar's own stylesheet, imported rather than copied.
+ * The kit's sidebar styles and its labelled group, imported rather than copied.
  *
- * These two panels are the same control in two places — the ask was that the
- * catalogue read like the front page — and a second file of the same rules is
- * how the two drift a pixel at a time until only one of them gets a fix.
+ * The filters live inside the wiki's own sidebar now — the one the monsters
+ * section draws — so they take its rhythm: the same group heading, the same
+ * chips. A second file of the same rules is how the two drift a pixel at a
+ * time until only one of them gets a fix.
  */
-import styles from './Filters.module.css';
+import { FilterGroup } from '@/wiki/kit';
+import styles from './ItemFilters.module.css';
 
 /**
- * The catalogue's left sidebar: type, tier, rarity.
+ * The catalogue's left sidebar: level, type, rarity.
  *
- * Deliberately not `Filters`. That one filters *builds*, over facets the server
- * understands and a query it debounces; this filters an array already in
- * memory, over the three columns of an index row that anybody actually narrows
- * by. Sharing the component would have meant one with two disjoint halves and a
- * mode flag; sharing the stylesheet gets the part that was asked for, which is
- * that they look the same.
+ * **The original wiki's three controls, in its order.** Levels are a row of
+ * buttons — "All", then 1–10, five to a row — because that is how the wiki
+ * that this one replaces drew them and how its readers picked a tier; type and
+ * rarity are selects, because a category and a grade are one-of-many choices
+ * and a select says so without a wall of chips.
  *
- * Memoised for the reason the other one is: it sits beside a grid of 1,885
- * tiles that re-renders whenever the query changes, and none of these chips
- * have anything to do with what was typed.
+ * The search box is not here: it belongs to the sidebar that holds this, which
+ * draws it under the filters so it narrows what they left.
+ *
+ * Memoised for the reason the browse sidebar's is: it sits beside a list of
+ * 1,885 rows that re-renders whenever the query changes, and none of these
+ * controls have anything to do with what was typed.
  */
 
 export interface ItemFilterState {
-  /** Item categories to include. Empty means every category. */
-  types: string[];
-  /** 1-10 progression tiers. Empty means every tier. */
-  tiers: number[];
-  /** 1-7 rarity grades. Empty means every grade. */
-  qualities: number[];
+  /** One progression tier (1-10), or '' for every tier. */
+  level: number | '';
+  /** One item category, or '' for every category. */
+  type: string;
+  /** One rarity grade (1-7), or '' for every grade. */
+  quality: number | '';
 }
 
-export const EMPTY_ITEM_FILTERS: ItemFilterState = { types: [], tiers: [], qualities: [] };
+export const EMPTY_ITEM_FILTERS: ItemFilterState = { level: '', type: '', quality: '' };
 
 export function isItemFiltered(value: ItemFilterState): boolean {
-  return value.types.length > 0 || value.tiers.length > 0 || value.qualities.length > 0;
-}
-
-/** Adds or removes one value, keeping the list sorted so two equal states compare equal. */
-function toggle<T>(list: T[], item: T): T[] {
-  return list.includes(item)
-    ? list.filter((x) => x !== item)
-    : [...list, item].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  return value.level !== '' || value.type !== '' || value.quality !== '';
 }
 
 interface ItemFiltersProps {
@@ -56,8 +53,8 @@ interface ItemFiltersProps {
    * The categories this deployment's table actually has.
    *
    * Taken from the data rather than from a literal list, so a category the
-   * addon adds appears here without an edit, and one it drops stops being a
-   * chip that matches nothing.
+   * addon adds appears here without an edit, and one it drops stops being an
+   * option that matches nothing.
    */
   types: readonly string[];
 }
@@ -66,116 +63,78 @@ export const ItemFilters = memo(function ItemFilters({ value, onChange, types }:
   const { strings } = useApp();
   const t = strings.itemsPage;
 
-  const set = (patch: Partial<ItemFilterState>) => onChange({ ...value, ...patch });
+  // 1-10, written out rather than derived from the data: a level with nothing
+  // in it today is still a level, and a row of buttons that changes length
+  // between paks is a row that moves under the cursor.
+  const levels = Array.from({ length: 10 }, (_, i) => i + 1);
+  const qualities = Array.from({ length: 7 }, (_, i) => i + 1);
 
-  // 1-10, which is the whole progression. Written out rather than derived from
-  // the data: a tier with nothing in it today is still a tier, and a row of
-  // chips that changes length between paks is a row that moves under the cursor.
-  const tiers = useMemo(() => Array.from({ length: 10 }, (_, i) => i + 1), []);
-  const qualities = useMemo(() => Array.from({ length: 7 }, (_, i) => i + 1), []);
+  const levelButton = (level: number | '') => {
+    const on = value.level === level;
+    return (
+      <button
+        key={String(level)}
+        type="button"
+        className={cx(styles.level, on && styles.levelOn)}
+        aria-pressed={on}
+        title={level === '' ? undefined : t.level(level)}
+        onClick={() => onChange({ ...value, level })}
+      >
+        {level === '' ? strings.filters.any : level}
+      </button>
+    );
+  };
 
   return (
-    <Panel
-      fill
-      className={styles.panel}
-      title={strings.filters.heading}
-      action={
-        isItemFiltered(value) ? (
-          <span className={styles.count}>{value.types.length + value.tiers.length + value.qualities.length}</span>
-        ) : undefined
-      }
-    >
-      <div className={styles.scroll}>
-        <div className={styles.group}>
-          <div className={styles.groupHead}>
-            <span>{t.filterType}</span>
-          </div>
-          <div className={styles.tiers}>
-            {types.map((type) => {
-              const on = value.types.includes(type);
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  className={cx(styles.tier, on && styles.tierOn)}
-                  onClick={() => set({ types: toggle(value.types, type) })}
-                  aria-pressed={on}
-                >
-                  {strings.itemTypes[type] ?? type}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className={styles.group}>
-          <div className={styles.groupHead}>
-            <span>{t.filterTier}</span>
-          </div>
-          {/* The same chips the browse sidebar uses for a build's tier, so `T6`
-              means one thing on both pages. */}
-          <div className={styles.tiers}>
-            {tiers.map((tier) => {
-              const on = value.tiers.includes(tier);
-              return (
-                <button
-                  key={tier}
-                  type="button"
-                  className={cx(styles.tier, on && styles.tierOn)}
-                  onClick={() => set({ tiers: toggle(value.tiers, tier) })}
-                  aria-pressed={on}
-                >
-                  T{tier}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className={styles.group}>
-          <div className={styles.groupHead}>
-            <span>{t.filterRarity}</span>
-          </div>
-          {/*
-            Named, and in the grade's own colour when it is lit. A row of
-            `1`…`7` would be the shortest control and the least readable one:
-            the grade is a word people use — "mythic" — and the colour is how
-            it is recognised on every tile the site draws.
-          */}
-          <div className={styles.tiers}>
-            {qualities.map((quality) => {
-              const on = value.qualities.includes(quality);
-              return (
-                <button
-                  key={quality}
-                  type="button"
-                  className={cx(styles.tier, on && styles.tierOn)}
-                  style={on ? { backgroundColor: qualityVar(quality), borderColor: qualityVar(quality) } : undefined}
-                  onClick={() => set({ qualities: toggle(value.qualities, quality) })}
-                  aria-pressed={on}
-                >
-                  {rarityLabel(strings, quality)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+    <>
+      {/*
+        No heading: "Any" over a row of numbers says what the block is. "Any"
+        takes a row of its own and the levels go five to a row, which is the
+        shape the original wiki drew and the shape its readers picked a tier by.
+      */}
+      <div className={styles.levelGroup}>
+        <div className={styles.levelsAll}>{levelButton('')}</div>
+        <div className={styles.levels}>{levels.slice(0, 5).map(levelButton)}</div>
+        <div className={styles.levels}>{levels.slice(5).map(levelButton)}</div>
       </div>
 
-      {/* Always drawn and disabled when there is nothing to clear, as the browse
-          sidebar's is: a button that appears changes the panel's height under
-          the cursor that was moving towards it. */}
-      <div className={styles.footer}>
-        <Button
-          variant="ghost"
-          size="sm"
-          block
-          disabled={!isItemFiltered(value)}
-          onClick={() => onChange(EMPTY_ITEM_FILTERS)}
+      <FilterGroup label={t.filterType}>
+        <Select
+          className={styles.select}
+          value={value.type}
+          aria-label={t.filterType}
+          onChange={(event) => onChange({ ...value, type: event.target.value })}
         >
-          {strings.filters.clear}
-        </Button>
-      </div>
-    </Panel>
+          <option value="">{strings.filters.any}</option>
+          {types.map((type) => (
+            <option key={type} value={type}>
+              {strings.itemTypes[type] ?? type}
+            </option>
+          ))}
+        </Select>
+      </FilterGroup>
+
+      <FilterGroup label={t.filterRarity}>
+        {/*
+          Named, and in the grade's own colour: the grade is a word people use —
+          "mythic" — and the colour is how it is recognised on every tile the
+          site draws.
+        */}
+        <Select
+          className={styles.select}
+          value={String(value.quality)}
+          style={value.quality === '' ? undefined : { color: qualityVar(value.quality) }}
+          aria-label={t.filterRarity}
+          onChange={(event) => onChange({ ...value, quality: event.target.value === '' ? '' : Number(event.target.value) })}
+        >
+          <option value="">{strings.filters.any}</option>
+          {qualities.map((quality) => (
+            <option key={quality} value={quality}>
+              {rarityLabel(strings, quality)}
+            </option>
+          ))}
+        </Select>
+      </FilterGroup>
+    </>
   );
 });

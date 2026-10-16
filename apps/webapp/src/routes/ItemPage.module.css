@@ -14,6 +14,17 @@
   padding: var(--space-4) var(--space-5) var(--space-7);
 }
 
+/*
+ * Inside the catalogue’s detail column: that column is the width, and the wiki
+ * page around it has already paid for the spacing — so the card adds none of
+ * its own rather than nesting margins.
+ */
+.pageEmbedded {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
 /* --- header ---------------------------------------------------------- */
 
 .head {

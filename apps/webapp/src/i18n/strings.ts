@@ -17,6 +17,21 @@ export const LANGS = ['en', 'ru', 'zh'] as const;
 export type Lang = (typeof LANGS)[number];
 
 /**
+ * The Russian form of a noun for a count that stands on its own — `1 предмет`,
+ * `2 предмета`, `5 предметов`.
+ *
+ * Only the counts that *are* a bare noun in a list need it; everywhere else the
+ * sentences are written so the number does not govern one ("42 of 1,885").
+ */
+function ruPlural(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
+}
+
+/**
  * A rarity's name, or the bare grade when it has none.
  *
  * The scale is 1-7 and every grade is named in all three languages, so the
@@ -446,14 +461,21 @@ export interface Strings {
    * tokens.
    */
   itemTypes: Record<string, string>;
-  /** The catalogue grid at `/items`. */
+  /** The catalogue at `/items`: the filters, the list, and the item's card beside it. */
   itemsPage: {
     heading: string;
     searchLabel: string;
     searchPlaceholder: string;
     filterType: string;
-    filterTier: string;
+    /** The 1–10 row of level buttons beside the list, as the original wiki had it. */
+    filterLevel: string;
     filterRarity: string;
+    /** `Lv. 3` — the level in the list's own line, as the original named it. */
+    level: (n: number) => string;
+    /** What the item costs: `1,500 gold`. */
+    cost: (n: number) => string;
+    /** The detail column before a row is picked. */
+    pickItem: string;
     /** `1,885 items`, when nothing is filtered. */
     total: (n: number) => string;
     /** `42 of 1,885`, when something is. */
@@ -520,9 +542,6 @@ export interface Strings {
     seasonValues: string;
     seasonValuesHint: string;
     /** The stat panel's two views: the item's own numbers, or a copy dialled in. */
-    statsPlain: string;
-    statsCalc: string;
-    statsCalcHint: string;
   };
   tracker: {
     heading: string;
@@ -966,8 +985,11 @@ const en: Strings = {
     searchLabel: 'Search items by name or id',
     searchPlaceholder: 'Name or id — "focus bow", "item_G502"',
     filterType: 'Type',
-    filterTier: 'Tier',
+    filterLevel: 'Level',
     filterRarity: 'Rarity',
+    level: (n) => `Lv. ${n}`,
+    cost: (n) => `${n.toLocaleString()} gold`,
+    pickItem: 'Pick an item on the left',
     total: (n) => `${n.toLocaleString()} items`,
     found: (n, total) => `${n.toLocaleString()} of ${total.toLocaleString()}`,
     none: 'Nothing matches that.',
@@ -1001,9 +1023,6 @@ const en: Strings = {
     dropsOnce: 'Drops once',
     seasonValues: 'Values',
     seasonValuesHint: 'This season changed the item’s numbers. Pick which season’s table the page shows.',
-    statsPlain: 'Stats',
-    statsCalc: 'Roll calculator',
-    statsCalcHint: 'Dial in a particular copy: where each stat rolled, divine forge, enhancement, fixed affix, reforge level.',
   },
   tracker: {
     heading: 'Farm tracker',
@@ -1439,9 +1458,12 @@ const ru: Strings = {
     searchLabel: 'Поиск предметов по названию или идентификатору',
     searchPlaceholder: 'Название или id — «лук», «item_G502»',
     filterType: 'Тип',
-    filterTier: 'Тир',
+    filterLevel: 'Уровень',
     filterRarity: 'Редкость',
-    total: (n) => `${n.toLocaleString('ru-RU')} предметов`,
+    level: (n) => `Ур. ${n}`,
+    cost: (n) => `${n.toLocaleString('ru-RU')} зол.`,
+    pickItem: 'Выберите предмет слева',
+    total: (n) => `${n.toLocaleString('ru-RU')} ${ruPlural(n, 'предмет', 'предмета', 'предметов')}`,
     found: (n, total) => `${n.toLocaleString('ru-RU')} из ${total.toLocaleString('ru-RU')}`,
     none: 'Ничего не найдено.',
   },
@@ -1474,9 +1496,6 @@ const ru: Strings = {
     dropsOnce: 'Выпадает один раз',
     seasonValues: 'Значения',
     seasonValuesHint: 'В этом сезоне числа предмета другие. Выберите, по таблице какого сезона показывать страницу.',
-    statsPlain: 'Статы',
-    statsCalc: 'Калькулятор прокрутки',
-    statsCalcHint: 'Настройте конкретный экземпляр: прокрутку каждого стата, божественную ковку, усиление, фикс и уровень перековки.',
   },
   tracker: {
     heading: 'Фарм-трекер',
@@ -1907,8 +1926,11 @@ const zh: Strings = {
     searchLabel: '按名称或 ID 搜索物品',
     searchPlaceholder: '名称或 ID —「凝心弓」「item_G502」',
     filterType: '类型',
-    filterTier: '等级',
+    filterLevel: '物品等级',
     filterRarity: '品质',
+    level: (n) => `${n} 级`,
+    cost: (n) => `${n.toLocaleString()} 金币`,
+    pickItem: '从左侧选择物品',
     total: (n) => `${n.toLocaleString()} 件物品`,
     found: (n, total) => `${n.toLocaleString()} / ${total.toLocaleString()}`,
     none: '没有匹配的物品。',
@@ -1942,9 +1964,6 @@ const zh: Strings = {
     dropsOnce: '仅掉落一次',
     seasonValues: '数值',
     seasonValuesHint: '此赛季更改了该物品的数值。选择页面按哪个赛季的数据显示。',
-    statsPlain: '属性',
-    statsCalc: '随机属性计算器',
-    statsCalcHint: '设定某一件具体物品：每条属性的随机值、神铸、强化、固定词条和重铸等级。',
   },
   tracker: {
     heading: '刷图追踪器',

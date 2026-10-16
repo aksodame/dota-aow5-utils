@@ -1,0 +1,58 @@
+/**
+ * The catalogue's filters, as the sidebar draws them: a row of level buttons
+ * and two selects.
+ *
+ * The buttons are the wiki kit's chips in everything but shape — same height,
+ * same sunken fill, same accent when lit — so the panel reads as one control
+ * set; only the grid is this file's, because "Any, then 1–10 five to a row" is
+ * a layout the kit's `chips` row cannot express.
+ */
+
+.levelGroup {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.levels {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+/* "Any" spans the row on its own, as the original's did. */
+.levelsAll {
+  display: grid;
+}
+
+.level {
+  min-width: 32px;
+  height: 28px;
+  padding: 0 var(--space-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.level:hover {
+  background: var(--panel-hover);
+  border-color: var(--border-strong);
+}
+
+.levelOn,
+.levelOn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* A select fills the sidebar's width, as the browse sidebar's controls do. */
+.select {
+  width: 100%;
+}

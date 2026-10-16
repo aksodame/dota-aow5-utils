@@ -27,5 +27,6 @@ export { AuctionField, ItemGrid, ItemRef, RowTile } from './Refs';
 export { WikiText } from './WikiText';
 export { setAuctionPrice, useAuctionPrice, useAuctionPrices } from './auction';
 export { collate, day, duration, num, pct, pctOf, plural } from './format';
+export { useStatNamer, type StatName } from './statNames';
 export { useWikiPageMeta } from './meta';
 export { useWikiData } from './useWikiData';

@@ -41,7 +41,22 @@ import styles from './ItemStatsEditor.module.css';
  * (`ability_*`, the numbers inside the passive) get their few reachable steps
  * as chips. The maths is `aow5-shared/wiki`'s `itemroll.ts`.
  */
-export function ItemStatsEditor({ itemId, state, onChange }: { itemId: string; state: RollState; onChange: (next: RollState) => void }) {
+export function ItemStatsEditor({
+  itemId,
+  state,
+  onChange,
+  /**
+   * Its own heading, drawn unless something above it already says what this
+   * is: the item card's stat panel draws its title, and two headings for one
+   * block is one too many.
+   */
+  heading = true,
+}: {
+  itemId: string;
+  state: RollState;
+  onChange: (next: RollState) => void;
+  heading?: boolean;
+}) {
   const store = useItemDetailsStore();
   const extra = useItemsExtra();
   const t = useWikiStrings(CALC).stats;
@@ -84,7 +99,7 @@ export function ItemStatsEditor({ itemId, state, onChange }: { itemId: string; s
 
   const head = (
     <>
-      <h3 className={styles.title}>{t.title}</h3>
+      {heading && <h3 className={styles.title}>{t.title}</h3>}
       {cooldown !== undefined && cooldown > 0 && <p className={styles.note}>{t.cooldown(num(cooldown, lang, 2))}</p>}
     </>
   );

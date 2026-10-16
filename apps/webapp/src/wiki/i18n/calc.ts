@@ -1,5 +1,6 @@
 import type { AttrBonus, EffectFacts } from 'aow5-shared/wiki';
 import type { Localised } from './index';
+import { STAT_NAMES } from './statNames';
 
 /**
  * The stats calculator's words, and the item editor's (the items page reuses
@@ -262,98 +263,8 @@ const ROWS_ZH: Record<string, string> = {
 };
 
 /** Item stat keys the game's labels skip. The `%` prefix is the game's percent mark. */
-const NAMES_RU: Record<string, string> = {
-  all_strength_pct: '%Сила',
-  all_agility_pct: '%Ловкость',
-  all_intelligence_pct: '%Интеллект',
-  all_all_stats_pct: '%Все атрибуты',
-  all_attack_damage_percent: '%Урон от атаки',
-  attack_speed_pct: '%Скорость атаки',
-  bonus_movespeed: 'Скорость передвижения',
-  omni_crit_chance_pct: '%Общий крит',
-  omni_lifesteal_pct: '%Общий вампиризм',
-  outgoing_damage_pct_2: '%Итоговый урон',
-  dot_outgoing_damage_pct: '%Периодический урон',
-  poison_outgoing_damage_pct: '%Урон ядом',
-  bleed_outgoing_damage_pct: '%Урон кровотечением',
-  block: 'Блок',
-  base_mana_pct: '%Базовая мана',
-  all_armor_pct: '%Броня',
-  all_health_pct: '%Здоровье',
-  all_mana_pct: '%Мана',
-  movespeed_pct: '%Скорость передвижения',
-  mana_regen_pct: '%Регенерация маны',
-  attack_lifesteal_pct: '%Вампиризм атаки',
-  spell_lifesteal_pct: '%Вампиризм навыков',
-  physical_armor_penetration_pct: '%Пробивание брони',
-  mana_cost_reduction_pct: '%Снижение затрат маны',
-  damage_reduction_pct: '%Снижение урона',
-  bonus_energy_shield: 'Энергощит',
-  bonus_energy_shield_pct: '%Энергощит',
-  talent_slot_unlock_count: 'Слоты талантов',
-};
 
-const NAMES_EN: Record<string, string> = {
-  all_strength_pct: '%Strength',
-  all_agility_pct: '%Agility',
-  all_intelligence_pct: '%Intelligence',
-  all_all_stats_pct: '%All Stats',
-  all_attack_damage_percent: '%Attack Damage',
-  attack_speed_pct: '%Attack Speed',
-  bonus_movespeed: 'Movement Speed',
-  omni_crit_chance_pct: '%Omni Crit Chance',
-  omni_lifesteal_pct: '%Omni Lifesteal',
-  outgoing_damage_pct_2: '%Final Damage',
-  dot_outgoing_damage_pct: '%Damage over Time',
-  poison_outgoing_damage_pct: '%Poison Damage',
-  bleed_outgoing_damage_pct: '%Bleed Damage',
-  block: 'Block',
-  base_mana_pct: '%Base Mana',
-  all_armor_pct: '%Armor',
-  all_health_pct: '%Health',
-  all_mana_pct: '%Mana',
-  movespeed_pct: '%Movement Speed',
-  mana_regen_pct: '%Mana Regen',
-  attack_lifesteal_pct: '%Attack Lifesteal',
-  spell_lifesteal_pct: '%Spell Lifesteal',
-  physical_armor_penetration_pct: '%Armor Penetration',
-  mana_cost_reduction_pct: '%Mana Cost Reduction',
-  damage_reduction_pct: '%Damage Reduction',
-  bonus_energy_shield: 'Energy Shield',
-  bonus_energy_shield_pct: '%Energy Shield',
-  talent_slot_unlock_count: 'Talent slots',
-};
 
-const NAMES_ZH: Record<string, string> = {
-  all_strength_pct: '%力量',
-  all_agility_pct: '%敏捷',
-  all_intelligence_pct: '%智力',
-  all_all_stats_pct: '%全属性',
-  all_attack_damage_percent: '%攻击力',
-  attack_speed_pct: '%攻击速度',
-  bonus_movespeed: '移动速度',
-  omni_crit_chance_pct: '%全域暴击',
-  omni_lifesteal_pct: '%全能吸血',
-  outgoing_damage_pct_2: '%最终伤害',
-  dot_outgoing_damage_pct: '%持续伤害',
-  poison_outgoing_damage_pct: '%中毒伤害',
-  bleed_outgoing_damage_pct: '%流血伤害',
-  block: '格挡',
-  base_mana_pct: '%基础魔法值',
-  all_armor_pct: '%护甲',
-  all_health_pct: '%生命值',
-  all_mana_pct: '%魔法值',
-  movespeed_pct: '%移动速度',
-  mana_regen_pct: '%魔法恢复',
-  attack_lifesteal_pct: '%攻击吸血',
-  spell_lifesteal_pct: '%技能吸血',
-  physical_armor_penetration_pct: '%护甲穿透',
-  mana_cost_reduction_pct: '%魔耗降低',
-  damage_reduction_pct: '%伤害减免',
-  bonus_energy_shield: '能量护盾',
-  bonus_energy_shield_pct: '%能量护盾',
-  talent_slot_unlock_count: '天赋栏位',
-};
 
 const ATTR_RU: Record<AttrName, string> = { str: 'сила', agi: 'ловкость', int: 'интеллект' };
 const ATTR_EN: Record<AttrName, string> = { str: 'strength', agi: 'agility', int: 'intelligence' };
@@ -497,7 +408,7 @@ export const CALC: Localised<CalcStrings> = {
       notModelled:
         'Не учтены сеты, способности и боевые эффекты предметов (их вклад — в слотах справа), а также дерево tree20 — в интерфейсе игры оно не показано.',
     },
-    statNames: NAMES_RU,
+    statNames: STAT_NAMES.ru,
     stats: {
       title: 'Характеристики',
       cooldown: (s) => `Перезарядка: ${s} с`,
@@ -685,7 +596,7 @@ export const CALC: Localised<CalcStrings> = {
       notModelled:
         "Sets, item abilities and combat effects are not counted (their contribution is in the slots), nor is tree20 — the game's interface does not show it.",
     },
-    statNames: NAMES_EN,
+    statNames: STAT_NAMES.en,
     stats: {
       title: 'Stats',
       cooldown: (s) => `Cooldown: ${s} s`,
@@ -866,7 +777,7 @@ export const CALC: Localised<CalcStrings> = {
       marks: '「天赋」页面中的标记不影响基础：本职业天赋树与全部通用天赋树均视为点满。',
       notModelled: '未计入套装、物品技能与战斗效果（其贡献见物品栏），以及 tree20——游戏界面中不显示该天赋树。',
     },
-    statNames: NAMES_ZH,
+    statNames: STAT_NAMES.zh,
     stats: {
       title: '属性',
       cooldown: (s) => `冷却时间：${s} 秒`,
