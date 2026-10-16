@@ -406,9 +406,42 @@ export function endlessMerchantSpans(sky: SkyFile): EndlessSpan[] {
   return endlessSpans(sky.endless.rows.filter((r) => r.kind === 'merchant_base'));
 }
 
-/** `24–29`, or `48+` for a pool that holds at any depth (an en dash, as elsewhere in the wiki). */
-export function endlessSpanLabel(from: number, to: number | null): string {
-  return to === null ? `${from}+` : `${from}–${to}`;
+/**
+ * The boss floors a pool is actually dealt on. A boss stands every third
+ * floor, so the pool that opens on wave 12 covers waves 12, 15, 18 and 21 —
+ * not the range 12–23, which is only the span between two pool switches.
+ * The deepest pool never ends, so it stands for itself: its opening floor,
+ * which the pages print as `48+`.
+ */
+export function endlessSpanFloors(from: number, to: number | null): number[] {
+  if (to === null) return [from];
+  const out: number[] = [];
+  for (let wave = from; wave <= to; wave += 3) out.push(wave);
+  return out;
+}
+
+/**
+ * The waves a set of ladder stages puts an item on: the union of their pools'
+ * boss floors, ascending. `more` says the deepest of those pools goes on to
+ * any depth, so the last floor of the list prints as `48+`.
+ */
+export function endlessFloorList(
+  stages: readonly number[],
+  spans: readonly EndlessSpan[],
+): { floors: number[]; more: boolean } {
+  const byLevel = new Map(spans.map((s) => [s.level, s]));
+  const floors = new Set<number>();
+  let more = false;
+  for (const stage of stages) {
+    const span = byLevel.get(stage);
+    if (span === undefined) {
+      floors.add(stage * 3); // no span for it in the data: its own wave at least
+      continue;
+    }
+    for (const wave of endlessSpanFloors(span.from, span.to)) floors.add(wave);
+    if (span.to === null) more = true;
+  }
+  return { floors: [...floors].sort((a, b) => a - b), more };
 }
 
 /**
@@ -798,7 +831,7 @@ export function skyPageFacts(
     return {
       name,
       facts: [s.bossPools(waves.length), s.items(endlessDrops(sky).length), s.everyThird].join(' · '),
-      description: s.endlessDesc(name, waves.map((w) => endlessSpanLabel(w.wave, w.to)).join(', ')),
+      description: s.endlessDesc(name, waves.map((w) => w.wave).join(', ')),
     };
   }
   if (key === 'spawns') {

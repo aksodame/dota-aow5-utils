@@ -275,10 +275,11 @@
   gap: var(--space-2);
 }
 
+/* The cell is a column, not a row: a pool's floors (12, 15, 18, 21) are a list
+   now, and beside the boss text they squeezed it into a narrow column. */
 .waveCell {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  display: grid;
+  gap: var(--space-1);
   min-width: 0;
   padding: var(--space-2);
   border: 1px solid var(--border);
@@ -300,12 +301,9 @@
 }
 
 .waveNum {
-  flex: none;
-  min-width: 2.2em;
   font-size: 20px;
   font-weight: 800;
   color: var(--accent);
-  text-align: center;
   font-variant-numeric: tabular-nums;
 }
 

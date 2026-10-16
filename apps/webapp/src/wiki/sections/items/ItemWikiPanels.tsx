@@ -7,8 +7,8 @@ import {
   craftUnlockOf,
   endlessAppearances,
   endlessBossSpans,
+  endlessFloorList,
   endlessMerchantSpans,
-  endlessSpanLabel,
   gachaByItem,
   itemDropIndex,
   mallByItem,
@@ -423,25 +423,23 @@ export function SourcesPanel({ item, full }: WikiPanelProps) {
 
   const t = tAll;
   const list = (xs: number[]) => joinList(lang, xs.map((x) => num(x, lang)));
-  // A pool is drawn on a span of waves, not on one: wave 24 is the pool that
-  // also covers 25–29, so a drop on 27 is that same list. The spans come from
-  // the endless ladder, the item only knows the pool it sits in.
-  const spans = (xs: EndlessStage[], byLevel: Map<number, EndlessSpan>) =>
-    joinList(
-      lang,
-      xs.map((x) => {
-        const span = byLevel.get(x.stage);
-        return span ? endlessSpanLabel(span.from, span.to) : num(x.wave, lang);
-      }),
-    );
-  const bossSpans = new Map(endlessBossSpans(sky).map((s) => [s.level, s]));
-  const merchantSpans = new Map(endlessMerchantSpans(sky).map((s) => [s.level, s]));
+  // A boss pool is named by the floors its boss stands on — the pool that opens
+  // on wave 24 is dealt on 24 and 27 — so the card prints those, not the range
+  // between two switches (a range names floors no boss spawns on). The floors
+  // come from the endless ladder; the item only knows the pool it sits in, and
+  // the deepest pool — which goes on to any depth — is printed as `48+`.
+  const wavesLine = (xs: EndlessStage[], spans: readonly EndlessSpan[]) => {
+    const { floors, more } = endlessFloorList(xs.map((x) => x.stage), spans);
+    return joinList(lang, floors.map((f, i) => num(f, lang) + (more && i === floors.length - 1 ? '+' : '')));
+  };
+  const bossSpans = endlessBossSpans(sky);
+  const merchantSpans = endlessMerchantSpans(sky);
   const skyParts: string[] = [];
   if (endless.bosses.length > 0) {
-    skyParts.push(t.sky.bosses(list(endless.bosses.map((b) => b.stage)), spans(endless.bosses, bossSpans)));
+    skyParts.push(t.sky.bosses(list(endless.bosses.map((b) => b.stage)), wavesLine(endless.bosses, bossSpans)));
   }
   if (endless.merchants.length > 0) {
-    skyParts.push(t.sky.merchants(list(endless.merchants.map((b) => b.stage)), spans(endless.merchants, merchantSpans)));
+    skyParts.push(t.sky.merchants(list(endless.merchants.map((b) => b.stage)), wavesLine(endless.merchants, merchantSpans)));
   }
 
   // One pack can sell an item in several portions: one chip per pack.
@@ -586,13 +584,12 @@ export function FacetPanel({ item, full, season }: WikiPanelProps) {
   }
   if (stone === undefined) return null;
 
-  // The pool a boss stage belongs to is drawn on a span of waves (see the sources panel).
+  // The floors a boss pool is dealt on, not the range between two switches (see the sources panel).
   const bosses = endlessAppearances(stone.sources).bosses;
-  const bossSpans = extra === null ? null : new Map(endlessBossSpans(extra[1]).map((s) => [s.level, s]));
-  const waves = bosses.map((w) => {
-    const span = bossSpans?.get(w.stage);
-    return span ? endlessSpanLabel(span.from, span.to) : num(w.wave, lang);
-  });
+  const bossFloors = endlessFloorList(bosses.map((b) => b.stage), extra === null ? [] : endlessBossSpans(extra[1]));
+  const waves = bossFloors.floors.map(
+    (f, i) => num(f, lang) + (bossFloors.more && i === bossFloors.floors.length - 1 ? '+' : ''),
+  );
   const base = view(stone.upgradesFrom);
   const made = stone.produces;
 

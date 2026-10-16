@@ -15,9 +15,10 @@ import {
   eliteComboRange,
   endlessBossSpans,
   endlessBossWaves,
+  endlessFloorList,
   endlessFloorStats,
   endlessMerchantSpans,
-  endlessSpanLabel,
+  endlessSpanFloors,
   isPoolRef,
   spawnShares,
   tierFloorStats,
@@ -105,10 +106,24 @@ test('the merchant ladder stops a step shorter than the boss one', () => {
   assert.ok(spans.length < endlessBossSpans(sky).length);
 });
 
-test('a wave carries the span of its pool, and the deepest span is open', () => {
+// What both the endless page and the item cards print is the floors a pool is
+// dealt on, not the range between two switches: the pool of boss 4 covers the
+// floors 12, 15, 18 and 21, and "12–23" would name floors no boss stands on.
+test('a pool prints the boss floors it is dealt on', () => {
+  assert.deepEqual(endlessSpanFloors(12, 23), [12, 15, 18, 21]);
+  assert.deepEqual(endlessSpanFloors(24, 29), [24, 27]);
+  assert.deepEqual(endlessSpanFloors(30, 32), [30]);
+  assert.deepEqual(endlessSpanFloors(45, 47), [45]);
+  // The deepest pool never ends, so it stands for itself — the pages print it as `48+`.
+  assert.deepEqual(endlessSpanFloors(48, null), [48]);
+});
+
+test('an item is listed on every floor its pools cover', () => {
+  const spans = endlessBossSpans(sky);
+  assert.deepEqual(endlessFloorList([8], spans), { floors: [24, 27], more: false });
+  assert.deepEqual(endlessFloorList([8, 16], spans), { floors: [24, 27, 48], more: true });
   const wave = endlessBossWaves(sky).find((w) => w.level === 8);
-  assert.equal(endlessSpanLabel(wave!.wave, wave!.to), '24–29');
-  assert.equal(endlessSpanLabel(48, null), '48+');
+  assert.equal(wave!.to, 29);
   const drop = endlessDrops(sky).find((d) => d.waves.some((w) => w.wave === 24));
   assert.ok(drop!.waves.some((w) => w.to === 29));
 });
