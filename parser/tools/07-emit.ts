@@ -115,7 +115,18 @@ const playable = Object.values(items)
   .filter((i) => i.flags.playable)
   .sort((a, b) => a.idx - b.idx);
 
-const rows: IndexRow[] = playable.map((i) => [
+/**
+ * What the index carries: every playable item, plus the pets the game hides
+ * from its own shop (`IsPet` with `hide=1`). The FAQ names those pets and
+ * links to their cards, so they need a row and a name; the builder's pet slot
+ * accepts them too. Everything else non-playable stays out and keeps its hole
+ * in the id table.
+ */
+const shipped = Object.values(items)
+  .filter((i) => i.flags.playable || i.isPet === true)
+  .sort((a, b) => a.idx - b.idx);
+
+const rows: IndexRow[] = shipped.map((i) => [
   i.idx,
   i.id,
   i.type,
@@ -183,10 +194,10 @@ for (const lang of cfg.languages) {
     details: Record<string, LocaleDetail>;
   };
 
-  // Only playable items ship; the rest are dead weight in every page load.
+  // The index's contents ship; the rest are dead weight in every page load.
   const names: Record<string, string> = {};
   const details: Record<string, LocaleDetail> = {};
-  for (const item of playable) {
+  for (const item of shipped) {
     const name = parsed.names[item.id];
     if (name !== undefined) names[item.id] = name;
     const detail = parsed.details[item.id];
@@ -391,6 +402,7 @@ const meta: Meta = {
   vpkEntryCount: vpkIndex.entryCount,
   itemCount: Object.keys(items).length,
   playableCount: playable.length,
+  shippedCount: shipped.length,
   idTableHash: tableHash,
   idTableLength: ids.length,
   heroCount,
@@ -417,6 +429,9 @@ info(
   `sizes: index ${sizeOf('items.index.json')}, full ${sizeOf('items.full.json')}, ` +
     emittedLangs.map((l) => `${l} names ${sizeOf(`locale.${l}.names.json`)} / details ${sizeOf(`locale.${l}.details.json`)}`).join(', '),
 );
-ok(`emitted ${playable.length} playable of ${Object.keys(items).length} items; id table ${ids.length} entries`);
+ok(
+  `emitted ${shipped.length} of ${Object.keys(items).length} items ` +
+    `(${playable.length} playable + ${shipped.length - playable.length} hidden pet(s)); id table ${ids.length} entries`,
+);
 
 exitIfFailed();

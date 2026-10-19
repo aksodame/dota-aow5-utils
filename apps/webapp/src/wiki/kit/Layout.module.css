@@ -21,6 +21,17 @@
 }
 
 /*
+ * The sidebar-and-detail grid without the reading cap. The craft page is a
+ * working area — a recipe tree and a column of totals — and at 1440px a 2560px
+ * screen wasted most of its width on the margins. The sidebar keeps the
+ * catalogue's 300px rhythm; everything else takes the window.
+ */
+.colsListWide {
+  grid-template-columns: 300px minmax(0, 1fr);
+  max-width: none;
+}
+
+/*
  * The three-column sections take the whole window: with the catalogue's 1440px
  * cap a 2560px screen left ~380px of nothing on each side of the drop tables,
  * and this section is a working tool rather than an article. The two lists
@@ -79,6 +90,7 @@
 
 @media (max-width: 900px) {
   .colsList,
+  .colsListWide,
   .colsThree,
   .colsDetail {
     grid-template-columns: minmax(0, 1fr);

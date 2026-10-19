@@ -132,7 +132,7 @@ export default function VendorsPage({ path }: SectionProps) {
   ];
 
   return (
-    <WikiShell columns="single">
+    <WikiShell columns="wide">
       <WikiDetail>
         <Notice tone="warn" title={t.wipTitle}>
           {t.wipBody}

@@ -191,7 +191,7 @@ export default function ProgressionPage({ path }: SectionProps) {
   const activeHero = view !== null && view.kind === 'hero' ? view.hero : null;
 
   return (
-    <WikiShell columns="single">
+    <WikiShell columns="wide">
       <WikiDetail className={styles.root}>
         <Panel className={styles.top}>
           <WikiSubTabs items={tabs} active={activeTab} label={t.tabsLabel} />

@@ -123,7 +123,7 @@ export default function HeroesPage({ path }: SectionProps) {
   }
 
   return (
-    <WikiShell columns="list">
+    <WikiShell columns="listWide">
       <WikiSidebar
         title={t.title}
         search={{ value: q, onChange: setQ, placeholder: t.searchPlaceholder }}

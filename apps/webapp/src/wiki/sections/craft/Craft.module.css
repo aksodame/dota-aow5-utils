@@ -39,25 +39,66 @@
 /* --- the two working columns ------------------------------------------------- */
 
 /**
+ * The detail column is held to the height of the sidebar — the same formula,
+ * so the tree and the summary end on the same line as the list of crafts and
+ * the page itself does not scroll. The header and the data footer keep their
+ * natural height; the work row takes what is left.
+ */
+.detailFit {
+  height: calc(100svh - var(--topbar-h) - 44px - var(--footer-h, 84px) - var(--space-6));
+  min-height: 420px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+/**
  * The tree takes what is left and the summary a fixed column beside it; below
- * 1200px the summary drops under the tree rather than squeezing it, since the
- * tree already scrolls sideways and needs the width more.
+ * 1280px the summary drops under the tree rather than squeezing it, since the
+ * tree already scrolls sideways and needs the width more. Both stretch to the
+ * work row's height and scroll inside themselves.
  */
 .work {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
-  align-items: start;
+  align-items: stretch;
   gap: var(--space-4);
+  min-height: 0;
 }
 
 @media (max-width: 1280px) {
   .work {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  /* Stacked, the fixed height would only squeeze both columns; let the page
+     scroll as usual and the columns grow with their content. */
+  .detailFit {
+    height: auto;
+    min-height: 0;
+    grid-template-rows: auto auto auto;
+  }
+
+  .summary,
+  .treePanel,
+  .treeBody {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
 }
 
 .treePanel {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  min-height: 0;
+}
+
+/* The panel body is the scroller: the tree keeps its sideways scroll inside. */
+.treeBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .legend {
@@ -204,8 +245,17 @@
 
 .summary {
   display: grid;
+  /* Natural panel heights, then scroll the column: a panel has `overflow:
+     hidden`, so as a grid item it is allowed to shrink to zero and would clip
+     its own body instead of letting the column scroll. */
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: var(--space-4);
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .verdictBuy,

@@ -46,7 +46,9 @@ for (const [type, expected] of Object.entries(cfg.expected.itemTypeHistogram)) {
 }
 
 const playable = Object.values(items).filter((i) => i.flags.playable);
-check(playable.length === index.rows.length, `index rows match playable items: ${index.rows.length}`);
+const shipped = Object.values(items).filter((i) => i.flags.playable || i.isPet === true);
+check(shipped.length === index.rows.length, `index rows match shipped items: ${index.rows.length}`);
+check(shipped.length === meta.shippedCount, `meta.shippedCount agrees: ${meta.shippedCount}`);
 check(playable.length === meta.playableCount, `meta.playableCount agrees: ${meta.playableCount}`);
 // A tripwire, not a pin: small drift is a content update, a large swing is a
 // bug. The baseline is the last accepted run's count rather than a literal, so

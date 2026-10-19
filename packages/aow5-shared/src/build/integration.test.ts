@@ -39,15 +39,16 @@ test('the app-side id table agrees with the committed one wherever it is populat
   }
   assert.equal(populated, index.rows.length, 'every index row lands at its own position');
   /*
-   * A hole is an item nobody can pick: one in the game but not playable, or a
-   * tombstone — an id that left the game data and keeps its position so old
-   * links still decode. Every item the game has holds a position, so the
-   * tombstones are exactly the table's surplus over the item count.
+   * A hole is an item that does not ship in the index — non-playable, bar the
+   * hidden pets the FAQ links to — or a tombstone: an id that left the game
+   * data and keeps its position so old links still decode. Every item the game
+   * has holds a position, so the tombstones are exactly the table's surplus
+   * over the item count.
    */
   assert.equal(
     rebuilt.length - populated,
-    meta.itemCount - meta.playableCount + (meta.idTableLength - meta.itemCount),
-    'holes correspond exactly to the non-playable items and the tombstones',
+    meta.itemCount - meta.shippedCount + (meta.idTableLength - meta.itemCount),
+    'holes correspond exactly to the unshipped items and the tombstones',
   );
 });
 
