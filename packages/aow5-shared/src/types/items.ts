@@ -324,6 +324,8 @@ export interface Meta {
   vpkEntryCount: number;
   itemCount: number;
   playableCount: number;
+  /** Rows in `items.index.json`: playable items plus the pets the game hides. */
+  shippedCount: number;
   idTableHash: string;
   idTableLength: number;
   /** Playable heroes and the abilities they may actually take. */

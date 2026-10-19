@@ -38,6 +38,66 @@
   align-items: flex-start;
 }
 
+/*
+ * Tables that repeat the same shape (the two fatigue tables, the forge's
+ * eleven-column ladders) keep one column grid, so switching between them does
+ * not make the columns jump. A pair splits down the middle; a wide grid gives
+ * the row label a tenth and shares the rest evenly.
+ */
+.tablePair {
+  table-layout: fixed;
+}
+
+.tablePair th:first-child,
+.tablePair td:first-child {
+  width: 50%;
+}
+
+.tableGrid {
+  table-layout: fixed;
+}
+
+.tableGrid th:first-child,
+.tableGrid td:first-child {
+  width: 10%;
+}
+
+/* Copies of the same table (the minigame ladders) share one column grid. */
+.tableFixed {
+  table-layout: fixed;
+}
+
+/* The season's three level ladders sit side by side and must line up. */
+.tableTriple {
+  table-layout: fixed;
+}
+
+.tableTriple th:nth-child(1),
+.tableTriple td:nth-child(1) {
+  width: 15%;
+}
+
+.tableTriple th:nth-child(2),
+.tableTriple td:nth-child(2) {
+  width: 47%;
+}
+
+.tableTriple th:nth-child(3),
+.tableTriple td:nth-child(3) {
+  width: 38%;
+}
+
+/* A set's members, one per line and ordered by the item's level. */
+.members {
+  display: grid;
+  gap: 4px;
+}
+
+.memberPlain {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
 .column {
   flex: 1 1 220px;
   min-width: 0;

@@ -303,7 +303,7 @@ export default function CraftPage({ path }: SectionProps) {
   const groups = Object.keys(CRAFT_GROUPS) as CraftGroup[];
 
   return (
-    <WikiShell columns="list">
+    <WikiShell columns="listWide">
       <WikiSidebar
         title={t.title}
         search={{ value: q, onChange: setQ, placeholder: t.searchPlaceholder }}
@@ -380,7 +380,7 @@ export default function CraftPage({ path }: SectionProps) {
         )}
       </WikiSidebar>
 
-      <WikiDetail>
+      <WikiDetail className={missing || selected === undefined || tree === null ? undefined : styles.detailFit}>
         {missing ? (
           <WikiMissing />
         ) : selected === undefined || tree === null ? (
@@ -432,6 +432,7 @@ export default function CraftPage({ path }: SectionProps) {
             <div className={styles.work}>
               <Panel
                 className={styles.treePanel}
+                fill
                 title={t.tree}
                 action={
                   <Check checked={matDepth} onChange={setMatDepth} title={t.matDepthTitle}>
@@ -439,12 +440,14 @@ export default function CraftPage({ path }: SectionProps) {
                   </Check>
                 }
               >
-                <div className={styles.legend} aria-hidden="true">
-                  <span>{t.colPrice}</span>
-                  <span>{t.colExchange}</span>
-                  <span>{t.colCraft}</span>
+                <div className={styles.treeBody}>
+                  <div className={styles.legend} aria-hidden="true">
+                    <span>{t.colPrice}</span>
+                    <span>{t.colExchange}</span>
+                    <span>{t.colCraft}</span>
+                  </div>
+                  <CraftTreeView ctx={ctx} root={selected.item} tree={tree} matDepth={matDepth} />
                 </div>
-                <CraftTreeView ctx={ctx} root={selected.item} tree={tree} matDepth={matDepth} />
               </Panel>
 
               <CraftSummary

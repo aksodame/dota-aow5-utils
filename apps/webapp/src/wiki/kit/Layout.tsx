@@ -17,19 +17,21 @@ import styles from './Layout.module.css';
  * than open them one at a time.
  */
 
-type Columns = 'list' | 'three' | 'single' | 'detail' | 'wide';
+type Columns = 'list' | 'listWide' | 'three' | 'single' | 'detail' | 'wide';
 
 /**
  * The page grid.
  *
- * `list`: a 300px sidebar and the rest. `three`: sidebar, a second list, and
- * the detail — the monsters section, where the middle column is the items the
- * left one drops. `single`: one wide column, for sections that are a document.
- * `detail`: a list and the record it opens, side by side and both full width —
- * the catalogue, where the record is a card that earns every pixel. `wide`:
- * the same single reading column with the cap taken off — a section whose
- * pages are grids of data rather than prose, and which the cap leaves half
- * empty on a wide screen.
+ * `list`: a 300px sidebar and the rest. `listWide`: the same, with the cap
+ * taken off — for a section whose detail is a working area rather than a
+ * column of prose, and which the 1440px cap leaves half empty on a wide
+ * screen. `three`: sidebar, a second list, and the detail — the monsters
+ * section, where the middle column is the items the left one drops. `single`:
+ * one wide column, for sections that are a document. `detail`: a list and the
+ * record it opens, side by side and both full width — the catalogue, where the
+ * record is a card that earns every pixel. `wide`: the same single reading
+ * column with the cap taken off — a section whose pages are grids of data
+ * rather than prose, and which the cap leaves half empty on a wide screen.
  */
 export function WikiShell({ columns = 'list', children }: { columns?: Columns; children: ReactNode }) {
   return <div className={cx(styles.page, COLUMNS[columns])}>{children}</div>;
@@ -37,6 +39,7 @@ export function WikiShell({ columns = 'list', children }: { columns?: Columns; c
 
 const COLUMNS: Record<Columns, string | undefined> = {
   list: styles.colsList,
+  listWide: styles.colsListWide,
   three: styles.colsThree,
   single: styles.colsSingle,
   detail: styles.colsDetail,
@@ -306,15 +309,18 @@ export function DataTable({
   rows,
   numeric = [],
   compact = false,
+  className,
 }: {
   head: readonly ReactNode[];
   rows: ReadonlyArray<readonly ReactNode[]>;
   numeric?: readonly number[];
   compact?: boolean;
+  /** A caller's own layout class — a fixed column grid, for tables that repeat. */
+  className?: string;
 }) {
   return (
     <div className={styles.tableWrap}>
-      <table className={cx(styles.table, compact && styles.tableCompact)}>
+      <table className={cx(styles.table, compact && styles.tableCompact, className)}>
         <thead>
           <tr>
             {head.map((cell, index) => (
