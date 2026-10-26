@@ -75,8 +75,8 @@ import styles from './VendorsPage.module.css';
  *
  * What the pak states — stock lists, refresh timers, exchange stock, the
  * talents — comes from `vendors.json`. What only the encrypted server code
- * knows — prices, fixed slots, order rules, the guild's order lists — is the
- * partner wiki's, and every such figure carries a `*` that says so.
+ * knows — prices, fixed slots, order rules, the guild's order lists — is not
+ * in the files, and every such figure carries a `*` that says so.
  */
 export default function VendorsPage({ path }: SectionProps) {
   const t = useWikiStrings(VENDORS);
@@ -152,7 +152,6 @@ export default function VendorsPage({ path }: SectionProps) {
             {address.vendor === 'guild' && (
               <Guild ctx={ctx} tab={address.guild ?? 'tasks'} orderLevel={orderLevel} setOrderLevel={setOrderLevel} />
             )}
-            <Note>{t.partnerFootnote(ORDERS_VERSION)}</Note>
             <DataFooter ruleset={CURRENT_RULESET} built={day(ctx.file.generatedAt, lang)} />
           </>
         )}
@@ -188,17 +187,14 @@ interface Ctx {
   talentsFailed: boolean;
 }
 
-/** The game version the partner's figures describe. */
-const ORDERS_VERSION = 'v1.507';
-
 /** Order levels 1-4 take the rarity hues 2-5, so a level reads like a grade. */
 const toneOf = (level: number) => `var(--q${Math.min(6, level + 1)})`;
 
-/** The `*` on a figure the partner wiki states and the pak does not. */
+/** The `*` on a figure the pak does not state: the game keeps it server-side. */
 function Star() {
   const t = useWikiStrings(VENDORS);
   return (
-    <abbr className={styles.star} title={t.partnerMark}>
+    <abbr className={styles.star} title={t.serverMark}>
       *
     </abbr>
   );
@@ -347,18 +343,12 @@ function ItemList({
 
 // --- headers ------------------------------------------------------------------
 
-function RefreshTag({ ctx, refresh, partnerSec }: { ctx: Ctx; refresh: VendorRefresh; partnerSec: number | null }) {
+function RefreshTag({ ctx, refresh }: { ctx: Ctx; refresh: VendorRefresh }) {
   const { t, lang } = ctx;
   const units = useWikiStrings(COMMON).units;
   const base = duration(refreshSeconds(refresh, 0), lang, units);
   const fastest = duration(refreshSeconds(refresh, refresh.maxReductionPct), lang, units);
-  return (
-    <Tag
-      title={t.refreshTitle(base, fastest, partnerSec === null || partnerSec === refresh.baseSec ? null : duration(partnerSec, lang, units))}
-    >
-      {t.refreshTag(base, refresh.maxReductionPct)}
-    </Tag>
-  );
+  return <Tag title={t.refreshTitle(base, fastest)}>{t.refreshTag(base, refresh.maxReductionPct)}</Tag>;
 }
 
 // --- regular merchant -----------------------------------------------------------
@@ -379,9 +369,9 @@ function Regular({ ctx, shopLevel, setShopLevel }: { ctx: Ctx; shopLevel: number
         code={t.code(PARTNER_NPC.regular, gold)}
         tags={
           <>
-            <RefreshTag ctx={ctx} refresh={R.refresh} partnerSec={PARTNER_REGULAR_RULES.refreshBaseSec} />
+            <RefreshTag ctx={ctx} refresh={R.refresh} />
             <Tag title={t.clientDefault}>{t.manualRefresh(ctx.name(R.refresh.manualItem), R.refresh.manualLimit)}</Tag>
-            <Tag title={t.partnerMark}>
+            <Tag title={t.serverMark}>
               {t.formulaSlots(PARTNER_REGULAR_RULES.formulaSlots)}
               <Star />
             </Tag>
@@ -478,9 +468,9 @@ function Ancient({ ctx }: { ctx: Ctx }) {
         code={t.code(PARTNER_NPC.ancient, `${coins} (${A.currencyItem})`)}
         tags={
           <>
-            <RefreshTag ctx={ctx} refresh={A.refresh} partnerSec={null} />
+            <RefreshTag ctx={ctx} refresh={A.refresh} />
             <Tag title={t.clientDefault}>{t.manualRefresh(ctx.name(A.refresh.manualItem), A.refresh.manualLimit)}</Tag>
-            <Tag title={t.partnerMark}>
+            <Tag title={t.serverMark}>
               {t.totalSlots(formula)}
               <Star />
             </Tag>
@@ -574,15 +564,15 @@ function Guild({
         code={`${PARTNER_NPC.guild} · ${t.guildCurrency}`}
         tags={
           <>
-            <Tag title={t.partnerMark}>
+            <Tag title={t.serverMark}>
               {t.orderRefresh(charter, PARTNER_GUILD_RULES.manualCost)}
               <Star />
             </Tag>
-            <Tag title={t.partnerMark}>
+            <Tag title={t.serverMark}>
               {t.taskReset(PARTNER_GUILD_RULES.taskResetCost)}
               <Star />
             </Tag>
-            <Tag title={t.partnerMark}>
+            <Tag title={t.serverMark}>
               {t.refreshLimit(PARTNER_GUILD_RULES.manualLimit)}
               <Star />
             </Tag>
@@ -727,9 +717,6 @@ function GuildTasks({ ctx, orderLevel, setOrderLevel }: { ctx: Ctx; orderLevel: 
                 ))}
               </div>
               <Note>{t.ordersNote}</Note>
-              <p className={styles.snapshot}>
-                <Star /> {t.snapshot(orders.data.version)}
-              </p>
             </>
           }
           cell={({ key, id }) => {
@@ -766,7 +753,7 @@ function GuildExchange({ ctx }: { ctx: Ctx }) {
   return (
     <>
       <div className={styles.tags}>
-        <Tag title={t.partnerMark}>
+        <Tag title={t.serverMark}>
           {t.dailyExchanges(E.dailyBase, E.dailyMax, E.perSlot)}
           <Star />
         </Tag>

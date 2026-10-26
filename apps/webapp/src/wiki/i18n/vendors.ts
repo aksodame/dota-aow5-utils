@@ -7,8 +7,8 @@ import type { Localised } from './index';
  *
  * Russian is the author's wording. Numbers that come from data are passed in;
  * the mechanics the prose describes (the 4-drop unlock, the ×1.5…×3.5 roll,
- * the coin divisor) are the partner wiki's statements, and the page marks
- * them as such.
+ * the coin divisor) live in the encrypted server code, and the page marks
+ * those figures with a `*`.
  */
 export interface VendorsStrings {
   title: string;
@@ -35,14 +35,12 @@ export interface VendorsStrings {
   // headers
   code: (npc: string, currency: string) => string;
   refreshTag: (time: string, pct: number) => string;
-  refreshTitle: (base: string, fastest: string, partner: string | null) => string;
+  refreshTitle: (base: string, fastest: string) => string;
   manualRefresh: (item: string, count: number) => string;
   clientDefault: string;
 
-  // the partner's figures
-  partnerMark: string;
-  partnerFootnote: (version: string) => string;
-  snapshot: (version: string) => string;
+  /** The `*` on a figure the pak does not state. */
+  serverMark: string;
 
   // regular merchant
   formulaSlots: (count: number) => string;
@@ -142,16 +140,12 @@ export const VENDORS: Localised<VendorsStrings> = {
 
     code: (npc, currency) => `${npc} · currency: ${currency}`,
     refreshTag: (time, pct) => `Restock: ${time} (−${pct}% from talents)`,
-    refreshTitle: (base, fastest, partner) =>
-      `The client's restock interval is ${base}; each point of shop_time from talents takes 1% off, down to ${fastest}.` +
-      (partner === null ? '' : ` The partner wiki states ${partner}.`),
+    refreshTitle: (base, fastest) =>
+      `The client's restock interval is ${base}; each point of shop_time from talents takes 1% off, down to ${fastest}.`,
     manualRefresh: (item, count) => `Manual refresh: ${item} ×${count}/day`,
     clientDefault: "The client's default; the server may send another value.",
 
-    partnerMark: "Stated by the partner wiki: the game keeps this in encrypted server code, so it is not read from the game's files.",
-    partnerFootnote: (version) =>
-      `Values marked * are the partner wiki's (its ${version} snapshot): the vendors' server code is encrypted, so prices, fixed stock and order rules cannot be read from the game files.`,
-    snapshot: (version) => `from the wiki's ${version} snapshot`,
+    serverMark: 'The game computes this in encrypted server code, so it is not read from the game files.',
 
     formulaSlots: (count) => `Blueprints on display: up to ${count}`,
     regularRule:
@@ -264,16 +258,12 @@ export const VENDORS: Localised<VendorsStrings> = {
 
     code: (npc, currency) => `${npc} · валюта: ${currency}`,
     refreshTag: (time, pct) => `Обновление: ${time} (−${pct} % от прокачки)`,
-    refreshTitle: (base, fastest, partner) =>
-      `Интервал обновления в клиенте — ${base}; каждое очко shop_time из талантов снимает 1 %, до ${fastest}.` +
-      (partner === null ? '' : ` Вики-партнёр указывает ${partner}.`),
+    refreshTitle: (base, fastest) =>
+      `Интервал обновления в клиенте — ${base}; каждое очко shop_time из талантов снимает 1 %, до ${fastest}.`,
     manualRefresh: (item, count) => `Ручное обновление: ${item} ×${count}/день`,
     clientDefault: 'Значение клиента по умолчанию; сервер может прислать другое.',
 
-    partnerMark: 'Со слов вики-партнёра: игра держит это в зашифрованном серверном коде, из файлов игры не читается.',
-    partnerFootnote: (version) =>
-      `Значения со звёздочкой * — из вики-партнёра (снимок ${version}): серверный код торговцев зашифрован, поэтому цены, постоянные позиции и правила заказов из файлов игры не прочитать.`,
-    snapshot: (version) => `из снимка вики ${version}`,
+    serverMark: 'Игра считает это в зашифрованном серверном коде, из файлов игры значение не читается.',
 
     formulaSlots: (count) => `Чертежей в витрине: до ${count}`,
     regularRule:
@@ -386,16 +376,12 @@ export const VENDORS: Localised<VendorsStrings> = {
 
     code: (npc, currency) => `${npc} · 货币：${currency}`,
     refreshTag: (time, pct) => `刷新：${time}（天赋最多 −${pct}%）`,
-    refreshTitle: (base, fastest, partner) =>
-      `客户端的刷新间隔为 ${base}；天赋每 1 点 shop_time 减少 1%，最短 ${fastest}。` +
-      (partner === null ? '' : `合作百科给出的数值为 ${partner}。`),
+    refreshTitle: (base, fastest) =>
+      `客户端的刷新间隔为 ${base}；天赋每 1 点 shop_time 减少 1%，最短 ${fastest}。`,
     manualRefresh: (item, count) => `手动刷新：${item} ×${count}/天`,
     clientDefault: '客户端默认值；服务器可能下发其他数值。',
 
-    partnerMark: '来自合作百科：游戏把这部分写在加密的服务器代码里，无法从游戏文件读取。',
-    partnerFootnote: (version) =>
-      `带 * 的数值来自合作百科（其 ${version} 快照）：商人的服务器代码是加密的，价格、固定货位和订单规则无法从游戏文件中读取。`,
-    snapshot: (version) => `取自百科 ${version} 快照`,
+    serverMark: '该数值由游戏在加密的服务器代码中计算，无法从游戏文件读取。',
 
     formulaSlots: (count) => `货架上的图纸：最多 ${count} 个`,
     regularRule:
