@@ -8,7 +8,7 @@ import { readRulesetTable } from './lib/ruleset.ts';
 import { scriptText } from './lib/hudScript.ts';
 import { writeJson } from './lib/writeJson.ts';
 import { check, exitIfFailed, fail, info, ok, step, warn } from './lib/log.ts';
-import type { PoolEntry, RulesetId } from '../../packages/aow5-shared/src/wiki/pools.ts';
+import { CURRENT_RULESET, type PoolEntry, type RulesetId } from '../../packages/aow5-shared/src/wiki/pools.ts';
 import type {
   Combo,
   ComboMember,
@@ -126,18 +126,25 @@ const num = (v: unknown, label: string): number => {
 
 const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : v === undefined || v === null ? '' : String(v));
 
-/** `a:1|b:2` -> `[['a', 1], ['b', 2]]`. A malformed part fails. */
+/**
+ * `a:1|b:2` -> `[['a', 1], ['b', 2]]`. A malformed part fails.
+ *
+ * The plain KV tables write one pipe-joined string; a ruleset copy of the same
+ * table carries a JSON array of the same `a:1` entries, so both shapes are read.
+ */
 function pairs(v: unknown, label: string): [string, number][] {
-  const s = str(v);
-  if (s === '') return [];
-  return s.split('|').map((part) => {
+  const parts = Array.isArray(v) ? v.map((x) => str(x)) : str(v).split('|');
+  const out: [string, number][] = [];
+  for (const part of parts) {
+    if (part === '') continue;
     const at = part.lastIndexOf(':');
     if (at <= 0) {
       fail(`${label}: malformed pair ${JSON.stringify(part)}`);
-      return ['', 0] as [string, number];
+      continue;
     }
-    return [part.slice(0, at).trim(), num(part.slice(at + 1), `${label} ${part}`)] as [string, number];
-  });
+    out.push([part.slice(0, at).trim(), num(part.slice(at + 1), `${label} ${part}`)]);
+  }
+  return out;
 }
 
 // --- the greed cave's config.lua ---------------------------------------------
@@ -753,7 +760,12 @@ for (const [id, row] of Object.entries(mallRows)) {
 }
 mall.sort((a, b) => Number(a.id) - Number(b.id));
 
-const treasureRows = kvTable('ak_treasure');
+/*
+ * The paid chests are per season: the S3 copy makes the third shop live (its
+ * `is_hide` is 1 in S1 and S2), so the wiki — which describes S3 — reads the
+ * season's table and its pools rather than the base KV file.
+ */
+const treasureRows = seasonTable(CURRENT_RULESET, 'ak_treasure');
 const gacha: TreasureChest[] = [];
 for (const [id, row] of Object.entries(treasureRows)) {
   const chest: TreasureChest = {
@@ -777,10 +789,10 @@ for (const [id, row] of Object.entries(treasureRows)) {
   gacha.push(chest);
 }
 gacha.sort((a, b) => Number(a.id) - Number(b.id));
-const treasurePools = baseTable('ak_treasure_pool');
+const treasurePools = seasonTable(CURRENT_RULESET, 'ak_treasure_pool');
 for (const c of gacha) for (const [p] of c.pools) check(p in treasurePools, `treasure ${c.id}: pool ${p} exists`);
 
-const sources: SourcesFile = { schema: 1, generatedAt, ruleset: PRIMARY, mall, gacha };
+const sources: SourcesFile = { schema: 1, generatedAt, ruleset: CURRENT_RULESET, mall, gacha };
 info(`sources: ${mall.length} mall packs, ${gacha.length} treasure chests`);
 
 // --- locales -----------------------------------------------------------------------------
