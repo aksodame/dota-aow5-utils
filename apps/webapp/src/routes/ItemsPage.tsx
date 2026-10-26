@@ -1,7 +1,7 @@
 import { useDeferredValue, useMemo, useState } from 'react';
-import { iconUrl, type ItemSummary } from 'aow5-shared/data';
+import { LATEST_SEASON, iconUrl, type ItemSummary } from 'aow5-shared/data';
 import { SLOT_KIND } from 'aow5-shared/types';
-import { inConsumables, type ItemsExtraFile } from 'aow5-shared/wiki';
+import { inConsumables, seasonalPatch, type ItemsExtraFile } from 'aow5-shared/wiki';
 import { useApp } from '@/data/AppData';
 import { qualityVar } from '@/components/Tile';
 import {
@@ -60,7 +60,26 @@ export function ItemsPage({ itemId }: { itemId?: string }) {
   const items = useMemo(() => {
     if (core === null || extra === null) return [];
     const file = extra[0];
-    return core.items.filter((i) => i.type !== 'blueprint' && !inConsumables(file, { id: i.id, type: i.type }));
+    /*
+     * The catalogue is the current season's, like the card beside it: an item
+     * whose level, grade or price a season changes must not say one thing in
+     * the row and another on the card. `items.index.json` carries the base
+     * table, so the season's patch is laid over the three fields the row, the
+     * filters and the ordering read.
+     */
+    const ruleset = `s${LATEST_SEASON}` as const;
+    return core.items
+      .filter((i) => i.type !== 'blueprint' && !inConsumables(file, { id: i.id, type: i.type }))
+      .map((item) => {
+        const patch = seasonalPatch(file, item.id, ruleset);
+        if (patch === undefined) return item;
+        return {
+          ...item,
+          level: patch.level ?? item.level,
+          quality: patch.quality ?? item.quality,
+          cost: patch.cost ?? item.cost,
+        };
+      });
   }, [core, extra]);
 
   /** The categories this table actually has, in the order the select draws them. */
