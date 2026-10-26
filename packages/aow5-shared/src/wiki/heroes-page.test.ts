@@ -87,5 +87,9 @@ test('every emitted hero has a URL-safe short id and facts in every language; Dr
     }
   }
   const dk = heroByShort(file, 'dragon_knight');
-  if (dk !== undefined) assert.equal(heroFallbackSeason(dk, file.season), 's3');
+  if (dk !== undefined) {
+    // The wiki describes S3, where DK plays; asking for S2 falls back to S3.
+    assert.equal(heroFallbackSeason(dk, file.season), null);
+    assert.equal(heroFallbackSeason(dk, 's2'), 's3');
+  }
 });

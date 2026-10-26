@@ -12,6 +12,7 @@ import { parseRichText } from './lib/richtext.ts';
 import { sortKeys, writeJson, writeJsonPretty } from './lib/writeJson.ts';
 import { check, checkSoft, exitIfFailed, info, ok, step, warn } from './lib/log.ts';
 import { isAbilitySlot, type AbilityLocale, type AbilitySlotKey } from '../../packages/aow5-shared/src/types/heroes.ts';
+import { CURRENT_RULESET } from '../../packages/aow5-shared/src/wiki/pools.ts';
 import {
   sumStats,
   talentIconFile,
@@ -66,7 +67,12 @@ import {
  * saturation curves. Nothing encrypted is read.
  */
 
-const PRIMARY_SEASON = 's2';
+/*
+ * The season the wiki describes (step 07 and 08d have the same switch). The
+ * ruleset manifest still names the base season; a node's `AllowedRulesets`
+ * decides whether it is drawn in this one.
+ */
+const PRIMARY_SEASON = CURRENT_RULESET;
 const RULESET_DIR = 'panorama/layout/custom_game/vendor/data/rulesets';
 const TALENT_ICON_DIR = 'panorama/images/custom_game/talent';
 const PANORAMA_SPELLICONS = 'panorama/images/spellicons';
