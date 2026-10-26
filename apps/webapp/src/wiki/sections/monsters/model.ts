@@ -1,5 +1,6 @@
 import type { CoreData } from 'aow5-shared/data';
 import {
+  CURRENT_RULESET,
   dropChance,
   isShownRoom,
   monsterInSeason,
@@ -116,7 +117,7 @@ export function buildModel(file: MonstersFile, locale: MonstersLocale, locations
     mapped,
     locations,
     groups: file.groups,
-    ruleset: file.ruleset,
+    ruleset: CURRENT_RULESET,
     built: file.generatedAt,
   };
 }

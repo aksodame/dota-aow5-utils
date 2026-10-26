@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
+  CURRENT_RULESET,
   PARTNER_CHEST_REWARD,
   PARTNER_DEEP,
   PARTNER_NORMAL_COIN_AMOUNT,
@@ -168,7 +169,7 @@ export default function SkyPage({ path }: SectionProps) {
         {error !== null && <WikiError message={error} />}
         {!missing && ctx === null && error === null && <WikiLoading />}
         {!missing && ctx !== null && key !== null && <SubPage ctx={ctx} tab={key} />}
-        {ctx !== null && <DataFooter ruleset={ctx.sky.ruleset.toUpperCase()} built={day(ctx.sky.generatedAt, lang)} />}
+        {ctx !== null && <DataFooter ruleset={CURRENT_RULESET.toUpperCase()} built={day(ctx.sky.generatedAt, lang)} />}
       </WikiDetail>
     </WikiShell>
   );

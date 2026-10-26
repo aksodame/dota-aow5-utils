@@ -170,7 +170,7 @@ export default function CalcPage({ path }: SectionProps) {
             </div>
           </div>
           <HeroBase file={data[0]} short={state.hero} level={level} heroName={heroName} prog={data[3]} base={state.base} />
-          <DataFooter ruleset={data[0].season} built={day(data[0].generatedAt, lang)} />
+          <DataFooter ruleset={CURRENT_RULESET} built={day(data[0].generatedAt, lang)} />
           <CalcPicker
             kind={pick?.kind ?? null}
             profession={profession}

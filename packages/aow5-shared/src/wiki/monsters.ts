@@ -39,7 +39,7 @@ export type { PoolEntry, RulesetId } from './pools.ts';
 export type UnitType = string;
 
 /** Which table a row was read from. */
-export type MonsterSource = 'ak_monster' | 'ak_breakable' | 'ak_tree';
+export type MonsterSource = 'ak_monster' | 'ak_breakable' | 'ak_tree' | 'ak_units';
 
 /**
  * Rooms the wiki leaves out.
@@ -475,15 +475,17 @@ export function locFarm(
 // --- the section's list, its badges and its drop tables ------------------------
 
 /**
- * The five groups the section files a unit under, strongest first.
+ * The groups the section files a unit under, strongest first.
  *
  * The partner wiki's own grouping: towers and room trees (`building`) sit with
  * the elites — it was asked for, there is no button of their own — and every
- * breakable is a "container".
+ * breakable is a "container". `gatherable` is ours: an S3 room places
+ * mushrooms a player picks up rather than kills, and they belong on the page
+ * with their spawn points.
  */
-export type MonsterTypeGroup = 'boss' | 'miniboss' | 'elite' | 'normal' | 'container';
+export type MonsterTypeGroup = 'boss' | 'miniboss' | 'elite' | 'normal' | 'container' | 'gatherable';
 
-export const MONSTER_TYPE_GROUPS: readonly MonsterTypeGroup[] = ['boss', 'miniboss', 'elite', 'normal', 'container'];
+export const MONSTER_TYPE_GROUPS: readonly MonsterTypeGroup[] = ['boss', 'miniboss', 'elite', 'normal', 'container', 'gatherable'];
 
 const GROUP_OF_TYPE: Record<string, MonsterTypeGroup> = {
   monster_boss: 'boss',
@@ -492,6 +494,7 @@ const GROUP_OF_TYPE: Record<string, MonsterTypeGroup> = {
   building: 'elite',
   monster_normal: 'normal',
   destructible: 'container',
+  gatherable: 'gatherable',
 };
 
 /**
@@ -628,9 +631,9 @@ type MonsterLang = 'en' | 'ru' | 'zh';
 
 /** The badge on a unit, per language. The partner's own words in Russian. */
 export const MONSTER_TYPE_NAMES: Record<MonsterLang, Record<MonsterTypeGroup, string>> = {
-  en: { boss: 'Boss', miniboss: 'Mini-boss', elite: 'Elite', normal: 'Normal', container: 'Container' },
-  ru: { boss: 'Босс', miniboss: 'Мини-босс', elite: 'Элитный', normal: 'Обычный', container: 'Контейнер' },
-  zh: { boss: 'BOSS', miniboss: '头目', elite: '精英', normal: '小怪', container: '可破坏物' },
+  en: { boss: 'Boss', miniboss: 'Mini-boss', elite: 'Elite', normal: 'Normal', container: 'Container', gatherable: 'Gathered' },
+  ru: { boss: 'Босс', miniboss: 'Мини-босс', elite: 'Элитный', normal: 'Обычный', container: 'Контейнер', gatherable: 'Собирается' },
+  zh: { boss: 'BOSS', miniboss: '头目', elite: '精英', normal: '小怪', container: '可破坏物', gatherable: '采集' },
 };
 
 /** What `monsterPageFacts` needs, already resolved to names in the reader's language. */

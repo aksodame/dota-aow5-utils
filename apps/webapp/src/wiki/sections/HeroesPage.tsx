@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { heroIconUrl } from 'aow5-shared/data';
 import type { AbilityLocale } from 'aow5-shared/types';
 import {
+  CURRENT_RULESET,
   abilityText,
   heroByShort,
   heroFallbackSeason,
@@ -160,7 +161,7 @@ export default function HeroesPage({ path }: SectionProps) {
         ) : (
           <HeroDetail hero={selected} name={nameOf(selected)} data={data} />
         )}
-        <DataFooter ruleset={file.season} built={day(file.generatedAt, lang)} />
+        <DataFooter ruleset={CURRENT_RULESET} built={day(file.generatedAt, lang)} />
       </WikiDetail>
     </WikiShell>
   );

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { heroIconUrl } from 'aow5-shared/data';
 import {
+  CURRENT_RULESET,
   PROGRESSION_HERO_TAB,
   inSeason,
   isShownRoom,
@@ -469,7 +470,7 @@ function TabBody({ file, names, view, learned, heroesOff, onToggle, farm, roomNa
         {roomName !== null ? t.locNote(roomName) : t.noLocNote}
         {t.costSource}
       </Note>
-      <DataFooter ruleset={file.season.toUpperCase()} built={day(file.generatedAt, lang)} />
+      <DataFooter ruleset={CURRENT_RULESET.toUpperCase()} built={day(file.generatedAt, lang)} />
     </>
   );
 }

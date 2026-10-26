@@ -17,10 +17,13 @@ export interface ItemWikiStrings {
 
   drops: {
     title: (n: number) => string;
+    titleGathered: (n: number) => string;
     titleBare: string;
     capped: (shown: number, total: number) => string;
     tip: (name: string, type: string, rooms: string, chance: string) => string;
+    tipGathered: (name: string, type: string, rooms: string) => string;
     note: string;
+    noteGathered: string;
     noteRecipe: string;
     recipeNone: string;
     firstTitle: string;
@@ -134,12 +137,16 @@ export const ITEMS: Localised<ItemWikiStrings> = {
       destructible: 'Container',
       summoned: 'Summon',
       monster_trap: 'Trap',
+      gatherable: 'Gathered',
     },
     drops: {
       title: (n) => `Drops from monsters (${n})`,
+      titleGathered: (n) => `Gathered in rooms (${n})`,
       titleBare: 'Drops from monsters',
       capped: (shown, total) => `Showing the first ${shown} of ${total}.`,
       tip: (name, type, rooms, chance) => `${name} · ${type}${rooms ? `\n${rooms}` : ''}\n\nChance per kill: ${chance}`,
+      tipGathered: (name, type, rooms) => `${name} · ${type}${rooms ? `\n${rooms}` : ''}`,
+      noteGathered: 'Gathered where it stands: no drop chance is rolled; the room is where the point is placed.',
       note: 'Chance per kill on Hard. Recipes are left out of the pool (each drops only once); the guaranteed first drop is listed separately below.',
       noteRecipe:
         'Chance per kill on Hard while the recipe is still in the pool: once it drops, it leaves every pool. Counted together with the rest of the pool.',
@@ -256,12 +263,16 @@ export const ITEMS: Localised<ItemWikiStrings> = {
       destructible: 'Контейнер',
       summoned: 'Призванный',
       monster_trap: 'Ловушка',
+      gatherable: 'Собирается',
     },
     drops: {
       title: (n) => `Выпадает с монстров (${n})`,
+      titleGathered: (n) => `Собирается в комнатах (${n})`,
       titleBare: 'Выпадает с монстров',
       capped: (shown, total) => `Показаны первые ${shown} из ${total}.`,
       tip: (name, type, rooms, chance) => `${name} · ${type}${rooms ? `\n${rooms}` : ''}\n\nШанс с одного убийства: ${chance}`,
+      tipGathered: (name, type, rooms) => `${name} · ${type}${rooms ? `\n${rooms}` : ''}`,
+      noteGathered: 'Собирается на месте: шанс не бросается, комната — это где стоит точка сбора.',
       note: 'Шанс — с одного убийства на сложной сложности. Рецепты исключены из пула (они выпадают один раз), гарантированный первый дроп — отдельной строкой ниже.',
       noteRecipe:
         'Шанс — с одного убийства на сложной сложности, пока рецепт ещё в пуле: выпав один раз, он из пулов исчезает. Считан вместе с остальными предметами пула.',
@@ -378,12 +389,16 @@ export const ITEMS: Localised<ItemWikiStrings> = {
       destructible: '容器',
       summoned: '召唤物',
       monster_trap: '陷阱',
+      gatherable: '采集',
     },
     drops: {
       title: (n) => `怪物掉落（${n}）`,
+      titleGathered: (n) => `在地图上采集（${n}）`,
       titleBare: '怪物掉落',
       capped: (shown, total) => `仅显示前 ${shown} 项，共 ${total} 项。`,
       tip: (name, type, rooms, chance) => `${name} · ${type}${rooms ? `\n${rooms}` : ''}\n\n每次击杀掉落几率：${chance}`,
+      tipGathered: (name, type, rooms) => `${name} · ${type}${rooms ? `\n${rooms}` : ''}`,
+      noteGathered: '在地图上采集：不进行掉落判定，房间即采集点所在位置。',
       note: '几率为困难难度下每次击杀的掉落几率。配方不计入掉落池（每个只掉一次）；首次必掉见下方单独一行。',
       noteRecipe: '几率为困难难度下、配方仍在池中时每次击杀的掉落几率：掉落一次后即从所有池中移除。与池中其他物品一同计算。',
       recipeNone: '没有任何怪物的掉落中包含此配方——数据中找不到来源。',

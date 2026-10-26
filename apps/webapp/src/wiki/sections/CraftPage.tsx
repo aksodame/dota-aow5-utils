@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ItemSummary } from 'aow5-shared/data';
 import {
+  CURRENT_RULESET,
   CRAFT_GROUPS,
   CRAFT_LIST_CAP,
   craftEconomy,
@@ -464,7 +465,7 @@ export default function CraftPage({ path }: SectionProps) {
             </div>
           </>
         )}
-        <DataFooter ruleset={extra.ruleset.toUpperCase()} built={data[0].generatedAt.slice(0, 10)} />
+        <DataFooter ruleset={CURRENT_RULESET.toUpperCase()} built={data[0].generatedAt.slice(0, 10)} />
       </WikiDetail>
     </WikiShell>
   );

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { ItemSummary } from 'aow5-shared/data';
 import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
 import {
+  CURRENT_RULESET,
   chestDraws,
   chestVariantDraws,
   chestVariants,
@@ -521,7 +522,7 @@ function Detail({
   const shares = (pool === undefined ? [] : poolShares(poolInSeason(pool))).filter((entry) => known(entry.id));
   const poolLabel = row.pool === undefined ? '' : poolsLocale.names[row.pool] ? `${poolsLocale.names[row.pool]} (${row.pool})` : row.pool;
 
-  const rules = seasons === null ? extra.ruleset : `${extra.ruleset} · ${t.footerOnly(seasons)}`;
+  const rules = seasons === null ? CURRENT_RULESET : `${CURRENT_RULESET} · ${t.footerOnly(seasons)}`;
 
   return (
     <>

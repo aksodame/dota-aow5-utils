@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import type { ItemSummary } from 'aow5-shared/data';
 import {
+  CURRENT_RULESET,
   PARTNER_ANCIENT_FIXED,
   PARTNER_ANCIENT_RULES,
   PARTNER_EXCHANGE,
@@ -152,7 +153,7 @@ export default function VendorsPage({ path }: SectionProps) {
               <Guild ctx={ctx} tab={address.guild ?? 'tasks'} orderLevel={orderLevel} setOrderLevel={setOrderLevel} />
             )}
             <Note>{t.partnerFootnote(ORDERS_VERSION)}</Note>
-            <DataFooter ruleset={ctx.file.ruleset} built={day(ctx.file.generatedAt, lang)} />
+            <DataFooter ruleset={CURRENT_RULESET} built={day(ctx.file.generatedAt, lang)} />
           </>
         )}
       </WikiDetail>

@@ -13,6 +13,7 @@ import {
   isShownRoom,
   itemDropIndex,
   mallByItem,
+  monsterTypeGroup,
   rewardChestTiers,
   seasonalPatch,
   soulCooldownAt,
@@ -304,12 +305,20 @@ export function DropsPanel({ item, full, season }: WikiPanelProps) {
       .map((room) => core?.maps.byId.get(room)?.label ?? room)
       .join(', ');
 
+  /*
+   * A gatherable is not a drop: the mushroom stands where the room places it
+   * and is picked up. When every source is one, the panel says so and the rows
+   * lose their "chance per kill"; a mixed list keeps the ordinary wording.
+   */
+  const isGathered = (id: string) => monsterTypeGroup(byId.get(id)?.type ?? '') === 'gatherable';
+  const allGathered = rows.length > 0 && rows.every((row) => isGathered(row.monster));
+
   return (
     <Panel
       title={
         <PanelTitle
           icon={<Icon.Crosshair size={15} />}
-          text={rows.length > 0 ? t.title(rows.length) : t.titleBare}
+          text={rows.length > 0 ? (allGathered ? t.titleGathered(rows.length) : t.title(rows.length)) : t.titleBare}
         />
       }
     >
@@ -317,11 +326,19 @@ export function DropsPanel({ item, full, season }: WikiPanelProps) {
         <>
           <ul className={styles.dropGrid}>
             {rows.slice(0, DROP_CAP).map((row) => (
-              <DropCell key={row.monster} row={row} monster={byId.get(row.monster)} name={name} typeLabel={typeLabel} rooms={rooms} />
+              <DropCell
+                key={row.monster}
+                row={row}
+                monster={byId.get(row.monster)}
+                gathered={isGathered(row.monster)}
+                name={name}
+                typeLabel={typeLabel}
+                rooms={rooms}
+              />
             ))}
           </ul>
           {rows.length > DROP_CAP && <p className={page.note}>{t.capped(DROP_CAP, rows.length)}</p>}
-          <p className={page.note}>{recipe ? t.noteRecipe : t.note}</p>
+          <p className={page.note}>{allGathered ? t.noteGathered : recipe ? t.noteRecipe : t.note}</p>
         </>
       )}
       {noneAtAll && <p className={page.note}>{t.recipeNone}</p>}
@@ -363,12 +380,15 @@ export function DropsPanel({ item, full, season }: WikiPanelProps) {
 function DropCell({
   row,
   monster,
+  gathered,
   name,
   typeLabel,
   rooms,
 }: {
   row: ItemDropRow;
   monster: Monster | undefined;
+  /** A gatherable: picked up where it stands, no drop roll to print. */
+  gathered: boolean;
   name: (id: string) => string;
   typeLabel: (type: string) => string;
   rooms: (m: Monster) => string;
@@ -383,7 +403,7 @@ function DropCell({
       <Link
         to={{ href: wikiPath('monsters', row.monster) }}
         className={cx(styles.dropCell, TYPE_TONE[type])}
-        title={t.tip(name(row.monster), typeLabel(type), where, chance)}
+        title={gathered ? t.tipGathered(name(row.monster), typeLabel(type), where) : t.tip(name(row.monster), typeLabel(type), where, chance)}
       >
         <span className={styles.dropText}>
           <span className={styles.dropName}>{name(row.monster)}</span>
@@ -392,7 +412,7 @@ function DropCell({
             {where !== '' && ` · ${where}`}
           </span>
         </span>
-        <span className={styles.dropChance}>{chance}</span>
+        {!gathered && <span className={styles.dropChance}>{chance}</span>}
       </Link>
     </li>
   );
