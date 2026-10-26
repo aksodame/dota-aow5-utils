@@ -622,12 +622,12 @@ function exchangeOffers(r: RulesetId): ExchangeOffer[] {
     .sort((a, b) => (a[0] < b[0] ? -1 : 1));
 }
 
-/** `bySeason` holding only the seasons whose value differs from the primary one. */
+/** `bySeason` holding only the seasons whose value differs from the wiki season's one. */
 function bySeason<T>(of: (r: RulesetId) => T): Partial<Record<RulesetId, T>> | undefined {
-  const primary = JSON.stringify(of(PRIMARY));
+  const primary = JSON.stringify(of(CURRENT_RULESET));
   const out: Partial<Record<RulesetId, T>> = {};
   for (const r of RULESETS) {
-    if (r === PRIMARY) continue;
+    if (r === CURRENT_RULESET) continue;
     const v = of(r);
     if (JSON.stringify(v) !== primary) out[r] = v;
   }
@@ -683,16 +683,16 @@ const guildSlots = hudMatch(
 const vendors: VendorsFile = {
   schema: 1,
   generatedAt,
-  ruleset: PRIMARY,
+  ruleset: CURRENT_RULESET,
   regular: {
-    ...regularStock(PRIMARY),
+    ...regularStock(CURRENT_RULESET),
     refresh: shopRefresh('shop'),
     talents: stableTalents('regular vendor', (k) => /^shop_/.test(k)),
   },
   ancient: {
     currencyItem: ancientCurrency?.[1] ?? '',
     refresh: shopRefresh('ancient_shop'),
-    accepts: ancientAccepts(PRIMARY),
+    accepts: ancientAccepts(CURRENT_RULESET),
     talents: stableTalents('ancient vendor', (k) => /^ancient_shop_|^shop_time$/.test(k)),
   },
   guild: {
@@ -707,7 +707,7 @@ const vendors: VendorsFile = {
     },
     exchange: {
       refresh: { item: guildExchange?.[3] ?? '', dailyLimit: n(guildExchange?.[1]), cost: n(guildExchange?.[2]) },
-      offers: exchangeOffers(PRIMARY),
+      offers: exchangeOffers(CURRENT_RULESET),
     },
     talents: stableTalents('guild vendor', (k) => k.startsWith('merchant_')),
   },
