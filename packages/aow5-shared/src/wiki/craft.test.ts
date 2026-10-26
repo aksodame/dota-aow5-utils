@@ -34,9 +34,10 @@ const items = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/items.full
 
 test('unlock per season and the free-craft test', () => {
   const entry: CraftEntry = { recipes: ['item_1M106'], bySeason: { s3: {} } };
-  assert.deepEqual(craftInSeason(entry).recipes, ['item_1M106']);
-  assert.equal(isFreeCraft(entry), false);
-  assert.equal(isFreeCraft(entry, 's3'), true);
+  // The wiki describes S3, so the default reads its copy; S2 reads the base one.
+  assert.equal(isFreeCraft(entry), true);
+  assert.deepEqual(craftInSeason(entry, 's2').recipes, ['item_1M106']);
+  assert.equal(isFreeCraft(entry, 's2'), false);
   assert.equal(isFreeCraft({ talents: [{ node: 'T201', tree: 'tree3' }] }), false);
 });
 

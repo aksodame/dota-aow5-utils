@@ -1,7 +1,7 @@
 import type { Dismantle, ItemFull, ItemNeed } from '../types/items.ts';
 import type { SeasonalPatch } from './items-extra.ts';
 import { isShownRoom, locFarm, type Difficulty, type LocationsFile, type Monster } from './monsters.ts';
-import { PRIMARY_RULESET, type RulesetId } from './pools.ts';
+import { CURRENT_RULESET, type RulesetId } from './pools.ts';
 
 /**
  * How a craftable item is unlocked — `wiki/craft.json`.
@@ -48,12 +48,12 @@ export interface CraftFile {
 }
 
 /** The unlock as one season sees it. */
-export function craftInSeason(entry: CraftEntry, ruleset: RulesetId = PRIMARY_RULESET): CraftUnlock {
+export function craftInSeason(entry: CraftEntry, ruleset: RulesetId = CURRENT_RULESET): CraftUnlock {
   return entry.bySeason?.[ruleset] ?? entry;
 }
 
 /** True when neither a recipe nor a talent unlocks the craft: it is available from the start. */
-export function isFreeCraft(entry: CraftEntry, ruleset: RulesetId = PRIMARY_RULESET): boolean {
+export function isFreeCraft(entry: CraftEntry, ruleset: RulesetId = CURRENT_RULESET): boolean {
   const unlock = craftInSeason(entry, ruleset);
   return (unlock.recipes?.length ?? 0) === 0 && (unlock.talents?.length ?? 0) === 0;
 }
@@ -87,7 +87,7 @@ export function stoneLinks(items: Iterable<Pick<ItemFull, 'id' | 'type' | 'upgra
 // `tab-craft.js` and kept here so the page and the server's card agree on what
 // a craft costs. Every function takes a lookup rather than the item table, so
 // the caller decides which season's copy of an item it reads (`craftItemOf`
-// lays the S2 patch over `items.full.json`).
+// lays the season's patch over `items.full.json`).
 
 /** The fields of an item the planner reads, as one season sees them. */
 export interface CraftItem {

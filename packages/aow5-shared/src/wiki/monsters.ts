@@ -24,7 +24,7 @@
  * `farm.js`, so a number shown here and there agrees for the same inputs.
  */
 
-import { PRIMARY_RULESET, type PoolEntry, type RulesetId } from './pools.ts';
+import { CURRENT_RULESET, type PoolEntry, type RulesetId } from './pools.ts';
 
 export type { PoolEntry, RulesetId } from './pools.ts';
 
@@ -311,7 +311,7 @@ export interface MinigamesLocale {
 // --- season -------------------------------------------------------------------
 
 /** The monster as one season sees it. */
-export function monsterInSeason(m: Monster, ruleset: RulesetId = PRIMARY_RULESET): Monster {
+export function monsterInSeason(m: Monster, ruleset: RulesetId = CURRENT_RULESET): Monster {
   const patch = m.bySeason?.[ruleset];
   return patch === undefined ? m : { ...m, ...patch };
 }

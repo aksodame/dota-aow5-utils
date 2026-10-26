@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { ItemFull, RollTables } from 'aow5-shared/types';
 import {
+  CURRENT_RULESET,
   applyEffects,
   copyStats,
   heroStatsAtLevel,
@@ -641,7 +642,7 @@ function SlotEditor({
 
   if (kind === 'rune') {
     const own = extra?.items[entry.id];
-    const patch = extra !== null ? seasonalPatch(extra, entry.id, 's2') : undefined;
+    const patch = extra !== null ? seasonalPatch(extra, entry.id, CURRENT_RULESET) : undefined;
     const target = own?.gemTarget;
     const targetName = target !== undefined ? (core?.heroes.spells.get(target)?.name ?? target) : null;
     const data = Object.entries(patch?.gemData ?? own?.gemData ?? {});

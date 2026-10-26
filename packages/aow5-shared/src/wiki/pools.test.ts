@@ -33,9 +33,10 @@ test('shares are weight over total, and a duplicated row counts twice', () => {
 });
 
 test('a season with its own copy replaces the whole pool', () => {
-  assert.equal(poolInSeason(pool), pool);
+  // The default is the season the wiki describes (S3); S2 and S1 are the base row.
+  assert.deepEqual(poolInSeason(pool).entries, [['c', 2.5]]);
+  assert.equal(poolInSeason(pool, 's2'), pool);
   assert.equal(poolInSeason(pool, 's1'), pool);
-  assert.deepEqual(poolInSeason(pool, 's3').entries, [['c', 2.5]]);
 });
 
 test('poolsContaining inverts the pools, best share first', () => {
@@ -45,11 +46,13 @@ test('poolsContaining inverts the pools, best share first', () => {
     ruleset: 's2',
     pools: { X: pool, Y: { id: 'Y', kind: 'drop', level: 1, entries: [['a', 1]] } },
   };
-  assert.deepEqual(poolsContaining(file, 'a'), [
+  assert.deepEqual(poolsContaining(file, 'a', 's2'), [
     { pool: 'Y', share: 1 },
     { pool: 'X', share: 0.8 },
   ]);
-  assert.deepEqual(poolsContaining(file, 'c', 's3'), [{ pool: 'X', share: 1 }]);
+  // The default season is S3, where X holds only `c`.
+  assert.deepEqual(poolsContaining(file, 'a'), [{ pool: 'Y', share: 1 }]);
+  assert.deepEqual(poolsContaining(file, 'c'), [{ pool: 'X', share: 1 }]);
 });
 
 test('the emitted pools are well-formed', () => {

@@ -79,7 +79,7 @@ import styles from './ConsumablesPage.module.css';
  *
  * A list and a detail, at `/wiki/consumables/<itemId>`. Which items belong is
  * `inConsumables` in `aow5-shared/wiki`, so the server's card and this list
- * cannot disagree. Every number is the S2 one: the season's patch is laid over
+ * cannot disagree. Every number is the current season's: the season's patch is laid over
  * `items.full.json` before anything reads it.
  *
  * The list includes the hidden-but-in-game items the partner wiki listed — the
@@ -261,7 +261,7 @@ interface Row {
   name: string;
   /** The tile's record; synthesised for the hidden items the index leaves out. */
   summary: ItemSummary;
-  /** The item record with the S2 patch applied. */
+  /** The item record with the current season's patch applied. */
   full: ItemFull;
   category: ConsumableCategory;
   subclass: string | undefined;

@@ -1,5 +1,5 @@
 import type { ItemFull, RichNode } from '../types/items.ts';
-import { entryShare, poolInSeason, type PoolsFile, type RulesetId, PRIMARY_RULESET } from './pools.ts';
+import { entryShare, poolInSeason, type PoolsFile, type RulesetId, CURRENT_RULESET } from './pools.ts';
 
 /**
  * What the wiki needs to know about an item that `items.full.json` does not
@@ -238,7 +238,7 @@ export function containerChance(
   container: ContainerInfo,
   pools: PoolsFile,
   itemId: string,
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): number {
   const pool = pools.pools[container.pool];
   if (pool === undefined) return 0;
@@ -255,7 +255,7 @@ export function containersOf(
   extra: ItemsExtraFile,
   pools: PoolsFile,
   itemId: string,
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): { box: string; pool: string; chance: number }[] {
   const out: { box: string; pool: string; chance: number }[] = [];
   for (const [box, info] of Object.entries(extra.items)) {
@@ -296,7 +296,7 @@ export function soulFragmentCost(soul: LifeSoulInfo, level: number): number {
 export function seasonalPatch(
   extra: ItemsExtraFile,
   itemId: string,
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): SeasonalPatch | undefined {
   return extra.seasonal[itemId]?.[ruleset];
 }

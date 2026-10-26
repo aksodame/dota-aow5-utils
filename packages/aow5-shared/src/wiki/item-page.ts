@@ -9,7 +9,7 @@ import {
   type DifficultyKey,
   type MonstersFile,
 } from './monsters.ts';
-import { entryShare, poolInSeason, PRIMARY_RULESET, type PoolsFile, type RulesetId } from './pools.ts';
+import { entryShare, poolInSeason, CURRENT_RULESET, type PoolsFile, type RulesetId } from './pools.ts';
 import { PARTNER_CHEST_REWARD } from './sky.ts';
 import {
   ancientPrice,
@@ -172,7 +172,7 @@ export interface VendorOffer {
 export function vendorOffersOf(
   file: VendorsFile,
   item: { id: string; type: string; cost: number; quality: number },
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): VendorOffer[] {
   const out: VendorOffer[] = [];
   const equip = item.type === 'equip';
@@ -247,7 +247,7 @@ export function endlessAppearances(sources: readonly Pick<ItemSource, 'kind' | '
 export function rewardChestTiers(
   pools: PoolsFile,
   itemId: string,
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): { tier: 1 | 2 | 3; pool: string; share: number }[] {
   const out: { tier: 1 | 2 | 3; pool: string; share: number }[] = [];
   for (const tier of [1, 2, 3] as const) {
@@ -278,7 +278,7 @@ export function rewardChestTiers(
 export function craftUnlockOf(
   craft: CraftFile,
   item: Pick<ItemFull, 'id' | 'isRecipe' | 'produces' | 'needs'>,
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): { recipes: string[]; talents: TalentUnlock[]; via?: string } {
   const own = craft.items[item.id];
   const unlock = own === undefined ? {} : craftInSeason(own, ruleset);

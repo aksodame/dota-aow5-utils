@@ -23,7 +23,17 @@
 /** The rulesets the pak ships, by their own ids. */
 export type RulesetId = 's1' | 's2' | 's3';
 
-/** The ruleset every primary value in the wiki files describes. */
+/** The season the wiki describes: every default below reads its copy of a row. */
+export const CURRENT_RULESET: RulesetId = 's3';
+
+/**
+ * The season the files' own (base) rows describe.
+ *
+ * The pipeline emits each table from the S2 copy and puts a season that differs
+ * under `bySeason` — so a caller that asks for nothing gets that season's data,
+ * not the base rows. Kept for the few places that mean the file's own season
+ * rather than the one the wiki shows (and for the files' `ruleset` field).
+ */
 export const PRIMARY_RULESET: RulesetId = 's2';
 
 /**
@@ -87,7 +97,7 @@ export interface PoolsLocale {
 }
 
 /** The pool as one season sees it. */
-export function poolInSeason(pool: Pool, ruleset: RulesetId = PRIMARY_RULESET): PoolBody {
+export function poolInSeason(pool: Pool, ruleset: RulesetId = CURRENT_RULESET): PoolBody {
   return pool.bySeason?.[ruleset] ?? pool;
 }
 
@@ -128,7 +138,7 @@ export function poolShares(body: PoolBody): { id: string; weight: number; share:
 export function poolsContaining(
   file: PoolsFile,
   itemId: string,
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): { pool: string; share: number }[] {
   const out: { pool: string; share: number }[] = [];
   for (const pool of Object.values(file.pools)) {
