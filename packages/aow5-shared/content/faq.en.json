@@ -498,44 +498,7 @@
      "blocks": [
       {
        "type": "text",
-       "text": "In regular forest rooms (M001–M014) a **cat** can appear: an NPC at a random spawn point. It does not attack and cannot be killed, and if you talk to it, it teleports you to the hidden room M021 \"Cat Challenge\"."
-      },
-      {
-       "type": "table",
-       "head": [
-        "Parameter",
-        "Value"
-       ],
-       "rows": [
-        [
-         "Spawn chance",
-         "2% per room (rolled when the room is created)"
-        ],
-        [
-         "Cooldown",
-         "1 hour, shared by all players and rooms (from the moment it appears)"
-        ],
-        [
-         "Where it appears",
-         "forest rooms M001–M014, at a random SpawnPoint"
-        ],
-        [
-         "Patrol",
-         "walks around the room in 400-unit steps every 3 s"
-        ],
-        [
-         "Room M021",
-         "boss \"Panda Brewmaster\": 800,000 HP, 220 armor, 95% magic resistance"
-        ],
-        [
-         "Reward",
-         "first drop is \"Crimson Heart\" (item_M504), plus 2 items at 100% chance"
-        ]
-       ]
-      },
-      {
-       "type": "note",
-       "text": "Pet cats (Curious Kitten, Evil Kitten, Sly Kitten and Cat God) are something else: auto-loot companions from the item_pet_cat_* items. The Cat God is crafted from three kittens."
+       "text": "A **cat** can appear in the ordinary forest rooms (M001–M014)."
       }
      ]
     },
@@ -545,7 +508,7 @@
      "blocks": [
       {
        "type": "text",
-       "text": "Every location M001–M014 has a Signal Tower. To switch it on you have to bring materials; the list is shown below. Towers M001–M014 cover all regular rooms of the first circle."
+       "text": "Every location M001–M014 has a Signal Tower. To switch it on you have to bring materials; the list is shown below. Towers M001–M014 cover all regular rooms of the first circle. In S3 a tower was added in M025 \"Molten Abyss Fortress\" (level 8) — outside the first circle."
       },
       {
        "type": "table",
@@ -682,6 +645,15 @@
          "Ender Thunder Mountain",
          "5",
          "[[item:item_M222|Mutated Fur]] ×4, [[item:item_M223|Thunder Grass]] ×4, [[item:item_M330|Thunder Core]] ×4",
+         "yes",
+         "20 kinds"
+        ],
+        [
+         "ST_M025",
+         "M025",
+         "Molten Abyss Fortress",
+         "8",
+         "[[item:item_M341|Molten Obsidian]] ×10, [[item:item_M342|Scorchscale]] ×10, [[item:item_M211|Glimmer Plank]] ×10",
          "yes",
          "20 kinds"
         ]
@@ -915,65 +887,6 @@
       {
        "type": "note",
        "text": "Which monsters can be hunters and in which locations is shown on the creature's card on the Monsters tab."
-      }
-     ]
-    },
-    {
-     "key": "runes",
-     "title": "Blessings (runes)",
-     "blocks": [
-      {
-       "type": "text",
-       "text": "Maps have **shrines**: when you approach one, the server offers you **one of three** runes (in the UI: \"Choose a Shrine Blessing\" / \"Three powers, you can only pick one\"). Each rune has **stacks** (\"Current Stacks: N\"), and once a rune's stacks hit the contract limit the option becomes unavailable (\"Contract limit reached\"); you have limited time to choose, and a \"Picked up rune: …\" notification confirms it. The dump of map **M010 \"Lv. 7: Ender Shrine\"** shows two \"Rune\" shrine points (and one on M005)."
-      },
-      {
-       "type": "table",
-       "head": [
-        "Rune",
-        "What it gives"
-       ],
-       "rows": [
-        [
-         "Haste Rune",
-         "+100 movement speed and +100 attack speed."
-        ],
-        [
-         "Damage Rune",
-         "+80% base attack damage and +15% spell amplification."
-        ],
-        [
-         "Arcane Rune",
-         "25% cooldown reduction and −30% mana cost."
-        ],
-        [
-         "Regeneration Rune",
-         "Restores 5% health and 5% mana per second."
-        ],
-        [
-         "Shield Rune",
-         "+200 energy shield capacity."
-        ],
-        [
-         "Purification Rune",
-         "Immunity to \"erosion\" effects (see below); nothing else can remove it."
-        ],
-        [
-         "Revive Rune",
-         "A lethal hit while it is active: 3 seconds, then revival with 50% health and mana."
-        ]
-       ]
-      },
-      {
-       "type": "text",
-       "text": "There is also a separate **\"Light Rune\"**, which is not in the choice list: it creates a light source inside which darkness is suppressed, \"dark gaze\" stacks fall off quickly and monsters' dark buffs are removed."
-      },
-      {
-       "type": "text",
-       "text": "**Erosion (M010 only).** The \"Ender Shrine\" environment applies the debuff `modifier_env_m010_erosion`: every second you lose **1% of current health + 1% of max mana** per stack. A stack is added every 3 s, up to 10 (so up to 10% per second). Erosion cannot be dispelled or removed by items; the only escape is the Purification Rune. The damage cannot kill: health is clamped to 1. The effect disappears on death."
-      },
-      {
-       "type": "note",
-       "text": "**In v1.503** five runes (haste, damage, arcane, regeneration, shield) were rewritten: in the new version haste gives +100% movement speed instead of +100 flat, and shield gives 100 and fills the shield immediately. This version is not hooked up in the game yet (it is not in the rune list), so the old version is what applies in game."
       }
      ]
     },
