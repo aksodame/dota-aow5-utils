@@ -900,6 +900,10 @@
       },
       {
        "type": "text",
+       "text": "The tower allows **5 runs a day** (reset at 19:00 MSK)."
+      },
+      {
+       "type": "text",
        "text": "**Tower chests**: three levels per tower. Each chest comes in three difficulty variants: **Easy**, **Normal** and **Hard**. They differ only in how many items are drawn from the pool: Easy gets 70% of Normal, Hard 150% (rounded). The variant is set by the difficulty of the run in which the chest was obtained."
       },
       {
@@ -3214,7 +3218,7 @@
       ],
       [
        "Eternal Points Pool Expansion",
-       "Eternal Book ×1 — permanently raises the Eternal Points Pool cap",
+       "Eternal Book ×1 — permanently raises the Eternal Points Pool cap by 200",
        "300",
        "5",
        "from lv. 5",
@@ -3552,7 +3556,7 @@
       },
       {
        "type": "text",
-       "text": "**M026** is the room the dragon teleports you to (see \"Pets\" → \"Cat and dragon\"); the data gives it no monsters or gathering points."
+       "text": "**M026 is the Dragon Lair.** Clicking the dragon takes you here (see \"Pets\" → \"Cat and dragon\"). The map itself is unchanged, but the room now has a lobby: while a run is in progress the game says the lair is occupied; its boss is the fire dragon."
       },
       {
        "type": "note",
@@ -5290,7 +5294,7 @@
     },
     {
      "type": "note",
-     "text": "The reference lists 197 debuff effects; monsters and bosses have their own 99 debuffs (applied to the player), which are not in the tables."
+     "text": "The reference lists 199 debuff effects; monsters and bosses have their own 101 debuffs (applied to the player), which are not in the tables."
     }
    ]
   },
