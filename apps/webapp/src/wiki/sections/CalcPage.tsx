@@ -5,6 +5,8 @@ import {
   applyEffects,
   copyStats,
   heroStatsAtLevel,
+  permanentBuffPool,
+  permanentBuffRows,
   seasonalPatch,
   type EffectsResult,
   type HeroStatsFile,
@@ -97,8 +99,9 @@ export default function CalcPage({ path }: SectionProps) {
     [file, level, state.hero, state.base, state.mode],
   );
 
-  // The build's pool: every equipped item's rolled stats, then what item effects add.
-  const { sums, fx } = useMemo(
+  // The build's pool: every equipped item's rolled stats, what item effects add,
+  // and the permanent buffs beside them (kept apart — they are not the base).
+  const { sums, fx, buffs } = useMemo(
     () => buildPool(state, input, full, tables, extra),
     [state, input, full, tables, extra],
   );
@@ -130,11 +133,13 @@ export default function CalcPage({ path }: SectionProps) {
       ) : (
         <>
           <div className={styles.grid}>
+            <Buffs state={state} update={update} extra={extra} />
             <StatsPanel
               state={state}
               update={update}
               input={input}
               sums={sums}
+              buffs={buffs}
               fx={fx}
               heroes={heroes}
               heroName={heroName}
@@ -188,8 +193,14 @@ export default function CalcPage({ path }: SectionProps) {
 function heroList(data: [HeroStatsFile, HeroesWikiFile, HeroesWikiLocale, ProgressionLocale] | null): Array<{ short: string; name: string }> {
   if (data === null) return [];
   const [file, hw, hwLocale] = data;
-  const order = [...hw.heroes.map((h) => h.short), ...Object.keys(file.heroes)].filter((s, i, all) => all.indexOf(s) === i && file.heroes[s] !== undefined);
-  return order.map((short) => ({ short, name: hwLocale.heroes[file.heroes[short]!.hero]?.name ?? short }));
+  const order = [...hw.heroes.map((h) => h.short), ...Object.keys(file.heroes)].filter(
+    (s, i, all) => all.indexOf(s) === i && file.heroes[s] !== undefined,
+  );
+  // Crystal Maiden's kit is unfinished in the build (five "To be filled."
+  // abilities, no runes), so the calculator does not offer her.
+  return order
+    .filter((short) => short !== 'crystal_maiden')
+    .map((short) => ({ short, name: hwLocale.heroes[file.heroes[short]!.hero]?.name ?? short }));
 }
 
 function buildPool(
@@ -198,8 +209,8 @@ function buildPool(
   full: Record<string, ItemFull> | null,
   tables: RollTables | null,
   extra: ItemsExtraFile | null,
-): { sums: Record<string, number>; fx: EffectsResult } {
-  const empty = { sums: {}, fx: { extra: {}, notes: [] } };
+): { sums: Record<string, number>; fx: EffectsResult; buffs: Record<string, number> } {
+  const empty = { sums: {}, fx: { extra: {}, notes: [] }, buffs: {} };
   if (full === null || tables === null || input === null) return empty;
   const links = linksOf(full);
   const list = equipped(state)
@@ -212,9 +223,17 @@ function buildPool(
     });
   const sums: Record<string, number> = {};
   for (const e of list) for (const [k, v] of Object.entries(e.stats)) sums[k] = (sums[k] ?? 0) + v;
-  const fx = applyEffects(list, (P) => derivePools(input, P), (id) => ancestralBase(full, id));
+  const buffs = extra === null ? {} : permanentBuffPool(permanentBuffRows(extra, state.buffs));
+  // An item effect that reads the panel ("per point of mana") sees the buffs
+  // too, as it would in the game.
+  const withBuffs = (P: Record<string, number>): Record<string, number> => {
+    const out = { ...P };
+    for (const [k, v] of Object.entries(buffs)) out[k] = (out[k] ?? 0) + v;
+    return out;
+  };
+  const fx = applyEffects(list, (P) => derivePools(input, withBuffs(P)), (id) => ancestralBase(full, id));
   for (const [k, v] of Object.entries(fx.extra)) sums[k] = (sums[k] ?? 0) + v;
-  return { sums, fx };
+  return { sums, fx, buffs };
 }
 
 // ---------------------------------------------------------------------------
@@ -225,6 +244,7 @@ function StatsPanel({
   update,
   input,
   sums,
+  buffs,
   fx,
   heroes,
   heroName,
@@ -235,6 +255,7 @@ function StatsPanel({
   update: (fn: (s: CalcState) => CalcState) => void;
   input: CalcInput;
   sums: Record<string, number>;
+  buffs: Record<string, number>;
   fx: EffectsResult;
   heroes: Array<{ short: string; name: string }>;
   heroName: string;
@@ -273,8 +294,10 @@ function StatsPanel({
             value={state.hero}
             onChange={(event) => {
               const hero = event.target.value;
-              // A new hero forgets the manual base, but not the season levels — those are the player's.
-              update((s) => ({ ...s, hero, base: clearHeroOverrides(s.base) }));
+              // A new hero forgets the manual base and the permanent buffs
+              // (both are the old hero's), but not the season levels — those
+              // are the player's.
+              update((s) => ({ ...s, hero, base: clearHeroOverrides(s.base), buffs: {} }));
             }}
           >
             {heroes.map((x) => (
@@ -323,6 +346,7 @@ function StatsPanel({
               <th>{t.head.stat}</th>
               <th className={styles.num}>{t.head.base(lvl)}</th>
               <th className={styles.num}>{t.head.items}</th>
+              <th className={styles.num}>{t.head.buffs}</th>
               <th className={styles.num}>{t.head.plus}</th>
               <th className={styles.num}>{t.head.total}</th>
             </tr>
@@ -331,7 +355,16 @@ function StatsPanel({
             {GROUPS.map((group) => (
               <Group key={group.id} title={t.groups[group.id]}>
                 {group.rows.map((row) => (
-                  <StatRow key={row.key} row={row} input={input} sums={sums} heroName={heroName} fmt={fmt} onBase={setBase} />
+                  <StatRow
+                    key={row.key}
+                    row={row}
+                    input={input}
+                    sums={sums}
+                    buffs={buffs}
+                    heroName={heroName}
+                    fmt={fmt}
+                    onBase={setBase}
+                  />
                 ))}
               </Group>
             ))}
@@ -350,7 +383,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <>
       <tr className={styles.group}>
-        <td colSpan={5}>{title}</td>
+        <td colSpan={6}>{title}</td>
       </tr>
       {children}
     </>
@@ -361,6 +394,7 @@ function StatRow({
   row,
   input,
   sums,
+  buffs,
   heroName,
   fmt,
   onBase,
@@ -368,13 +402,14 @@ function StatRow({
   row: RowDef;
   input: CalcInput;
   sums: Record<string, number>;
+  buffs: Record<string, number>;
   heroName: string;
   fmt: (v: number, dec: number | undefined) => string;
   onBase: (key: string, value: number | 'clear') => void;
 }) {
   const t = useWikiStrings(CALC);
   const { lang } = useApp();
-  const total = rowTotal(input, row, sums);
+  const total = rowTotal(input, row, sums, buffs);
   const season = row.kind.type === 'season' ? row.kind.max : undefined;
   const over = isOverridden(input, row.key);
   const auto = !over && season === undefined && total.base ? fmt(total.base, row.dec) : '';
@@ -403,6 +438,7 @@ function StatRow({
         <td className={styles.num}>{cell}</td>
         <td className={cx(styles.num, styles.zero)}>—</td>
         <td className={cx(styles.num, styles.zero)}>—</td>
+        <td className={cx(styles.num, styles.zero)}>—</td>
         <td className={cx(styles.num, styles.total, styles.wrap)} title={t.cell.seasonTitle}>
           {pct ? t.cell.seasonTotal(num(pct, lang, 0)) : '—'}
         </td>
@@ -422,6 +458,9 @@ function StatRow({
       </td>
       <td className={styles.num}>{cell}</td>
       <td className={cx(styles.num, !total.items && styles.zero)}>{fmt(total.items, row.dec)}</td>
+      <td className={cx(styles.num, total.buffs ? styles.buff : styles.zero)}>
+        {total.buffs ? fmt(total.buffs, row.dec) : '—'}
+      </td>
       <td
         className={cx(styles.num, total.fromAttrs ? styles.attr : styles.zero)}
         title={total.pct ? t.cell.pctBonus(`${num(total.pct, lang, 1)}%`) : undefined}
@@ -531,6 +570,82 @@ function Effects({ fx, state, full }: { fx: EffectsResult; state: CalcState; ful
       )}
       {counted.length === 0 && unmodelled.length === 0 && <p className={styles.hint}>{t.none}</p>}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// The permanent buffs
+
+/** Items a hero can use a limited number of times, each use adding for good. */
+function Buffs({
+  state,
+  update,
+  extra,
+}: {
+  state: CalcState;
+  update: (fn: (s: CalcState) => CalcState) => void;
+  extra: ItemsExtraFile | null;
+}) {
+  const strings = useWikiStrings(CALC);
+  const t = strings.buffs;
+  const { lang, core } = useApp();
+  const rows = useMemo(() => (extra === null ? [] : permanentBuffRows(extra, state.buffs)), [extra, state.buffs]);
+
+  const set = (id: string, value: number, max: number) =>
+    update((s) => {
+      const used = Math.max(0, Math.min(max, Math.floor(Number.isFinite(value) ? value : 0)));
+      const buffs = { ...s.buffs };
+      if (used === 0) delete buffs[id];
+      else buffs[id] = used;
+      return { ...s, buffs };
+    });
+
+  const label = (key: string) => strings.rows[key] ?? t.keys[key] ?? key;
+
+  return (
+    <Panel title={t.title} className={styles.buffsPanel}>
+      <p className={styles.hint}>{t.note}</p>
+      {rows.length === 0 ? (
+        <p className={styles.hint}>{t.empty}</p>
+      ) : (
+        <div className={styles.buffList}>
+          {rows.map((row) => {
+            const item = core?.byId.get(row.id);
+            const effect = Object.entries(row.perUse)
+              .map(([key, perUse]) => t.perUse(num(perUse, lang, digitsFor(perUse, undefined)), label(key)))
+              .join(' · ');
+            return (
+              <div key={row.id} className={styles.buffRow}>
+                <div className={styles.buffHead}>
+                  {item !== undefined && <ItemTile item={item} />}
+                  <span className={styles.buffName} title={row.id}>
+                    {item?.name ?? row.id}
+                  </span>
+                </div>
+                <div className={styles.buffEffect}>{effect}</div>
+                <div className={styles.buffControls}>
+                  <input
+                    type="number"
+                    className={styles.buffInput}
+                    min={0}
+                    max={row.max}
+                    step={1}
+                    value={row.used}
+                    aria-label={item?.name ?? row.id}
+                    onChange={(event) => set(row.id, Number(event.target.value), row.max)}
+                  />
+                  <Button size="sm" variant="ghost" title={t.allTitle} onClick={() => set(row.id, row.max, row.max)}>
+                    {t.all}
+                  </Button>
+                  <span className={styles.buffMax}>{t.max(row.max)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <p className={styles.hint}>{t.offPanel}</p>
+    </Panel>
   );
 }
 

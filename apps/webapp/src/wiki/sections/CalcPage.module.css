@@ -14,7 +14,9 @@
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  /* The permanent buffs sit in their own column on the left; the panel and the
+     inventory keep the width they had. */
+  grid-template-columns: minmax(240px, 0.55fr) minmax(0, 1.15fr) minmax(0, 1fr);
   align-items: start;
   gap: var(--space-4);
   min-width: 0;
@@ -26,9 +28,28 @@
   min-width: 0;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1300px) {
+  .grid {
+    grid-template-columns: minmax(220px, 0.55fr) minmax(0, 1.15fr);
+  }
+  .side {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1000px) {
   .grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .statsPanel {
+    order: 1;
+  }
+  .side {
+    order: 2;
+    grid-column: auto;
+  }
+  .buffsPanel {
+    order: 3;
   }
 }
 
@@ -40,6 +61,69 @@
 
 .statsPanel {
   min-width: 0;
+}
+
+/* ------------------------------------------------------------ buffs column */
+
+.buffsPanel {
+  min-width: 0;
+}
+
+.buffList {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.buffRow {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.buffHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.buffName {
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.buffEffect {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.buffControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 2px;
+}
+
+.buffInput {
+  width: 56px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.buffMax {
+  font-size: 11px;
+  color: var(--text-dim);
 }
 
 .hint {
@@ -182,6 +266,10 @@
 
 .attr {
   color: var(--accent-2);
+}
+
+.buff {
+  color: var(--accent);
 }
 
 .total {

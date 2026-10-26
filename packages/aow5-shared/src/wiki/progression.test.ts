@@ -149,3 +149,15 @@ test('heroStatsAtLevel reproduces the level-30 panel', () => {
   assert.equal(lv.rest['bonus_exp_pct'], 120);
   assert.equal(heroStatsAtLevel(stats, 'nobody'), undefined);
 });
+
+test('the default full progression takes the season’s trees, not the S2-only tower', () => {
+  // The build gates tree13 to S2; the wiki describes S3, so "every tree taken"
+  // is the hero's own tree plus the four common ones the window shows.
+  assert.ok(!stats.commonTrees.includes('tree13'));
+  assert.deepEqual(stats.commonTrees, ['tree1', 'tree2', 'tree10', 'tree9']);
+  const lv = heroStatsAtLevel(stats, 'axe')!;
+  assert.deepEqual(lv, heroStatsAtLevel(stats, 'axe', { trees: ['tree4', 'tree1', 'tree2', 'tree9', 'tree10'] }));
+  // The S3 panel without items, as the calculator's base column shows it.
+  assert.ok(Math.abs(lv.totals.bonus_health - 4412.3407) < 1e-3, `${lv.totals.bonus_health}`);
+  assert.ok(Math.abs(lv.totals.attack_speed - 316.550228945647) < 1e-6, `${lv.totals.attack_speed}`);
+});

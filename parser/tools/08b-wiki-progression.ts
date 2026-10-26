@@ -958,7 +958,18 @@ const herostats: HeroStatsFile = {
   level: 30,
   attrBonus,
   heroes: statsHeroes,
-  commonTrees: tabs.map((t) => t.id).filter((id) => Object.keys(treeStats[id] ?? {}).length > 0),
+  /*
+   * The trees a hero's panel takes by default: the window's tabs this season
+   * actually shows. The tower's tree is gated to S2 by the build, so in an S3
+   * wiki it is not part of "every tree taken" — its nodes are still in
+   * `treeStats` for anyone who asks for them by name.
+   */
+  commonTrees: tabs
+    .map((t) => t.id)
+    .filter((id) => {
+      const tree = trees[id];
+      return tree !== undefined && (tree.seasons === undefined || tree.seasons.includes(PRIMARY_SEASON)) && Object.keys(treeStats[id] ?? {}).length > 0;
+    }),
   treeStats,
   treeNodes,
 };
