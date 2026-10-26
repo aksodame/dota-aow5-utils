@@ -38,7 +38,7 @@ import styles from './Filters.module.css';
  */
 export interface FilterState {
   /**
-   * Always exactly one season, the current one (S2) by default and after a
+   * Always exactly one season, the current one (S3) by default and after a
    * reset. Only the heroes split by season — rooms and tiers are the same list
    * whichever is chosen.
    */

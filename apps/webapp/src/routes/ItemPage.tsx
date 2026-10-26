@@ -5,8 +5,11 @@ import {
   iconUrl,
   reforgeCost,
   reforgeCostTotal,
+  LATEST_SEASON,
+  SEASON_KEYS,
   seasonLabel,
   type ItemSummary,
+  type SeasonKey,
   type ReforgeCostRow,
 } from 'aow5-shared/data';
 import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
@@ -141,16 +144,19 @@ function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: bo
    *
    * `items.full.json` is built from the base tables, which are the first
    * season's; a season's own copy of the table changes a few dozen items —
-   * stats, a recipe, a soul's cooldown, a glyph's grade. The wiki describes the
-   * current season, so the page opens on it and offers the base table beside
-   * it, only for the items where the two actually differ.
+   * stats, a recipe, a soul's cooldown, a glyph's grade. The page opens on the
+   * newest season the item is in and offers every season's table beside it,
+   * only for the items some season actually changes.
    */
   const extra = useWikiData<[ItemsExtraFile]>(['items-extra.json']).data?.[0] ?? null;
-  const patch = extra !== null ? seasonalPatch(extra, item.id, 's2') : undefined;
-  const [season, setSeason] = useState<1 | 2>(2);
-  const shownSeason: 1 | 2 = patch === undefined ? 2 : season;
-  const full: ItemFull | undefined =
-    baseFull !== undefined && shownSeason === 2 ? applySeasonalPatch(baseFull, patch) : baseFull;
+  const patchOf = (s: SeasonKey) => (extra === null || s === 1 ? undefined : seasonalPatch(extra, item.id, `s${s}`));
+  const seasonal = SEASON_KEYS.some((s) => patchOf(s) !== undefined);
+  // The newest season the item is in: an S2-only item opens on S2's numbers.
+  const homeSeason: SeasonKey = (baseFull?.seasons?.at(-1) as SeasonKey | undefined) ?? LATEST_SEASON;
+  const [season, setSeason] = useState<SeasonKey>(homeSeason);
+  const shownSeason: SeasonKey = seasonal ? season : homeSeason;
+  const patch = patchOf(shownSeason);
+  const full: ItemFull | undefined = baseFull !== undefined ? applySeasonalPatch(baseFull, patch) : baseFull;
   const quality = full?.quality ?? item.quality;
   const level = full?.level ?? item.level;
   const cost = full?.cost ?? item.cost;
@@ -290,13 +296,13 @@ function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: bo
                 season and saying "every season" on all of them is noise. */}
             {full?.seasons !== undefined && full.seasons.length > 0 && (
               <span className={styles.season}>
-                {t.seasonOnly(full.seasons.map((s) => seasonLabel(s as 1 | 2)).join(', '))}
+                {t.seasonOnly(full.seasons.map((s) => seasonLabel(s as SeasonKey)).join(', '))}
               </span>
             )}
-            {patch !== undefined && (
+            {seasonal && (
               <span className={styles.seasonSwitch} role="group" aria-label={t.seasonValues} title={t.seasonValuesHint}>
                 <span className={styles.seasonLabel}>{t.seasonValues}</span>
-                {([1, 2] as const).map((s) => (
+                {SEASON_KEYS.map((s) => (
                   <button
                     key={s}
                     type="button"

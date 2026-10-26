@@ -7,8 +7,8 @@ import styles from './HeroChoices.module.css';
 /**
  * The playable roster, as portrait tiles with one of them chosen.
  *
- * Three across, each a third of the container at the portrait's own 16:9, so a
- * season's three heroes are one row. At a third of the sidebar a tile has no
+ * Three across, each a third of the container at the portrait's own 16:9, so
+ * S1's and S2's three heroes are one row and S3's six are two. At a third of the sidebar a tile has no
  * room for a name, so the name is the tooltip and the image's `alt`; the tick on the
  * chosen one is the same as `MapChoices` draws.
  *
@@ -16,7 +16,7 @@ import styles from './HeroChoices.module.css';
  * control and were drifting: the editor's was a modal with a different tile
  * size and a different highlight, so picking a hero looked like a different
  * operation depending on which page you were on. It is not — it is "which of
- * these three" both times.
+ * these" both times.
  *
  * Only heroes the addon has finished. Crystal Maiden occupies a roster slot
  * with nothing but the shared heal, so offering her hands somebody an empty

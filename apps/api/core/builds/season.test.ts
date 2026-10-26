@@ -7,13 +7,16 @@ const LINA = 'npc_dota_hero_lina';
 const DROW = 'npc_dota_hero_drow_ranger';
 const VOID = 'npc_dota_hero_void_spirit';
 const CM = 'npc_dota_hero_crystal_maiden';
+const DK = 'npc_dota_hero_dragon_knight';
 
 test('a hero is accepted in the seasons that offer it and refused in the others', () => {
   assert.deepEqual(resolveSeason(1, LINA, null), { ok: true, season: 1 });
   assert.deepEqual(resolveSeason(2, VOID, null), { ok: true, season: 2 });
   assert.deepEqual(resolveSeason(1, AXE, null), { ok: true, season: 1 });
   assert.deepEqual(resolveSeason(2, AXE, null), { ok: true, season: 2 });
-  for (const [season, hero] of [[2, LINA], [1, DROW], [1, VOID]] as const) {
+  // S3 offers every hero, the first-season ones included.
+  for (const hero of [AXE, LINA, DROW, VOID, DK]) assert.deepEqual(resolveSeason(3, hero, null), { ok: true, season: 3 });
+  for (const [season, hero] of [[2, LINA], [1, DROW], [1, VOID], [1, DK], [2, DK]] as const) {
     const result = resolveSeason(season, hero, null);
     assert.equal(result.ok, false, `${hero} in S${season}`);
     if (!result.ok) assert.match(result.errors['season']!, new RegExp(`S${season}`));
@@ -24,6 +27,7 @@ test('a create that says nothing gets the first season its hero is in', () => {
   assert.deepEqual(resolveSeason(undefined, LINA, null), { ok: true, season: 1 });
   assert.deepEqual(resolveSeason(undefined, DROW, null), { ok: true, season: 2 });
   assert.deepEqual(resolveSeason(undefined, AXE, null), { ok: true, season: 1 });
+  assert.deepEqual(resolveSeason(undefined, DK, null), { ok: true, season: 3 });
   assert.deepEqual(resolveSeason(undefined, null, null), { ok: true, season: 1 });
 });
 
@@ -39,7 +43,7 @@ test('a build with no hero, or one no season lists, may sit in any season', () =
 });
 
 test('a season that does not exist is refused rather than guessed', () => {
-  for (const bad of [3, 0, '3', 'two', null, '']) {
+  for (const bad of [4, 0, '4', 'two', null, '']) {
     assert.equal(resolveSeason(bad, null, null).ok, false, JSON.stringify(bad));
   }
   // What a form or a query string sends is fine.

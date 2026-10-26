@@ -104,7 +104,7 @@ const potions = pool(SLOT_KIND.POTION);
 /*
  * Life Souls, and where one is worn.
  *
- * S2 only, and the seed has to reflect that: a soul on a first-season build is
+ * S2 and S3 only, and the seed has to reflect that: a soul on a first-season build is
  * a slot the game does not have, and the browse list would be showing something
  * nobody can reproduce.
  */
@@ -283,11 +283,11 @@ for (let i = 0; i < count; i += 1) {
   state.slots[13] = { k: 'id', id: pick(equipment, 13)[1] };
   state.slots[14] = { k: 'id', id: pick(equipment, 14)[1] };
   /*
-   * A Life Soul on most second-season builds, and none at all on the first.
+   * A Life Soul on most later-season builds, and none at all on the first.
    * Most rather than all, so both states are on screen: the soul slot filled,
    * and the `f` key still showing the shared heal it stands in for.
    */
-  if (season === 2 && SOUL_SLOT >= 0 && souls.length > 0 && i % 4 !== 3) {
+  if (season !== 1 && SOUL_SLOT >= 0 && souls.length > 0 && i % 4 !== 3) {
     state.slots[SOUL_SLOT] = { k: 'id', id: pick(souls, SOUL_SLOT)[1] };
   }
 

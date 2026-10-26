@@ -20,7 +20,7 @@ import { LATEST_SEASON, isTierKey, parseSeason, type SeasonKey, type TierKey } f
  */
 export interface BrowseQueryState {
   /**
-   * Always one season. The current one, S2, unless the URL says otherwise —
+   * Always one season. The current one, S3, unless the URL says otherwise —
    * so it is also what an absent `?season=` and a cleared filter mean.
    */
   season: SeasonKey;

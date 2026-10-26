@@ -12,6 +12,7 @@ import {
   parseSeason,
   seasonHeroes,
   seasonsOfHero,
+  type SeasonKey,
 } from './seasons.ts';
 
 /**
@@ -36,10 +37,12 @@ test('every season hero exists and is playable', () => {
 });
 
 test('the pools are the ones the seasons were announced with', () => {
-  const short = (season: 1 | 2) => seasonHeroes(season).map((id) => id.replace('npc_dota_hero_', ''));
+  const short = (season: SeasonKey) => seasonHeroes(season).map((id) => id.replace('npc_dota_hero_', ''));
   assert.deepEqual(short(1), ['lina', 'phantom_assassin', 'axe']);
   assert.deepEqual(short(2), ['void_spirit', 'drow_ranger', 'axe']);
-  assert.deepEqual(seasonsOfHero('npc_dota_hero_axe'), [1, 2], 'Axe is in both');
+  assert.deepEqual(short(3), ['dragon_knight', 'void_spirit', 'drow_ranger', 'lina', 'phantom_assassin', 'axe']);
+  assert.deepEqual(seasonsOfHero('npc_dota_hero_axe'), [1, 2, 3], 'Axe is in every season');
+  assert.deepEqual(seasonsOfHero('npc_dota_hero_dragon_knight'), [3]);
   assert.equal(isHeroInSeason('npc_dota_hero_drow_ranger', 1), false);
   assert.equal(isHeroInSeason('npc_dota_hero_lina', 2), false);
   assert.deepEqual(seasonsOfHero('npc_dota_hero_crystal_maiden'), []);
@@ -55,7 +58,8 @@ test('a season parses from what a query string or a form sends, and nothing else
   assert.equal(parseSeason(2), 2);
   assert.equal(parseSeason('s2'), 2);
   assert.equal(parseSeason('S1'), 1);
-  for (const bad of ['3', '0', '', 'two', '1.0', null, undefined, 3, 1.5]) {
+  assert.equal(parseSeason('s3'), 3);
+  for (const bad of ['4', '0', '', 'two', '1.0', null, undefined, 4, 1.5]) {
     assert.equal(parseSeason(bad), null, JSON.stringify(bad));
   }
 });

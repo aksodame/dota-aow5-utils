@@ -222,7 +222,7 @@ export const builds = sqliteTable(
     codecVersion: integer('codec_version').notNull(),
     heroId: text('hero_id'),
     /**
-     * Which season of the game the guide is for: `1` or `2`.
+     * Which season of the game the guide is for: `1`, `2` or `3`.
      *
      * The author's field. Seasons have separate hero pools, and the service
      * refuses a hero the season does not offer — see `SEASON_HEROES` in
@@ -345,7 +345,7 @@ export const builds = sqliteTable(
       'builds_tier',
       sql`${table.tier} is null or ${table.tier} in ('1','2','3','4','5','6','7','8','9','event')`,
     ),
-    check('builds_season', sql`${table.season} in (1, 2)`),
+    check('builds_season', sql`${table.season} in (1, 2, 3)`),
     check(
       'builds_main_spell',
       sql`${table.mainSpell} is null or ${table.mainSpell} in ('passive','q','w','e','d','f','r')`,

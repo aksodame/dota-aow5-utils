@@ -78,10 +78,11 @@ test('a trimmed search is what gets written, so two spellings are one URL', () =
 });
 
 test('the season is always one, the current one unless the link says otherwise', () => {
-  assert.equal(DEFAULT_BROWSE.season, 2);
-  assert.equal(readBrowseParams('').season, 2, 'absent is S2');
+  assert.equal(DEFAULT_BROWSE.season, 3);
+  assert.equal(readBrowseParams('').season, 3, 'absent is S3');
+  assert.equal(readBrowseParams('?season=2').season, 2);
   assert.equal(readBrowseParams('?season=1').season, 1);
-  assert.equal(readBrowseParams('?season=9').season, 2, 'a season that does not exist is the current one');
+  assert.equal(readBrowseParams('?season=9').season, 3, 'a season that does not exist is the current one');
   assert.equal(browseSearch(DEFAULT_BROWSE), '', 'the default stays out of the URL');
   assert.equal(browseSearch({ ...DEFAULT_BROWSE, season: 1 }), '?season=1');
   assert.deepEqual(readBrowseParams(browseSearch({ ...DEFAULT_BROWSE, season: 1, hero: 'npc_dota_hero_lina' })), {

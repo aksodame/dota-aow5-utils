@@ -539,9 +539,10 @@ test('the five panels between them hold every group', () => {
   assert.deepEqual(new Set(grouped.map((g) => g.key)), new Set(LOADOUT_LAYOUT.map((g) => g.key)));
 });
 
-test('the soul slot is offered in S2, and out of season only when it is filled', () => {
+test('the soul slot is offered in S2 and S3, and out of season only when it is filled', () => {
   const empty = createEmptyState();
   assert.deepEqual(visibleGroups('soul', empty.slots, 2).map((g) => g.key), ['soul']);
+  assert.deepEqual(visibleGroups('soul', empty.slots, 3).map((g) => g.key), ['soul']);
   // S1 does not have the slot, and a link carries no season at all.
   assert.deepEqual(visibleGroups('soul', empty.slots, 1), []);
   assert.deepEqual(visibleGroups('soul', empty.slots), []);
