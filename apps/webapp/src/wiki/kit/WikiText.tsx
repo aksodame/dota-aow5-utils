@@ -16,6 +16,8 @@ import styles from './WikiText.module.css';
  *   so a translated page can never name an item differently from its own page.
  * - `[[monster:<id>|label]]` — a link to the monster.
  * - `[[talent:<tree>/<node>|label]]` — a link to that node in its tree.
+ * - `[[faq:<section>[/<sub>]|label]]` — a link to a topic (or a tab of one) in
+ *   the FAQ, so a patch note can point at the page that explains it.
  *
  * Anything that does not parse is drawn as the text it is.
  */
@@ -23,7 +25,7 @@ export function WikiText({ text }: { text: string }) {
   return <>{render(text)}</>;
 }
 
-const TOKEN = /\*\*(.+?)\*\*|`([^`]+)`|\[\[(item|monster|talent):([^|\]]+)\|([^\]]*)\]\]/g;
+const TOKEN = /\*\*(.+?)\*\*|`([^`]+)`|\[\[(item|monster|talent|faq):([^|\]]+)\|([^\]]*)\]\]/g;
 
 function render(text: string): ReactNode[] {
   const out: ReactNode[] = [];
@@ -59,6 +61,12 @@ function render(text: string): ReactNode[] {
       const [tree = '', node = ''] = ref.split('/');
       out.push(
         <Link key={key++} to={{ href: wikiPath('progression', tree, node) }} className={styles.link}>
+          {label}
+        </Link>,
+      );
+    } else if (kind === 'faq' && ref !== undefined) {
+      out.push(
+        <Link key={key++} to={{ href: wikiPath('faq', ...ref.split('/')) }} className={styles.link}>
           {label}
         </Link>,
       );
