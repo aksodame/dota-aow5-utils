@@ -6,7 +6,10 @@
   display: grid;
   align-items: start;
   gap: var(--space-4);
-  max-width: 1440px;
+  /* The calculator is a working area, not an article: at the catalogue's
+     1440px cap a wide screen kept the panel and the inventory in a strip in
+     the middle. Like the craft page, it takes the window. */
+  max-width: none;
   margin: 0 auto;
   padding: var(--space-4) var(--space-5) var(--space-7);
   min-width: 0;
