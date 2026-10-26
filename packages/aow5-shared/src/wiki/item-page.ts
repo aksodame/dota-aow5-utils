@@ -3,12 +3,13 @@ import type { CraftFile, TalentUnlock } from './craft.ts';
 import { craftInSeason } from './craft.ts';
 import {
   dropChance,
+  monsterInSeason,
   poolFor,
   totalWeight,
   type DifficultyKey,
   type MonstersFile,
 } from './monsters.ts';
-import { entryShare, poolInSeason, PRIMARY_RULESET, type PoolsFile, type RulesetId } from './pools.ts';
+import { entryShare, poolInSeason, CURRENT_RULESET, type PoolsFile, type RulesetId } from './pools.ts';
 import { PARTNER_CHEST_REWARD } from './sky.ts';
 import {
   ancientPrice,
@@ -68,20 +69,28 @@ const dropIndexes = new WeakMap<MonstersFile, Map<string, ItemDropIndex>>();
  *   - the first-kill list picks exactly one row by weight, so its number is a
  *     share of that list rather than a per-kill chance.
  *
- * Memoised per file and difficulty: it walks every pool of ~1,000 units and the
- * item page asks for it on every navigation.
+ * Memoised per file, difficulty and season: it walks every pool of ~1,000 units
+ * and the item page asks for it on every navigation.
+ *
+ * `ruleset` is the season whose rows the index reads. A monster's pool can be
+ * season-specific (`Monster.bySeason`) — the S3 bosses, for one, drop the S3
+ * runes that no base table names — and a card offering an S3 item's sources
+ * must read the same season as the numbers above them. Omitted, the rows are
+ * the base ones the file carries, which is what the non-seasonal callers want.
  */
 export function itemDropIndex(
   file: MonstersFile,
   isRecipe: (itemId: string) => boolean,
   difficulty: DifficultyKey = 'hard',
+  ruleset?: RulesetId,
 ): ItemDropIndex {
   let byDiff = dropIndexes.get(file);
   if (byDiff === undefined) {
     byDiff = new Map();
     dropIndexes.set(file, byDiff);
   }
-  const cached = byDiff.get(difficulty);
+  const cacheKey = ruleset === undefined ? difficulty : `${ruleset}/${difficulty}`;
+  const cached = byDiff.get(cacheKey);
   if (cached !== undefined) return cached;
 
   const diff = file.difficulties.find((d) => d.key === difficulty);
@@ -92,7 +101,8 @@ export function itemDropIndex(
     else list.push(row);
   };
 
-  for (const m of file.monsters) {
+  for (const base of file.monsters) {
+    const m = ruleset === undefined ? base : monsterInSeason(base, ruleset);
     // An item listed on two rows of one pool is one item with both weights.
     const weights = new Map<string, number>();
     for (const [id, w] of poolFor(m, difficulty)) weights.set(id, (weights.get(id) ?? 0) + w);
@@ -120,7 +130,7 @@ export function itemDropIndex(
     b.chance - a.chance || (a.monster < b.monster ? -1 : a.monster > b.monster ? 1 : 0);
   for (const map of [index.drops, index.recipes, index.first]) for (const list of map.values()) list.sort(order);
 
-  byDiff.set(difficulty, index);
+  byDiff.set(cacheKey, index);
   return index;
 }
 
@@ -162,7 +172,7 @@ export interface VendorOffer {
 export function vendorOffersOf(
   file: VendorsFile,
   item: { id: string; type: string; cost: number; quality: number },
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): VendorOffer[] {
   const out: VendorOffer[] = [];
   const equip = item.type === 'equip';
@@ -237,7 +247,7 @@ export function endlessAppearances(sources: readonly Pick<ItemSource, 'kind' | '
 export function rewardChestTiers(
   pools: PoolsFile,
   itemId: string,
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): { tier: 1 | 2 | 3; pool: string; share: number }[] {
   const out: { tier: 1 | 2 | 3; pool: string; share: number }[] = [];
   for (const tier of [1, 2, 3] as const) {
@@ -268,7 +278,7 @@ export function rewardChestTiers(
 export function craftUnlockOf(
   craft: CraftFile,
   item: Pick<ItemFull, 'id' | 'isRecipe' | 'produces' | 'needs'>,
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): { recipes: string[]; talents: TalentUnlock[]; via?: string } {
   const own = craft.items[item.id];
   const unlock = own === undefined ? {} : craftInSeason(own, ruleset);

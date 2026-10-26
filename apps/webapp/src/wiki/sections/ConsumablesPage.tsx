@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { ItemSummary } from 'aow5-shared/data';
 import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
 import {
+  CURRENT_RULESET,
   chestDraws,
   chestVariantDraws,
   chestVariants,
@@ -79,7 +80,7 @@ import styles from './ConsumablesPage.module.css';
  *
  * A list and a detail, at `/wiki/consumables/<itemId>`. Which items belong is
  * `inConsumables` in `aow5-shared/wiki`, so the server's card and this list
- * cannot disagree. Every number is the S2 one: the season's patch is laid over
+ * cannot disagree. Every number is the current season's: the season's patch is laid over
  * `items.full.json` before anything reads it.
  *
  * The list includes the hidden-but-in-game items the partner wiki listed — the
@@ -261,7 +262,7 @@ interface Row {
   name: string;
   /** The tile's record; synthesised for the hidden items the index leaves out. */
   summary: ItemSummary;
-  /** The item record with the S2 patch applied. */
+  /** The item record with the current season's patch applied. */
   full: ItemFull;
   category: ConsumableCategory;
   subclass: string | undefined;
@@ -420,7 +421,7 @@ function Detail({
   detail: LocaleDetail | undefined;
   sources: Sources | null;
 }) {
-  const { lang } = useApp();
+  const { lang, core } = useApp();
   const t = useWikiStrings(CONSUMABLES);
   const [extra, extraLocale, pools, poolsLocale] = data;
   const variants = CHEST_VARIANT_NAMES[lang];
@@ -429,7 +430,6 @@ function Detail({
   const towerName = chest === undefined ? '' : (extraLocale.towers[chest.chest.tower] ?? chest.chest.tower);
   const gold = row.container?.gold;
   const chance = row.container?.chance;
-  const seasons = item.seasons !== undefined && item.seasons.length > 0 ? item.seasons.map((s) => `S${s}`).join(', ') : null;
 
   /** A link to another consumable, or the item's page for anything else. */
   const ref = (id: string, count?: number | string, extraText?: ReactNode) => (
@@ -512,10 +512,14 @@ function Detail({
 
   // ---- the pool
   const pool = row.pool === undefined ? undefined : pools.pools[row.pool];
-  const shares = pool === undefined ? [] : poolShares(poolInSeason(pool));
+  /*
+   * Rows the wiki has no item for are unfinished ids the pak still lists (an
+   * unnamed rune family, for one). They cannot be obtained, so they are not
+   * drawn; the shares keep the pool's own total, so the rest still read true.
+   */
+  const known = (id: string) => rows.byId.has(id) || extra.wearables[id] !== undefined || core?.byId.has(id) === true;
+  const shares = (pool === undefined ? [] : poolShares(poolInSeason(pool))).filter((entry) => known(entry.id));
   const poolLabel = row.pool === undefined ? '' : poolsLocale.names[row.pool] ? `${poolsLocale.names[row.pool]} (${row.pool})` : row.pool;
-
-  const rules = seasons === null ? extra.ruleset : `${extra.ruleset} · ${t.footerOnly(seasons)}`;
 
   return (
     <>
@@ -539,7 +543,6 @@ function Detail({
             {item.cost > 0 && <Tag tone="warn">{t.rowCost(num(item.cost, lang))}</Tag>}
             {row.useMax !== undefined && <Tag tone="accent">{t.usesTag(row.useMax)}</Tag>}
             {item.timeCost !== undefined && item.timeCost > 0 && <Tag>{t.timeTag(item.timeCost)}</Tag>}
-            {seasons !== null && <Tag tone="accent">{t.onlyIn(seasons)}</Tag>}
             {chest !== undefined && <Tag>{t.towerTag(towerName)}</Tag>}
             {chest !== undefined && (
               <Tag>{chest.ref.variant === 'temporary' ? t.unsealed : variants[chest.ref.variant]}</Tag>
@@ -652,7 +655,7 @@ function Detail({
         </Panel>
       )}
 
-      <DataFooter ruleset={rules} built={extra.generatedAt.slice(0, 10)} />
+      <DataFooter ruleset={CURRENT_RULESET} built={extra.generatedAt.slice(0, 10)} />
     </>
   );
 }

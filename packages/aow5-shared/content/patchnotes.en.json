@@ -1,6 +1,29 @@
 {
  "notes": [
   {
+   "version": "v1.510",
+   "date": "26.10.2026",
+   "game": [
+    "Season s3 is live: the game now runs the s3 rules. Souls, Ancestral items and Magic Tower items that used to be s2-only are allowed in the season again.",
+    "New room M025 \"Molten Abyss Fortress\": eight new monsters, the dummy boss included, and magma mushroom gathering points.",
+    "Dragon Knight is the seventh playable hero: five profession tiers, an 88-node tree and 11 abilities.",
+    "24 new gear items (0659–0682) with their Ancestral versions, recipes, materials and fate stones.",
+    "Eight new potions, Triumphant Vintage and profession rune bags.",
+    "Seals: every Dragon Knight seal gained tier IV, G619 \"Dragon Quake\" is new and G603/G607 are removed; several seals were reworked.",
+    "12 new \"Molten Abyss\" nodes T1500–T1512 in the common talent tree.",
+    "The battle pass is reworked: 100 levels instead of 80, eight weekly and six season tasks, updated rewards.",
+    "The data gained 12 new DLC bosses, including the ice and poison dragons; none is tied to a room yet.",
+    "Details are in the FAQ: [[faq:s3/s3|\"Season s3: what's new\"]] — locations, heroes, equipment, items, runes and the battle pass, one tab each."
+   ],
+   "wiki": [
+    "The wiki reads s3 data: Items, Consumables, Craft, Progression, Heroes, Monsters, Sky and the Calculator now use season s3.",
+    "FAQ: the \"Season s3\" tab was rewritten — eight sub-tabs instead of three mixed sections.",
+    "FAQ: \"Locations and activities\", \"Drops\", \"Vendors and fragments\", \"Experience and season\", \"Debuffs\" and \"Damage and its multipliers\" were updated.",
+    "Calculator: Crystal Maiden is gone, full-progression stats no longer include the s2 tower tree, and permanent buffs moved to their own column with their own sum.",
+    "Patch notes can now link straight into the FAQ section that explains them."
+   ]
+  },
+  {
    "version": "v1.509",
    "date": "16.10.2026",
    "game": [

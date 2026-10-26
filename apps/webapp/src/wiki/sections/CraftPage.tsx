@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ItemSummary } from 'aow5-shared/data';
 import {
+  CURRENT_RULESET,
   CRAFT_GROUPS,
   CRAFT_LIST_CAP,
   craftEconomy,
@@ -11,6 +12,7 @@ import {
   craftPricing,
   craftTree,
   dropSourceIndex,
+  seasonalPatch,
   isCraftable,
   isFreeCraft,
   type CraftFile,
@@ -73,7 +75,7 @@ import styles from './craft/Craft.module.css';
  *
  * `/wiki/craft/<itemId>` names the item. Only an item the game will actually
  * craft — one with a `Needs` list, not merely a recipe or a talent — has a
- * page. Every number is S2's: the season's patch is laid over the item table
+ * page. Every number is the current season's: the season's patch is laid over the item table
  * before anything reads it, and dismantle yields are the server's own rule
  * (`ItemFull.dismantle`), which differs from the partner wiki's for about a
  * hundred items.
@@ -146,12 +148,12 @@ export default function CraftPage({ path }: SectionProps) {
     writeEssence(value);
   };
 
-  // Every item as S2 sees it.
+  // Every item as the wiki season sees it.
   const view = useMemo(() => {
     if (full === null || data === null) return null;
     const extra = data[1];
     const map = new Map<string, CraftItem>();
-    for (const item of Object.values(full)) map.set(item.id, craftItemOf(item, extra.seasonal[item.id]?.s2));
+    for (const item of Object.values(full)) map.set(item.id, craftItemOf(item, seasonalPatch(extra, item.id)));
     return map;
   }, [full, data]);
 
@@ -463,7 +465,7 @@ export default function CraftPage({ path }: SectionProps) {
             </div>
           </>
         )}
-        <DataFooter ruleset={extra.ruleset.toUpperCase()} built={data[0].generatedAt.slice(0, 10)} />
+        <DataFooter ruleset={CURRENT_RULESET.toUpperCase()} built={data[0].generatedAt.slice(0, 10)} />
       </WikiDetail>
     </WikiShell>
   );

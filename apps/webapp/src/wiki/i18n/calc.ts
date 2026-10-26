@@ -35,7 +35,20 @@ export interface CalcStrings {
   resetAll: string;
   resetAllTitle: string;
   hint: string;
-  head: { stat: string; base: (level: number) => string; items: string; plus: string; total: string };
+  head: { stat: string; base: (level: number) => string; items: string; buffs: string; plus: string; total: string };
+  /** The permanent consumables column: one-time items with a lifetime limit. */
+  buffs: {
+    title: string;
+    note: string;
+    empty: string;
+    all: string;
+    allTitle: string;
+    max: (n: number) => string;
+    offPanel: string;
+    perUse: (amount: string, label: string) => string;
+    /** Labels for buff keys that are not panel rows. */
+    keys: Record<string, string>;
+  };
   cell: {
     seasonRange: (max: number) => string;
     override: string;
@@ -302,7 +315,24 @@ export const CALC: Localised<CalcStrings> = {
     resetAllTitle: 'Очистить базу, слоты и руны',
     hint:
       'База считается сама: для выбранного героя на 30 уровне, со всеми ступенями профессии и всеми узлами — своей ветки и общих деревьев, взятыми целиком (что именно вошло — в блоке «Откуда база» под панелью). Поле можно править руками — у такой строки появляется пометка, а кнопка «Пересчитать из героя» возвращает расчёт. Дальше предметы прибавляются сами, а вклад атрибутов считается разницей — чтобы ничего не посчиталось дважды. Уровни сезона (вклад и мир) дают по +2 % урона и −2 % получаемого за уровень и работают в самом конце — после брони, независимыми множителями.',
-    head: { stat: 'Стат', base: (level) => `База (герой, ${level} ур.)`, items: 'Предметы', plus: 'Плюс сверху', total: 'Итого' },
+    head: { stat: 'Стат', base: (level) => `База (герой, ${level} ур.)`, items: 'Предметы', buffs: 'Бафы', plus: 'Плюс сверху', total: 'Итого' },
+    buffs: {
+      title: 'Бафы',
+      note: 'Одноразовые предметы с лимитом использований: каждое использование навсегда добавляет к панели. Укажите, сколько уже использовано, или нажмите «Все».',
+      empty: 'Нет данных о постоянных предметах.',
+      all: 'Все',
+      allTitle: 'Применить максимум использований',
+      max: (n) => `из ${n}`,
+      offPanel: 'Постоянные эффекты вне панели — удача, обзор, склад, слоты биржи, сопротивление яду — здесь не считаются.',
+      perUse: (amount, label) => `${label} +${amount} за использование`,
+      keys: {
+        all_strength_pct: 'Сила, %',
+        all_agility_pct: 'Ловкость, %',
+        all_intelligence_pct: 'Интеллект, %',
+        all_all_stats_pct: 'Все атрибуты, %',
+        bonus_movespeed_pct: 'Скорость передвижения, %',
+      },
+    },
     cell: {
       seasonRange: (max) => `От 0 до ${max}`,
       override: 'Правка вручную: очистите поле, чтобы вернуть значение из героя',
@@ -495,7 +525,24 @@ export const CALC: Localised<CalcStrings> = {
     resetAllTitle: 'Clear the base, the slots and the runes',
     hint:
       'The base computes itself: the chosen hero at level 30, with every profession tier and every node — their own tree and the common ones, taken in full (what went in is in "Where the base comes from" below the panel). You can edit a field by hand — the row gets a mark, and "Recompute from hero" brings the computed value back. Items then add on top by themselves, and the attributes\' contribution is counted as a difference, so nothing is counted twice. Season levels (contribution and world) give +2% damage dealt and −2% damage taken per level, applied last — after armor, as independent multipliers.',
-    head: { stat: 'Stat', base: (level) => `Base (hero, lv. ${level})`, items: 'Items', plus: 'On top', total: 'Total' },
+    head: { stat: 'Stat', base: (level) => `Base (hero, lv. ${level})`, items: 'Items', buffs: 'Buffs', plus: 'On top', total: 'Total' },
+    buffs: {
+      title: 'Buffs',
+      note: 'One-time items with a lifetime limit: every use adds to the panel for good. Enter how many are used, or press “All”.',
+      empty: 'No permanent items in the data.',
+      all: 'All',
+      allTitle: 'Apply the maximum number of uses',
+      max: (n) => `of ${n}`,
+      offPanel: 'Permanent effects outside the panel — luck, vision, storage, Exchange slots, poison resistance — are not counted here.',
+      perUse: (amount, label) => `${label} +${amount} per use`,
+      keys: {
+        all_strength_pct: 'Strength, %',
+        all_agility_pct: 'Agility, %',
+        all_intelligence_pct: 'Intelligence, %',
+        all_all_stats_pct: 'All Stats, %',
+        bonus_movespeed_pct: 'Movement speed, %',
+      },
+    },
     cell: {
       seasonRange: (max) => `0 to ${max}`,
       override: 'Edited by hand: clear the field to get the hero\'s value back',
@@ -678,7 +725,24 @@ export const CALC: Localised<CalcStrings> = {
     resetAllTitle: '清空基础、物品栏与符印',
     hint:
       '基础属性自动计算：所选英雄 30 级，含全部职业阶段与全部天赋节点——本职业天赋树与通用天赋树，全部点满（具体内容见面板下方「基础来源」）。字段可手动修改——该行会出现标记，「按英雄重新计算」可恢复计算值。之后物品自动叠加，属性的贡献按差值计算——避免重复计算。赛季等级（贡献与世界）每级提供 +2% 造成伤害与 −2% 承受伤害，在最后结算——护甲之后，作为独立乘区。',
-    head: { stat: '属性', base: (level) => `基础（英雄 ${level} 级）`, items: '物品', plus: '额外', total: '合计' },
+    head: { stat: '属性', base: (level) => `基础（英雄 ${level} 级）`, items: '物品', buffs: '增益', plus: '额外', total: '合计' },
+    buffs: {
+      title: '增益',
+      note: '有使用次数上限的一次性物品：每次使用都会永久增加面板。填写已使用次数，或点击「全部」。',
+      empty: '数据中没有永久物品。',
+      all: '全部',
+      allTitle: '应用最大使用次数',
+      max: (n) => `共 ${n}`,
+      offPanel: '面板之外的永久效果——幸运、视野、仓库、交易所栏位、毒抗——此处不计入。',
+      perUse: (amount, label) => `每次使用 ${label} +${amount}`,
+      keys: {
+        all_strength_pct: '力量，%',
+        all_agility_pct: '敏捷，%',
+        all_intelligence_pct: '智力，%',
+        all_all_stats_pct: '全属性，%',
+        bonus_movespeed_pct: '移动速度，%',
+      },
+    },
     cell: {
       seasonRange: (max) => `0 至 ${max}`,
       override: '手动修改：清空字段即可恢复英雄数值',

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { heroIconUrl } from 'aow5-shared/data';
 import {
+  CURRENT_RULESET,
   PROGRESSION_HERO_TAB,
   inSeason,
   isShownRoom,
@@ -183,8 +184,19 @@ export default function ProgressionPage({ path }: SectionProps) {
     navigateTo(`${window.location.pathname}${query === '' ? '' : `?${query}`}`, { replace: true });
   };
 
+  /*
+   * The window's tabs, less the trees this season gates out. The build's own
+   * gate (`tree14` in `s3`, the tower's `tree13` in `s2` only) decides what the
+   * window lists, and the wiki describes S3 — so the tower's tree is not drawn
+   * here, and `all` below does not count it either.
+   */
   const tabs = [
-    ...file.tabs.map((id) => ({ key: id, label: treeTitle(file, id, names), href: href(id) })),
+    ...file.tabs.flatMap((id) => {
+      const tree = file.trees[id];
+      return tree !== undefined && inSeason(tree, file.season)
+        ? [{ key: id, label: treeTitle(file, id, names), href: href(id) }]
+        : [];
+    }),
     { key: PROGRESSION_HERO_TAB, label: data[1].heroTab, href: href(PROGRESSION_HERO_TAB) },
   ];
   const activeTab = view === null ? '' : view.tab;
@@ -203,7 +215,6 @@ export default function ProgressionPage({ path }: SectionProps) {
                 key: p.profession,
                 label: professionName(p, names),
                 href: href(PROGRESSION_HERO_TAB, p.profession),
-                ...(p.seasons.includes(file.season) ? {} : { badge: p.seasons.join('/').toUpperCase() }),
               }))}
             />
           )}
@@ -332,7 +343,6 @@ function TabBody({ file, names, view, learned, heroesOff, onToggle, farm, roomNa
   const tree = view.tree;
   const hero = view.kind === 'hero' ? view.hero : null;
   const heroText = hero === null ? undefined : names.heroes[hero.hero];
-  const heroInSeason = hero === null || hero.seasons.includes(file.season);
 
   const treeCost = tree === undefined ? totalCost([]) : totalCost(tree.nodes, learned);
   const learnedHere = tree === undefined ? 0 : tree.nodes.length - treeCost.nodes;
@@ -388,28 +398,23 @@ function TabBody({ file, names, view, learned, heroesOff, onToggle, farm, roomNa
               <Tag href={wikiPath('heroes', hero.profession)}>{t.heroPage}</Tag>
               {tree !== undefined && <Tag>{treeTitle(file, tree.id, names)}</Tag>}
               {heroText?.archetype !== undefined && <Tag>{heroText.archetype}</Tag>}
-              {!heroInSeason && <Tag tone="warn">{common.onlyIn(hero.seasons.join('/').toUpperCase())}</Tag>}
             </>
           ) : undefined
         }
         actions={
           hero !== null ? (
-            heroInSeason ? (
-              <Check
-                checked={!heroesOff.has(hero.profession)}
-                title={t.calcCheckTitle}
-                onChange={(on) => {
-                  const next = new Set(heroesOff);
-                  if (on) next.delete(hero.profession);
-                  else next.add(hero.profession);
-                  writeStoredList(HEROES_OFF_KEY, [...next]);
-                }}
-              >
-                {t.calcCheck}
-              </Check>
-            ) : (
-              <span className={styles.offSeason}>{t.notInSeason(file.season.toUpperCase())}</span>
-            )
+            <Check
+              checked={!heroesOff.has(hero.profession)}
+              title={t.calcCheckTitle}
+              onChange={(on) => {
+                const next = new Set(heroesOff);
+                if (on) next.delete(hero.profession);
+                else next.add(hero.profession);
+                writeStoredList(HEROES_OFF_KEY, [...next]);
+              }}
+            >
+              {t.calcCheck}
+            </Check>
           ) : undefined
         }
       />
@@ -437,7 +442,7 @@ function TabBody({ file, names, view, learned, heroesOff, onToggle, farm, roomNa
         </>
       )}
 
-      {hero !== null && hero.tiers.length > 0 && <Tiers hero={hero} file={file} names={names} />}
+      {hero !== null && hero.tiers.length > 0 && <Tiers hero={hero} names={names} />}
 
       <ResourceBlock
         title={tree === undefined ? t.branchTitleBare : t.branchTitle(treeTitle(file, tree.id, names))}
@@ -469,7 +474,7 @@ function TabBody({ file, names, view, learned, heroesOff, onToggle, farm, roomNa
         {roomName !== null ? t.locNote(roomName) : t.noLocNote}
         {t.costSource}
       </Note>
-      <DataFooter ruleset={file.season.toUpperCase()} built={day(file.generatedAt, lang)} />
+      <DataFooter ruleset={CURRENT_RULESET.toUpperCase()} built={day(file.generatedAt, lang)} />
     </>
   );
 }
@@ -714,10 +719,9 @@ function NodeCard({ node, tree, names, learned }: { node: TalentNode; tree: Tale
 // ---------------------------------------------------------------------------
 // Profession tiers
 
-function Tiers({ hero, file, names }: { hero: Profession; file: ProgressionFile; names: ProgressionNames }) {
+function Tiers({ hero, names }: { hero: Profession; names: ProgressionNames }) {
   const { lang } = useApp();
   const t = useWikiStrings(PROGRESSION);
-  const common = useWikiStrings(COMMON);
   const growth = (g: Profession['tiers'][number]['growth']) =>
     (['str', 'agi', 'int'] as const)
       .filter((key) => g[key] !== 0)
@@ -732,11 +736,9 @@ function Tiers({ hero, file, names }: { hero: Profession; file: ProgressionFile;
         numeric={[2]}
         rows={hero.tiers.map((tier) => {
           const name = names.locale.tiers[`${hero.hero}_tier_${tier.tier}`]?.name;
-          const seasonal = tier.seasons !== undefined && !inSeason(tier, file.season);
           return [
             <span key="tier" className={styles.tierCell}>
               {t.tier(tier.tier)}
-              {seasonal && <Badge small>{common.onlyIn((tier.seasons ?? []).join('/').toUpperCase())}</Badge>}
             </span>,
             name ?? '—',
             num(tier.heroLevel, lang),

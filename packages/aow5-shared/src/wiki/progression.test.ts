@@ -129,21 +129,35 @@ test('every stat key in the trees has a label in every language, bar the known g
 });
 
 /*
- * Axe at level 30 with his tree and the five stat-bearing tab trees. Pinned
- * against the partner wiki's calculator (v1.507), which agreed to the last
- * digit — a change here means the model or the data moved.
+ * Axe at level 30 with his tree and the five stat-bearing tab trees, in the
+ * season the wiki describes (S3). The partner's v1.507 pin was the S2 view;
+ * S3's common tree adds T1500–T1512 and its profession tiers grow differently,
+ * so the numbers below are the S3 ones — a change here means the model or the
+ * data moved again.
  */
 test('heroStatsAtLevel reproduces the level-30 panel', () => {
   const lv = heroStatsAtLevel(stats, 'axe', { trees: ['tree4', 'tree1', 'tree2', 'tree9', 'tree10', 'tree13'] })!;
   const close = (a: number, b: number) => assert.ok(Math.abs(a - b) < 1e-6, `${a} ≈ ${b}`);
   close(lv.buckets.str, 367.1);
-  assert.equal(lv.pct.str, 15);
-  close(lv.attrs.str, 422.165);
-  close(lv.derived.bonus_health.flat, 1260);
-  close(lv.derived.bonus_health.mult, 1.12);
-  close(lv.totals.bonus_health, 4096.9488);
-  close(lv.totals.attack_speed, 316.8847518406897);
+  assert.equal(lv.pct.str, 24);
+  close(lv.attrs.str, 455.204);
+  close(lv.derived.bonus_health.flat, 1374.6);
+  close(lv.derived.bonus_health.mult, 1.16);
+  close(lv.totals.bonus_health, 4542.81984);
+  close(lv.totals.attack_speed, 320.24828206040405);
   close(lv.totals.bonus_movespeed, 276.04);
   assert.equal(lv.rest['bonus_exp_pct'], 120);
   assert.equal(heroStatsAtLevel(stats, 'nobody'), undefined);
+});
+
+test('the default full progression takes the season’s trees, not the S2-only tower', () => {
+  // The build gates tree13 to S2; the wiki describes S3, so "every tree taken"
+  // is the hero's own tree plus the four common ones the window shows.
+  assert.ok(!stats.commonTrees.includes('tree13'));
+  assert.deepEqual(stats.commonTrees, ['tree1', 'tree2', 'tree10', 'tree9']);
+  const lv = heroStatsAtLevel(stats, 'axe')!;
+  assert.deepEqual(lv, heroStatsAtLevel(stats, 'axe', { trees: ['tree4', 'tree1', 'tree2', 'tree9', 'tree10'] }));
+  // The S3 panel without items, as the calculator's base column shows it.
+  assert.ok(Math.abs(lv.totals.bonus_health - 4412.3407) < 1e-3, `${lv.totals.bonus_health}`);
+  assert.ok(Math.abs(lv.totals.attack_speed - 316.550228945647) < 1e-6, `${lv.totals.attack_speed}`);
 });

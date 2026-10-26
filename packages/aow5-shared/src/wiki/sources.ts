@@ -16,7 +16,7 @@
  * that from the per-pack and per-chest records here.
  */
 
-import { poolInSeason, PRIMARY_RULESET, type PoolsFile, type RulesetId } from './pools.ts';
+import { poolInSeason, CURRENT_RULESET, type PoolsFile, type RulesetId } from './pools.ts';
 
 /** `[itemId, count]`. */
 export type ItemCount = [itemId: string, count: number];
@@ -113,7 +113,7 @@ export function mallByItem(file: SourcesFile, packName: (pack: MallPack) => stri
 export function gachaByItem(
   file: SourcesFile,
   pools: PoolsFile,
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): Record<string, { chest: string; pools: string[] }[]> {
   const out: Record<string, { chest: string; pools: string[] }[]> = {};
   for (const chest of file.gacha) {

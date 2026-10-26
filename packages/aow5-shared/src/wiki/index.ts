@@ -12,6 +12,7 @@ export * from './items-extra.ts';
 export * from './craft.ts';
 export * from './faq.ts';
 export * from './consumables.ts';
+export * from './permanent-buffs.ts';
 export * from './sky.ts';
 export * from './vendors.ts';
 export * from './sources.ts';

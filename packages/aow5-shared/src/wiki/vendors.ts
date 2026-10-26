@@ -10,8 +10,8 @@
  * The JSON holds what the pak states: which items each vendor can stock,
  * derived from the item table's own flags (`ItemSellable`,
  * `ItemSellableInAncient`, `ExchangeInventory`, `Subclass: precious`) in the
- * S2 ruleset; the client bundle's refresh timers and counters; and the talent
- * nodes that touch each vendor. The vendors' server code
+ * wiki season's ruleset; the client bundle's refresh timers and counters; and
+ * the talent nodes that touch each vendor. The vendors' server code
  * (`shop/shop.lua`, `shop/ancient_shop.lua`, `my_game_axe/merchant/*.lua`) is
  * shipped encrypted, so its constants — price multipliers, fixed goods, order
  * tiers, the exchange price formula — are **not** in the JSON. The partner

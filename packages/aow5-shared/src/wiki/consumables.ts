@@ -1,4 +1,4 @@
-import { PRIMARY_RULESET, poolInSeason, type PoolsFile, type RulesetId } from './pools.ts';
+import { CURRENT_RULESET, poolInSeason, type PoolsFile, type RulesetId } from './pools.ts';
 import { seasonalPatch, sourceFileOf, type ChestRef, type ItemsExtraFile, type TowerChest } from './items-extra.ts';
 
 /**
@@ -26,11 +26,11 @@ export interface ConsumableBase {
   type: string;
 }
 
-/** How many of it a hero may consume, in a season (S2 unless asked). */
+/** How many of it a hero may consume, in the wiki's season unless asked. */
 export function consumableUseMax(
   extra: ItemsExtraFile,
   itemId: string,
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): number | undefined {
   return seasonalPatch(extra, itemId, ruleset)?.useMax ?? extra.items[itemId]?.useMax;
 }
@@ -50,9 +50,9 @@ export function consumablePool(extra: ItemsExtraFile, itemId: string): string | 
 /**
  * The partner's rule, on our fields — the list this section shows. Unlike
  * `isConsumable` in `items-extra.ts` it counts the magic-tower chests, which
- * carry `chest` rather than `container`, and reads the S2 use cap.
+ * carry `chest` rather than `container`, and reads the wiki season's use cap.
  */
-export function inConsumables(extra: ItemsExtraFile, item: ConsumableBase, ruleset: RulesetId = PRIMARY_RULESET): boolean {
+export function inConsumables(extra: ItemsExtraFile, item: ConsumableBase, ruleset: RulesetId = CURRENT_RULESET): boolean {
   return (
     sourceFileOf(extra, item.id) === 'ak_items_potion' ||
     item.type === 'potion' ||
@@ -74,7 +74,7 @@ export function isConsumable(extra: ItemsExtraFile, itemId: string, type?: strin
 export function consumableCategory(
   extra: ItemsExtraFile,
   itemId: string,
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): ConsumableCategory {
   if (consumablePool(extra, itemId) !== undefined) return 'container';
   return consumableUseMax(extra, itemId, ruleset) !== undefined ? 'limited' : 'plain';
@@ -98,7 +98,7 @@ export function chestVariantDraws(chest: TowerChest, variant: ChestRef['variant'
 }
 
 /** An item's cost in a season: the seasonal patch over the base table. */
-export function seasonalCost(extra: ItemsExtraFile, itemId: string, base: number, ruleset: RulesetId = PRIMARY_RULESET): number {
+export function seasonalCost(extra: ItemsExtraFile, itemId: string, base: number, ruleset: RulesetId = CURRENT_RULESET): number {
   return seasonalPatch(extra, itemId, ruleset)?.cost ?? base;
 }
 
@@ -241,7 +241,7 @@ export function consumableFactsInput(
   pools: PoolsFile,
   item: { id: string; name: string; level: number; cost: number },
   names: { pools: Readonly<Record<string, string>>; towers: Readonly<Record<string, string>> },
-  ruleset: RulesetId = PRIMARY_RULESET,
+  ruleset: RulesetId = CURRENT_RULESET,
 ): ConsumableFactsInput {
   const patch = seasonalPatch(extra, item.id, ruleset);
   const own = extra.items[item.id];

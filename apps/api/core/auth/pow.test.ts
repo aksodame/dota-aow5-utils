@@ -37,8 +37,17 @@ test('the difficulty actually binds', () => {
   const answer = solve(challenge);
   // The right nonce works...
   assert.equal(meetsDifficulty(challenge.salt, answer, 12), true);
-  // ...and one that only clears a weaker bar does not.
-  const weaker = solve({ salt: challenge.salt, difficulty: 4 });
+  // ...and one that only clears a weaker bar does not. The first 4-bit nonce
+  // can itself clear 12 bits — then it *is* the answer — so pick a nonce that
+  // provably stops between the two bars instead of assuming the first one does.
+  let weaker: number | undefined;
+  for (let nonce = 0; nonce < 5_000_000; nonce++) {
+    if (meetsDifficulty(challenge.salt, nonce, 4) && !meetsDifficulty(challenge.salt, nonce, 12)) {
+      weaker = nonce;
+      break;
+    }
+  }
+  assert.ok(weaker !== undefined, 'a 4-bit nonce that does not clear 12 bits');
   assert.notEqual(weaker, answer);
   assert.equal(meetsDifficulty(challenge.salt, weaker, 12), false);
   const verdict = verifySolution(SECRET, new ConsumedSalts(), { ...challenge, nonce: weaker }, NOW);

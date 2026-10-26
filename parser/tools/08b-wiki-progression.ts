@@ -12,6 +12,7 @@ import { parseRichText } from './lib/richtext.ts';
 import { sortKeys, writeJson, writeJsonPretty } from './lib/writeJson.ts';
 import { check, checkSoft, exitIfFailed, info, ok, step, warn } from './lib/log.ts';
 import { isAbilitySlot, type AbilityLocale, type AbilitySlotKey } from '../../packages/aow5-shared/src/types/heroes.ts';
+import { CURRENT_RULESET } from '../../packages/aow5-shared/src/wiki/pools.ts';
 import {
   sumStats,
   talentIconFile,
@@ -66,15 +67,19 @@ import {
  * saturation curves. Nothing encrypted is read.
  */
 
-const PRIMARY_SEASON = 's2';
+/*
+ * The season the wiki describes (step 07 and 08d have the same switch). The
+ * ruleset manifest still names the base season; a node's `AllowedRulesets`
+ * decides whether it is drawn in this one.
+ */
+const PRIMARY_SEASON = CURRENT_RULESET;
 const RULESET_DIR = 'panorama/layout/custom_game/vendor/data/rulesets';
 const TALENT_ICON_DIR = 'panorama/images/custom_game/talent';
 const PANORAMA_SPELLICONS = 'panorama/images/spellicons';
 const CONST_LUA = 'scripts/vscripts/shared/const.lua';
 const STOCK_HEROES_KV = 'scripts/npc/original_kv/npc_heroes.txt';
 const HEROES_KV = 'scripts/npc/ak_heroes.txt';
-/** The addon's placeholder naming for an ability it has not written yet (as in step 04b). */
-const PLACEHOLDER_NAME = /^(?:ability|skill|talent)\s*\d+$/i;
+/** The addon's placeholder text for an ability it has not written yet (as in step 04b). */
 const PLACEHOLDER_DESC = /^to be filled\.?$/i;
 const ID = '[\\w$]+';
 
@@ -85,7 +90,14 @@ step('08b · wiki progression, heroes and hero stats');
 const WIKI_DIR = path.join(DIRS.publicData, 'wiki');
 const TALENT_ICONS = path.join(DIRS.publicIcons, 'talents');
 const ABILITY_ICONS_WIKI = path.join(DIRS.publicIcons, 'abilities-wiki');
-const generatedAt = new Date().toISOString();
+/*
+ * The same stamp step 07 writes — the pak's own mtime — not the clock: a
+ * re-run on an unchanged pak has to leave the tree clean, and a wall-clock
+ * stamp would dirty every file this step writes.
+ */
+const generatedAt = new Date(
+  (JSON.parse(fs.readFileSync(path.join(DIRS.cache, 'vpk-index.json'), 'utf8')) as { vpkMtimeMs: number }).vpkMtimeMs,
+).toISOString();
 
 // --- small parsers ----------------------------------------------------------
 
@@ -622,8 +634,16 @@ let genericRunes = 0;
     const r = list(row['AllowedRulesets']);
     return r.length ? r : undefined;
   };
+  /*
+   * The build's own flag for a rune it actually hands out. An unfinished family
+   * carries names in every language and a target ability, but `is_item_in_game`
+   * is 0 and no item table has its rows — it cannot be owned or dropped, so it
+   * is not a rune: there is no card to link and no count to promise.
+   */
+  const inGame = (row: Row): boolean => String(row['is_item_in_game'] ?? '1') !== '0';
   for (const [id, row] of Object.entries(G)) {
     if (/_\d+$/.test(id)) continue; // a higher tier of some family
+    if (!inGame(row)) continue; // an unfinished family, off in this season
     const target = list(row['target_ability'])[0];
     if (!target) {
       genericRunes++;
@@ -634,6 +654,8 @@ let genericRunes = 0;
     if (r) fam.rulesets = r;
     for (let tier = 2; G[`${id}_${tier}`]; tier++) {
       const tid = `${id}_${tier}`;
+      // A family is drawn tier by tier: a hole would be a dead chip.
+      if (!inGame(G[tid]!)) throw new Error(`${tid} is off while the rest of family ${id} is in game`);
       const tr = rulesetsOf(G[tid]!);
       fam.tiers.push(!same(tr, r) && tr ? [tid, tier, tr] : [tid, tier]);
       if (list(G[tid]!['target_ability'])[0] !== target) throw new Error(`${tid} targets another ability than ${id}`);
@@ -719,10 +741,14 @@ for (const p of professions) {
       (a.bySeason ??= {})[s] = d as never;
     }
 
-    // Text, per language and per season it can differ in.
-    const en = tok('en', `dota_tooltip_ability_${id}`, primary) ?? '';
+    /*
+     * A stub is an ability the build has not written: no description, or the
+     * "To be filled." placeholder. A placeholder *name* alone is not one — an
+     * ability the build wrote but left unnamed (lina_008, drow_002/005) has a
+     * full description and runes, and the heroes tab gives it a wiki name.
+     */
     const enDesc = tok('en', `dota_tooltip_ability_${id}_description`, primary) ?? '';
-    if (en === '' || PLACEHOLDER_NAME.test(en.trim()) || enDesc === '' || PLACEHOLDER_DESC.test(enDesc.trim())) {
+    if (enDesc === '' || PLACEHOLDER_DESC.test(enDesc.trim())) {
       a.stub = true;
       stubs.push(id);
     }
@@ -932,7 +958,18 @@ const herostats: HeroStatsFile = {
   level: 30,
   attrBonus,
   heroes: statsHeroes,
-  commonTrees: tabs.map((t) => t.id).filter((id) => Object.keys(treeStats[id] ?? {}).length > 0),
+  /*
+   * The trees a hero's panel takes by default: the window's tabs this season
+   * actually shows. The tower's tree is gated to S2 by the build, so in an S3
+   * wiki it is not part of "every tree taken" — its nodes are still in
+   * `treeStats` for anyone who asks for them by name.
+   */
+  commonTrees: tabs
+    .map((t) => t.id)
+    .filter((id) => {
+      const tree = trees[id];
+      return tree !== undefined && (tree.seasons === undefined || tree.seasons.includes(PRIMARY_SEASON)) && Object.keys(treeStats[id] ?? {}).length > 0;
+    }),
   treeStats,
   treeNodes,
 };

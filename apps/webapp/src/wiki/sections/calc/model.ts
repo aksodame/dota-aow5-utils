@@ -119,6 +119,8 @@ export interface CalcInput {
 export interface RowTotal {
   base: number;
   items: number;
+  /** What the permanent buffs add to this row, indirect attribute effects included. */
+  buffs: number;
   /** "On top": the attributes' contribution (and an attribute's own `%` bonus). */
   fromAttrs: number;
   sum: number;
@@ -188,58 +190,94 @@ export function derivePools(input: CalcInput, P: Record<string, number>): Derive
  * the whole attribute part is shown and the base keeps only the game's flat.
  * "Total" is the same either way.
  */
-export function rowTotal(input: CalcInput, row: RowDef, sums: Record<string, number>): RowTotal {
+export function rowTotal(
+  input: CalcInput,
+  row: RowDef,
+  sums: Record<string, number>,
+  buffs: Readonly<Record<string, number>> = {},
+): RowTotal {
   const { key, kind } = row;
   if (kind.type === 'season') {
     const base = input.base[key] ?? 0;
-    return { base, items: 0, fromAttrs: 0, sum: base };
+    return { base, items: 0, buffs: 0, fromAttrs: 0, sum: base };
   }
-  const pool = (k: string) => sums[k] ?? 0;
-  const attrPct = (a: keyof AttrTriple) => pool(ATTR_PCT[a]) + pool('all_all_stats_pct');
-  const items = pool(key);
-
-  const base0 = baseAttrs(input);
-  const allItems = pool('bonus_all_stats');
-  const flat: AttrTriple = {
-    str: base0.str + pool('bonus_strength') + allItems,
-    agi: base0.agi + pool('bonus_agility') + allItems,
-    int: base0.int + pool('bonus_intelligence') + allItems,
-  };
-  const total: AttrTriple = {
-    str: flat.str * (1 + attrPct('str') / 100),
-    agi: flat.agi * (1 + attrPct('agi') / 100),
-    int: flat.int * (1 + attrPct('int') / 100),
-  };
+  const items = sums[key] ?? 0;
   const full = input.mode === 'full';
 
-  if (kind.type === 'derived') {
-    const der = input.level?.derived[kind.key];
-    if (der !== undefined) {
-      const base = isOverridden(input, key) ? input.base[key]! : full ? der.flat : der.flat + der.mult * bonusOf(input, kind.key, base0);
-      const fromAttrs = full
-        ? der.mult * bonusOf(input, kind.key, total)
-        : der.mult * (bonusOf(input, kind.key, total) - bonusOf(input, kind.key, base0));
-      return { base, items, fromAttrs, sum: base + items + fromAttrs };
+  /*
+   * The row as a pool sees it: items only, or items plus the permanent buffs.
+   * The columns keep the pool's own values; the buffs column is the difference
+   * the second evaluation makes — so an indirect bonus (buffs' attributes
+   * feeding health, a buffed `%` multiplying the whole) lands there too.
+   */
+  const evaluate = (P: (k: string) => number): { base: number; fromAttrs: number; sum: number; pct?: number } => {
+    const base0 = baseAttrs(input);
+    const all = P('bonus_all_stats');
+    const flat: AttrTriple = {
+      str: base0.str + P('bonus_strength') + all,
+      agi: base0.agi + P('bonus_agility') + all,
+      int: base0.int + P('bonus_intelligence') + all,
+    };
+    const pctOf = (a: keyof AttrTriple) => P(ATTR_PCT[a]) + P('all_all_stats_pct');
+    const total: AttrTriple = {
+      str: flat.str * (1 + pctOf('str') / 100),
+      agi: flat.agi * (1 + pctOf('agi') / 100),
+      int: flat.int * (1 + pctOf('int') / 100),
+    };
+
+    if (kind.type === 'derived') {
+      const der = input.level?.derived[kind.key];
+      if (der !== undefined) {
+        const base = isOverridden(input, key) ? input.base[key]! : full ? der.flat : der.flat + der.mult * bonusOf(input, kind.key, base0);
+        const fromAttrs = full
+          ? der.mult * bonusOf(input, kind.key, total)
+          : der.mult * (bonusOf(input, kind.key, total) - bonusOf(input, kind.key, base0));
+        return { base, fromAttrs, sum: base + P(key) + fromAttrs };
+      }
+      // No hero data: the base is typed, the attributes still add on top.
+      const base = baseVal(input, key);
+      const fromAttrs = full ? bonusOf(input, kind.key, total) : bonusOf(input, kind.key, total) - bonusOf(input, kind.key, base0);
+      return { base, fromAttrs, sum: base + P(key) + fromAttrs };
     }
-    // No hero data: the base is typed, the attributes still add on top.
+
     const base = baseVal(input, key);
-    const fromAttrs = full ? bonusOf(input, kind.key, total) : bonusOf(input, kind.key, total) - bonusOf(input, kind.key, base0);
-    return { base, items, fromAttrs, sum: base + items + fromAttrs };
+    if (kind.type === 'attr') {
+      // "All Stats" from items lands on each attribute, and the attribute's `%`
+      // multiplies the whole of it — shown "on top" beside the All Stats share.
+      const fromAll = all;
+      const pct = pctOf(kind.attr);
+      const bonus = pct ? ((base + P(key) + fromAll) * pct) / 100 : 0;
+      return { base, fromAttrs: fromAll + bonus, sum: base + P(key) + fromAll + bonus, ...(pct ? { pct } : {}) };
+    }
+    return { base, fromAttrs: 0, sum: base + P(key) };
+  };
+
+  /*
+   * Movement speed is the one row where a buff can work through a percentage:
+   * items keep their existing flat handling, the buff's `%` multiplies what is
+   * already on the panel.
+   */
+  if (key === 'bonus_movespeed') {
+    const base = baseVal(input, key);
+    const noBuff = base + items;
+    const flat = buffs['bonus_movespeed'] ?? 0;
+    const pct = buffs['bonus_movespeed_pct'] ?? 0;
+    const sum = (base + items + flat) * (1 + pct / 100);
+    return { base, items, buffs: sum - noBuff, fromAttrs: 0, sum };
   }
 
-  const base = baseVal(input, key);
-  if (kind.type === 'attr') {
-    // "All Stats" from items lands on each attribute, and the attribute's `%`
-    // multiplies the whole of it — shown "on top" beside the All Stats share.
-    const fromAll = allItems;
-    const pct = attrPct(kind.attr);
-    if (pct) {
-      const bonus = ((base + items + fromAll) * pct) / 100;
-      return { base, items, fromAttrs: fromAll + bonus, sum: base + items + fromAll + bonus, pct };
-    }
-    return { base, items, fromAttrs: fromAll, sum: base + items + fromAll };
-  }
-  return { base, items, fromAttrs: 0, sum: base + items };
+  const plain = (k: string) => sums[k] ?? 0;
+  const combined = (k: string) => (sums[k] ?? 0) + (buffs[k] ?? 0);
+  const noBuff = evaluate(plain);
+  const withBuff = evaluate(combined);
+  return {
+    base: noBuff.base,
+    items,
+    buffs: withBuff.sum - noBuff.sum,
+    fromAttrs: noBuff.fromAttrs,
+    sum: withBuff.sum,
+    ...(noBuff.pct !== undefined ? { pct: noBuff.pct } : {}),
+  };
 }
 
 /** Decimals a value is printed with when the row names none: as the partner did, by magnitude. */

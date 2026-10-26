@@ -8,7 +8,7 @@ import { readRulesetTable } from './lib/ruleset.ts';
 import { scriptText } from './lib/hudScript.ts';
 import { writeJson } from './lib/writeJson.ts';
 import { check, exitIfFailed, fail, info, ok, step, warn } from './lib/log.ts';
-import type { PoolEntry, RulesetId } from '../../packages/aow5-shared/src/wiki/pools.ts';
+import { CURRENT_RULESET, type PoolEntry, type RulesetId } from '../../packages/aow5-shared/src/wiki/pools.ts';
 import type {
   Combo,
   ComboMember,
@@ -66,7 +66,14 @@ const OUT = path.join(DIRS.publicData, 'wiki');
 const DATA = 'panorama/layout/custom_game/vendor/data';
 const RULESETS: RulesetId[] = ['s1', 's2', 's3'];
 const PRIMARY: RulesetId = 's2';
-const generatedAt = new Date().toISOString();
+/*
+ * The same stamp step 07 writes — the pak's own mtime — not the clock: a
+ * re-run on an unchanged pak has to leave the tree clean, and a wall-clock
+ * stamp would dirty every file this step writes.
+ */
+const generatedAt = new Date(
+  (JSON.parse(fs.readFileSync(path.join(DIRS.cache, 'vpk-index.json'), 'utf8')) as { vpkMtimeMs: number }).vpkMtimeMs,
+).toISOString();
 
 const vpk = Vpk.open(cfg.vpkPath);
 
@@ -119,18 +126,25 @@ const num = (v: unknown, label: string): number => {
 
 const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : v === undefined || v === null ? '' : String(v));
 
-/** `a:1|b:2` -> `[['a', 1], ['b', 2]]`. A malformed part fails. */
+/**
+ * `a:1|b:2` -> `[['a', 1], ['b', 2]]`. A malformed part fails.
+ *
+ * The plain KV tables write one pipe-joined string; a ruleset copy of the same
+ * table carries a JSON array of the same `a:1` entries, so both shapes are read.
+ */
 function pairs(v: unknown, label: string): [string, number][] {
-  const s = str(v);
-  if (s === '') return [];
-  return s.split('|').map((part) => {
+  const parts = Array.isArray(v) ? v.map((x) => str(x)) : str(v).split('|');
+  const out: [string, number][] = [];
+  for (const part of parts) {
+    if (part === '') continue;
     const at = part.lastIndexOf(':');
     if (at <= 0) {
       fail(`${label}: malformed pair ${JSON.stringify(part)}`);
-      return ['', 0] as [string, number];
+      continue;
     }
-    return [part.slice(0, at).trim(), num(part.slice(at + 1), `${label} ${part}`)] as [string, number];
-  });
+    out.push([part.slice(0, at).trim(), num(part.slice(at + 1), `${label} ${part}`)]);
+  }
+  return out;
 }
 
 // --- the greed cave's config.lua ---------------------------------------------
@@ -608,12 +622,12 @@ function exchangeOffers(r: RulesetId): ExchangeOffer[] {
     .sort((a, b) => (a[0] < b[0] ? -1 : 1));
 }
 
-/** `bySeason` holding only the seasons whose value differs from the primary one. */
+/** `bySeason` holding only the seasons whose value differs from the wiki season's one. */
 function bySeason<T>(of: (r: RulesetId) => T): Partial<Record<RulesetId, T>> | undefined {
-  const primary = JSON.stringify(of(PRIMARY));
+  const primary = JSON.stringify(of(CURRENT_RULESET));
   const out: Partial<Record<RulesetId, T>> = {};
   for (const r of RULESETS) {
-    if (r === PRIMARY) continue;
+    if (r === CURRENT_RULESET) continue;
     const v = of(r);
     if (JSON.stringify(v) !== primary) out[r] = v;
   }
@@ -669,16 +683,16 @@ const guildSlots = hudMatch(
 const vendors: VendorsFile = {
   schema: 1,
   generatedAt,
-  ruleset: PRIMARY,
+  ruleset: CURRENT_RULESET,
   regular: {
-    ...regularStock(PRIMARY),
+    ...regularStock(CURRENT_RULESET),
     refresh: shopRefresh('shop'),
     talents: stableTalents('regular vendor', (k) => /^shop_/.test(k)),
   },
   ancient: {
     currencyItem: ancientCurrency?.[1] ?? '',
     refresh: shopRefresh('ancient_shop'),
-    accepts: ancientAccepts(PRIMARY),
+    accepts: ancientAccepts(CURRENT_RULESET),
     talents: stableTalents('ancient vendor', (k) => /^ancient_shop_|^shop_time$/.test(k)),
   },
   guild: {
@@ -693,7 +707,7 @@ const vendors: VendorsFile = {
     },
     exchange: {
       refresh: { item: guildExchange?.[3] ?? '', dailyLimit: n(guildExchange?.[1]), cost: n(guildExchange?.[2]) },
-      offers: exchangeOffers(PRIMARY),
+      offers: exchangeOffers(CURRENT_RULESET),
     },
     talents: stableTalents('guild vendor', (k) => k.startsWith('merchant_')),
   },
@@ -746,7 +760,12 @@ for (const [id, row] of Object.entries(mallRows)) {
 }
 mall.sort((a, b) => Number(a.id) - Number(b.id));
 
-const treasureRows = kvTable('ak_treasure');
+/*
+ * The paid chests are per season: the S3 copy makes the third shop live (its
+ * `is_hide` is 1 in S1 and S2), so the wiki — which describes S3 — reads the
+ * season's table and its pools rather than the base KV file.
+ */
+const treasureRows = seasonTable(CURRENT_RULESET, 'ak_treasure');
 const gacha: TreasureChest[] = [];
 for (const [id, row] of Object.entries(treasureRows)) {
   const chest: TreasureChest = {
@@ -770,10 +789,10 @@ for (const [id, row] of Object.entries(treasureRows)) {
   gacha.push(chest);
 }
 gacha.sort((a, b) => Number(a.id) - Number(b.id));
-const treasurePools = baseTable('ak_treasure_pool');
+const treasurePools = seasonTable(CURRENT_RULESET, 'ak_treasure_pool');
 for (const c of gacha) for (const [p] of c.pools) check(p in treasurePools, `treasure ${c.id}: pool ${p} exists`);
 
-const sources: SourcesFile = { schema: 1, generatedAt, ruleset: PRIMARY, mall, gacha };
+const sources: SourcesFile = { schema: 1, generatedAt, ruleset: CURRENT_RULESET, mall, gacha };
 info(`sources: ${mall.length} mall packs, ${gacha.length} treasure chests`);
 
 // --- locales -----------------------------------------------------------------------------

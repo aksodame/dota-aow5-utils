@@ -20,6 +20,8 @@ export interface CalcState {
   hero: string;
   base: Record<string, number>;
   mode: AttrMode;
+  /** Permanent consumables used, by item id; the page clamps them to `use_max`. */
+  buffs: Record<string, number>;
   slots: Array<Entry | null>;
   neutral: Entry | null;
   pet: Entry | null;
@@ -41,6 +43,7 @@ export function freshState(): CalcState {
     hero: DEFAULT_HERO,
     base: {},
     mode: 'delta',
+    buffs: {},
     slots: Array.from({ length: 6 }, () => null),
     neutral: null,
     pet: null,
@@ -63,10 +66,19 @@ export function hydrate(raw: unknown): CalcState {
   if (raw === null || typeof raw !== 'object') return s;
   const r = raw as Record<string, unknown>;
   if (typeof r.hero === 'string' && r.hero !== '') s.hero = r.hero;
+  // Crystal Maiden is not part of the calculator (her kit is unfinished in the
+  // build): a state saved with her moves to the default hero.
+  if (s.hero === 'crystal_maiden') s.hero = DEFAULT_HERO;
   if (r.base !== null && typeof r.base === 'object') {
     for (const [k, v] of Object.entries(r.base as Record<string, unknown>)) {
       const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
       if (Number.isFinite(n)) s.base[k] = n;
+    }
+  }
+  if (r.buffs !== null && typeof r.buffs === 'object') {
+    for (const [id, v] of Object.entries(r.buffs as Record<string, unknown>)) {
+      const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
+      if (Number.isFinite(n) && n > 0) s.buffs[id] = Math.floor(n);
     }
   }
   s.mode = r.mode === 'full' || r.attrMode === 'full' ? 'full' : 'delta';

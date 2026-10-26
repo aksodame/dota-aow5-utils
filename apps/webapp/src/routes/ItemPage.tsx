@@ -17,6 +17,7 @@ import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
 // wiki's barrel, which would pull every section's helpers into the main chunk.
 import { applySeasonalPatch, seasonalPatch, type ItemsExtraFile } from 'aow5-shared/wiki/items-extra.ts';
 import { newRollState, type RollState } from 'aow5-shared/wiki/itemroll.ts';
+import { CURRENT_RULESET } from 'aow5-shared/wiki/pools.ts';
 import { Badge, Button, Icon, Panel, cx } from '@/ui';
 import { withLang } from '@/router';
 import { useApp } from '@/data/AppData';
@@ -79,6 +80,12 @@ const CodeNote = panel('CodeNote');
  * where a copy starts to differ from the table's numbers", not two.
  */
 const ROLL_MIN_QUALITY = 5;
+
+/**
+ * The season the wiki describes. An item the pak carries in it is the normal
+ * case, so its card gets no season label; one it does not carry is marked.
+ */
+const WIKI_SEASON = Number(CURRENT_RULESET.slice(1)) as SeasonKey;
 
 const ItemStatsEditor = lazy(() =>
   import('@/wiki/sections/calc/ItemStatsEditor').then((m) => ({ default: m.ItemStatsEditor })),
@@ -292,9 +299,10 @@ function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: bo
             </span>
             {/* A recipe leaves every drop pool once it has dropped. */}
             {full?.isRecipe === true && <span className={styles.season}>{t.dropsOnce}</span>}
-            {/* Only when the pak actually restricts it — most items have no
-                season and saying "every season" on all of them is noise. */}
-            {full?.seasons !== undefined && full.seasons.length > 0 && (
+            {/* The wiki describes S3, so an item that is in it needs no label.
+                Only one the season does not carry is marked — "S2 only" is the
+                warning; "S3 only" would be every card on the page. */}
+            {full?.seasons !== undefined && full.seasons.length > 0 && !full.seasons.includes(WIKI_SEASON) && (
               <span className={styles.season}>
                 {t.seasonOnly(full.seasons.map((s) => seasonLabel(s as SeasonKey)).join(', '))}
               </span>

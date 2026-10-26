@@ -24,8 +24,6 @@ export interface CommonStrings {
   units: { hours: string; minutes: string; seconds: string };
   /** The exchange-price field shared by the item, consumable and crafting pages. */
   auction: { label: string; title: string; unit: string };
-  /** The badge on something that only exists in one season. */
-  onlyIn: (season: string) => string;
 }
 
 export const COMMON: Localised<CommonStrings> = {
@@ -51,7 +49,6 @@ export const COMMON: Localised<CommonStrings> = {
       title: 'What this sells for on the Exchange. Shared across the wiki: Crafting uses it to decide whether buying beats crafting.',
       unit: 'gold',
     },
-    onlyIn: (season) => `${season} only`,
   },
   ru: {
     search: 'Поиск…',
@@ -75,7 +72,6 @@ export const COMMON: Localised<CommonStrings> = {
       title: 'Цена этого предмета на бирже (аукционе). Общая для всей вики — по ней «Крафт» считает, что дешевле: купить или скрафтить.',
       unit: 'зол.',
     },
-    onlyIn: (season) => `только ${season}`,
   },
   zh: {
     search: '搜索…',
@@ -99,6 +95,5 @@ export const COMMON: Localised<CommonStrings> = {
       title: '此物品在交易所的价格。全百科共用：合成页据此判断买还是造更划算。',
       unit: '金币',
     },
-    onlyIn: (season) => `仅限 ${season}`,
   },
 };

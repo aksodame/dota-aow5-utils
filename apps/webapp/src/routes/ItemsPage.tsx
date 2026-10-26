@@ -60,6 +60,11 @@ export function ItemsPage({ itemId }: { itemId?: string }) {
   const items = useMemo(() => {
     if (core === null || extra === null) return [];
     const file = extra[0];
+    /*
+     * The rows already carry the season the wiki describes — the index is
+     * emitted with its level, grade and price — so the list, the filters and
+     * the card agree without a second overlay here.
+     */
     return core.items.filter((i) => i.type !== 'blueprint' && !inConsumables(file, { id: i.id, type: i.type }));
   }, [core, extra]);
 

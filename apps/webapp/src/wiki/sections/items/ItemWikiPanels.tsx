@@ -13,6 +13,7 @@ import {
   isShownRoom,
   itemDropIndex,
   mallByItem,
+  monsterTypeGroup,
   rewardChestTiers,
   seasonalPatch,
   soulCooldownAt,
@@ -187,12 +188,14 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 
 // --- what unlocks the craft ---------------------------------------------------------
 
-export function UnlockPanel({ full }: WikiPanelProps) {
+export function UnlockPanel({ full, season }: WikiPanelProps) {
   const t = useWikiStrings(ITEMS).unlock;
   const data = useFiles<[CraftFile, ProgressionLocale]>(['craft.json', 'locale.{lang}.progression.json']);
   if (data === null || full === undefined) return null;
   const [craft, prog] = data;
-  const unlock = craftUnlockOf(craft, full);
+  // The season the numbers above are from: a recipe a season adds is part of
+  // whether the card can promise the craft.
+  const unlock = craftUnlockOf(craft, full, `s${season}`);
   const free = unlock.talents.length === 0 && unlock.recipes.length === 0 && full.needs.length > 0 && full.isRecipe !== true;
   if (unlock.talents.length === 0 && unlock.recipes.length === 0 && !free) return null;
 
@@ -256,7 +259,7 @@ const TYPE_TONE: Record<string, string | undefined> = {
   destructible: styles.container,
 };
 
-export function DropsPanel({ item, full }: WikiPanelProps) {
+export function DropsPanel({ item, full, season }: WikiPanelProps) {
   const { core, lang } = useApp();
   const tAll = useWikiStrings(ITEMS);
   const t = tAll.drops;
@@ -264,20 +267,26 @@ export function DropsPanel({ item, full }: WikiPanelProps) {
   const boxes = useFiles<[ItemsExtraFile, PoolsFile]>(['items-extra.json', 'pools.json']);
   const store = useItemDetailsStore();
   const fullTable = store?.full ?? null;
+  /*
+   * The card's season, not the file's: a monster's pool can differ between
+   * seasons (the S3 bosses drop the S3 runes), and a source list that read the
+   * base pools would contradict the numbers at the top of the same card.
+   */
+  const ruleset = `s${season}` as const;
 
   const index = useMemo(() => {
     if (monsters === null) return null;
     // A recipe item: the table's own flag, or the catalogue's type.
     const isRecipe = (id: string) => fullTable?.[id]?.isRecipe === true || core?.byId.get(id)?.type === 'blueprint';
-    return itemDropIndex(monsters[0], isRecipe);
-  }, [monsters, fullTable, core]);
+    return itemDropIndex(monsters[0], isRecipe, 'hard', ruleset);
+  }, [monsters, fullTable, core, ruleset]);
   const byId = useMemo(
     () => (monsters === null ? null : new Map<string, Monster>(monsters[0].monsters.map((m) => [m.id, m]))),
     [monsters],
   );
   const containers = useMemo(
-    () => (boxes === null ? [] : containersOf(boxes[0], boxes[1], item.id)),
-    [boxes, item.id],
+    () => (boxes === null ? [] : containersOf(boxes[0], boxes[1], item.id, ruleset)),
+    [boxes, item.id, ruleset],
   );
 
   if (index === null || byId === null || monsters === null) return null;
@@ -296,12 +305,20 @@ export function DropsPanel({ item, full }: WikiPanelProps) {
       .map((room) => core?.maps.byId.get(room)?.label ?? room)
       .join(', ');
 
+  /*
+   * A gatherable is not a drop: the mushroom stands where the room places it
+   * and is picked up. When every source is one, the panel says so and the rows
+   * lose their "chance per kill"; a mixed list keeps the ordinary wording.
+   */
+  const isGathered = (id: string) => monsterTypeGroup(byId.get(id)?.type ?? '') === 'gatherable';
+  const allGathered = rows.length > 0 && rows.every((row) => isGathered(row.monster));
+
   return (
     <Panel
       title={
         <PanelTitle
           icon={<Icon.Crosshair size={15} />}
-          text={rows.length > 0 ? t.title(rows.length) : t.titleBare}
+          text={rows.length > 0 ? (allGathered ? t.titleGathered(rows.length) : t.title(rows.length)) : t.titleBare}
         />
       }
     >
@@ -309,11 +326,19 @@ export function DropsPanel({ item, full }: WikiPanelProps) {
         <>
           <ul className={styles.dropGrid}>
             {rows.slice(0, DROP_CAP).map((row) => (
-              <DropCell key={row.monster} row={row} monster={byId.get(row.monster)} name={name} typeLabel={typeLabel} rooms={rooms} />
+              <DropCell
+                key={row.monster}
+                row={row}
+                monster={byId.get(row.monster)}
+                gathered={isGathered(row.monster)}
+                name={name}
+                typeLabel={typeLabel}
+                rooms={rooms}
+              />
             ))}
           </ul>
           {rows.length > DROP_CAP && <p className={page.note}>{t.capped(DROP_CAP, rows.length)}</p>}
-          <p className={page.note}>{recipe ? t.noteRecipe : t.note}</p>
+          <p className={page.note}>{allGathered ? t.noteGathered : recipe ? t.noteRecipe : t.note}</p>
         </>
       )}
       {noneAtAll && <p className={page.note}>{t.recipeNone}</p>}
@@ -355,12 +380,15 @@ export function DropsPanel({ item, full }: WikiPanelProps) {
 function DropCell({
   row,
   monster,
+  gathered,
   name,
   typeLabel,
   rooms,
 }: {
   row: ItemDropRow;
   monster: Monster | undefined;
+  /** A gatherable: picked up where it stands, no drop roll to print. */
+  gathered: boolean;
   name: (id: string) => string;
   typeLabel: (type: string) => string;
   rooms: (m: Monster) => string;
@@ -375,7 +403,7 @@ function DropCell({
       <Link
         to={{ href: wikiPath('monsters', row.monster) }}
         className={cx(styles.dropCell, TYPE_TONE[type])}
-        title={t.tip(name(row.monster), typeLabel(type), where, chance)}
+        title={gathered ? t.tipGathered(name(row.monster), typeLabel(type), where) : t.tip(name(row.monster), typeLabel(type), where, chance)}
       >
         <span className={styles.dropText}>
           <span className={styles.dropName}>{name(row.monster)}</span>
@@ -384,7 +412,7 @@ function DropCell({
             {where !== '' && ` · ${where}`}
           </span>
         </span>
-        <span className={styles.dropChance}>{chance}</span>
+        {!gathered && <span className={styles.dropChance}>{chance}</span>}
       </Link>
     </li>
   );
@@ -392,9 +420,12 @@ function DropCell({
 
 // --- vendors, the Sky, paid sources ---------------------------------------------------
 
-export function SourcesPanel({ item, full }: WikiPanelProps) {
+export function SourcesPanel({ item, full, season }: WikiPanelProps) {
   const { lang } = useApp();
   const tAll = useWikiStrings(ITEMS);
+  // The season whose numbers the card shows: a vendor's shelf and a chest's
+  // pool can be per-season, and they belong beside the stats they price.
+  const ruleset = `s${season}` as const;
   const data = useFiles<[VendorsFile, PoolsFile, SourcesFile, SourcesLocale, SkyFile]>([
     'vendors.json',
     'pools.json',
@@ -408,17 +439,17 @@ export function SourcesPanel({ item, full }: WikiPanelProps) {
     const [, pools, sources, locale] = data;
     return {
       mall: mallByItem(sources, (pack) => locale.packs[pack.id] ?? pack.id),
-      gacha: gachaByItem(sources, pools),
+      gacha: gachaByItem(sources, pools, ruleset),
     };
-  }, [data]);
+  }, [data, ruleset]);
 
   if (data === null || paid === null || full === undefined) return null;
   const [vendors, pools, , sourcesLocale, sky] = data;
 
-  const offers = vendorOffersOf(vendors, { id: item.id, type: full.type, cost: full.cost, quality: full.quality });
+  const offers = vendorOffersOf(vendors, { id: item.id, type: full.type, cost: full.cost, quality: full.quality }, ruleset);
   // A fate stone's endless waves are drawn by its own panel, with the item it upgrades.
   const endless = full.type === 'stone' ? { bosses: [], merchants: [] } : endlessAppearances(full.sources);
-  const chests = rewardChestTiers(pools, item.id);
+  const chests = rewardChestTiers(pools, item.id, ruleset);
   const mall = paid.mall[item.id] ?? [];
   const gacha = paid.gacha[item.id] ?? [];
 

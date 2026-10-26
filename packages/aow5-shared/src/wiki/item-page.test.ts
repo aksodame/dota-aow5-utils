@@ -87,6 +87,35 @@ test('drop index: recipes out of the ordinary pool, in on their own; hard merges
   assert.notEqual(itemDropIndex(file, (id) => id === 'item_r', 'normal'), index);
 });
 
+test('drop index: a season reads that season\'s pools', () => {
+  /*
+   * A monster's pool can be season-specific — the S3 bosses drop runes no base
+   * table names — and the item card's sources must be the same season as its
+   * numbers. Asked for s3, the index reads `bySeason.s3`; asked for nothing,
+   * it keeps the file's own (base) pools.
+   */
+  const seasonal: MonstersFile = {
+    ...file,
+    monsters: [
+      monster('a', {
+        pool: [['item_base', 1]],
+        bySeason: { s3: { pool: [['item_s3', 1]] } },
+      }),
+    ],
+  };
+
+  const s3 = itemDropIndex(seasonal, () => false, 'hard', 's3');
+  assert.deepEqual(s3.drops.get('item_s3'), [{ monster: 'a', chance: 1 }]);
+  assert.equal(s3.drops.has('item_base'), false);
+
+  const base = itemDropIndex(seasonal, () => false);
+  assert.deepEqual(base.drops.get('item_base'), [{ monster: 'a', chance: 1 }]);
+  assert.equal(base.drops.has('item_s3'), false);
+
+  // The memo is keyed by season as well as difficulty.
+  assert.notEqual(itemDropIndex(seasonal, () => false, 'normal', 's3'), s3);
+});
+
 test('vendor offers: shop level for equipment, drop rule otherwise, exchange stock and points', () => {
   const sword = items['item_0101']!;
   const regular = vendorOffersOf(vendors, sword);

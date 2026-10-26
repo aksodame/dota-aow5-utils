@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  PRIMARY_RULESET,
+  CURRENT_RULESET,
   faqAllBlocks,
   faqPage,
   faqPageFacts,
@@ -206,7 +206,7 @@ export default function FaqPage({ path }: SectionProps) {
               </div>
             </Panel>
             <Note>{t.patchNote}</Note>
-            {core !== null && <DataFooter ruleset={PRIMARY_RULESET.toUpperCase()} built={day(core.meta.generatedAt, lang)} />}
+            {core !== null && <DataFooter ruleset={CURRENT_RULESET.toUpperCase()} built={day(core.meta.generatedAt, lang)} />}
           </>
         )}
       </WikiDetail>
@@ -438,8 +438,19 @@ function PoolBrowser({
   const current = pools.find((p) => p.id === picked) ?? pools[0];
   const [file, locale, extra, extraLocale] = data ?? [];
   const body = current === undefined || file === undefined ? undefined : file.pools[current.id];
-  const view = body === undefined ? undefined : poolInSeason(body, PRIMARY_RULESET);
-  const shares = useMemo(() => (view === undefined ? [] : poolShares(view)), [view]);
+  const view = body === undefined ? undefined : poolInSeason(body, CURRENT_RULESET);
+  /*
+   * A row the wiki has no record for is an unfinished id the pak still keeps in
+   * the pool (an unnamed rune family, for one). It cannot be obtained, so it is
+   * left out of the list; the shares keep the pool's own total.
+   */
+  const shares = useMemo(
+    () =>
+      view === undefined
+        ? []
+        : poolShares(view).filter((entry) => core?.byId.has(entry.id) === true || extra?.wearables[entry.id] !== undefined),
+    [view, core, extra],
+  );
 
   if (error !== null) return <WikiError message={error} />;
   if (data === null || file === undefined || current === undefined) return <WikiLoading />;
@@ -458,7 +469,7 @@ function PoolBrowser({
         >
           {pools.map((p) => {
             const own = file.pools[p.id];
-            const seen = own === undefined ? undefined : poolInSeason(own, PRIMARY_RULESET);
+            const seen = own === undefined ? undefined : poolInSeason(own, CURRENT_RULESET);
             return (
               <option key={p.id} value={p.id}>
                 {t.pools.option(p.id, seen?.level ?? 0, t.pools.items(seen?.entries.length ?? 0))}
@@ -474,7 +485,7 @@ function PoolBrowser({
         <Note>{t.pools.unknown}</Note>
       ) : (
         <>
-          <p className={styles.poolStat}>{t.pools.stat(num(view.entries.length, lang), num(total, lang))}</p>
+          <p className={styles.poolStat}>{t.pools.stat(num(shares.length, lang), num(total, lang))}</p>
           <ItemGrid>
             {shares.map((entry, index) => {
               const item = core?.byId.get(entry.id);

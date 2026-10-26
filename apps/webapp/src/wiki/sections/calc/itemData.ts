@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ItemFull, RichNode } from 'aow5-shared/types';
-import { seasonalPatch, stoneLinks, type ItemsExtraFile } from 'aow5-shared/wiki';
+import { CURRENT_RULESET, seasonalPatch, stoneLinks, type ItemsExtraFile } from 'aow5-shared/wiki';
 import { useWikiData } from '../../kit';
 
 /**
@@ -9,7 +9,7 @@ import { useWikiData } from '../../kit';
  */
 
 /** The season the wiki describes; an item's values are patched to it. */
-const SEASON = 's2' as const;
+const SEASON = CURRENT_RULESET;
 
 /** `items-extra.json`: season patches, glyph targets. Null until it arrives. */
 export function useItemsExtra(): ItemsExtraFile | null {
