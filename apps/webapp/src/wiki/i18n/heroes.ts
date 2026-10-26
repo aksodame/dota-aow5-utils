@@ -71,8 +71,6 @@ export const HEROES: Localised<HeroesStrings> = {
     tierOpen: (name) => `${name} — open its card`,
     iconMissing: 'No icon',
     wikiNames: {
-      pa_013: 'Boomerang',
-      lina_014: 'Searing Thunder',
       drow_002: 'Frost-Piercing Arrow',
       drow_005: 'Arrow Hail',
     },
@@ -110,8 +108,6 @@ export const HEROES: Localised<HeroesStrings> = {
     tierOpen: (name) => `${name} — открыть карточку`,
     iconMissing: 'Нет иконки',
     wikiNames: {
-      pa_013: 'Бумеранг',
-      lina_014: 'Палящий гром',
       drow_002: 'Пронзающая иней',
       drow_005: 'Град стрел',
     },

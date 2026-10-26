@@ -79,8 +79,7 @@ const PANORAMA_SPELLICONS = 'panorama/images/spellicons';
 const CONST_LUA = 'scripts/vscripts/shared/const.lua';
 const STOCK_HEROES_KV = 'scripts/npc/original_kv/npc_heroes.txt';
 const HEROES_KV = 'scripts/npc/ak_heroes.txt';
-/** The addon's placeholder naming for an ability it has not written yet (as in step 04b). */
-const PLACEHOLDER_NAME = /^(?:ability|skill|talent)\s*\d+$/i;
+/** The addon's placeholder text for an ability it has not written yet (as in step 04b). */
 const PLACEHOLDER_DESC = /^to be filled\.?$/i;
 const ID = '[\\w$]+';
 
@@ -635,8 +634,16 @@ let genericRunes = 0;
     const r = list(row['AllowedRulesets']);
     return r.length ? r : undefined;
   };
+  /*
+   * The build's own flag for a rune it actually hands out. An unfinished family
+   * carries names in every language and a target ability, but `is_item_in_game`
+   * is 0 and no item table has its rows — it cannot be owned or dropped, so it
+   * is not a rune: there is no card to link and no count to promise.
+   */
+  const inGame = (row: Row): boolean => String(row['is_item_in_game'] ?? '1') !== '0';
   for (const [id, row] of Object.entries(G)) {
     if (/_\d+$/.test(id)) continue; // a higher tier of some family
+    if (!inGame(row)) continue; // an unfinished family, off in this season
     const target = list(row['target_ability'])[0];
     if (!target) {
       genericRunes++;
@@ -647,6 +654,8 @@ let genericRunes = 0;
     if (r) fam.rulesets = r;
     for (let tier = 2; G[`${id}_${tier}`]; tier++) {
       const tid = `${id}_${tier}`;
+      // A family is drawn tier by tier: a hole would be a dead chip.
+      if (!inGame(G[tid]!)) throw new Error(`${tid} is off while the rest of family ${id} is in game`);
       const tr = rulesetsOf(G[tid]!);
       fam.tiers.push(!same(tr, r) && tr ? [tid, tier, tr] : [tid, tier]);
       if (list(G[tid]!['target_ability'])[0] !== target) throw new Error(`${tid} targets another ability than ${id}`);
@@ -732,10 +741,14 @@ for (const p of professions) {
       (a.bySeason ??= {})[s] = d as never;
     }
 
-    // Text, per language and per season it can differ in.
-    const en = tok('en', `dota_tooltip_ability_${id}`, primary) ?? '';
+    /*
+     * A stub is an ability the build has not written: no description, or the
+     * "To be filled." placeholder. A placeholder *name* alone is not one — an
+     * ability the build wrote but left unnamed (lina_008, drow_002/005) has a
+     * full description and runes, and the heroes tab gives it a wiki name.
+     */
     const enDesc = tok('en', `dota_tooltip_ability_${id}_description`, primary) ?? '';
-    if (en === '' || PLACEHOLDER_NAME.test(en.trim()) || enDesc === '' || PLACEHOLDER_DESC.test(enDesc.trim())) {
+    if (enDesc === '' || PLACEHOLDER_DESC.test(enDesc.trim())) {
       a.stub = true;
       stubs.push(id);
     }

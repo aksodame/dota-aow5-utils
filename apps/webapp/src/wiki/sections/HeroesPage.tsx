@@ -162,9 +162,8 @@ export default function HeroesPage({ path }: SectionProps) {
 }
 
 /**
- * The hero's art: the builder's portrait where it has one, else Valve's from
- * the Dota CDN — Dragon Knight is new in s3 and the builder's roster predates
- * him.
+ * The hero's art: the builder's portrait, else Valve's from the Dota CDN — a
+ * fallback for an id the builder's roster does not carry.
  */
 function HeroPortrait({ hero, small = false }: { hero: WikiHero; small?: boolean }) {
   const { core } = useApp();
@@ -386,10 +385,10 @@ function AbilityBlock({
 }
 
 /**
- * One rune family: its art and name (the tier-I item's), the seasons it is
- * handed out in, the item's own description, and a chip per tier — each tier
- * is a separate item with its own page. A click anywhere off the links opens
- * the family's page, as the partner's whole row did.
+ * One rune family: its art and name (the tier-I item's), the item's own
+ * description, and a chip per tier — each tier is a separate item with its own
+ * page. A click anywhere off the links opens the family's page, as the
+ * partner's whole row did.
  */
 function RuneRow({ family, t }: { family: RuneFamily; t: HeroesStrings }) {
   const { core } = useApp();
