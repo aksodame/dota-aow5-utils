@@ -69,10 +69,18 @@
   min-width: 0;
 }
 
+/*
+ * The list scrolls inside a fixed height, so the column stays roughly as tall
+ * as the stats panel instead of stretching the page by every buff.
+ */
 .buffList {
   display: grid;
   gap: var(--space-2);
+  max-height: 950px;
   margin: var(--space-3) 0;
+  padding-right: 4px;
+  overflow-y: scroll;
+  overscroll-behavior: contain;
 }
 
 .buffRow {
@@ -89,6 +97,13 @@
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
+}
+
+/* The buff list is about the count, not the art: a small icon leaves room. */
+.buffHead .buffIcon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
 }
 
 .buffName {

@@ -617,7 +617,7 @@ function Buffs({
             return (
               <div key={row.id} className={styles.buffRow}>
                 <div className={styles.buffHead}>
-                  {item !== undefined && <ItemTile item={item} />}
+                  {item !== undefined && <ItemTile item={item} className={styles.buffIcon} />}
                   <span className={styles.buffName} title={row.id}>
                     {item?.name ?? row.id}
                   </span>
