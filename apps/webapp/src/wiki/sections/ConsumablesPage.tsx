@@ -430,7 +430,6 @@ function Detail({
   const towerName = chest === undefined ? '' : (extraLocale.towers[chest.chest.tower] ?? chest.chest.tower);
   const gold = row.container?.gold;
   const chance = row.container?.chance;
-  const seasons = item.seasons !== undefined && item.seasons.length > 0 ? item.seasons.map((s) => `S${s}`).join(', ') : null;
 
   /** A link to another consumable, or the item's page for anything else. */
   const ref = (id: string, count?: number | string, extraText?: ReactNode) => (
@@ -522,8 +521,6 @@ function Detail({
   const shares = (pool === undefined ? [] : poolShares(poolInSeason(pool))).filter((entry) => known(entry.id));
   const poolLabel = row.pool === undefined ? '' : poolsLocale.names[row.pool] ? `${poolsLocale.names[row.pool]} (${row.pool})` : row.pool;
 
-  const rules = seasons === null ? CURRENT_RULESET : `${CURRENT_RULESET} · ${t.footerOnly(seasons)}`;
-
   return (
     <>
       <DetailHeader
@@ -546,7 +543,6 @@ function Detail({
             {item.cost > 0 && <Tag tone="warn">{t.rowCost(num(item.cost, lang))}</Tag>}
             {row.useMax !== undefined && <Tag tone="accent">{t.usesTag(row.useMax)}</Tag>}
             {item.timeCost !== undefined && item.timeCost > 0 && <Tag>{t.timeTag(item.timeCost)}</Tag>}
-            {seasons !== null && <Tag tone="accent">{t.onlyIn(seasons)}</Tag>}
             {chest !== undefined && <Tag>{t.towerTag(towerName)}</Tag>}
             {chest !== undefined && (
               <Tag>{chest.ref.variant === 'temporary' ? t.unsealed : variants[chest.ref.variant]}</Tag>
@@ -659,7 +655,7 @@ function Detail({
         </Panel>
       )}
 
-      <DataFooter ruleset={rules} built={extra.generatedAt.slice(0, 10)} />
+      <DataFooter ruleset={CURRENT_RULESET} built={extra.generatedAt.slice(0, 10)} />
     </>
   );
 }

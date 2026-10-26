@@ -25,7 +25,6 @@ export interface ProgressionStrings {
   learned: (count: string) => string;
   calcCheck: string;
   calcCheckTitle: string;
-  notInSeason: (season: string) => string;
   noTree: string;
   treeNote: string;
   treeLabel: (name: string) => string;
@@ -98,7 +97,6 @@ export const PROGRESSION: Localised<ProgressionStrings> = {
     calcCheck: 'Count in the all-trees totals',
     calcCheckTitle:
       "Untick this if you are not levelling this profession: its tree will not be part of “Resources for all trees” (the list is kept in your browser).",
-    notInSeason: (season) => `Not in season ${season}, so never part of the all-trees totals.`,
     noTree: 'This profession has no tree laid out in the data.',
     treeNote:
       'Click a node to mark it as learned and see how much is left to gather. Marks are saved in your browser and survive a reload. The bright link is the main path; the dim ones are extra requirements.',
@@ -169,7 +167,6 @@ export const PROGRESSION: Localised<ProgressionStrings> = {
     calcCheck: 'Учитывать в расчёте по всем деревьям',
     calcCheckTitle:
       'Снимите галочку, если профессию не качаете: её дерево не попадёт в строку «Ресурсы на все деревья» (список хранится в браузере)',
-    notInSeason: (season) => `Профессии нет в сезоне ${season} — в расчёт по всем деревьям она не входит.`,
     noTree: 'Для этой профессии дерево в данных не размечено.',
     treeNote:
       'Клик по узлу отмечает его как прокачанный — видно, сколько останется собрать. Отметки сохраняются в браузере и не сбрасываются при перезагрузке. Яркая связь — основной путь, тусклые — дополнительные требования.',
@@ -240,7 +237,6 @@ export const PROGRESSION: Localised<ProgressionStrings> = {
     learned: (count) => `已学习 ${count}`,
     calcCheck: '计入全部天赋树合计',
     calcCheckTitle: '如果你不练这个职业，请取消勾选：它的天赋树将不计入「全部天赋树所需资源」（列表保存在浏览器中）',
-    notInSeason: (season) => `该职业不在 ${season} 赛季中，不计入全部天赋树合计。`,
     noTree: '数据中没有该职业的天赋树布局。',
     treeNote: '点击节点即标记为已学习，便能看到还需收集多少。标记保存在浏览器中，刷新后不会丢失。高亮连线为主路径，暗色连线为额外前置条件。',
     treeLabel: (name) => `天赋树：${name}`,

@@ -108,24 +108,6 @@
   overflow-wrap: anywhere;
 }
 
-/* A season-difference mark: a small outlined pill that is a link when it goes to the FAQ. */
-.differs {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px var(--space-2);
-  border: 1px solid var(--warn);
-  border-radius: var(--radius-pill);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--warn);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-a.differs:hover {
-  background: var(--panel-hover);
-}
-
 .metaRow {
   display: flex;
   flex-wrap: wrap;
@@ -262,12 +244,6 @@ a.differs:hover {
 .tier:hover {
   border-color: var(--accent);
   color: var(--accent);
-}
-
-.tierSeason {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--text-dim);
 }
 
 .runeDesc {

@@ -33,7 +33,6 @@ export interface ConsumablesStrings {
   levelTag: (level: number) => string;
   usesTag: (uses: number) => string;
   timeTag: (time: number) => string;
-  onlyIn: (season: string) => string;
   towerTag: (tower: string) => string;
   unsealed: string;
   goldPerOpen: (min: string, max: string) => string;
@@ -86,8 +85,6 @@ export interface ConsumablesStrings {
   shareNote: string;
   wearable: string;
 
-  /** The footer's "only in S2" tail. */
-  footerOnly: (season: string) => string;
   /** Said once, beside the sort, because the partner's comment says the opposite. */
   sortNote: string;
 }
@@ -118,7 +115,6 @@ export const CONSUMABLES: Localised<ConsumablesStrings> = {
     levelTag: (level) => `Level ${level}`,
     usesTag: (uses) => `Uses: ${uses}`,
     timeTag: (time) => `Time: ${time}`,
-    onlyIn: (season) => `${season} only`,
     towerTag: (tower) => tower,
     unsealed: 'unsealed',
     goldPerOpen: (min, max) => `${min}–${max} per open`,
@@ -169,7 +165,6 @@ export const CONSUMABLES: Localised<ConsumablesStrings> = {
     shareNote: "Share is the chance of getting this particular item from one open (by the pool's weights).",
     wearable: 'cosmetic',
 
-    footerOnly: (season) => `item available in ${season} only`,
     sortNote: 'Most expensive first, then by name.',
   },
   ru: {
@@ -195,7 +190,6 @@ export const CONSUMABLES: Localised<ConsumablesStrings> = {
     levelTag: (level) => `Уровень ${level}`,
     usesTag: (uses) => `Применений: ${uses}`,
     timeTag: (time) => `Время: ${time}`,
-    onlyIn: (season) => `только ${season}`,
     towerTag: (tower) => tower,
     unsealed: 'незапечатанный',
     goldPerOpen: (min, max) => `${min}–${max} за открытие`,
@@ -246,7 +240,6 @@ export const CONSUMABLES: Localised<ConsumablesStrings> = {
     shareNote: 'Доля — вероятность получить именно этот предмет из одного открытия (по весам пула).',
     wearable: 'косметика',
 
-    footerOnly: (season) => `предмет доступен только в ${season}`,
     sortNote: 'Сначала дороже, затем по названию.',
   },
   zh: {
@@ -272,7 +265,6 @@ export const CONSUMABLES: Localised<ConsumablesStrings> = {
     levelTag: (level) => `等级 ${level}`,
     usesTag: (uses) => `可使用次数：${uses}`,
     timeTag: (time) => `时间：${time}`,
-    onlyIn: (season) => `仅限 ${season}`,
     towerTag: (tower) => tower,
     unsealed: '未封装',
     goldPerOpen: (min, max) => `每次开启 ${min}–${max}`,
@@ -323,7 +315,6 @@ export const CONSUMABLES: Localised<ConsumablesStrings> = {
     shareNote: '占比为一次开启获得该物品的概率（按掉落池权重）。',
     wearable: '饰品',
 
-    footerOnly: (season) => `该物品仅在 ${season} 中可用`,
     sortNote: '价格从高到低，然后按名称。',
   },
 };

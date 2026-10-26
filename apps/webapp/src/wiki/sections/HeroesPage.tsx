@@ -5,17 +5,13 @@ import {
   CURRENT_RULESET,
   abilityText,
   heroByShort,
-  heroFallbackSeason,
   heroPageFacts,
-  heroPrimarySeason,
   heroRuneCount,
-  runeTierSeasons,
   type HeroesWikiFile,
   type HeroesWikiLocale,
   type ProgressionFile,
   type ProgressionLocale,
   type RuneFamily,
-  type RulesetId,
   type WikiAbility,
   type WikiHero,
 } from 'aow5-shared/wiki';
@@ -25,7 +21,6 @@ import { useApp } from '@/data/AppData';
 import { useItemDetailsStore } from '@/data/ItemDetailsProvider';
 import { RichText } from '@/components/RichText';
 import { useWikiStrings } from '../i18n';
-import { COMMON } from '../i18n/common';
 import { HEROES, type HeroesStrings } from '../i18n/heroes';
 import {
   DataFooter,
@@ -58,9 +53,8 @@ import styles from './HeroesPage.module.css';
  * first hero, as the partner wiki opened on one, but keeps the section's own
  * address and card.
  *
- * Everything is described in the hero's primary season (`heroPrimarySeason`):
- * the file's, except for Dragon Knight, who exists only in s3. A rune tier is a
- * separate item, so every tier chip is its own link to its own item page.
+ * The wiki describes season 3, and a rune tier is a separate item, so every
+ * tier chip is its own link to its own item page.
  */
 export default function HeroesPage({ path }: SectionProps) {
   const { lang, core } = useApp();
@@ -201,11 +195,8 @@ function HeroDetail({
 }) {
   const { core } = useApp();
   const t = useWikiStrings(HEROES);
-  const common = useWikiStrings(COMMON);
-  const [file, locale, progression, progressionLocale] = data;
+  const [, locale, progression, progressionLocale] = data;
   const text = locale.heroes[hero.id];
-  const primary = heroPrimarySeason(hero, file);
-  const fallback = heroFallbackSeason(hero, file.season);
 
   // The builder's ability text, the second place `abilityText` looks.
   const builder = useMemo(() => {
@@ -231,11 +222,6 @@ function HeroDetail({
             <Tag tone="accent" href={wikiPath('progression', 'heroes', hero.short)} title={t.talentTreeTitle(treeName)}>
               {t.talentTree}
             </Tag>
-            {!hero.seasons.includes(file.season) && (
-              <Tag tone="warn" title={t.onlyInTitle(hero.seasons.join('/'))}>
-                {common.onlyIn(hero.seasons.join('/'))}
-              </Tag>
-            )}
           </>
         }
       />
@@ -246,14 +232,13 @@ function HeroDetail({
         </Panel>
       )}
 
-      <Note>{t.note(primary, fallback === primary ? null : fallback)}</Note>
+      <Note>{t.note}</Note>
 
       <div className={styles.abilities}>
         {hero.abilities.map((ability) => (
           <AbilityBlock
             key={ability.id}
             ability={ability}
-            primary={primary}
             text={abilityText(ability.id, locale, builder)}
             progression={progression}
             progressionLocale={progressionLocale}
@@ -265,9 +250,6 @@ function HeroDetail({
 }
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
-
-/** A season list as a badge reads it: `s3`, `s2/s3`. */
-const seasonsLabel = (seasons: readonly RulesetId[]) => seasons.join('/');
 
 /**
  * Where an ability's art is: ours (`icons/abilities/…`, or `icons/abilities-wiki/…`
@@ -304,20 +286,17 @@ function AbilityIcon({ ability }: { ability: WikiAbility }) {
 
 function AbilityBlock({
   ability,
-  primary,
   text,
   progression,
   progressionLocale,
 }: {
   ability: WikiAbility;
-  primary: RulesetId;
   text: AbilityLocale | undefined;
   progression: ProgressionFile;
   progressionLocale: ProgressionLocale;
 }) {
   const { lang, core } = useApp();
   const t = useWikiStrings(HEROES);
-  const common = useWikiStrings(COMMON);
 
   const gameName = text?.name;
   const wikiName = t.wikiNames[ability.id];
@@ -327,8 +306,6 @@ function AbilityBlock({
   const unlockNode =
     unlock === undefined ? undefined : progression.trees[unlock.tree]?.nodes.find((node) => node.id === unlock.node);
   const unlockTree = unlock === undefined ? '' : (progressionLocale.trees[unlock.tree] ?? progressionLocale.heroTab);
-
-  const differs = Object.keys(ability.bySeason ?? {}) as RulesetId[];
 
   /*
    * A family whose first tier the catalogue does not carry is not a rune a
@@ -354,25 +331,6 @@ function AbilityBlock({
                 {ability.slot === 'passive' ? t.passive : ability.slot.toUpperCase()}
               </Badge>
             )}
-            {ability.seasons !== undefined && (
-              <Badge small tone="season" title={t.onlyInTitle(seasonsLabel(ability.seasons))}>
-                {common.onlyIn(seasonsLabel(ability.seasons))}
-              </Badge>
-            )}
-            {differs.map((season) => {
-              const label = `${primary} ≠ ${season}`;
-              const title = t.differsTitle(primary, season);
-              // The FAQ's season chapter is about s3; a difference with s1 has nowhere to point.
-              return primary === 's3' || season === 's3' ? (
-                <Link key={season} to={{ href: wikiPath('faq', 's3') }} className={styles.differs} title={title}>
-                  {label}
-                </Link>
-              ) : (
-                <span key={season} className={styles.differs} title={title}>
-                  {label}
-                </span>
-              );
-            })}
             {ability.stub === true && (
               <Badge small tone="draft" title={t.stubTitle}>
                 {t.stub}
@@ -435,7 +393,6 @@ function AbilityBlock({
  */
 function RuneRow({ family, t }: { family: RuneFamily; t: HeroesStrings }) {
   const { core } = useApp();
-  const common = useWikiStrings(COMMON);
   const store = useItemDetailsStore();
   const base = core?.byId.get(family.base);
   // A tier the catalogue does not carry is an unfinished item, not a rune.
@@ -460,29 +417,13 @@ function RuneRow({ family, t }: { family: RuneFamily; t: HeroesStrings }) {
           <Link to={{ href: itemPath(family.base) }} className={styles.runeName}>
             {name}
           </Link>
-          {family.rulesets !== undefined && (
-            <Badge small tone="season" title={t.runeOnlyInTitle(seasonsLabel(family.rulesets))}>
-              {common.onlyIn(seasonsLabel(family.rulesets))}
-            </Badge>
-          )}
           <span className={styles.tiers}>
             {tiers.map((tier) => {
               const [id, level] = tier;
-              const own = tier[2];
               const tierName = core?.byId.get(id)?.name ?? id;
-              const seasons = runeTierSeasons(family, tier);
               return (
-                <Link
-                  key={id}
-                  to={{ href: itemPath(id) }}
-                  className={styles.tier}
-                  title={
-                    t.tierOpen(tierName) +
-                    (own !== undefined && seasons !== undefined ? ` · ${common.onlyIn(seasonsLabel(seasons))}` : '')
-                  }
-                >
+                <Link key={id} to={{ href: itemPath(id) }} className={styles.tier} title={t.tierOpen(tierName)}>
                   {ROMAN[level] ?? String(level)}
-                  {own !== undefined && <sup className={styles.tierSeason}>{seasonsLabel(own)}</sup>}
                 </Link>
               );
             })}
