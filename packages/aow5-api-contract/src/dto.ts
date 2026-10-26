@@ -186,7 +186,7 @@ export type MainSpellKey = 'passive' | 'q' | 'w' | 'e' | 'd' | 'f' | 'r';
  * this package has no runtime dependencies. The shared package owns which
  * heroes each season offers; this is only the shape the wire carries.
  */
-export type SeasonKey = 1 | 2;
+export type SeasonKey = 1 | 2 | 3;
 
 export interface BuildSummary {
   slug: string;

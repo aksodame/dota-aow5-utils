@@ -105,7 +105,7 @@ export const LOADOUT_LAYOUT: SlotGroup[] = [
    * is not one of the six worn pieces, it is refined rather than reforged, and
    * a character has exactly one.
    */
-  { key: 'soul', kind: SLOT_KIND.SOUL, accepts: SLOT_KIND.SOUL, start: 15, count: 1, columns: 1, panel: 'soul', seasons: [2] },
+  { key: 'soul', kind: SLOT_KIND.SOUL, accepts: SLOT_KIND.SOUL, start: 15, count: 1, columns: 1, panel: 'soul', seasons: [2, 3] },
 ];
 
 export const SLOT_COUNT = LOADOUT_LAYOUT.reduce((n, g) => n + g.count, 0);

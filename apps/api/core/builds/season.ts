@@ -1,5 +1,6 @@
 import {
   DEFAULT_SEASON,
+  SEASON_KEYS,
   isHeroInSeason,
   parseSeason,
   seasonLabel,
@@ -35,7 +36,7 @@ export function resolveSeason(
     season = stored ?? heroSeasons[0] ?? DEFAULT_SEASON;
   } else {
     const parsed = parseSeason(raw);
-    if (parsed === null) return { ok: false, errors: { season: 'Pick S1 or S2.' } };
+    if (parsed === null) return { ok: false, errors: { season: `Pick ${SEASON_KEYS.map(seasonLabel).join(', ')}.` } };
     season = parsed;
   }
 

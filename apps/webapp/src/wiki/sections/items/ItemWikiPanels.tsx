@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { statSpan, type ItemSummary } from 'aow5-shared/data';
+import { statSpan, type ItemSummary, type SeasonKey } from 'aow5-shared/data';
 import type { ItemFull } from 'aow5-shared/types';
 import {
   applySeasonalPatch,
@@ -71,7 +71,7 @@ export interface WikiPanelProps {
   /** The record as the page shows it — already the selected season's copy. */
   full: ItemFull | undefined;
   /** The season the page shows numbers for. */
-  season: 1 | 2;
+  season: SeasonKey;
 }
 
 type Data<T extends unknown[]> = T | null;
@@ -569,7 +569,7 @@ export function FacetPanel({ item, full, season }: WikiPanelProps) {
     if (id === undefined) return undefined;
     const base = table[id];
     if (base === undefined) return undefined;
-    return season === 2 && extra !== null ? applySeasonalPatch(base, seasonalPatch(extra[0], id)) : base;
+    return season !== 1 && extra !== null ? applySeasonalPatch(base, seasonalPatch(extra[0], id, `s${season}`)) : base;
   };
 
   let mode: 'ancestral' | 'base' | 'stone';

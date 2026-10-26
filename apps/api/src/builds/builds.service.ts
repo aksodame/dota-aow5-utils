@@ -466,7 +466,7 @@ export class BuildsService {
       /*
        * One season. An unrecognised one is dropped, like an unknown tier —
        * though here that widens to every season rather than narrowing to none,
-       * which is the right way round for a facet with one value: `?season=3`
+       * which is the right way round for a facet with one value: `?season=4`
        * is a stale link, and a list of everything beats an empty one.
        */
       ...(season !== null ? { season } : {}),

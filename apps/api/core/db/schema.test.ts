@@ -297,7 +297,7 @@ test('the rooms of a build go with it, and the pair is the key', () => {
 });
 
 
-test('a season is 1 or 2, and every build written before seasons is S1', () => {
+test('a season is 1, 2 or 3, and every build written before seasons is S1', () => {
   const { sqlite, userId } = fixture();
   // The insert every other test uses, which names no season — the shape of
   // every row the migration found.
@@ -315,7 +315,8 @@ test('a season is 1 or 2, and every build written before seasons is S1', () => {
       )
       .run(`season${slot}`, userId, slot++, season, now, now);
   assert.doesNotThrow(() => withSeason(2));
-  for (const bad of [0, 3, -1]) assert.throws(() => withSeason(bad), /CHECK/, `season ${bad}`);
+  assert.doesNotThrow(() => withSeason(3));
+  for (const bad of [0, 4, -1]) assert.throws(() => withSeason(bad), /CHECK/, `season ${bad}`);
   assert.throws(() => withSeason(null), /NOT NULL/);
   sqlite.close();
 });

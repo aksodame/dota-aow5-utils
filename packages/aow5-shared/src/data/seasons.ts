@@ -9,9 +9,10 @@
  *
  * Items are a different matter, and this comment used to say otherwise. The pak
  * *does* split them: an item may carry `AllowedRulesets`, and the pipeline
- * emits that as `ItemFull.seasons`. Sixty-five items are S2-only, thirty of
- * them the Life Souls, which is why `LOADOUT_LAYOUT`'s soul slot names a season
- * rather than being offered everywhere. Rooms are still not filtered here — a
+ * emits that as `ItemFull.seasons`. A few dozen are S2's, nearly two hundred
+ * S3's, and the thirty Life Souls are S2's and S3's, which is why
+ * `LOADOUT_LAYOUT`'s soul slot names seasons rather than being offered
+ * everywhere. Rooms are still not filtered here — a
  * room that leaves the game stays offered — which is why nothing below mentions
  * them.
  *
@@ -20,7 +21,7 @@
  */
 
 /** A season. Numbers, because every one of them is a number. */
-export type SeasonKey = 1 | 2;
+export type SeasonKey = 1 | 2 | 3;
 
 /**
  * Every season that exists, in the order they are offered.
@@ -28,7 +29,7 @@ export type SeasonKey = 1 | 2;
  * The database's CHECK constraint is this list too; a third season is a
  * migration that widens it plus an entry here.
  */
-export const SEASON_KEYS: readonly SeasonKey[] = [1, 2];
+export const SEASON_KEYS: readonly SeasonKey[] = [1, 2, 3];
 
 /**
  * The season every guide written before seasons existed belongs to.
@@ -39,16 +40,26 @@ export const SEASON_KEYS: readonly SeasonKey[] = [1, 2];
 export const DEFAULT_SEASON: SeasonKey = 1;
 
 /** The newest season, which is what the editor starts a new build on. */
-export const LATEST_SEASON: SeasonKey = 2;
+export const LATEST_SEASON: SeasonKey = 3;
 
 /**
  * The heroes each season can be played with, as `npc_dota_hero_*` ids.
  *
- * Order is the order they are offered in. Axe is in both.
+ * Order is the order they are offered in. Axe is in every season, and S3
+ * (maps `s3`, `s3-1`) offers every hero the game has finished, Dragon Knight
+ * — new with it — first.
  */
 const SEASON_HEROES: Readonly<Record<SeasonKey, readonly string[]>> = {
   1: ['npc_dota_hero_lina', 'npc_dota_hero_phantom_assassin', 'npc_dota_hero_axe'],
   2: ['npc_dota_hero_void_spirit', 'npc_dota_hero_drow_ranger', 'npc_dota_hero_axe'],
+  3: [
+    'npc_dota_hero_dragon_knight',
+    'npc_dota_hero_void_spirit',
+    'npc_dota_hero_drow_ranger',
+    'npc_dota_hero_lina',
+    'npc_dota_hero_phantom_assassin',
+    'npc_dota_hero_axe',
+  ],
 };
 
 export function isSeasonKey(value: unknown): value is SeasonKey {
@@ -58,7 +69,7 @@ export function isSeasonKey(value: unknown): value is SeasonKey {
 /**
  * A season out of a query string or a form field: `'2'`, `2` or `'s2'`.
  *
- * Null for anything else, never a guess — `?season=3` asked for a season that
+ * Null for anything else, never a guess — `?season=4` asked for a season that
  * does not exist, and answering with S1 would be answering a different question.
  */
 export function parseSeason(value: unknown): SeasonKey | null {
