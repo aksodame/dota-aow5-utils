@@ -1,6 +1,27 @@
 {
  "notes": [
   {
+   "version": "v1.513",
+   "date": "26.10.2026",
+   "game": [
+    "Shadow Assassin and Lina runes now drop in s3: Poison Dagger, Sleight of Hand, Searing Dragonflame, Dragon Soul and others joined monster, breakable and pool drops.",
+    "Bosses summon reinforcements at phase changes: 14 bosses gained transitions, including Abyssal, Chaos, Faceless, Kez and Warlock.",
+    "New elite abilities are implemented (16 of them) along with Fireball for normal monsters; monster `monster_10132` is now \"Mage Beetle\".",
+    "The Dragon Lair (M026) has a lobby: \"the lair is occupied\", \"another map is loading\"; the room's boss is the fire dragon.",
+    "Magic Tower: 5 runs a day instead of 3.",
+    "DLC bosses now speak Russian: the lich, sand king, Sylvanas, Terrorblade, Undying, Viper and their abilities.",
+    "Item and rune descriptions were corrected: the Demon, Sage and Lionheart sets are capped at three items, Residual Shadow gives +2% per 3 speed, Great Mage hits from max mana; the Drow seals, G505, G508 and G413 texts were rewritten.",
+    "The old potion and item scripts that the previous build removed are back.",
+    "The HUD is assembled from \"groups\" — combat, commerce, crafting, greed, inventory, progression, world — loaded dynamically.",
+    "Details are in the FAQ: [[faq:s3/s3|\"Season s3: what's new\"]]."
+   ],
+   "wiki": [
+    "Data rebuilt from v1.513: Shadow Assassin and Lina rune cards now list their sources — monsters, breakables and pools; Drops and the item, potion and rune descriptions were refreshed.",
+    "FAQ: the season shop now says +200 for the Eternal Book, the Magic Tower allows 5 runs a day, M026 is described as the Dragon Lair, and the debuff counts read 199/101.",
+    "FAQ: Drow abilities carry their official names — Piercing Frost Arrow and Arrow Volley."
+   ]
+  },
+  {
    "version": "v1.510",
    "date": "26.10.2026",
    "game": [
