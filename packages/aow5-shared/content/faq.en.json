@@ -4995,12 +4995,57 @@
        "Dragon Knight",
        "Dragon Breath Slow",
        "Movement speed reduction."
+      ],
+      [
+       "Drow Ranger",
+       "Frozen Soul",
+       "Magic damage taken is increased."
+      ],
+      [
+       "Drow Ranger",
+       "Armor Break",
+       "Armor is reduced per stack; the amount and cap are in the ability description."
+      ],
+      [
+       "Drow Ranger",
+       "Frost Abyss",
+       "Abyss erosion: the deeper the layer, the more damage taken."
+      ],
+      [
+       "Lina",
+       "Fire Curse Mark",
+       "Each stack increases spell damage taken; 1 stack falls off per second."
+      ],
+      [
+       "Lina",
+       "Five Thunders",
+       "Builds up from Burning Thunder; at max stacks it calls down a lightning strike."
+      ],
+      [
+       "Phantom Assassin",
+       "Mark",
+       "At max stacks it deals a burst of damage and clears."
+      ],
+      [
+       "Phantom Assassin",
+       "Soul-Chasing Mark",
+       "Detonates on a second Boomerang hit and adds an extra attack."
+      ],
+      [
+       "Void Spirit",
+       "Void Mark",
+       "The caster tracks the stacks and the explosion."
+      ],
+      [
+       "Void Spirit",
+       "Void Erosion",
+       "Part of the magic damage taken is paid out over time; stacks are the damage left."
       ]
      ]
     },
     {
      "type": "note",
-     "text": "The reference lists 173 debuff effects; monsters and bosses have their own 86 debuffs (applied to the player), which are not in the tables."
+     "text": "The reference lists 197 debuff effects; monsters and bosses have their own 99 debuffs (applied to the player), which are not in the tables."
     }
    ]
   },
