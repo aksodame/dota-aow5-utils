@@ -420,7 +420,7 @@ function Detail({
   detail: LocaleDetail | undefined;
   sources: Sources | null;
 }) {
-  const { lang } = useApp();
+  const { lang, core } = useApp();
   const t = useWikiStrings(CONSUMABLES);
   const [extra, extraLocale, pools, poolsLocale] = data;
   const variants = CHEST_VARIANT_NAMES[lang];
@@ -512,7 +512,13 @@ function Detail({
 
   // ---- the pool
   const pool = row.pool === undefined ? undefined : pools.pools[row.pool];
-  const shares = pool === undefined ? [] : poolShares(poolInSeason(pool));
+  /*
+   * Rows the wiki has no item for are unfinished ids the pak still lists (an
+   * unnamed rune family, for one). They cannot be obtained, so they are not
+   * drawn; the shares keep the pool's own total, so the rest still read true.
+   */
+  const known = (id: string) => rows.byId.has(id) || extra.wearables[id] !== undefined || core?.byId.has(id) === true;
+  const shares = (pool === undefined ? [] : poolShares(poolInSeason(pool))).filter((entry) => known(entry.id));
   const poolLabel = row.pool === undefined ? '' : poolsLocale.names[row.pool] ? `${poolsLocale.names[row.pool]} (${row.pool})` : row.pool;
 
   const rules = seasons === null ? extra.ruleset : `${extra.ruleset} · ${t.footerOnly(seasons)}`;

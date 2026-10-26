@@ -439,7 +439,18 @@ function PoolBrowser({
   const [file, locale, extra, extraLocale] = data ?? [];
   const body = current === undefined || file === undefined ? undefined : file.pools[current.id];
   const view = body === undefined ? undefined : poolInSeason(body, CURRENT_RULESET);
-  const shares = useMemo(() => (view === undefined ? [] : poolShares(view)), [view]);
+  /*
+   * A row the wiki has no record for is an unfinished id the pak still keeps in
+   * the pool (an unnamed rune family, for one). It cannot be obtained, so it is
+   * left out of the list; the shares keep the pool's own total.
+   */
+  const shares = useMemo(
+    () =>
+      view === undefined
+        ? []
+        : poolShares(view).filter((entry) => core?.byId.has(entry.id) === true || extra?.wearables[entry.id] !== undefined),
+    [view, core, extra],
+  );
 
   if (error !== null) return <WikiError message={error} />;
   if (data === null || file === undefined || current === undefined) return <WikiLoading />;
@@ -474,7 +485,7 @@ function PoolBrowser({
         <Note>{t.pools.unknown}</Note>
       ) : (
         <>
-          <p className={styles.poolStat}>{t.pools.stat(num(view.entries.length, lang), num(total, lang))}</p>
+          <p className={styles.poolStat}>{t.pools.stat(num(shares.length, lang), num(total, lang))}</p>
           <ItemGrid>
             {shares.map((entry, index) => {
               const item = core?.byId.get(entry.id);

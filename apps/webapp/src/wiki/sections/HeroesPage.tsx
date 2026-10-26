@@ -314,7 +314,7 @@ function AbilityBlock({
   progression: ProgressionFile;
   progressionLocale: ProgressionLocale;
 }) {
-  const { lang } = useApp();
+  const { lang, core } = useApp();
   const t = useWikiStrings(HEROES);
   const common = useWikiStrings(COMMON);
 
@@ -328,6 +328,14 @@ function AbilityBlock({
   const unlockTree = unlock === undefined ? '' : (progressionLocale.trees[unlock.tree] ?? progressionLocale.heroTab);
 
   const differs = Object.keys(ability.bySeason ?? {}) as RulesetId[];
+
+  /*
+   * A family whose first tier the catalogue does not carry is not a rune a
+   * player can own: the pak ships unfinished families (no name in any language,
+   * not in the item index) and the gem table still lists them. Drawn, the row
+   * would be a bare id with a dead card behind it.
+   */
+  const shownRunes = core === null ? ability.runes : ability.runes.filter((family) => core.byId.has(family.base));
 
   return (
     <Panel className={styles.ability}>
@@ -404,10 +412,10 @@ function AbilityBlock({
         <p className={styles.abilityDesc}>{text.descPlain}</p>
       ) : null}
 
-      {ability.runes.length > 0 ? (
+      {shownRunes.length > 0 ? (
         <section className={styles.runes}>
-          <h3 className={styles.runesTitle}>{t.runesTitle(ability.runes.length)}</h3>
-          {ability.runes.map((family) => (
+          <h3 className={styles.runesTitle}>{t.runesTitle(shownRunes.length)}</h3>
+          {shownRunes.map((family) => (
             <RuneRow key={family.base} family={family} t={t} />
           ))}
         </section>
@@ -429,6 +437,9 @@ function RuneRow({ family, t }: { family: RuneFamily; t: HeroesStrings }) {
   const common = useWikiStrings(COMMON);
   const store = useItemDetailsStore();
   const base = core?.byId.get(family.base);
+  // A tier the catalogue does not carry is an unfinished item, not a rune.
+  const tiers = core === null ? family.tiers : family.tiers.filter(([id]) => core.byId.has(id));
+  if (core !== null && (base === undefined || tiers.length === 0)) return null;
   // The family is named after its first tier: "Rune: Cleaving Strike I" minus the numeral.
   const name = base === undefined ? family.base : base.name.replace(/\s*[IVXⅠ-Ⅻ]+$/u, '');
   const desc = store?.detail?.[family.base];
@@ -454,7 +465,7 @@ function RuneRow({ family, t }: { family: RuneFamily; t: HeroesStrings }) {
             </Badge>
           )}
           <span className={styles.tiers}>
-            {family.tiers.map((tier) => {
+            {tiers.map((tier) => {
               const [id, level] = tier;
               const own = tier[2];
               const tierName = core?.byId.get(id)?.name ?? id;
