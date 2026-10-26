@@ -66,7 +66,14 @@ const OUT = path.join(DIRS.publicData, 'wiki');
 const DATA = 'panorama/layout/custom_game/vendor/data';
 const RULESETS: RulesetId[] = ['s1', 's2', 's3'];
 const PRIMARY: RulesetId = 's2';
-const generatedAt = new Date().toISOString();
+/*
+ * The same stamp step 07 writes — the pak's own mtime — not the clock: a
+ * re-run on an unchanged pak has to leave the tree clean, and a wall-clock
+ * stamp would dirty every file this step writes.
+ */
+const generatedAt = new Date(
+  (JSON.parse(fs.readFileSync(path.join(DIRS.cache, 'vpk-index.json'), 'utf8')) as { vpkMtimeMs: number }).vpkMtimeMs,
+).toISOString();
 
 const vpk = Vpk.open(cfg.vpkPath);
 

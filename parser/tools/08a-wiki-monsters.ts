@@ -165,6 +165,32 @@ for (const r of RULESETS) {
 }
 const trees = baseTable('ak_tree');
 const groupsTable = baseTable('ak_monster_groups');
+const unitsTable = baseTable('ak_units');
+
+/**
+ * The gather units and the item their point yields.
+ *
+ * A map's `GatherPoint` entity names the **item** (`item_M556`), not the unit
+ * that stands there, and no plain table joins the two — the server's gather
+ * code is encrypted. These three pairs are the S3 rooms' mushrooms; every id is
+ * checked against its table so a rename stops the run instead of dropping a
+ * card silently.
+ */
+const GATHER: readonly { unit: string; item: string }[] = [
+  { unit: 'npc_gather_lava_mushroom', item: 'item_M556' },
+  { unit: 'npc_gather_venom_mushroom', item: 'item_M558' },
+  { unit: 'npc_gather_ice_mushroom', item: 'item_M559' },
+];
+for (const g of GATHER) if (unitsTable[g.unit] === undefined) fail(`ak_units has no ${g.unit}`);
+const gatherByItem = new Map(GATHER.map((g) => [g.item, g.unit]));
+
+/** The builder's catalogue: which items exist, and at what level. */
+const itemIndex = JSON.parse(fs.readFileSync(path.join(DIRS.publicData, 'items.index.json'), 'utf8')) as {
+  rows: [number, string, string, number, number, number, string, number][];
+};
+const knownItems = new Set(itemIndex.rows.map((r) => String(r[1])));
+const itemLevel = new Map(itemIndex.rows.map((r) => [String(r[1]), Number(r[4])]));
+for (const g of GATHER) if (!knownItems.has(g.item)) fail(`gather item ${g.item} is not in items.index.json`);
 
 for (const r of RULESETS) {
   for (const t of ['monster', 'breakable'] as const) {
@@ -256,6 +282,27 @@ for (const [table, source] of [
 }
 for (const [id, row] of Object.entries(trees)) monsters.push(buildMonster(id, row, 'ak_tree', `ak_tree/${id}`));
 
+/*
+ * A gather unit is a card of its own on the monsters page: its stats come from
+ * `ak_units`, its one "drop" is the item its point yields, and its rooms are
+ * filled in below from the map's `GatherPoint` entities (the row has no
+ * `Appear`).
+ */
+for (const g of GATHER) {
+  const m = buildMonster(g.unit, unitsTable[g.unit]!, 'ak_units', `ak_units/${g.unit}`);
+  m.type = 'gatherable';
+  m.locations = [];
+  m.dropRatePct = 100;
+  m.dropMin = 1;
+  m.dropMax = 1;
+  m.pool = [[g.item, 1]];
+  m.poolHard = [];
+  m.poolFirst = [];
+  const level = itemLevel.get(g.item);
+  if (level !== undefined) m.level = level;
+  monsters.push(m);
+}
+
 const dupes = monsters.map((m) => m.id).filter((id, i, all) => all.indexOf(id) !== i);
 check(dupes.length === 0, `unit ids are unique across ak_monster, ak_breakable and ak_tree${dupes.length ? `: ${dupes.join(', ')}` : ''}`);
 monsters.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
@@ -272,10 +319,8 @@ for (const m of monsters) for (const g of m.groups ?? []) if (!(g in groups)) fa
 // Item ids are checked against the builder's index, softly: the addon's pools
 // reference ids it never shipped (`item_392`, `P015`), and those are its bugs.
 {
-  const index = JSON.parse(fs.readFileSync(path.join(DIRS.publicData, 'items.index.json'), 'utf8')) as { rows: unknown[][] };
-  const known = new Set(index.rows.map((r) => String(r[1])));
   const unknown = new Set<string>();
-  for (const m of monsters) for (const [id] of [...m.pool, ...m.poolHard, ...m.poolFirst]) if (!known.has(id)) unknown.add(id);
+  for (const m of monsters) for (const [id] of [...m.pool, ...m.poolHard, ...m.poolFirst]) if (!knownItems.has(id)) unknown.add(id);
   if (unknown.size > 0) warn(`${unknown.size} pool item id(s) not in items.index.json: ${[...unknown].sort().join(', ')}`);
 }
 if (unweighted.size > 0) warn(`${unweighted.size} pool row(s) without a weight, left out: ${[...unweighted].join('; ')}`);
@@ -411,6 +456,20 @@ for (const [room, maps] of [...roomMaps.entries()].sort()) {
     const x = round1(Number(origin[0]));
     const y = round1(Number(origin[1]));
     const a = e.attributes;
+
+    /*
+     * A `GatherPoint` names the item it yields (`item_M556`), not the unit the
+     * server puts there; `GATHER` is the table that joins them.
+     */
+    if (kind === 'GatherPoint') {
+      const unit = gatherByItem.get(target);
+      if (unit === undefined) {
+        fail(`${room}: gather point names unknown item ${target}`);
+        continue;
+      }
+      add(unit, { x, y, chance: attrNum(a, 'Probability') ?? 100, count: 1, kind });
+      continue;
+    }
 
     if (kind === 'HunterTracker') {
       const other: Record<string, number | string> = {};
@@ -685,7 +744,14 @@ for (const line of coverage) info(line);
 
 // === write ===================================================================
 
-const generatedAt = new Date().toISOString();
+/*
+ * The same stamp step 07 writes — the pak's own mtime — not the clock: a
+ * re-run on an unchanged pak has to leave the tree clean, and a wall-clock
+ * stamp would dirty every file this step writes.
+ */
+const generatedAt = new Date(
+  (JSON.parse(fs.readFileSync(path.join(DIRS.cache, 'vpk-index.json'), 'utf8')) as { vpkMtimeMs: number }).vpkMtimeMs,
+).toISOString();
 const monstersFile: MonstersFile = { schema: 1, generatedAt, ruleset: PRIMARY, monsters, groups, difficulties };
 const locationsFile: LocationsFile = { schema: 1, generatedAt, locations };
 const minigamesFile: MinigamesFile = { schema: 1, generatedAt, games };

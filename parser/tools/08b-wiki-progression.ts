@@ -85,7 +85,14 @@ step('08b · wiki progression, heroes and hero stats');
 const WIKI_DIR = path.join(DIRS.publicData, 'wiki');
 const TALENT_ICONS = path.join(DIRS.publicIcons, 'talents');
 const ABILITY_ICONS_WIKI = path.join(DIRS.publicIcons, 'abilities-wiki');
-const generatedAt = new Date().toISOString();
+/*
+ * The same stamp step 07 writes — the pak's own mtime — not the clock: a
+ * re-run on an unchanged pak has to leave the tree clean, and a wall-clock
+ * stamp would dirty every file this step writes.
+ */
+const generatedAt = new Date(
+  (JSON.parse(fs.readFileSync(path.join(DIRS.cache, 'vpk-index.json'), 'utf8')) as { vpkMtimeMs: number }).vpkMtimeMs,
+).toISOString();
 
 // --- small parsers ----------------------------------------------------------
 
