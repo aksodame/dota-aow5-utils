@@ -79,15 +79,22 @@ export function formatValue(key: string, value: number | string): string {
 /**
  * The game's own name for a stat, or a readable one made from the key.
  *
+ * `names` is the wiki's own table for the current language. It goes first, as
+ * it does in the calculator's namer: the game's labels live inside whichever
+ * tooltip grants the stat and read as sentence fragments, while the table is
+ * one word per stat — the same word on every card. Most items carry no labels
+ * of their own at all, so without the table a Russian card would name every
+ * stat in English.
+ *
  * Exported because the priority panel names stats one at a time — it ranks them
  * rather than printing the block — and a second copy of this lookup there would
  * be a second place for a stat to be called something else.
  */
-export function statLabel(key: string, detail: LocaleDetail | undefined): string {
-  const localized = detail?.values?.[key];
-  // The game's own labels come as `+All Stats Bonus`; the `+` belongs to the
-  // number here, so it is dropped rather than printed twice.
-  if (localized) return localized.replace(/^\+\s*/, '').trim();
+export function statLabel(key: string, detail: LocaleDetail | undefined, names?: Record<string, string>): string {
+  const raw = names?.[key] ?? detail?.values?.[key];
+  // The labels come as `+All Stats Bonus` or `%Attack Speed`; the sign belongs
+  // to the number here, so it is dropped rather than printed twice.
+  if (raw) return raw.replace(/^[\s%+]+/, '').trim() || prettifyKey(key);
   return prettifyKey(key);
 }
 
@@ -111,12 +118,13 @@ export function statRows(
   detail: LocaleDetail | undefined,
   which: 'stats' | 'tuning' = 'stats',
   tables?: RollTables | null,
+  names?: Record<string, string>,
 ): StatRow[] {
   if (!full) return [];
   return Object.entries(full.values)
     .filter(([key]) => isTuningKey(key) === (which === 'tuning'))
     .map(([key, value]) => {
-      const row: StatRow = { key, label: statLabel(key, detail), value: formatValue(key, value) };
+      const row: StatRow = { key, label: statLabel(key, detail, names), value: formatValue(key, value) };
       // A string value is one item's oddity in the data, and nothing rolls it.
       const span = tables != null && typeof value === 'number' ? statSpan(tables, key, value) : null;
       return span === null ? row : { ...row, span: formatSpan(key, span.min, span.max) };

@@ -31,6 +31,7 @@ import { itemPath, navigate, Link } from '@/router';
 import { dataVersion, factsOfItem, useDocumentMeta } from '@/lib/meta';
 import { useWikiData } from '@/wiki/kit/useWikiData';
 import { useStatNamer } from '@/wiki/kit';
+import { STAT_NAMES } from '@/wiki/i18n/statNames';
 import { AuctionField } from '@/wiki/kit/Refs';
 import type { WikiPanelProps } from '@/wiki/sections/items/ItemWikiPanels';
 import styles from './ItemPage.module.css';
@@ -186,7 +187,7 @@ function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: bo
     lang,
   );
 
-  const stats = statRows(full, text, 'stats', store?.rolls);
+  const stats = statRows(full, text, 'stats', store?.rolls, STAT_NAMES[lang]);
   const gems = gemRows(full);
   const named = hasNamedSkill(full, text);
   const behavior = named ? behaviorOf(full) : null;

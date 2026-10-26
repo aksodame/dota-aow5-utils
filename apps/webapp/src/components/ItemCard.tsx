@@ -5,6 +5,7 @@ import { useItemDetailsStore } from '@/data/ItemDetailsProvider';
 import { affectsOf, behaviorOf, gemRows, hasNamedSkill, statRows, type StatRow } from '@/lib/itemStats';
 import { splitDescription, type DescSection } from '@/lib/richDesc';
 import { rarityLabel } from '@/i18n/strings';
+import { STAT_NAMES } from '@/wiki/i18n/statNames';
 import { RichText } from './RichText';
 import { qualityVar } from './Tile';
 import styles from './ItemCard.module.css';
@@ -27,7 +28,7 @@ import styles from './ItemCard.module.css';
  * a blank box.
  */
 export function ItemCard({ item }: { item: ItemSummary }) {
-  const { strings, core } = useApp();
+  const { strings, core, lang } = useApp();
   const store = useItemDetailsStore();
   const full: ItemFull | undefined = store?.full?.[item.id];
   const text: LocaleDetail | undefined = store?.detail?.[item.id];
@@ -41,7 +42,7 @@ export function ItemCard({ item }: { item: ItemSummary }) {
    * copy — and a card that prints it alone is the reason somebody buys the
    * wrong sword. The tables ride with the same fetch as the stats themselves.
    */
-  const stats = statRows(full, text, 'stats', store?.rolls);
+  const stats = statRows(full, text, 'stats', store?.rolls, STAT_NAMES[lang]);
   const gems = gemRows(full);
   // Only for an item that actually has one: see `hasNamedSkill`.
   const named = hasNamedSkill(full, text);
