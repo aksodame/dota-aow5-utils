@@ -5450,32 +5450,32 @@
       [
        "Damage: all",
        "`outgoing_damage_pct`",
-       "[[talent:tree1/T033|Damage Boost]] +2%, [[talent:tree1/T045|Damage Amplification]] +1%, [[talent:tree1/T072|Damage Boost]] +3%, [[talent:tree1/T073|Damage Boost]] +3%, [[talent:tree2/T106|Damage Boost]] +1%, [[talent:tree2/T125|Armor Break]] +2%, [[talent:tree4/T389|Damage Bonus +3%]] +3%, [[talent:tree4/T375|+4% Bonus Damage]] +4%, [[talent:tree5/T444|Damage Bonus +3%]] +3%, [[talent:tree5/T476|Damage Bonus +4%]] +4%, [[talent:tree6/T577|Damage Bonus +4%]] +4%, [[talent:tree7/T644|+3% Bonus Damage]] +3%, [[talent:tree7/T675|+4% Bonus Damage]] +4%, [[talent:tree10/T922|Ancient Power]] +1%, [[talent:tree12/T1167|+4% Bonus Damage]] +4%, [[talent:tree13/T1230|Will of the Cube]] +1%, [[talent:tree14/T1489|Damage Bonus +3%]] +3%, [[talent:tree14/T1475|Damage Bonus +4%]] +4%",
+       "[[talent:tree1/T033|Damage Boost]] +2%, [[talent:tree1/T045|Damage Amplification]] +1%, [[talent:tree1/T072|Damage Boost]] +3%, [[talent:tree1/T073|Damage Boost]] +3%, [[talent:tree1/T1504|Molten Edge]] +4%, [[talent:tree1/T1510|Molten Fury]] +5%, [[talent:tree2/T106|Damage Boost]] +1%, [[talent:tree2/T125|Armor Break]] +2%, [[talent:tree4/T389|Damage Bonus +3%]] +3%, [[talent:tree4/T375|+4% Bonus Damage]] +4%, [[talent:tree5/T444|Damage Bonus +3%]] +3%, [[talent:tree5/T476|Damage Bonus +4%]] +4%, [[talent:tree6/T577|Damage Bonus +4%]] +4%, [[talent:tree7/T644|+3% Bonus Damage]] +3%, [[talent:tree7/T675|+4% Bonus Damage]] +4%, [[talent:tree10/T922|Ancient Power]] +1%, [[talent:tree12/T1167|+4% Bonus Damage]] +4%, [[talent:tree14/T1489|Damage Bonus +3%]] +3%, [[talent:tree14/T1475|Damage Bonus +4%]] +4%",
        "57 items, max +36% ([[item:item_0737|Ancestral: Crown of Paranoia]], [[item:item_0608|Crown of Paranoia]], [[item:item_0202|Scythe of Vyse]], [[item:item_0802|Ancestral: Scythe of Vyse]] and more)"
       ],
       [
        "Damage: final multiplier",
        "`outgoing_damage_pct_2`",
        "—",
-       "38 items, max +21% ([[item:item_0883|Ancestral: Hourglass of Lingering Time]], [[item:item_0415|Nether Visage]], [[item:item_0813|Ancestral: Nether Visage]], [[item:item_0612|Overflow Rotation]] and more)"
+       "42 items, max +21% ([[item:item_0883|Ancestral: Hourglass of Lingering Time]], [[item:item_0415|Nether Visage]], [[item:item_0813|Ancestral: Nether Visage]], [[item:item_0612|Overflow Rotation]] and more)"
       ],
       [
        "Physical damage",
        "`physical_damage_add_pct`",
-       "[[talent:tree2/T151|Crossbow Strike]] +2%, [[talent:tree13/T1224|Shadow Edge Forging]] +1%",
-       "133 items, max +32% ([[item:item_0882|Ancestral: Blade of Essence]], [[item:item_0787|Ancestral: Lionheart Battleaxe]], [[item:item_0424|Thorncrown Aegis]], [[item:item_0610|Critical Overflow]] and more)"
+       "[[talent:tree2/T151|Crossbow Strike]] +2%",
+       "147 items, max +32% ([[item:item_0882|Ancestral: Blade of Essence]], [[item:item_0787|Ancestral: Lionheart Battleaxe]], [[item:item_0424|Thorncrown Aegis]], [[item:item_0610|Critical Overflow]] and more)"
       ],
       [
        "Magic damage",
        "`magical_damage_add_pct`",
-       "[[talent:tree2/T171|Echo]] +2%, [[talent:tree8/T710|Frost Resonance]] +10%, [[talent:tree13/T1209|Mystic Initiate]] +1%, [[talent:tree13/T1227|Shadow Ascension]] +1%",
-       "136 items, max +36% ([[item:item_0740|Ancestral: Curse Brand]], [[item:item_0736|Ancestral: Ring of Ebb and Flow]], [[item:item_0739|Ancestral: Overheat Core]], [[item:item_0881|Ancestral: Hunter's Chain]] and more)"
+       "[[talent:tree2/T171|Echo]] +2%, [[talent:tree8/T710|Frost Resonance]] +10%",
+       "141 items, max +36% ([[item:item_0740|Ancestral: Curse Brand]], [[item:item_0736|Ancestral: Ring of Ebb and Flow]], [[item:item_0739|Ancestral: Overheat Core]], [[item:item_0881|Ancestral: Hunter's Chain]] and more)"
       ],
       [
        "Ability and item damage",
        "`spell_amplify_pct`",
        "—",
-       "57 items, max +32% ([[item:item_0740|Ancestral: Curse Brand]], [[item:item_0607|Curse Brand]], [[item:item_0617|Settlement Pact: Blade]], [[item:item_0618|Settlement Pact: Balance]] and more)"
+       "65 items, max +32% ([[item:item_0740|Ancestral: Curse Brand]], [[item:item_0607|Curse Brand]], [[item:item_0617|Settlement Pact: Blade]], [[item:item_0618|Settlement Pact: Balance]] and more)"
       ],
       [
        "Basic attack damage",
@@ -5510,13 +5510,13 @@
       [
        "Damage to elites",
        "`extra_damage_pct_2`",
-       "[[talent:tree9/T829|Sunder]] +1%, [[talent:tree13/T1226|Elite Hunter]] +1%",
+       "[[talent:tree9/T829|Sunder]] +1%",
        "—"
       ],
       [
        "Damage to bosses",
        "`extra_damage_pct_3`",
-       "[[talent:tree9/T829|Sunder]] +1%, [[talent:tree13/T1229|Kingslayer Arts]] +1%",
+       "[[talent:tree9/T829|Sunder]] +1%",
        "—"
       ],
       [
@@ -5528,26 +5528,26 @@
       [
        "Physical crit chance",
        "`physical_crit_chance_pct`",
-       "[[talent:tree2/T108|Critical Strike]] +1%, [[talent:tree2/T159|Hurricane]] +2%, [[talent:tree2/T169|Star Shatter]] +3%, [[talent:tree4/T372|+2% Physical Crit Chance]] +2%, [[talent:tree5/T469|Physical Critical Chance +2%]] +2%, [[talent:tree7/T668|+2% Physical Crit Chance]] +2%, [[talent:tree9/T805|Lethal Strike]] +2%, [[talent:tree13/T1206|Flaw Insight]] +1%, [[talent:tree14/T1472|Physical Crit Chance +2%]] +2%",
-       "69 items, max +24% ([[item:item_0610|Critical Overflow]], [[item:item_0820|Ancestral: Critical Overflow]], [[item:item_0853|Ancestral: Monkey King Bar]], [[item:item_0770|Ancestral: Desperate Fury]] and more)"
+       "[[talent:tree2/T108|Critical Strike]] +1%, [[talent:tree2/T159|Hurricane]] +2%, [[talent:tree2/T169|Star Shatter]] +3%, [[talent:tree4/T372|+2% Physical Crit Chance]] +2%, [[talent:tree5/T469|Physical Critical Chance +2%]] +2%, [[talent:tree7/T668|+2% Physical Crit Chance]] +2%, [[talent:tree9/T805|Lethal Strike]] +2%, [[talent:tree14/T1472|Physical Crit Chance +2%]] +2%",
+       "73 items, max +24% ([[item:item_0610|Critical Overflow]], [[item:item_0820|Ancestral: Critical Overflow]], [[item:item_0853|Ancestral: Monkey King Bar]], [[item:item_0770|Ancestral: Desperate Fury]] and more)"
       ],
       [
        "Magic crit chance",
        "`magical_crit_chance_pct`",
-       "[[talent:tree2/T112|Spell Critical Strike]] +1%, [[talent:tree2/T154|Meteor]] +2%, [[talent:tree2/T174|Army Breaker]] +3%, [[talent:tree6/T571|Magic Crit Chance +2%]] +2%, [[talent:tree12/T1162|+2% Magic Crit]] +2%, [[talent:tree13/T1219|Mystic Insight]] +1%",
-       "40 items, max +23% ([[item:item_0739|Ancestral: Overheat Core]], [[item:item_0219|Soul Scatter Blade]], [[item:item_0865|Ancestral: Soul Scatter Blade]], [[item:item_0725|Ancestral: Spirit Crown]] and more)"
+       "[[talent:tree2/T112|Spell Critical Strike]] +1%, [[talent:tree2/T154|Meteor]] +2%, [[talent:tree2/T174|Army Breaker]] +3%, [[talent:tree6/T571|Magic Crit Chance +2%]] +2%, [[talent:tree12/T1162|+2% Magic Crit]] +2%",
+       "43 items, max +23% ([[item:item_0739|Ancestral: Overheat Core]], [[item:item_0219|Soul Scatter Blade]], [[item:item_0865|Ancestral: Soul Scatter Blade]], [[item:item_0725|Ancestral: Spirit Crown]] and more)"
       ],
       [
        "Omni crit chance (all damage)",
        "`omni_crit_chance_pct`",
        "—",
-       "18 items, max +19% ([[item:item_0779|Ancestral: Endless Blade]], [[item:item_0837|Ancestral: Shadow Armor]], [[item:item_0859|Ancestral: Ring of Blessing]], [[item:item_0368|Endless Blade]] and more)"
+       "21 items, max +19% ([[item:item_0779|Ancestral: Endless Blade]], [[item:item_0837|Ancestral: Shadow Armor]], [[item:item_0859|Ancestral: Ring of Blessing]], [[item:item_0368|Endless Blade]] and more)"
       ],
       [
        "Crit multiplier",
        "`crit_damage_pct`",
-       "[[talent:tree2/T110|Critical Damage Enhancement]] +2%, [[talent:tree2/T120|Rampage]] +3%, [[talent:tree2/T163|Wraith]] +4%, [[talent:tree2/T173|Absolute Shadow]] +5%, [[talent:tree2/T128|Critical Damage Refinement]] +2%, [[talent:tree9/T826|Critical Damage]] +3%, [[talent:tree13/T1215|Fatal Rift]] +2%",
-       "52 items, max +39% ([[item:item_0735|Ancestral: Crown of Curses]], [[item:item_0884|Ancestral: Crystal of Essence]], [[item:item_0570|Crown of Curses]], [[item:item_0770|Ancestral: Desperate Fury]] and more)"
+       "[[talent:tree2/T110|Critical Damage Enhancement]] +2%, [[talent:tree2/T120|Rampage]] +3%, [[talent:tree2/T163|Wraith]] +4%, [[talent:tree2/T173|Absolute Shadow]] +5%, [[talent:tree2/T128|Critical Damage Refinement]] +2%, [[talent:tree9/T826|Critical Damage]] +3%",
+       "66 items, max +39% ([[item:item_0735|Ancestral: Crown of Curses]], [[item:item_0884|Ancestral: Crystal of Essence]], [[item:item_0570|Crown of Curses]], [[item:item_0770|Ancestral: Desperate Fury]] and more)"
       ],
       [
        "Armor penetration",
@@ -5574,31 +5574,31 @@
        "Armor",
        "`bonus_armor`",
        "—",
-       "126 items, max +30 ([[item:item_0705|Ancestral: Unyielding Cuirass]], [[item:item_0787|Ancestral: Lionheart Battleaxe]], [[item:item_0714|Ancestral: Lionheart War Armor]], [[item:item_0770|Ancestral: Desperate Fury]] and more)"
+       "132 items, max +30 ([[item:item_0705|Ancestral: Unyielding Cuirass]], [[item:item_0787|Ancestral: Lionheart Battleaxe]], [[item:item_0714|Ancestral: Lionheart War Armor]], [[item:item_0770|Ancestral: Desperate Fury]] and more)"
       ],
       [
        "Armor (base)",
        "`base_armor`",
-       "[[talent:tree1/T005|Armor Boost]] +1, [[talent:tree1/T010|Armor Proficiency]] +1, [[talent:tree1/T018|Armor Proficiency]] +1, [[talent:tree1/T055|Armor]] +1, [[talent:tree1/T081|Armor]] +1, [[talent:tree1/T024|Armor]] +3, [[talent:tree2/T103|Armor Boost]] +1, [[talent:tree2/T123|Unyielding]] +2, [[talent:tree2/T133|Battle-Hardened Body]] +2, [[talent:tree4/T301|Armor +1]] +1, [[talent:tree4/T306|Armor +2]] +2, [[talent:tree4/T312|Armor +1]] +1, [[talent:tree4/T329|Armor +1]] +1, [[talent:tree4/T332|Armor +2]] +2, [[talent:tree4/T351|Armor +2]] +2, [[talent:tree4/T356|Armor +3]] +3, [[talent:tree4/T367|+4 Armor]] +4, [[talent:tree4/T369|Armor +3]] +3, [[talent:tree5/T430|Armor +1]] +1, [[talent:tree5/T432|Armor +1]] +1, [[talent:tree5/T456|+2 Armor]] +2, [[talent:tree5/T461|Armor +1]] +1, [[talent:tree5/T464|Armor +2]] +2, [[talent:tree5/T474|Armor +3]] +3, [[talent:tree6/T505|Armor +1]] +1, [[talent:tree6/T532|Armor +1]] +1, [[talent:tree6/T549|Armor +1]] +1, [[talent:tree7/T630|+1 Armor]] +1, [[talent:tree7/T632|+1 Armor]] +1, [[talent:tree7/T656|+2 Armor]] +2, [[talent:tree7/T661|+1 Armor]] +1, [[talent:tree7/T664|+2 Armor]] +2, [[talent:tree7/T673|+3 Armor]] +3, [[talent:tree9/T812|Defensive Training]] +2, [[talent:tree10/T918|Hardened Skin]] +1, [[talent:tree12/T1110|+1 Armor]] +1, [[talent:tree12/T1132|+1 Armor]] +1, [[talent:tree12/T1147|+1 Armor]] +1, [[talent:tree13/T1202|Bedrock Armor]] +1, [[talent:tree14/T1401|Armor +1]] +1, [[talent:tree14/T1406|Armor +2]] +2, [[talent:tree14/T1412|Armor +1]] +1, [[talent:tree14/T1429|Armor +1]] +1, [[talent:tree14/T1432|Armor +2]] +2, [[talent:tree14/T1451|Armor +2]] +2, [[talent:tree14/T1456|Armor +3]] +3, [[talent:tree14/T1467|Armor +4]] +4, [[talent:tree14/T1469|Armor +3]] +3",
+       "[[talent:tree1/T005|Armor Boost]] +1, [[talent:tree1/T010|Armor Proficiency]] +1, [[talent:tree1/T018|Armor Proficiency]] +1, [[talent:tree1/T055|Armor]] +1, [[talent:tree1/T081|Armor]] +1, [[talent:tree1/T024|Armor]] +3, [[talent:tree1/T1503|Scorchscale Bulwark]] +4, [[talent:tree2/T103|Armor Boost]] +1, [[talent:tree2/T123|Unyielding]] +2, [[talent:tree2/T133|Battle-Hardened Body]] +2, [[talent:tree4/T301|Armor +1]] +1, [[talent:tree4/T306|Armor +2]] +2, [[talent:tree4/T312|Armor +1]] +1, [[talent:tree4/T329|Armor +1]] +1, [[talent:tree4/T332|Armor +2]] +2, [[talent:tree4/T351|Armor +2]] +2, [[talent:tree4/T356|Armor +3]] +3, [[talent:tree4/T367|+4 Armor]] +4, [[talent:tree4/T369|Armor +3]] +3, [[talent:tree5/T430|Armor +1]] +1, [[talent:tree5/T432|Armor +1]] +1, [[talent:tree5/T456|+2 Armor]] +2, [[talent:tree5/T461|Armor +1]] +1, [[talent:tree5/T464|Armor +2]] +2, [[talent:tree5/T474|Armor +3]] +3, [[talent:tree6/T505|Armor +1]] +1, [[talent:tree6/T532|Armor +1]] +1, [[talent:tree6/T549|Armor +1]] +1, [[talent:tree7/T630|+1 Armor]] +1, [[talent:tree7/T632|+1 Armor]] +1, [[talent:tree7/T656|+2 Armor]] +2, [[talent:tree7/T661|+1 Armor]] +1, [[talent:tree7/T664|+2 Armor]] +2, [[talent:tree7/T673|+3 Armor]] +3, [[talent:tree9/T812|Defensive Training]] +2, [[talent:tree10/T918|Hardened Skin]] +1, [[talent:tree12/T1110|+1 Armor]] +1, [[talent:tree12/T1132|+1 Armor]] +1, [[talent:tree12/T1147|+1 Armor]] +1, [[talent:tree14/T1401|Armor +1]] +1, [[talent:tree14/T1406|Armor +2]] +2, [[talent:tree14/T1412|Armor +1]] +1, [[talent:tree14/T1429|Armor +1]] +1, [[talent:tree14/T1432|Armor +2]] +2, [[talent:tree14/T1451|Armor +2]] +2, [[talent:tree14/T1456|Armor +3]] +3, [[talent:tree14/T1467|Armor +4]] +4, [[talent:tree14/T1469|Armor +3]] +3",
        "10 items, max +25 ([[item:item_0609|Paladin's Armor]], [[item:item_0819|Ancestral: Paladin's Armor]], [[item:item_0346|Nightraven Cloak]], [[item:item_0399|Blood Pact Cleaver]] and more)"
       ],
       [
        "Magic resistance",
        "`base_magic_resistance`",
        "[[talent:tree2/T170|Divine]] +3%, [[talent:tree2/T127|Magic Resistance Boost]] +1%, [[talent:tree4/T313|Magic Resistance +3%]] +3%, [[talent:tree4/T385|Magic Resistance +3%]] +3%, [[talent:tree5/T429|Magic Resistance +3%]] +3%, [[talent:tree5/T454|Magic Resistance +3%]] +3%, [[talent:tree6/T507|Magic Resistance +3%]] +3%, [[talent:tree6/T534|Magic Resistance +3%]] +3%, [[talent:tree7/T629|+3% Magic Resistance]] +3%, [[talent:tree7/T654|+3% Magic Resistance]] +3%, [[talent:tree8/T704|Chill Infusion]] +5%, [[talent:tree8/T711|Everfrost Heart]] +8%, [[talent:tree12/T1112|+3% Magic Resistance]] +3%, [[talent:tree12/T1134|+3% Magic Resistance]] +3%, [[talent:tree14/T1413|Magic Resistance +3%]] +3%, [[talent:tree14/T1485|Magic Resistance +3%]] +3%",
-       "96 items, max +29% ([[item:item_0853|Ancestral: Monkey King Bar]], [[item:item_0883|Ancestral: Hourglass of Lingering Time]], [[item:item_0739|Ancestral: Overheat Core]], [[item:item_0704|Ancestral: Gloom Armor]] and more)"
+       "99 items, max +29% ([[item:item_0853|Ancestral: Monkey King Bar]], [[item:item_0883|Ancestral: Hourglass of Lingering Time]], [[item:item_0739|Ancestral: Overheat Core]], [[item:item_0704|Ancestral: Gloom Armor]] and more)"
       ],
       [
        "Damage resistance (÷ (1 + %/100), to everything)",
        "`damage_resistance_pct`",
-       "[[talent:tree1/T019|Iron Wall]] +1%, [[talent:tree1/T059|Damage Resistance]] +1%, [[talent:tree1/T070|Damage Resistance]] +1%, [[talent:tree1/T071|Damage Resistance]] +3%, [[talent:tree2/T118|Ironclad]] +1%, [[talent:tree2/T160|Eternity]] +2%, [[talent:tree4/T338|+1% Damage Resistance]] +1%, [[talent:tree5/T479|Damage Resistance +2%]] +2%, [[talent:tree6/T570|Damage Resistance +1%]] +1%, [[talent:tree7/T678|+2% Damage Resistance]] +2%, [[talent:tree9/T811|Iron Will]] +2%, [[talent:tree10/T923|Shield Armor]] +1%, [[talent:tree12/T1161|+1% Damage Resistance]] +1%, [[talent:tree13/T1213|Core Will]] +1%, [[talent:tree13/T1223|Unyielding Tower Heart]] +1%, [[talent:tree14/T1438|Damage Resistance +1%]] +1%",
-       "60 items, max +27% ([[item:item_0705|Ancestral: Unyielding Cuirass]], [[item:item_0611|Crown of All Benefits]], [[item:item_0816|Ancestral: Thorncrown Aegis]], [[item:item_0821|Ancestral: Crown of All Benefits]] and more)"
+       "[[talent:tree1/T019|Iron Wall]] +1%, [[talent:tree1/T059|Damage Resistance]] +1%, [[talent:tree1/T070|Damage Resistance]] +1%, [[talent:tree1/T071|Damage Resistance]] +3%, [[talent:tree1/T1506|Scorchscale Aegis]] +4%, [[talent:tree2/T118|Ironclad]] +1%, [[talent:tree2/T160|Eternity]] +2%, [[talent:tree4/T338|+1% Damage Resistance]] +1%, [[talent:tree5/T479|Damage Resistance +2%]] +2%, [[talent:tree6/T570|Damage Resistance +1%]] +1%, [[talent:tree7/T678|+2% Damage Resistance]] +2%, [[talent:tree9/T811|Iron Will]] +2%, [[talent:tree10/T923|Shield Armor]] +1%, [[talent:tree12/T1161|+1% Damage Resistance]] +1%, [[talent:tree14/T1438|Damage Resistance +1%]] +1%",
+       "63 items, max +27% ([[item:item_0705|Ancestral: Unyielding Cuirass]], [[item:item_0611|Crown of All Benefits]], [[item:item_0816|Ancestral: Thorncrown Aegis]], [[item:item_0821|Ancestral: Crown of All Benefits]] and more)"
       ],
       [
        "Evasion",
        "`evasion_pct`",
-       "[[talent:tree20/T109|Evasion Mastery]] +1%",
-       "52 items, max +30% ([[item:item_0220|Butterfly]], [[item:item_0563|Shadow Swift Blade]], [[item:item_0775|Ancestral: Butterfly]], [[item:item_0731|Ancestral: Vortex Gloves]] and more)"
+       "—",
+       "55 items, max +30% ([[item:item_0220|Butterfly]], [[item:item_0563|Shadow Swift Blade]], [[item:item_0775|Ancestral: Butterfly]], [[item:item_0731|Ancestral: Vortex Gloves]] and more)"
       ]
      ]
     }

@@ -5450,32 +5450,32 @@
       [
        "伤害——全部",
        "`outgoing_damage_pct`",
-       "[[talent:tree1/T033|伤害增强]] +2%, [[talent:tree1/T045|伤害加深]] +1%, [[talent:tree1/T072|伤害强化]] +3%, [[talent:tree1/T073|伤害强化]] +3%, [[talent:tree2/T106|伤害强化]] +1%, [[talent:tree2/T125|破甲打击]] +2%, [[talent:tree4/T389|伤害加成 +3%]] +3%, [[talent:tree4/T375|伤害加成 +4%]] +4%, [[talent:tree5/T444|伤害加成 +3%]] +3%, [[talent:tree5/T476|伤害加成 +4%]] +4%, [[talent:tree6/T577|伤害加成 +4%]] +4%, [[talent:tree7/T644|伤害加成 +3%]] +3%, [[talent:tree7/T675|伤害加成 +4%]] +4%, [[talent:tree10/T922|远古之力]] +1%, [[talent:tree12/T1167|伤害加成 +4%]] +4%, [[talent:tree13/T1230|魔方意志]] +1%, [[talent:tree14/T1489|伤害加成 +3%]] +3%, [[talent:tree14/T1475|伤害加成 +4%]] +4%",
+       "[[talent:tree1/T033|伤害增强]] +2%, [[talent:tree1/T045|伤害加深]] +1%, [[talent:tree1/T072|伤害强化]] +3%, [[talent:tree1/T073|伤害强化]] +3%, [[talent:tree1/T1504|熔火之锋]] +4%, [[talent:tree1/T1510|熔火之怒]] +5%, [[talent:tree2/T106|伤害强化]] +1%, [[talent:tree2/T125|破甲打击]] +2%, [[talent:tree4/T389|伤害加成 +3%]] +3%, [[talent:tree4/T375|伤害加成 +4%]] +4%, [[talent:tree5/T444|伤害加成 +3%]] +3%, [[talent:tree5/T476|伤害加成 +4%]] +4%, [[talent:tree6/T577|伤害加成 +4%]] +4%, [[talent:tree7/T644|伤害加成 +3%]] +3%, [[talent:tree7/T675|伤害加成 +4%]] +4%, [[talent:tree10/T922|远古之力]] +1%, [[talent:tree12/T1167|伤害加成 +4%]] +4%, [[talent:tree14/T1489|伤害加成 +3%]] +3%, [[talent:tree14/T1475|伤害加成 +4%]] +4%",
        "57 件，最高 +36%（[[item:item_0737|先祖：偏执之冠]]、[[item:item_0608|偏执之冠]]、[[item:item_0202|邪恶镰刀]]、[[item:item_0802|先祖：邪恶镰刀]] 等）"
       ],
       [
        "伤害——最终乘区",
        "`outgoing_damage_pct_2`",
        "—",
-       "38 件，最高 +21%（[[item:item_0883|先祖：凝时沙漏]]、[[item:item_0415|冥王暗面]]、[[item:item_0813|先祖：冥王暗面]]、[[item:item_0612|轮转逾限]] 等）"
+       "42 件，最高 +21%（[[item:item_0883|先祖：凝时沙漏]]、[[item:item_0415|冥王暗面]]、[[item:item_0813|先祖：冥王暗面]]、[[item:item_0612|轮转逾限]] 等）"
       ],
       [
        "物理伤害",
        "`physical_damage_add_pct`",
-       "[[talent:tree2/T151|弩击]] +2%, [[talent:tree13/T1224|绝影淬锋]] +1%",
-       "133 件，最高 +32%（[[item:item_0882|先祖：本源之刃]]、[[item:item_0787|先祖：狮心战斧]]、[[item:item_0424|棘冠圣盾]]、[[item:item_0610|会心逾限]] 等）"
+       "[[talent:tree2/T151|弩击]] +2%",
+       "147 件，最高 +32%（[[item:item_0882|先祖：本源之刃]]、[[item:item_0787|先祖：狮心战斧]]、[[item:item_0424|棘冠圣盾]]、[[item:item_0610|会心逾限]] 等）"
       ],
       [
        "魔法伤害",
        "`magical_damage_add_pct`",
-       "[[talent:tree2/T171|回音]] +2%, [[talent:tree8/T710|寒霜共鸣]] +10%, [[talent:tree13/T1209|秘术初识]] +1%, [[talent:tree13/T1227|幽暗升华]] +1%",
-       "136 件，最高 +36%（[[item:item_0740|先祖：咒缚印记]]、[[item:item_0736|先祖：盈枯法环]]、[[item:item_0739|先祖：过热核心]]、[[item:item_0881|先祖：猎杀之链]] 等）"
+       "[[talent:tree2/T171|回音]] +2%, [[talent:tree8/T710|寒霜共鸣]] +10%",
+       "141 件，最高 +36%（[[item:item_0740|先祖：咒缚印记]]、[[item:item_0736|先祖：盈枯法环]]、[[item:item_0739|先祖：过热核心]]、[[item:item_0881|先祖：猎杀之链]] 等）"
       ],
       [
        "技能与物品伤害",
        "`spell_amplify_pct`",
        "—",
-       "57 件，最高 +32%（[[item:item_0740|先祖：咒缚印记]]、[[item:item_0607|咒缚印记]]、[[item:item_0617|清算之约·锋]]、[[item:item_0618|清算之约·衡]] 等）"
+       "65 件，最高 +32%（[[item:item_0740|先祖：咒缚印记]]、[[item:item_0607|咒缚印记]]、[[item:item_0617|清算之约·锋]]、[[item:item_0618|清算之约·衡]] 等）"
       ],
       [
        "普通攻击伤害",
@@ -5510,13 +5510,13 @@
       [
        "对精英怪伤害",
        "`extra_damage_pct_2`",
-       "[[talent:tree9/T829|破军]] +1%, [[talent:tree13/T1226|精英猎手]] +1%",
+       "[[talent:tree9/T829|破军]] +1%",
        "—"
       ],
       [
        "对 BOSS 伤害",
        "`extra_damage_pct_3`",
-       "[[talent:tree9/T829|破军]] +1%, [[talent:tree13/T1229|弑王秘术]] +1%",
+       "[[talent:tree9/T829|破军]] +1%",
        "—"
       ],
       [
@@ -5528,26 +5528,26 @@
       [
        "物理暴击率",
        "`physical_crit_chance_pct`",
-       "[[talent:tree2/T108|致命一击]] +1%, [[talent:tree2/T159|飓风]] +2%, [[talent:tree2/T169|碎星]] +3%, [[talent:tree4/T372|物理暴击率 +2%]] +2%, [[talent:tree5/T469|物理暴击率 +2%]] +2%, [[talent:tree7/T668|物理暴击率 +2%]] +2%, [[talent:tree9/T805|致命一击]] +2%, [[talent:tree13/T1206|破绽洞察]] +1%, [[talent:tree14/T1472|物理暴击率 +2%]] +2%",
-       "69 件，最高 +24%（[[item:item_0610|会心逾限]]、[[item:item_0820|先祖：会心逾限]]、[[item:item_0853|先祖：金箍棒]]、[[item:item_0770|先祖：炽怒之斧]] 等）"
+       "[[talent:tree2/T108|致命一击]] +1%, [[talent:tree2/T159|飓风]] +2%, [[talent:tree2/T169|碎星]] +3%, [[talent:tree4/T372|物理暴击率 +2%]] +2%, [[talent:tree5/T469|物理暴击率 +2%]] +2%, [[talent:tree7/T668|物理暴击率 +2%]] +2%, [[talent:tree9/T805|致命一击]] +2%, [[talent:tree14/T1472|物理暴击率 +2%]] +2%",
+       "73 件，最高 +24%（[[item:item_0610|会心逾限]]、[[item:item_0820|先祖：会心逾限]]、[[item:item_0853|先祖：金箍棒]]、[[item:item_0770|先祖：炽怒之斧]] 等）"
       ],
       [
        "魔法暴击率",
        "`magical_crit_chance_pct`",
-       "[[talent:tree2/T112|魔法暴击]] +1%, [[talent:tree2/T154|陨星]] +2%, [[talent:tree2/T174|破军]] +3%, [[talent:tree6/T571|魔法暴击率 +2%]] +2%, [[talent:tree12/T1162|魔法暴击率 +2%]] +2%, [[talent:tree13/T1219|秘术洞察]] +1%",
-       "40 件，最高 +23%（[[item:item_0739|先祖：过热核心]]、[[item:item_0219|散魂剑]]、[[item:item_0865|先祖：散魂剑]]、[[item:item_0725|先祖：英灵之冠]] 等）"
+       "[[talent:tree2/T112|魔法暴击]] +1%, [[talent:tree2/T154|陨星]] +2%, [[talent:tree2/T174|破军]] +3%, [[talent:tree6/T571|魔法暴击率 +2%]] +2%, [[talent:tree12/T1162|魔法暴击率 +2%]] +2%",
+       "43 件，最高 +23%（[[item:item_0739|先祖：过热核心]]、[[item:item_0219|散魂剑]]、[[item:item_0865|先祖：散魂剑]]、[[item:item_0725|先祖：英灵之冠]] 等）"
       ],
       [
        "全域暴击率（对所有伤害）",
        "`omni_crit_chance_pct`",
        "—",
-       "18 件，最高 +19%（[[item:item_0779|先祖：无尽之刃]]、[[item:item_0837|先祖：疾影护服]]、[[item:item_0859|先祖：庇佑之戒]]、[[item:item_0368|无尽之刃]] 等）"
+       "21 件，最高 +19%（[[item:item_0779|先祖：无尽之刃]]、[[item:item_0837|先祖：疾影护服]]、[[item:item_0859|先祖：庇佑之戒]]、[[item:item_0368|无尽之刃]] 等）"
       ],
       [
        "暴击倍率",
        "`crit_damage_pct`",
-       "[[talent:tree2/T110|暴伤强化]] +2%, [[talent:tree2/T120|暴怒]] +3%, [[talent:tree2/T163|幽魂]] +4%, [[talent:tree2/T173|绝影]] +5%, [[talent:tree2/T128|暴伤精修]] +2%, [[talent:tree9/T826|暴击伤害]] +3%, [[talent:tree13/T1215|致命裂隙]] +2%",
-       "52 件，最高 +39%（[[item:item_0735|先祖：万诅之冕]]、[[item:item_0884|先祖：本源之晶]]、[[item:item_0570|万诅之冕]]、[[item:item_0770|先祖：炽怒之斧]] 等）"
+       "[[talent:tree2/T110|暴伤强化]] +2%, [[talent:tree2/T120|暴怒]] +3%, [[talent:tree2/T163|幽魂]] +4%, [[talent:tree2/T173|绝影]] +5%, [[talent:tree2/T128|暴伤精修]] +2%, [[talent:tree9/T826|暴击伤害]] +3%",
+       "66 件，最高 +39%（[[item:item_0735|先祖：万诅之冕]]、[[item:item_0884|先祖：本源之晶]]、[[item:item_0570|万诅之冕]]、[[item:item_0770|先祖：炽怒之斧]] 等）"
       ],
       [
        "护甲穿透",
@@ -5574,31 +5574,31 @@
        "护甲",
        "`bonus_armor`",
        "—",
-       "126 件，最高 +30（[[item:item_0705|先祖：不屈重铠]]、[[item:item_0787|先祖：狮心战斧]]、[[item:item_0714|先祖：狮心战铠]]、[[item:item_0770|先祖：炽怒之斧]] 等）"
+       "132 件，最高 +30（[[item:item_0705|先祖：不屈重铠]]、[[item:item_0787|先祖：狮心战斧]]、[[item:item_0714|先祖：狮心战铠]]、[[item:item_0770|先祖：炽怒之斧]] 等）"
       ],
       [
        "护甲（基础）",
        "`base_armor`",
-       "[[talent:tree1/T005|护甲强化]] +1, [[talent:tree1/T010|护甲精通]] +1, [[talent:tree1/T018|护甲精通]] +1, [[talent:tree1/T055|护甲]] +1, [[talent:tree1/T081|护甲]] +1, [[talent:tree1/T024|护甲]] +3, [[talent:tree2/T103|护甲强化]] +1, [[talent:tree2/T123|不屈]] +2, [[talent:tree2/T133|百战之躯]] +2, [[talent:tree4/T301|护甲 +1]] +1, [[talent:tree4/T306|护甲 +2]] +2, [[talent:tree4/T312|护甲 +1]] +1, [[talent:tree4/T329|护甲 +1]] +1, [[talent:tree4/T332|护甲 +2]] +2, [[talent:tree4/T351|护甲 +2]] +2, [[talent:tree4/T356|护甲 +3]] +3, [[talent:tree4/T367|护甲 +4]] +4, [[talent:tree4/T369|护甲 +3]] +3, [[talent:tree5/T430|护甲 +1]] +1, [[talent:tree5/T432|护甲 +1]] +1, [[talent:tree5/T456|护甲 +2]] +2, [[talent:tree5/T461|护甲 +1]] +1, [[talent:tree5/T464|护甲 +2]] +2, [[talent:tree5/T474|护甲 +3]] +3, [[talent:tree6/T505|护甲 +1]] +1, [[talent:tree6/T532|护甲 +1]] +1, [[talent:tree6/T549|护甲 +1]] +1, [[talent:tree7/T630|护甲 +1]] +1, [[talent:tree7/T632|护甲 +1]] +1, [[talent:tree7/T656|护甲 +2]] +2, [[talent:tree7/T661|护甲 +1]] +1, [[talent:tree7/T664|护甲 +2]] +2, [[talent:tree7/T673|护甲 +3]] +3, [[talent:tree9/T812|防护训练]] +2, [[talent:tree10/T918|硬化皮肤]] +1, [[talent:tree12/T1110|护甲 +1]] +1, [[talent:tree12/T1132|护甲 +1]] +1, [[talent:tree12/T1147|护甲 +1]] +1, [[talent:tree13/T1202|岩层护甲]] +1, [[talent:tree14/T1401|护甲 +1]] +1, [[talent:tree14/T1406|护甲 +2]] +2, [[talent:tree14/T1412|护甲 +1]] +1, [[talent:tree14/T1429|护甲 +1]] +1, [[talent:tree14/T1432|护甲 +2]] +2, [[talent:tree14/T1451|护甲 +2]] +2, [[talent:tree14/T1456|护甲 +3]] +3, [[talent:tree14/T1467|护甲 +4]] +4, [[talent:tree14/T1469|护甲 +3]] +3",
+       "[[talent:tree1/T005|护甲强化]] +1, [[talent:tree1/T010|护甲精通]] +1, [[talent:tree1/T018|护甲精通]] +1, [[talent:tree1/T055|护甲]] +1, [[talent:tree1/T081|护甲]] +1, [[talent:tree1/T024|护甲]] +3, [[talent:tree1/T1503|焚鳞铁壁]] +4, [[talent:tree2/T103|护甲强化]] +1, [[talent:tree2/T123|不屈]] +2, [[talent:tree2/T133|百战之躯]] +2, [[talent:tree4/T301|护甲 +1]] +1, [[talent:tree4/T306|护甲 +2]] +2, [[talent:tree4/T312|护甲 +1]] +1, [[talent:tree4/T329|护甲 +1]] +1, [[talent:tree4/T332|护甲 +2]] +2, [[talent:tree4/T351|护甲 +2]] +2, [[talent:tree4/T356|护甲 +3]] +3, [[talent:tree4/T367|护甲 +4]] +4, [[talent:tree4/T369|护甲 +3]] +3, [[talent:tree5/T430|护甲 +1]] +1, [[talent:tree5/T432|护甲 +1]] +1, [[talent:tree5/T456|护甲 +2]] +2, [[talent:tree5/T461|护甲 +1]] +1, [[talent:tree5/T464|护甲 +2]] +2, [[talent:tree5/T474|护甲 +3]] +3, [[talent:tree6/T505|护甲 +1]] +1, [[talent:tree6/T532|护甲 +1]] +1, [[talent:tree6/T549|护甲 +1]] +1, [[talent:tree7/T630|护甲 +1]] +1, [[talent:tree7/T632|护甲 +1]] +1, [[talent:tree7/T656|护甲 +2]] +2, [[talent:tree7/T661|护甲 +1]] +1, [[talent:tree7/T664|护甲 +2]] +2, [[talent:tree7/T673|护甲 +3]] +3, [[talent:tree9/T812|防护训练]] +2, [[talent:tree10/T918|硬化皮肤]] +1, [[talent:tree12/T1110|护甲 +1]] +1, [[talent:tree12/T1132|护甲 +1]] +1, [[talent:tree12/T1147|护甲 +1]] +1, [[talent:tree14/T1401|护甲 +1]] +1, [[talent:tree14/T1406|护甲 +2]] +2, [[talent:tree14/T1412|护甲 +1]] +1, [[talent:tree14/T1429|护甲 +1]] +1, [[talent:tree14/T1432|护甲 +2]] +2, [[talent:tree14/T1451|护甲 +2]] +2, [[talent:tree14/T1456|护甲 +3]] +3, [[talent:tree14/T1467|护甲 +4]] +4, [[talent:tree14/T1469|护甲 +3]] +3",
        "10 件，最高 +25（[[item:item_0609|圣骑士之铠]]、[[item:item_0819|先祖：圣骑士之铠]]、[[item:item_0346|夜鸦披风]]、[[item:item_0399|血誓断刃]] 等）"
       ],
       [
        "魔法抗性",
        "`base_magic_resistance`",
        "[[talent:tree2/T170|神圣]] +3%, [[talent:tree2/T127|魔抗强化]] +1%, [[talent:tree4/T313|魔法抗性 +3%]] +3%, [[talent:tree4/T385|魔法抗性 +3%]] +3%, [[talent:tree5/T429|魔法抗性 +3%]] +3%, [[talent:tree5/T454|魔法抗性 +3%]] +3%, [[talent:tree6/T507|魔法抗性 +3%]] +3%, [[talent:tree6/T534|魔法抗性 +3%]] +3%, [[talent:tree7/T629|魔法抗性 +3%]] +3%, [[talent:tree7/T654|魔法抗性 +3%]] +3%, [[talent:tree8/T704|寒意灌注]] +5%, [[talent:tree8/T711|永冻之心]] +8%, [[talent:tree12/T1112|魔法抗性 +3%]] +3%, [[talent:tree12/T1134|魔法抗性 +3%]] +3%, [[talent:tree14/T1413|魔法抗性 +3%]] +3%, [[talent:tree14/T1485|魔法抗性 +3%]] +3%",
-       "96 件，最高 +29%（[[item:item_0853|先祖：金箍棒]]、[[item:item_0883|先祖：凝时沙漏]]、[[item:item_0739|先祖：过热核心]]、[[item:item_0704|先祖：晦暗之铠]] 等）"
+       "99 件，最高 +29%（[[item:item_0853|先祖：金箍棒]]、[[item:item_0883|先祖：凝时沙漏]]、[[item:item_0739|先祖：过热核心]]、[[item:item_0704|先祖：晦暗之铠]] 等）"
       ],
       [
        "伤害抵抗（÷ (1 + %/100)，对所有伤害）",
        "`damage_resistance_pct`",
-       "[[talent:tree1/T019|铁壁]] +1%, [[talent:tree1/T059|伤害抵抗]] +1%, [[talent:tree1/T070|伤害抵抗]] +1%, [[talent:tree1/T071|伤害抵抗]] +3%, [[talent:tree2/T118|铁壁]] +1%, [[talent:tree2/T160|恒宇]] +2%, [[talent:tree4/T338|伤害抵抗 +1%]] +1%, [[talent:tree5/T479|伤害抵抗 +2%]] +2%, [[talent:tree6/T570|伤害抵抗 +1%]] +1%, [[talent:tree7/T678|伤害抵抗 +2%]] +2%, [[talent:tree9/T811|钢铁意志]] +2%, [[talent:tree10/T923|盾甲术]] +1%, [[talent:tree12/T1161|伤害抵抗 +1%]] +1%, [[talent:tree13/T1213|岩心意志]] +1%, [[talent:tree13/T1223|不屈塔心]] +1%, [[talent:tree14/T1438|伤害抵抗 +1%]] +1%",
-       "60 件，最高 +27%（[[item:item_0705|先祖：不屈重铠]]、[[item:item_0611|百益之冠]]、[[item:item_0816|先祖：棘冠圣盾]]、[[item:item_0821|先祖：百益之冠]] 等）"
+       "[[talent:tree1/T019|铁壁]] +1%, [[talent:tree1/T059|伤害抵抗]] +1%, [[talent:tree1/T070|伤害抵抗]] +1%, [[talent:tree1/T071|伤害抵抗]] +3%, [[talent:tree1/T1506|焚鳞庇护]] +4%, [[talent:tree2/T118|铁壁]] +1%, [[talent:tree2/T160|恒宇]] +2%, [[talent:tree4/T338|伤害抵抗 +1%]] +1%, [[talent:tree5/T479|伤害抵抗 +2%]] +2%, [[talent:tree6/T570|伤害抵抗 +1%]] +1%, [[talent:tree7/T678|伤害抵抗 +2%]] +2%, [[talent:tree9/T811|钢铁意志]] +2%, [[talent:tree10/T923|盾甲术]] +1%, [[talent:tree12/T1161|伤害抵抗 +1%]] +1%, [[talent:tree14/T1438|伤害抵抗 +1%]] +1%",
+       "63 件，最高 +27%（[[item:item_0705|先祖：不屈重铠]]、[[item:item_0611|百益之冠]]、[[item:item_0816|先祖：棘冠圣盾]]、[[item:item_0821|先祖：百益之冠]] 等）"
       ],
       [
        "闪避",
        "`evasion_pct`",
-       "[[talent:tree20/T109|闪避精通]] +1%",
-       "52 件，最高 +30%（[[item:item_0220|蝴蝶]]、[[item:item_0563|影疾之刃]]、[[item:item_0775|先祖：蝴蝶]]、[[item:item_0731|先祖：涡流手套]] 等）"
+       "—",
+       "55 件，最高 +30%（[[item:item_0220|蝴蝶]]、[[item:item_0563|影疾之刃]]、[[item:item_0775|先祖：蝴蝶]]、[[item:item_0731|先祖：涡流手套]] 等）"
       ]
      ]
     }
