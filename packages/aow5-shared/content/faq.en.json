@@ -494,11 +494,11 @@
     },
     {
      "key": "cat",
-     "title": "Cat",
+     "title": "Cat and dragon",
      "blocks": [
       {
        "type": "text",
-       "text": "A **cat** can appear in the ordinary forest rooms (M001–M014)."
+       "text": "A **cat** can appear in the ordinary forest rooms. A **dragon** is found there too — it works the same way, and clicking it teleports you to room M026."
       }
      ]
     },
