@@ -1103,7 +1103,7 @@
        "rows": [
         [
          "Chance",
-         "each monster has its own (the `DropRate` field): 10% — 8, 12% — 4, 15% — 10, 20% — 7, 25% — 22, 30% — 23, 35% — 4, 40% — 5, 50% — 38, 60% — 9, 65% — 4, 70% — 1, 80% — 9, 90% — 3, 100% — 188. If the field is not set, the server uses 15%."
+         "each monster has its own (the `DropRate` field): 0% — 132 (summons, traps and creatures with no drop), 10% — 8, 12% — 5, 15% — 10, 20% — 7, 25% — 22, 30% — 24, 35% — 4, 40% — 5, 50% — 38, 60% — 10, 65% — 4, 70% — 1, 80% — 10, 90% — 3, 100% — 209."
         ],
         [
          "Count",
@@ -1220,8 +1220,8 @@
        "rows": [
         [
          "Talents",
-         "29 (7 nodes)",
-         "+4% (2 nodes)"
+         "43 (9 nodes)",
+         "+7% (3 nodes)"
         ],
         [
          "[[item:item_0857|Ancestral: Adventurer's Compass]]",
@@ -1275,7 +1275,7 @@
         ],
         [
          "Account badges (medals)",
-         "+1% per level, 4 badges in total → no more than +50% (permanent)",
+         "+1% per level, 5 badges (M531–M534 and [[item:item_M555|M555]]) → no more than +50% (permanent)",
          "+50 %"
         ],
         [
@@ -1319,9 +1319,24 @@
          "Luck: +5"
         ],
         [
+         "[[talent:tree1/T1502|Abyssal Fortune]] (T1502)",
+         "Main",
+         "Luck: +6"
+        ],
+        [
+         "[[talent:tree1/T1505|Abyssal Bounty]] (T1505)",
+         "Main",
+         "Luck: +8"
+        ],
+        [
          "[[talent:tree1/T051|Ring of Luck]] (T051)",
          "Main",
          "%Luck Percentage: +2"
+        ],
+        [
+         "[[talent:tree1/T1508|Abyssal Blessing]] (T1508)",
+         "Main",
+         "%Luck Percentage: +3"
         ],
         [
          "[[talent:tree9/T825|Lucky Streak]] (T825)",
@@ -1357,14 +1372,6 @@
          "+5 (with a perfect seed: +6.9)"
         ],
         [
-         "Dormant Treasure",
-         " (with a perfect seed: )"
-        ],
-        [
-         "Weighted Dice",
-         " (with a perfect seed: )"
-        ],
-        [
          "[[item:item_0376|Adventurer's Compass]]",
          "+10, +6% (with a perfect seed: +13.8, +8.3%)"
         ],
@@ -1386,7 +1393,7 @@
         ],
         [
          "[[item:item_P047|Potion of Luck]]",
-         " (with a perfect seed: )"
+         "+20 for 4 min"
         ],
         [
          "[[item:item_s_0376|Fate Stone: Adventurer's Compass]]",
@@ -1406,7 +1413,7 @@
      "blocks": [
       {
        "type": "text",
-       "text": "A pool is a list of \"item : weight\". An item's chance = its weight / the sum of the pool's weights. There are 65 pools in the game."
+       "text": "A pool is a list of \"item : weight\". An item's chance = its weight / the sum of the pool's weights. There are 74 regular drop pools; 17 more are the paid chests' pools (T001–T206), listed on the chest cards and in Consumables."
       },
       {
        "type": "pools",
@@ -1566,6 +1573,42 @@
         {
          "id": "P638_3",
          "use": "opened from \"Mage Rune Pouch (Tier 3)\""
+        },
+        {
+         "id": "P641",
+         "use": "opened from \"Assassin Rune Pouch (Tier 1)\""
+        },
+        {
+         "id": "P641_2",
+         "use": "opened from \"Assassin Rune Pouch (Tier 2)\""
+        },
+        {
+         "id": "P641_3",
+         "use": "opened from \"Assassin Rune Pouch (Tier 3)\""
+        },
+        {
+         "id": "P642",
+         "use": "opened from \"Lina Rune Pouch (Tier 1)\""
+        },
+        {
+         "id": "P642_2",
+         "use": "opened from \"Lina Rune Pouch (Tier 2)\""
+        },
+        {
+         "id": "P642_3",
+         "use": "opened from \"Lina Rune Pouch (Tier 3)\""
+        },
+        {
+         "id": "P643",
+         "use": "opened from \"Dragon Knight Rune Pouch (Tier 1)\""
+        },
+        {
+         "id": "P643_2",
+         "use": "opened from \"Dragon Knight Rune Pouch (Tier 2)\""
+        },
+        {
+         "id": "P643_3",
+         "use": "opened from \"Dragon Knight Rune Pouch (Tier 3)\""
         },
         {
          "id": "P701",
