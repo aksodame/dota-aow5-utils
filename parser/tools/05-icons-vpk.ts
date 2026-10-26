@@ -4,6 +4,7 @@ import path from 'node:path';
 import { DIRS, ensureDirs, loadConfig } from './lib/paths.ts';
 import { Vpk } from './lib/vpk.ts';
 import { readPngInfo } from './lib/png.ts';
+import { vtexToPng } from './lib/vtex.ts';
 import { writeJsonPretty } from './lib/writeJson.ts';
 import { check, exitIfFailed, info, ok, step, warn } from './lib/log.ts';
 import type { ItemFull } from '../../packages/aow5-shared/src/types/items.ts';
@@ -169,7 +170,9 @@ ok(`wrote reports/icons.manifest.json (${Object.keys(manifest).length} entries)`
 //   1. assets/ability-icons/, for the handful Valve publishes nowhere and that
 //      no stock icon honestly stands in for. Hand-supplied, so it wins.
 //   2. the addon's own resource/flash3/images/spellicons, real PNGs.
-//   3. Valve's CDN via step 06, which serves stock art byte-identical to the
+//   3. the addon's panorama/images/spellicons, compiled textures. Dragon
+//      Knight's kit (S3) ships only here, under its full texture path.
+//   4. Valve's CDN via step 06, which serves stock art byte-identical to the
 //      game's own texture — verified against an uncompressed one in pak01.
 //
 // Hero portraits are always stock, so they are queued for step 06 outright.
@@ -177,6 +180,7 @@ ok(`wrote reports/icons.manifest.json (${Object.keys(manifest).length} entries)`
 // Ability textures may carry a path (`drow_ranger/immortal_gold/foo`), so the
 // basename is the key — both the VPK lookup and the CDN answer to that.
 
+const PANORAMA_SPELLICONS = 'panorama/images/spellicons';
 const heroesFile = path.join(DIRS.cache, 'heroes.normalized.json');
 if (!fs.existsSync(heroesFile)) {
   warn('no cache/heroes.normalized.json; run 04b-build-heroes first (skipping spell icons)');
@@ -206,6 +210,7 @@ if (!fs.existsSync(heroesFile)) {
   const vpkSpells = Vpk.open(cfg.vpkPath);
   let fromSpellDir = 0;
   let fromAssets = 0;
+  let fromPanorama = 0;
   try {
     for (const short of [...abilityTextures.keys()].sort()) {
       const textures = [...new Set(abilityTextures.get(short)!)].sort();
@@ -243,7 +248,29 @@ if (!fs.existsSync(heroesFile)) {
 
       const entry = vpkSpells.get(`${cfg.spellIconDir}/${short}.png`);
       if (!entry) {
-        heroPending.push({ kind: 'ability', short, textures });
+        const pano = textures
+          .map((t) => `${PANORAMA_SPELLICONS}/${t}_png.vtex_c`)
+          .find((p) => vpkSpells.get(p) !== undefined);
+        const decoded = pano === undefined ? undefined : vtexToPng(vpkSpells.read(vpkSpells.get(pano)!));
+        if (decoded === undefined || !decoded.ok) {
+          if (decoded !== undefined && !decoded.ok) warn(`${pano}: ${decoded.reason}; queued for CDN`);
+          heroPending.push({ kind: 'ability', short, textures });
+          continue;
+        }
+        const png = readPngInfo(decoded.png)!;
+        fs.writeFileSync(path.join(DIRS.publicIconAbilities, `${short}.png`), decoded.png);
+        heroManifest[`ability:${short}`] = {
+          short,
+          textures,
+          source: 'vpk',
+          file: `${short}.png`,
+          origin: pano!,
+          bytes: decoded.png.length,
+          w: png.width,
+          h: png.height,
+          sha1: crypto.createHash('sha1').update(decoded.png).digest('hex'),
+        };
+        fromPanorama++;
         continue;
       }
       const buf = vpkSpells.read(entry);
@@ -288,7 +315,7 @@ if (!fs.existsSync(heroesFile)) {
     }
   }
 
-  ok(`${fromSpellDir} spell icon(s) from the addon, ${fromAssets} from assets/ability-icons`);
+  ok(`${fromSpellDir} spell icon(s) from the addon, ${fromPanorama} compiled, ${fromAssets} from assets/ability-icons`);
   info(
     `${heroPending.filter((x) => x.kind === 'ability').length} spell icon(s) and ` +
       `${heroData.heroes.length} hero portrait(s) need the CDN` +

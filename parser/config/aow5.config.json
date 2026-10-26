@@ -101,7 +101,8 @@
       "npc_dota_hero_phantom_assassin",
       "npc_dota_hero_drow_ranger",
       "npc_dota_hero_crystal_maiden",
-      "npc_dota_hero_void_spirit"
+      "npc_dota_hero_void_spirit",
+      "npc_dota_hero_dragon_knight"
     ],
     "_namesComment": "Hero display names are NOT in the addon. It reuses stock Dota heroes, whose names live in Valve's base-game localization rather than in this VPK — the addon only localizes its own profession tier titles. These are the official Dota 2 names for each language, kept here as reviewable data rather than invented at runtime.",
     "names": {
@@ -141,9 +142,10 @@
         "zh": "龙骑士"
       }
     },
-    "_professionsComment": "Heroes whose abilities name a profession that ak_profession has no ladder rows for. Void Spirit arrived in pak 3011606331 with a full kit gated on void_spirit and nothing in the profession table. Marci is deliberately absent: two abilities are not a hero.",
+    "_professionsComment": "Heroes whose abilities name a profession that ak_profession has no ladder rows for. Void Spirit arrived in pak 3011606331 with a full kit gated on void_spirit and nothing in the profession table. Marci is deliberately absent: two abilities are not a hero. Dragon Knight (S3, pak of 2026-10-26) has ladder rows only in the s3 ruleset copy, which step 04b does not read.",
     "professions": {
-      "npc_dota_hero_void_spirit": "void_spirit"
+      "npc_dota_hero_void_spirit": "void_spirit",
+      "npc_dota_hero_dragon_knight": "dragon_knight"
     }
   },
   "knownDataIssues": {
@@ -166,56 +168,57 @@
     "unresolvedAbilityTokensNote": "The addon's own English and Russian text for drow_008 references %attack_speed_threshold%, a value the ability never defines — its AbilityValues carry only attack_speed_per_bonus, base_interval, frequency_bonus_pct and search_radius. The Chinese baseline does not reference it at all, so this is a translation written against a stat that was removed or renamed. Nothing the pipeline can substitute; listed so verify fails on a NEW unresolved token. void_spirit_006 (Sigil Slash, pak 3011606331) is the same bug in all three languages: its text references %swing_intelligence_damage_pct% for the three opening slashes, and its AbilityValues define only seal_intelligence_damage_pct, knockback_distance, knockback_duration and vulnerable_duration."
   },
   "expected": {
-    "vpkBytes": 1072796995,
-    "treeSize": 766110,
-    "entryCount": 18397,
+    "vpkBytes": 1018927907,
+    "treeSize": 611496,
+    "entryCount": 14587,
     "archiveIndex": 32767,
-    "itemsPayloadOffset": 917307706,
-    "itemsPayloadLength": 1613360,
-    "flash3ItemPngCount": 2161,
-    "panoramaItemVtexCount": 830,
-    "itemCount": 2118,
-    "inGameCount": 2021,
-    "playableCount": 1981,
+    "itemsPayloadOffset": 873632496,
+    "itemsPayloadLength": 1702583,
+    "flash3ItemPngCount": 2244,
+    "panoramaItemVtexCount": 859,
+    "itemCount": 2230,
+    "inGameCount": 2133,
+    "playableCount": 2093,
     "hiddenCount": 41,
-    "withNeedsCount": 336,
+    "withNeedsCount": 359,
     "itemTypeHistogram": {
-      "blueprint": 392,
+      "blueprint": 413,
       "change": 1,
-      "equip": 722,
-      "gem": 413,
-      "identity": 4,
-      "material": 217,
-      "potion": 97,
-      "special": 101,
-      "stone": 169,
+      "equip": 758,
+      "gem": 427,
+      "identity": 5,
+      "material": 227,
+      "potion": 114,
+      "special": 102,
+      "stone": 181,
       "unknown": 2
     },
     "dismantleRuleHistogram": {
-      "dismantle_equip_low_quality": 255,
-      "dismantle_equip_q5": 270,
-      "dismantle_equip_q6": 97,
-      "dismantle_gem": 413,
-      "dismantle_stone": 169,
+      "dismantle_equip_low_quality": 267,
+      "dismantle_equip_q5": 292,
+      "dismantle_equip_q6": 99,
+      "dismantle_gem": 427,
+      "dismantle_stone": 181,
       "dismantle_treasure_q5": 80,
       "dismantle_treasure_q6": 20
     },
     "enTokens": {
-      "names": 2116,
-      "descriptions": 1607,
-      "lore": 307,
+      "names": 2228,
+      "descriptions": 1692,
+      "lore": 328,
       "values": 362
     },
-    "heroCount": 6,
-    "abilityCount": 67,
-    "selectableAbilityCount": 56,
+    "heroCount": 7,
+    "abilityCount": 78,
+    "selectableAbilityCount": 67,
     "abilitiesPerHero": {
       "axe": 13,
       "lina": 13,
       "phantom_assassin": 13,
       "drow_ranger": 10,
       "crystal_maiden": 1,
-      "void_spirit": 11
+      "void_spirit": 11,
+      "dragon_knight": 12
     }
   },
   "abilityCdnBases": [

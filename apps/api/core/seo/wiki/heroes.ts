@@ -4,9 +4,9 @@
  *
  * The sentence each page says is `heroPageFacts` in `aow5-shared/wiki`, which
  * the page in the browser calls too. The card's portrait is the builder's hero
- * art and its icons are the hero's first abilities that ship art of their own:
- * Dragon Knight is in neither the builder's roster nor its ability table, so
- * his card has no portrait and draws the wiki-extracted icons by path.
+ * art and its icons are the hero's first abilities that ship art of their own.
+ * A hero outside the builder's roster would have no portrait and draw the
+ * wiki-extracted icons by path; Dragon Knight was that until he joined it in S3.
  */
 
 import { wikiPagePath, type SeoLang } from 'aow5-shared/seo';

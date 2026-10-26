@@ -1,271 +1,194 @@
-## Pak 3462334284 — published 2026-10-13 10:31
+## Pak 3462334284 — published 2026-10-26 04:31
 
-2022 → **2118** items, 1885 → **1981** playable, 55 → **56** abilities.
+2120 → **2230** items, 1983 → **2093** playable, 56 → **67** abilities.
 
-### Added — 96 items
+### Added — 116 items
 
-92 gem, 3 stone, 1 special.
+36 equip, 21 blueprint, 20 gem, 17 potion, 12 stone, 10 material.
 
-<details><summary><b>gem — 92</b></summary>
+<details><summary><b>equip — 36</b></summary>
 
 | id | name | quality | level |
 |---|---|---|---|
-| `item_G115` | Rune: Second Strike I | q3 | L2 |
-| `item_G115_2` | Rune: Second Strike II | q4 | L3 |
-| `item_G115_3` | Rune: Second Strike III | q5 | L4 |
-| `item_G116` | Rune: Rallying Roar I | q3 | L3 |
-| `item_G116_2` | Rune: Rallying Roar II | q4 | L4 |
-| `item_G116_3` | Rune: Rallying Roar III | q5 | L5 |
-| `item_G216` | 符印：旋镖Ⅰ | q3 | L3 |
-| `item_G216_2` | 符印：旋镖Ⅱ | q4 | L4 |
-| `item_G216_3` | 符印：旋镖Ⅲ | q5 | L5 |
-| `item_G216_4` | 符印：旋镖Ⅳ | q6 | L8 |
-| `item_G217` | 符印：锋锐Ⅰ | q3 | L3 |
-| `item_G217_2` | 符印：锋锐Ⅱ | q4 | L4 |
-| `item_G217_3` | 符印：锋锐Ⅲ | q5 | L5 |
-| `item_G217_4` | 符印：锋锐Ⅳ | q6 | L8 |
-| `item_G218` | 符印：追魂Ⅰ | q3 | L3 |
-| `item_G218_2` | 符印：追魂Ⅱ | q4 | L4 |
-| `item_G218_3` | 符印：追魂Ⅲ | q5 | L5 |
-| `item_G218_4` | 符印：追魂Ⅳ | q6 | L8 |
-| `item_G219` | 符印：爆裂飞镖Ⅰ | q3 | L3 |
-| `item_G219_2` | 符印：爆裂飞镖Ⅱ | q4 | L4 |
-| `item_G219_3` | 符印：爆裂飞镖Ⅲ | q5 | L5 |
-| `item_G219_4` | 符印：爆裂飞镖Ⅳ | q6 | L8 |
-| `item_G317` | 符印：余雷Ⅰ | q3 | L3 |
-| `item_G317_2` | 符印：余雷Ⅱ | q4 | L4 |
-| `item_G317_3` | 符印：余雷Ⅲ | q5 | L5 |
-| `item_G317_4` | 符印：余雷Ⅳ | q6 | L8 |
-| `item_G318` | 符印：五雷Ⅰ | q3 | L3 |
-| `item_G318_2` | 符印：五雷Ⅱ | q4 | L4 |
-| `item_G318_3` | 符印：五雷Ⅲ | q5 | L5 |
-| `item_G318_4` | 符印：五雷Ⅳ | q6 | L8 |
-| `item_G319` | 符印：灵雷Ⅰ | q3 | L3 |
-| `item_G319_2` | 符印：灵雷Ⅱ | q4 | L4 |
-| `item_G319_3` | 符印：灵雷Ⅲ | q5 | L5 |
-| `item_G319_4` | 符印：灵雷Ⅳ | q6 | L8 |
-| `item_G320` | 符印：雷烬Ⅰ | q3 | L3 |
-| `item_G320_2` | 符印：雷烬Ⅱ | q4 | L4 |
-| `item_G320_3` | 符印：雷烬Ⅲ | q5 | L5 |
-| `item_G320_4` | 符印：雷烬Ⅳ | q6 | L8 |
-| `item_G601` | Sigil: Multicast I | q3 | L3 |
-| `item_G601_2` | Sigil: Multicast II | q4 | L4 |
-| `item_G601_3` | Sigil: Multicast III | q5 | L5 |
-| `item_G602` | Sigil: Multibreath I | q3 | L3 |
-| `item_G602_2` | Sigil: Multibreath II | q4 | L4 |
-| `item_G602_3` | Sigil: Multibreath III | q5 | L5 |
-| `item_G603` | Rune: Fire Swamp I | q3 | L3 |
-| `item_G603_2` | Rune: Fire Swamp II | q4 | L4 |
-| `item_G603_3` | Rune: Fire Swamp III | q5 | L5 |
-| `item_G604` | Rune: Frost Dragon's Breath I | q3 | L3 |
-| `item_G604_2` | Rune: Frost Dragon's Breath II | q4 | L4 |
-| `item_G604_3` | Rune: Frost Dragon's Breath III | q5 | L5 |
-| `item_G605` | Rune: Absolute Zero I | q3 | L3 |
-| `item_G605_2` | Rune: Absolute Zero II | q4 | L4 |
-| `item_G605_3` | Rune: Absolute Zero III | q5 | L5 |
-| `item_G606` | Rune: Giant Strength I | q3 | L3 |
-| `item_G606_2` | Rune: Giant Strength II | q4 | L4 |
-| `item_G606_3` | Rune: Giant Strength III | q5 | L5 |
-| `item_G607` | Rune: Frostfire Spray I | q3 | L3 |
-| `item_G607_2` | Rune: Frostfire Spray II | q4 | L4 |
-| `item_G607_3` | Rune: Frostfire Spray III | q5 | L5 |
-| `item_G608` | Rune: Ice Storm I | q3 | L3 |
-| `item_G608_2` | Rune: Ice Storm II | q4 | L4 |
-| `item_G608_3` | Rune: Ice Storm III | q5 | L5 |
-| `item_G609` | Rune: Paralyzing Potion I | q3 | L3 |
-| `item_G609_2` | Rune: Paralyzing Potion II | q4 | L4 |
-| `item_G609_3` | Rune: Paralyzing Potion III | q5 | L5 |
-| `item_G610` | Rune: Grievous Wounds I | q3 | L3 |
-| `item_G610_2` | Rune: Grievous Wounds II | q4 | L4 |
-| `item_G610_3` | Rune: Grievous Wounds III | q5 | L5 |
-| `item_G611` | Rune: Indomitable I | q3 | L3 |
-| `item_G611_2` | Rune: Indomitable II | q4 | L4 |
-| `item_G611_3` | Rune: Indomitable III | q5 | L5 |
-| `item_G612` | Rune: Dragon Blood Reflux I | q3 | L3 |
-| `item_G612_2` | Rune: Dragon Blood Reflux II | q4 | L4 |
-| `item_G612_3` | Rune: Dragon Blood Reflux III | q5 | L5 |
-| `item_G613` | Rune: Dragon's Roar I | q3 | L3 |
-| `item_G613_2` | Rune: Dragon's Roar II | q4 | L4 |
-| `item_G613_3` | Rune: Dragon's Roar III | q5 | L5 |
-| `item_G614` | Rune: Ancient Black Dragon I | q3 | L3 |
-| `item_G614_2` | Rune: Ancient Black Dragon II | q4 | L4 |
-| `item_G614_3` | Rune: Ancient Black Dragon III | q5 | L5 |
-| `item_G615` | Rune: Eternity I | q3 | L3 |
-| `item_G615_2` | Rune: Eternity II | q4 | L4 |
-| `item_G615_3` | Rune: Eternity III | q5 | L5 |
-| `item_G616` | Rune: Twin I | q3 | L3 |
-| `item_G616_2` | Rune: Twin II | q4 | L4 |
-| `item_G616_3` | Rune: Twin III | q5 | L5 |
-| `item_G617` | Sigil: Long Breath I | q3 | L3 |
-| `item_G617_2` | Sigil: Long Breath II | q4 | L4 |
-| `item_G617_3` | Sigil: Long Breath III | q5 | L5 |
-| `item_G618` | Sigil: Dragon's Might Bash I | q3 | L3 |
-| `item_G618_2` | Sigil: Dragon's Might Bash II | q4 | L4 |
-| `item_G618_3` | Sigil: Dragon's Might Bash III | q5 | L5 |
+| `item_0659` | Scorchscale Pack | q5 | L8 |
+| `item_0660` | Frostcrystal Satchel | q5 | L8 |
+| `item_0661` | Venomdrinker's Pack | q5 | L8 |
+| `item_0662` | Spirit Dragon Cuirass | q5 | L8 |
+| `item_0663` | Bloodforged Flask | q5 | L8 |
+| `item_0664` | Earth Dragon Plate | q5 | L8 |
+| `item_0665` | Wind Dragon Talons | q5 | L8 |
+| `item_0666` | Dice of Fate | q5 | L8 |
+| `item_0667` | Flame Dragon Longblade | q5 | L8 |
+| `item_0668` | Beastmaw Ring | q5 | L8 |
+| `item_0669` | Overload Capacitor | q5 | L8 |
+| `item_0670` | Dragon Fang | q6 | L8 |
+| `item_0671` | Scorchmark Talisman | q2 | L8 |
+| `item_0672` | Blazeheart Ring | q2 | L8 |
+| `item_0673` | Obsidian Heartstone | q2 | L8 |
+| `item_0674` | Moltenfire Orb | q3 | L8 |
+| `item_0675` | Obsidian Dagger | q3 | L8 |
+| `item_0676` | Searmark Ring | q3 | L8 |
+| `item_0677` | Lava Plate | q3 | L8 |
+| `item_0678` | Flameforged Band | q4 | L8 |
+| `item_0679` | Meltcorrode Blade | q4 | L8 |
+| `item_0680` | Scorchscale Gauntlets | q4 | L8 |
+| `item_0681` | Crystal of the Molten Abyss | q4 | L8 |
+| `item_0682` | Dragon Lair Pack | q4 | L8 |
+| `item_0888` | Ancestral: Scorchscale Pack | q5 | L9 |
+| `item_0889` | Ancestral: Frostcrystal Satchel | q5 | L9 |
+| `item_0890` | Ancestral: Venomdrinker's Pack | q5 | L9 |
+| `item_0891` | Ancestral: Spirit Dragon Cuirass | q5 | L9 |
+| `item_0892` | Ancestral: Bloodforged Flask | q5 | L9 |
+| `item_0893` | Ancestral: Earth Dragon Plate | q5 | L9 |
+| `item_0894` | Ancestral: Wind Dragon Talons | q5 | L9 |
+| `item_0895` | Ancestral: Dice of Fate | q5 | L9 |
+| `item_0896` | Ancestral: Flame Dragon Longblade | q5 | L9 |
+| `item_0897` | Ancestral: Beastmaw Ring | q5 | L9 |
+| `item_0898` | Ancestral: Overload Capacitor | q5 | L9 |
+| `item_0899` | Ancestral: Dragon Fang | q6 | L9 |
 
 </details>
 
-### stone — 3
+### blueprint — 21
 
 | id | name | quality | level |
 |---|---|---|---|
-| `item_s_0168` | Fate Stone: Shadow Cloak | q4 | L9 |
-| `item_s_0240` | Fate Stone: Unyielding Cuirass | q4 | L9 |
-| `item_s_0456` | Fate Stone: Robe of the Sage | q4 | L9 |
+| `item_1659` | Recipe: Scorchscale Pack | q5 | L8 |
+| `item_1660` | Recipe: Frostcrystal Satchel | q5 | L8 |
+| `item_1661` | Recipe: Venomdrinker's Pack | q5 | L8 |
+| `item_1662` | Recipe: Spirit Dragon Cuirass | q5 | L8 |
+| `item_1663` | Recipe: Bloodforged Flask | q5 | L8 |
+| `item_1664` | Recipe: Earth Dragon Plate | q5 | L8 |
+| `item_1665` | Recipe: Wind Dragon Talons | q5 | L8 |
+| `item_1666` | Recipe: Dice of Fate | q5 | L8 |
+| `item_1667` | Recipe: Flame Dragon Longblade | q5 | L8 |
+| `item_1668` | Recipe: Beastmaw Ring | q5 | L8 |
+| `item_1669` | Recipe: Overload Capacitor | q5 | L8 |
+| `item_1674` | Recipe: Moltenfire Orb | q3 | L8 |
+| `item_1678` | Recipe: Flameforged Band | q4 | L8 |
+| `item_1679` | Recipe: Meltcorrode Blade | q4 | L8 |
+| `item_1680` | Recipe: Scorchscale Gauntlets | q4 | L8 |
+| `item_1681` | Recipe: Crystal of the Molten Abyss | q4 | L8 |
+| `item_1M345` | Recipe: Moltencast Ingot | q4 | L8 |
+| `item_1M346` | Recipe: Scorchscale Leather | q4 | L8 |
+| `item_YP059` | Recipe: Venom Potion | q5 | L8 |
+| `item_YP061` | Recipe: Cooling Potion | q5 | L8 |
+| `item_YP065` | Recipe: Flame Potion | q5 | L8 |
 
-### special — 1
+### gem — 20
 
 | id | name | quality | level |
 |---|---|---|---|
-| `item_P274` | Triumphant Vintage | q6 | L6 |
+| `item_G601_4` | Sigil: Multicast IV | q6 | L8 |
+| `item_G602_4` | Sigil: Summon Whelp IV | q6 | L8 |
+| `item_G604_4` | Rune: Frost Dragon's Breath IV | q6 | L8 |
+| `item_G605_4` | Rune: Absolute Zero IV | q6 | L8 |
+| `item_G606_4` | Rune: Giant Strength IV | q6 | L8 |
+| `item_G608_4` | Rune: Ice Storm IV | q6 | L8 |
+| `item_G609_4` | Rune: Paralyzing Potion IV | q6 | L8 |
+| `item_G610_4` | Rune: Grievous Wounds IV | q6 | L8 |
+| `item_G611_4` | Rune: Indomitable IV | q6 | L8 |
+| `item_G612_4` | Rune: Dragon Blood Reflux IV | q6 | L8 |
+| `item_G613_4` | Rune: Dragon's Roar IV | q6 | L8 |
+| `item_G614_4` | Rune: Ancient Black Dragon IV | q6 | L8 |
+| `item_G615_4` | Rune: Eternity IV | q6 | L8 |
+| `item_G616_4` | Rune: Twin IV | q6 | L8 |
+| `item_G617_4` | Sigil: Long Breath IV | q6 | L8 |
+| `item_G618_4` | Sigil: Dragon's Might IV | q6 | L8 |
+| `item_G619` | Sigil: Dragon Quake I | q3 | L3 |
+| `item_G619_2` | Sigil: Dragon Quake II | q4 | L4 |
+| `item_G619_3` | Sigil: Dragon Quake III | q5 | L5 |
+| `item_G619_4` | Sigil: Dragon Quake IV | q6 | L8 |
+
+### potion — 17
+
+| id | name | quality | level |
+|---|---|---|---|
+| `item_P058` | Wrath Potion | q5 | L8 |
+| `item_P059` | Venom Potion | q5 | L8 |
+| `item_P060` | Dragonblood Potion | q5 | L8 |
+| `item_P061` | Cooling Potion | q5 | L8 |
+| `item_P062` | Elder Dragon's Blood | q6 | L8 |
+| `item_P063` | Poison Dragon's Blood | q6 | L8 |
+| `item_P064` | Fire Dragon's Blood | q6 | L8 |
+| `item_P065` | Flame Potion | q5 | L8 |
+| `item_P329` | Assassin Rune Pouch (Tier 1) | q3 | L2 |
+| `item_P329_2` | Assassin Rune Pouch (Tier 2) | q4 | L4 |
+| `item_P329_3` | Assassin Rune Pouch (Tier 3) | q5 | L6 |
+| `item_P330` | Lina Rune Pouch (Tier 1) | q3 | L2 |
+| `item_P330_2` | Lina Rune Pouch (Tier 2) | q4 | L4 |
+| `item_P330_3` | Lina Rune Pouch (Tier 3) | q5 | L6 |
+| `item_P331` | Dragon Knight Rune Pouch (Tier 1) | q3 | L2 |
+| `item_P331_2` | Dragon Knight Rune Pouch (Tier 2) | q4 | L4 |
+| `item_P331_3` | Dragon Knight Rune Pouch (Tier 3) | q5 | L6 |
+
+### stone — 12
+
+| id | name | quality | level |
+|---|---|---|---|
+| `item_s_0659` | Fate Stone: Scorchscale Pack | q5 | L9 |
+| `item_s_0660` | Fate Stone: Frostcrystal Satchel | q5 | L9 |
+| `item_s_0661` | Fate Stone: Venomdrinker's Pack | q5 | L9 |
+| `item_s_0662` | Fate Stone: Spirit Dragon Cuirass | q5 | L9 |
+| `item_s_0663` | Fate Stone: Bloodforged Flask | q5 | L9 |
+| `item_s_0664` | Fate Stone: Earth Dragon Plate | q5 | L9 |
+| `item_s_0665` | Fate Stone: Wind Dragon Talons | q5 | L9 |
+| `item_s_0666` | Fate Stone: Dice of Fate | q5 | L9 |
+| `item_s_0667` | Fate Stone: Flame Dragon Longblade | q5 | L9 |
+| `item_s_0668` | Fate Stone: Beastmaw Ring | q5 | L9 |
+| `item_s_0669` | Fate Stone: Overload Capacitor | q5 | L9 |
+| `item_s_0670` | Fate Stone: Dragon Fang | q6 | L9 |
+
+### material — 10
+
+| id | name | quality | level |
+|---|---|---|---|
+| `item_M341` | Molten Obsidian | q3 | L8 |
+| `item_M342` | Scorchscale | q3 | L8 |
+| `item_M343` | Molten Core | q4 | L8 |
+| `item_M344` | Soul of the Molten Abyss | q5 | L8 |
+| `item_M345` | Moltencast Ingot | q4 | L8 |
+| `item_M346` | Scorchscale Leather | q4 | L8 |
+| `item_M556` | Magma Mushroom | q3 | L8 |
+| `item_M557` | Dragon's Reverse Scale | q5 | L8 |
+| `item_M558` | Venom Mushroom | q3 | L8 |
+| `item_M559` | Ice Mushroom | q3 | L8 |
+
+### Removed from the game data — 6
+
+| id | name |
+|---|---|
+| `item_G603` | Rune: Fire Swamp I |
+| `item_G603_2` | Rune: Fire Swamp II |
+| `item_G603_3` | Rune: Fire Swamp III |
+| `item_G607` | Rune: Frostfire Spray I |
+| `item_G607_2` | Rune: Frostfire Spray II |
+| `item_G607_3` | Rune: Frostfire Spray III |
 
 ### Heroes and abilities
 
-- **void_spirit** gained 1: `void_spirit_011`
+- **dragon_knight** gained 11: `dragon_knight_001`, `dragon_knight_002`, `dragon_knight_003`, `dragon_knight_004`, `dragon_knight_005`, `dragon_knight_006`, `dragon_knight_007`, `dragon_knight_008`, `dragon_knight_009`, `dragon_knight_010`, `dragon_knight_011`
 
-<details><summary><b>Renamed in English — 64</b></summary>
-
-| id | was | now |
-|---|---|---|
-| `item_0415` | Barbed Bracers | Nether Visage |
-| `item_0813` | Ancestral: Barbed Bracers | Ancestral: Nether Visage |
-| `item_0885` | Ancestral: Rocksplit Echo | Ancestral: Crag Echo |
-| `item_0886` | Ancestral: Duskroot Draw | Ancestral: Duskroot Siphon |
-| `item_0887` | Ancestral: Glimmer Edge | Ancestral: Gleam Edge |
-| `item_2000` | Assassin Notes (Tier 1) | Hunter Notes (Tier 1) |
-| `item_2010` | Assassin Notes (Tier 2) | Hunter Notes (Tier 2) |
-| `item_2020` | Assassin Notes (Tier 3) | Hunter Notes (Tier 3) |
-| `item_2030` | Assassin Notes (Tier 4) | Hunter Notes (Tier 4) |
-| `item_2040` | Assassin's Notes (Tier 5) | Hunter Notes (Tier 5) |
-| `item_G502` | Rune: Sigil Resonance I | Rune: Mark Resonance I |
-| `item_G502_2` | Rune: Sigil Resonance II | Rune: Mark Resonance II |
-| `item_G502_3` | Rune: Sigil Resonance III | Rune: Mark Resonance III |
-| `item_G503` | Rune: Essence Return I | Rune: Restoration I |
-| `item_G503_2` | Rune: Essence Return II | Rune: Restoration II |
-| `item_G503_3` | Rune: Essence Return III | Rune: Restoration III |
-| `item_G519` | Rune: Threefold Finish I | Rune: Triple Finale I |
-| `item_G519_2` | Rune: Threefold Finish II | Rune: Triple Finale II |
-| `item_G519_3` | Rune: Threefold Finish III | Rune: Triple Finale III |
-| `item_G520` | Rune: Void Step Resonance I | Rune: Astral Resonance I |
-| `item_G520_2` | Rune: Void Step Resonance II | Rune: Astral Resonance II |
-| `item_G520_3` | Rune: Void Step Resonance III | Rune: Astral Resonance III |
-| `item_H0015` | Radiant Shock | Radiant Strike |
-| `item_H0016` | Radiant Shock | Radiant Strike |
-| `item_H0021` | Predator Blades | Predator's Blade |
-| `item_H0022` | Predator Blades | Predator's Blade |
-| `item_MT001` | Mineheart Bulwark | Mine Bulwark |
-| `item_MT002` | Rocksplit Echo | Crag Echo |
-| `item_MT003` | Deepwood Dewdrop | Forest Dew |
-| `item_MT004` | Duskroot Draw | Duskroot Siphon |
-| `item_MT005` | Fading Step Sigil | Shadow Step Mark |
-| `item_MT006` | Glimmer Edge | Gleam Edge |
-| `item_MTB001` | Level 1 Mine Tower Chest (Normal) | Mine Tower Chest Level 1 (Normal) |
-| `item_MTB001_easy` | Level 1 Mine Tower Chest (Easy) | Mine Tower Chest Level 1 (Easy) |
-| `item_MTB001_hard` | Level 1 Mine Tower Chest (Hard) | Mine Tower Chest Level 1 (Hard) |
-| `item_MTB002` | Level 2 Mine Tower Chest (Normal) | Mine Tower Chest Level 2 (Normal) |
-| `item_MTB002_easy` | Level 2 Mine Tower Chest (Easy) | Mine Tower Chest Level 2 (Easy) |
-| `item_MTB002_hard` | Level 2 Mine Tower Chest (Hard) | Mine Tower Chest Level 2 (Hard) |
-| `item_MTB003` | Level 3 Mine Tower Chest (Normal) | Mine Tower Chest Level 3 (Normal) |
-| `item_MTB003_easy` | Level 3 Mine Tower Chest (Easy) | Mine Tower Chest Level 3 (Easy) |
-| `item_MTB003_hard` | Level 3 Mine Tower Chest (Hard) | Mine Tower Chest Level 3 (Hard) |
-| `item_MTB004` | Level 1 Forest Tower Chest (Normal) | Forest Tower Chest Level 1 (Normal) |
-| `item_MTB004_easy` | Level 1 Forest Tower Chest (Easy) | Forest Tower Chest Level 1 (Easy) |
-| `item_MTB004_hard` | Level 1 Forest Tower Chest (Hard) | Forest Tower Chest Level 1 (Hard) |
-| `item_MTB005` | Level 2 Forest Tower Chest (Normal) | Forest Tower Chest Level 2 (Normal) |
-| `item_MTB005_easy` | Level 2 Forest Tower Chest (Easy) | Forest Tower Chest Level 2 (Easy) |
-| `item_MTB005_hard` | Level 2 Forest Tower Chest (Hard) | Forest Tower Chest Level 2 (Hard) |
-| `item_MTB006` | Level 3 Forest Tower Chest (Normal) | Forest Tower Chest Level 3 (Normal) |
-| `item_MTB006_easy` | Level 3 Forest Tower Chest (Easy) | Forest Tower Chest Level 3 (Easy) |
-| `item_MTB006_hard` | Level 3 Forest Tower Chest (Hard) | Forest Tower Chest Level 3 (Hard) |
-| `item_MTB007` | Level 1 Shadow Tower Chest (Normal) | Shadow Tower Chest Level 1 (Normal) |
-| `item_MTB007_easy` | Level 1 Shadow Tower Chest (Easy) | Shadow Tower Chest Level 1 (Easy) |
-| `item_MTB007_hard` | Level 1 Shadow Tower Chest (Hard) | Shadow Tower Chest Level 1 (Hard) |
-| `item_MTB008` | Level 2 Shadow Tower Chest (Normal) | Shadow Tower Chest Level 2 (Normal) |
-| `item_MTB008_easy` | Level 2 Shadow Tower Chest (Easy) | Shadow Tower Chest Level 2 (Easy) |
-| `item_MTB008_hard` | Level 2 Shadow Tower Chest (Hard) | Shadow Tower Chest Level 2 (Hard) |
-| `item_MTB009` | Level 3 Shadow Tower Chest (Normal) | Shadow Tower Chest Level 3 (Normal) |
-| `item_MTB009_easy` | Level 3 Shadow Tower Chest (Easy) | Shadow Tower Chest Level 3 (Easy) |
-| `item_MTB009_hard` | Level 3 Shadow Tower Chest (Hard) | Shadow Tower Chest Level 3 (Hard) |
-| `item_P273` | Cube Brew | Cube Special |
-| `item_s_0415` | Fate Stone: Barbed Bracers | Fate Stone: Nether Visage |
-| `item_s_MT002` | Fate Stone: Rocksplit Echo | Fate Stone: Crag Echo |
-| `item_s_MT004` | Fate Stone: Duskroot Draw | Fate Stone: Duskroot Siphon |
-| `item_s_MT006` | Fate Stone: Glimmer Edge | Fate Stone: Gleam Edge |
-
-</details>
-
-<details><summary><b>Renamed in Russian — 69</b></summary>
+### Renamed in English — 7
 
 | id | was | now |
 |---|---|---|
-| `item_0217` | Джингу Банг | Посох короля обезьян |
-| `item_0415` | Шипованный Наруч | Лик преисподней |
-| `item_0813` | Предок: Шипованный Наруч | Предок: Лик преисподней |
-| `item_0853` | Предок: Джингу Банг | Предок: Посох короля обезьян |
-| `item_0885` | Предок: Эхо раскола скал | Предок: Эхо скалы |
-| `item_0886` | Предок: Вытяжка сумеречного корня | Предок: Вытягивание сумеречного корня |
-| `item_0887` | Предок: Острие проблеска | Предок: Проблеск лезвия |
-| `item_1217` | Рецепт: Джингу Банг | Рецепт: Посох короля обезьян |
-| `item_2000` | Записки убийцы (ур. 1) | Записки охотника (тир 1) |
-| `item_2010` | Записки убийцы (2-й уровень) | Записки охотника (тир 2) |
-| `item_2020` | Записки убийцы (3-й уровень) | Записки охотника (тир 3) |
-| `item_2030` | Заметки убийцы (4-й ранг) | Записки охотника (тир 4) |
-| `item_2040` | Заметки убийцы (5-й ранг) | Записки охотника (тир 5) |
-| `item_G502` | Руна: Резонанс печати I | Руна: Резонанс метки I |
-| `item_G502_2` | Руна: Резонанс печати II | Руна: Резонанс метки II |
-| `item_G502_3` | Руна: Резонанс печати III | Руна: Резонанс метки III |
-| `item_G503` | Руна: Возврат энергии I | Руна: Восстановление I |
-| `item_G503_2` | Руна: Возврат энергии II | Руна: Восстановление II |
-| `item_G503_3` | Руна: Возврат энергии III | Руна: Восстановление III |
-| `item_G519` | Руна: Тройное завершение I | Руна: Тройной финал I |
-| `item_G519_2` | Руна: Тройное завершение II | Руна: Тройной финал II |
-| `item_G519_3` | Руна: Тройное завершение III | Руна: Тройной финал III |
-| `item_G520` | Руна: Резонанс шага в пустоту I | Руна: Астральный резонанс I |
-| `item_G520_2` | Руна: Резонанс шага в пустоту II | Руна: Астральный резонанс II |
-| `item_G520_3` | Руна: Резонанс шага в пустоту III | Руна: Астральный резонанс III |
-| `item_H0001` | Танец водоплавающей птицы | Танец водяной птицы |
-| `item_H0002` | Танец водоплавающей птицы | Танец водяной птицы |
-| `item_H0021` | Клинки хищника | Клинок хищника |
-| `item_H0022` | Клинки хищника | Клинок хищника |
-| `item_MT001` | Бастион рудного сердца | Шахтёрский оплот |
-| `item_MT002` | Эхо раскола скал | Эхо скалы |
-| `item_MT003` | Роса глухого леса | Лесная роса |
-| `item_MT004` | Вытяжка сумеречного корня | Вытягивание сумеречного корня |
-| `item_MT005` | Печать ускользающего шага | Метка теневого шага |
-| `item_MT006` | Острие проблеска | Проблеск лезвия |
-| `item_MTB001` | Сундук башни рудника 1-го уровня (обычный) | Сундук шахтёрской башни (ур. 1) — Обычный |
-| `item_MTB001_easy` | Сундук башни рудника 1-го уровня (лёгкий) | Сундук шахтёрской башни (ур. 1) — Лёгкий |
-| `item_MTB001_hard` | Сундук башни рудника 1-го уровня (сложный) | Сундук шахтёрской башни (ур. 1) — Сложный |
-| `item_MTB002` | Сундук башни рудника 2-го уровня (обычный) | Сундук шахтёрской башни (ур. 2) — Обычный |
-| `item_MTB002_easy` | Сундук башни рудника 2-го уровня (лёгкий) | Сундук шахтёрской башни (ур. 2) — Лёгкий |
-| `item_MTB002_hard` | Сундук башни рудника 2-го уровня (сложный) | Сундук шахтёрской башни (ур. 2) — Сложный |
-| `item_MTB003` | Сундук башни рудника 3-го уровня (обычный) | Сундук шахтёрской башни (ур. 3) — Обычный |
-| `item_MTB003_easy` | Сундук башни рудника 3-го уровня (лёгкий) | Сундук шахтёрской башни (ур. 3) — Лёгкий |
-| `item_MTB003_hard` | Сундук башни рудника 3-го уровня (сложный) | Сундук шахтёрской башни (ур. 3) — Сложный |
-| `item_MTB004` | Сундук башни леса 1-го уровня (обычный) | Сундук лесной башни (ур. 1) — Обычный |
-| `item_MTB004_easy` | Сундук башни леса 1-го уровня (лёгкий) | Сундук лесной башни (ур. 1) — Лёгкий |
-| `item_MTB004_hard` | Сундук башни леса 1-го уровня (сложный) | Сундук лесной башни (ур. 1) — Сложный |
-| `item_MTB005` | Сундук башни леса 2-го уровня (обычный) | Сундук лесной башни (ур. 2) — Обычный |
-| `item_MTB005_easy` | Сундук башни леса 2-го уровня (лёгкий) | Сундук лесной башни (ур. 2) — Лёгкий |
-| `item_MTB005_hard` | Сундук башни леса 2-го уровня (сложный) | Сундук лесной башни (ур. 2) — Сложный |
-| `item_MTB006` | Сундук башни леса 3-го уровня (обычный) | Сундук лесной башни (ур. 3) — Обычный |
-| `item_MTB006_easy` | Сундук башни леса 3-го уровня (лёгкий) | Сундук лесной башни (ур. 3) — Лёгкий |
-| `item_MTB006_hard` | Сундук башни леса 3-го уровня (сложный) | Сундук лесной башни (ур. 3) — Сложный |
-| `item_MTB007` | Сундук башни теней 1-го уровня (обычный) | Сундук теневой башни (ур. 1) — Обычный |
-| `item_MTB007_easy` | Сундук башни теней 1-го уровня (лёгкий) | Сундук теневой башни (ур. 1) — Лёгкий |
-| `item_MTB007_hard` | Сундук башни теней 1-го уровня (сложный) | Сундук теневой башни (ур. 1) — Сложный |
-| `item_MTB008` | Сундук башни теней 2-го уровня (обычный) | Сундук теневой башни (ур. 2) — Обычный |
-| `item_MTB008_easy` | Сундук башни теней 2-го уровня (лёгкий) | Сундук теневой башни (ур. 2) — Лёгкий |
-| `item_MTB008_hard` | Сундук башни теней 2-го уровня (сложный) | Сундук теневой башни (ур. 2) — Сложный |
-| `item_MTB009` | Сундук башни теней 3-го уровня (обычный) | Сундук теневой башни (ур. 3) — Обычный |
-| `item_MTB009_easy` | Сундук башни теней 3-го уровня (лёгкий) | Сундук теневой башни (ур. 3) — Лёгкий |
-| `item_MTB009_hard` | Сундук башни теней 3-го уровня (сложный) | Сундук теневой башни (ур. 3) — Сложный |
-| `item_P272` | Тайный договор куба | Договор куба |
-| `item_P273` | Особый состав куба | Особое зелье куба |
-| `item_s_0217` | Грань: Джингу Банг | Грань: Посох короля обезьян |
-| `item_s_0415` | Грань: Шипованный Наруч | Грань: Лик преисподней |
-| `item_s_MT002` | Грань: Эхо раскола скал | Грань: Эхо скалы |
-| `item_s_MT004` | Грань: Вытяжка сумеречного корня | Грань: Вытягивание сумеречного корня |
-| `item_s_MT006` | Грань: Острие проблеска | Грань: Проблеск лезвия |
+| `item_G602` | Sigil: Multibreath I | Sigil: Summon Whelp I |
+| `item_G602_2` | Sigil: Multibreath II | Sigil: Summon Whelp II |
+| `item_G602_3` | Sigil: Multibreath III | Sigil: Summon Whelp III |
+| `item_G618` | Sigil: Dragon's Might Bash I | Sigil: Dragon's Might I |
+| `item_G618_2` | Sigil: Dragon's Might Bash II | Sigil: Dragon's Might II |
+| `item_G618_3` | Sigil: Dragon's Might Bash III | Sigil: Dragon's Might III |
+| `item_P275` | Endless Special | Bottomless Brew |
 
-</details>
+### Renamed in Russian — 7
+
+| id | was | now |
+|---|---|---|
+| `item_G602` | Печать: Множественное дыхание I | Печать: Призыв дракончика I |
+| `item_G602_2` | Печать: Множественное дыхание II | Печать: Призыв дракончика II |
+| `item_G602_3` | Печать: Множественное дыхание III | Печать: Призыв дракончика III |
+| `item_G618` | Печать: Удар драконьей мощи I | Печать: Драконья мощь I |
+| `item_G618_2` | Печать: Удар драконьей мощи II | Печать: Драконья мощь II |
+| `item_G618_3` | Печать: Удар драконьей мощи III | Печать: Драконья мощь III |
+| `item_P275` | Бесконечный купаж | Бездонный кубок |
