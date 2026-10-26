@@ -4648,7 +4648,7 @@
       [
        "Burn",
        "Pure damage every 0.5 s: normal targets 15% of current health per second, elites 7.5%, bosses 1.5%; healing −25%.",
-       "Axe, Lina, [[item:item_0216|Radiance]], [[item:item_0273|Flame Cloak]], [[item:item_0344|Amorous Scourge]], [[item:item_0407|Emberfire Ring]], [[item:item_0409|Ashmark Ring]], [[item:item_0524|Infernal Boots]], [[item:item_0550|Desperate Fury]], [[item:item_0578|Inducement of Myriad Forms]]"
+       "Axe, Lina, [[item:item_0216|Radiance]], [[item:item_0273|Flame Cloak]], [[item:item_0344|Amorous Scourge]], [[item:item_0407|Emberfire Ring]], [[item:item_0409|Ashmark Ring]], [[item:item_0524|Infernal Boots]], [[item:item_0550|Desperate Fury]], [[item:item_0578|Inducement of Myriad Forms]], [[item:item_0659|Scorchscale Pack]], [[item:item_0675|Obsidian Dagger]], [[item:item_0676|Searmark Ring]]"
       ],
       [
        "Ignite",
@@ -4928,6 +4928,26 @@
        "Part of the physical crit chance is converted into magic crit chance (a technical effect on the owner)."
       ],
       [
+       "[[item:item_0659|Scorchscale Pack]]",
+       "Scorch Mark",
+       "While the target Burns, it takes increased damage from the mark's applier; stacks build up and refresh the duration."
+      ],
+      [
+       "[[item:item_0676|Searmark Ring]]",
+       "Searmark",
+       "Movement speed reduced."
+      ],
+      [
+       "[[item:item_0679|Meltcorrode Blade]]",
+       "Meltcorrosion",
+       "Reduces physical armor; stronger with stacks."
+      ],
+      [
+       "[[item:item_P065|Flame Potion]]",
+       "Kindle",
+       "The target takes increased Burn damage from the applier; stacks build up."
+      ],
+      [
        "[[item:item_0229|Battle Fury]]",
        "Armor Break",
        "Armor reduction when the \"Shatter\" passive triggers (example: \"Battle Fury\")."
@@ -4964,7 +4984,7 @@
       [
        "Dragon Knight",
        "Grievous Wounds",
-       "Increases all damage taken by the number of negative effects (up to 50 stacks are counted)."
+       "Increases all damage taken by the number of negative effects (up to 40 stacks are counted)."
       ],
       [
        "Dragon Knight",
@@ -4980,7 +5000,7 @@
     },
     {
      "type": "note",
-     "text": "The reference lists 154 debuff effects; monsters and bosses have their own 71 debuffs (applied to the player), which are not in the tables."
+     "text": "The reference lists 173 debuff effects; monsters and bosses have their own 86 debuffs (applied to the player), which are not in the tables."
     }
    ]
   },
