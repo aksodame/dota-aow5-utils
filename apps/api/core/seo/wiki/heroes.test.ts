@@ -13,11 +13,12 @@ test('a hero page resolves by short id, with the hero art and ability icons', ()
   assert.ok(axe.icons.every((icon) => icon !== null && icon.startsWith('icons/abilities')));
 });
 
-test('Dragon Knight, who the builder has no art for, still has a page', () => {
+test('Dragon Knight, playable since S3, has a page with the builder’s art', () => {
   const dk = resolveWikiPage('heroes', ['dragon_knight'], 'en');
   assert.ok(dk);
   assert.equal(dk.facts.name, 'Dragon Knight');
-  assert.equal(dk.portrait, null);
+  assert.equal(dk.portrait, 'icons/heroes/dragon_knight.png');
+  assert.ok(dk.icons !== undefined && dk.icons.every((icon) => icon !== null && icon.startsWith('icons/abilities')));
 });
 
 test('anything else under heroes is not a page', () => {

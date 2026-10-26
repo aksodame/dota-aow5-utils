@@ -5,8 +5,8 @@ import { DIRS, ensureDirs, loadConfig } from './lib/paths.ts';
 import { parseKv, type KvObject } from './lib/kv.ts';
 import { Vpk } from './lib/vpk.ts';
 import { readRulesetManifest, readRulesetTable } from './lib/ruleset.ts';
-import { decodeVtex, encodePng, readVtexInfo } from './lib/vtex.ts';
-import { readPngInfo, stripTextChunks } from './lib/png.ts';
+import { vtexToPng as decodeVtexPng } from './lib/vtex.ts';
+import { readPngInfo } from './lib/png.ts';
 import { substitute } from './lib/placeholders.ts';
 import { parseRichText } from './lib/richtext.ts';
 import { sortKeys, writeJson, writeJsonPretty } from './lib/writeJson.ts';
@@ -325,12 +325,14 @@ function nodeOf(id: string, row: Row): TalentNode {
 
 const KNOWN_TALENT_FIELDS = new Set([
   'type', 'Level', 'data', 'icon', 'cost_coin', 'time', 'IsRoot', 'layout_col', 'layout_row',
-  'needs', 'cost', 'player_data', 'formula', 'profession', 'profession_skills',
+  'needs', 'cost', 'player_data', 'formula', 'profession', 'profession_skills', 'AllowedRulesets',
 ]);
 const DIFFABLE = ['gold', 'items', 'time', 'stats', 'unlocks', 'needs'] as const;
 
 const trees: Record<string, TalentTree> = {};
 const rawIcon: Record<string, string> = {};
+/** Node → the seasons its `AllowedRulesets` names, for the nodes that carry one. */
+const nodeSeasons = new Map<string, string[]>();
 for (const s of seasons) {
   const extra = Object.keys(talentBy[s]!).filter((id) => !(id in T2));
   check(extra.length === 0, `${s}: every talent row is also in ${PRIMARY_SEASON}${extra.length ? ` (extra: ${extra.join(', ')})` : ''}`);
@@ -339,6 +341,10 @@ for (const [id, row] of Object.entries(T2)) {
   const unknown = Object.keys(row).filter((f) => !KNOWN_TALENT_FIELDS.has(f));
   if (unknown.length) throw new Error(`talent ${id}: unknown field(s) ${unknown.join(', ')}`);
   const treeId = String(row['type']);
+  const allowed = list(row['AllowedRulesets']);
+  const strange = allowed.filter((s) => !seasons.includes(s));
+  if (strange.length) throw new Error(`talent ${id}: AllowedRulesets names ${strange.join(', ')}, which the manifest does not`);
+  if (allowed.length) nodeSeasons.set(id, allowed);
   const node = nodeOf(id, row);
   rawIcon[node.icon] = String(row['icon']);
   const present = seasons.filter((s) => talentBy[s]![id] !== undefined);
@@ -361,6 +367,26 @@ for (const [id, row] of Object.entries(T2)) {
 for (const [t, s] of Object.entries(treeSeasons)) {
   if (!trees[t]) check(false, `season-gated tree ${t} exists`);
   else trees[t]!.seasons = s;
+}
+
+/*
+ * Nodes gated by `AllowedRulesets` (pak of 2026-10-26: thirteen S3 nodes in the
+ * common tree, a few more in hero trees, one S1/S2-only node). The file
+ * describes one season, so a node goes out only when it exists in the season
+ * its tree is shown in — the primary, or the tree's own season when the tree is
+ * gated elsewhere (Dragon Knight's tree14 is s3's).
+ */
+{
+  const dropped: string[] = [];
+  for (const tree of Object.values(trees)) {
+    const shownIn = tree.seasons === undefined || tree.seasons.includes(PRIMARY_SEASON) ? PRIMARY_SEASON : tree.seasons[0]!;
+    tree.nodes = tree.nodes.filter((n) => {
+      const keep = nodeSeasons.get(n.id)?.includes(shownIn) ?? true;
+      if (!keep) dropped.push(`${n.id} (${tree.id}, ${nodeSeasons.get(n.id)!.join('/')})`);
+      return keep;
+    });
+  }
+  info(`${dropped.length} node(s) outside the season their tree is shown in, left out: ${dropped.join(', ') || 'none'}`);
 }
 for (const t of tabs) check(trees[t.id] !== undefined, `tab ${t.id} has nodes`);
 
@@ -461,36 +487,15 @@ const progression: ProgressionFile = {
 
 // --- talent icons -----------------------------------------------------------
 
-/**
- * A compiled texture as a PNG. The talent art is compiled as `PNG_RGBA8888`,
- * which is not pixels at all: the resource carries the original PNG file whole,
- * after its header. That is cut out as-is (minus text chunks); the block
- * formats go through the shared DXT/BGRA decoder.
- */
+/** A compiled texture as a PNG, failing the step when it will not decode. */
 function vtexToPng(buf: Buffer, what: string): Buffer | undefined {
-  const info = readVtexInfo(buf);
-  if (info?.formatName === 'PNG_RGBA8888') {
-    const start = buf.indexOf(PNG_MAGIC);
-    const iend = buf.lastIndexOf(Buffer.from('IEND', 'latin1'));
-    if (start < 0 || iend < start) {
-      check(false, `${what}: PNG_RGBA8888 resource carries a PNG`);
-      return undefined;
-    }
-    const png = stripTextChunks(buf.subarray(start, iend + 8));
-    if (!readPngInfo(png)) {
-      check(false, `${what}: embedded PNG parses`);
-      return undefined;
-    }
-    return png;
-  }
-  const decoded = decodeVtex(buf);
-  if (!decoded.ok) {
-    check(false, `${what} decodes (${decoded.reason})`);
+  const out = decodeVtexPng(buf);
+  if (!out.ok) {
+    check(false, `${what} decodes (${out.reason})`);
     return undefined;
   }
-  return encodePng(decoded.image);
+  return out.png;
 }
-const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 fs.mkdirSync(TALENT_ICONS, { recursive: true });
 {

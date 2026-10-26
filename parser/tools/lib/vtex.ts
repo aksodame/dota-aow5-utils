@@ -1,4 +1,5 @@
 import zlib from 'node:zlib';
+import { readPngInfo, stripTextChunks } from './png.ts';
 
 /**
  * Just enough of Source 2's compiled-texture format to get the map art out.
@@ -389,4 +390,27 @@ export function encodePng({ width, height, rgba }: Decoded): Buffer {
     chunk('IDAT', zlib.deflateSync(raw, { level: 9 })),
     chunk('IEND', Buffer.alloc(0)),
   ]);
+}
+
+const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+/**
+ * A compiled texture as a PNG. Panorama art is often compiled as
+ * `PNG_RGBA8888`, which is not pixels at all: the resource carries the original
+ * PNG file whole, after its header. That is cut out as-is (minus text chunks);
+ * the block formats go through {@link decodeVtex}.
+ */
+export function vtexToPng(buf: Buffer): { ok: true; png: Buffer } | { ok: false; reason: string } {
+  const info = readVtexInfo(buf);
+  if (info?.formatName === 'PNG_RGBA8888') {
+    const start = buf.indexOf(PNG_MAGIC);
+    const iend = buf.lastIndexOf(Buffer.from('IEND', 'latin1'));
+    if (start < 0 || iend < start) return { ok: false, reason: 'PNG_RGBA8888 resource carries no PNG' };
+    const png = stripTextChunks(buf.subarray(start, iend + 8));
+    if (!readPngInfo(png)) return { ok: false, reason: 'embedded PNG does not parse' };
+    return { ok: true, png };
+  }
+  const decoded = decodeVtex(buf);
+  if (!decoded.ok) return { ok: false, reason: decoded.reason };
+  return { ok: true, png: encodePng(decoded.image) };
 }
