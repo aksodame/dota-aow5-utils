@@ -13,6 +13,9 @@ import {
 } from './lib/idTable.ts';
 import { writeJson, writeJsonByEntry, writeJsonWithRows } from './lib/writeJson.ts';
 import { check, exitIfFailed, info, ok, step, warn } from './lib/log.ts';
+import { Vpk } from './lib/vpk.ts';
+import { readRulesetTable } from './lib/ruleset.ts';
+import { CURRENT_RULESET } from '../../packages/aow5-shared/src/wiki/pools.ts';
 import { HERO_ICON_MANIFEST, type IconRecord } from './05-icons-vpk.ts';
 import {
   SLOT_KIND,
@@ -126,16 +129,45 @@ const shipped = Object.values(items)
   .filter((i) => i.flags.playable || i.isPet === true)
   .sort((a, b) => a.idx - b.idx);
 
-const rows: IndexRow[] = shipped.map((i) => [
-  i.idx,
-  i.id,
-  i.type,
-  i.quality,
-  i.level,
-  i.cost,
-  i.icon,
-  i.kinds,
-]);
+/**
+ * The index is the catalogue as the game currently offers it, so the level,
+ * grade and price come from the season the wiki describes (`CURRENT_RULESET`),
+ * not from the base table `items.full.json` keeps. A season changes those on a
+ * few dozen rows — the wiki's rows and cards must agree, and the builder's
+ * picker prices what the game charges.
+ *
+ * The ruleset tree is read straight from the VPK, the way step 08d reads it;
+ * an item its season's copy does not carry keeps the base row.
+ */
+type Row = Record<string, unknown>;
+const INDEX_TABLES = ['ak_items', 'ak_items_equip', 'ak_items_potion', 'ak_items_stone', 'ak_items_formula', 'ak_items_change', 'ak_gems'];
+const DATA = 'panorama/layout/custom_game/vendor/data';
+const seasonRows = new Map<string, Row>();
+{
+  const vpk = Vpk.open(cfg.vpkPath);
+  for (const table of INDEX_TABLES) {
+    const p = `${DATA}/rulesets/${CURRENT_RULESET}/${table}.vjs_c`;
+    const rows = readRulesetTable(vpk.readPath(p), table, p) as Record<string, Row>;
+    for (const [id, row] of Object.entries(rows)) seasonRows.set(id, row); // later table wins, as in npc_items_custom
+  }
+  vpk.close();
+}
+const seasonNum = (row: Row | undefined, key: string): number | undefined => {
+  const v = row?.[key];
+  if (v === undefined || v === null || v === '') return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+};
+let seasonalRows = 0;
+const rows: IndexRow[] = shipped.map((i) => {
+  const row = seasonRows.get(i.id);
+  const quality = seasonNum(row, 'ItemQuality') ?? i.quality;
+  const level = seasonNum(row, 'Level') ?? i.level;
+  const cost = seasonNum(row, 'ItemCost') ?? i.cost;
+  if (quality !== i.quality || level !== i.level || cost !== i.cost) seasonalRows++;
+  return [i.idx, i.id, i.type, quality, level, cost, i.icon, i.kinds];
+});
+info(`index rows carry ${CURRENT_RULESET}'s level, grade and price (${seasonalRows} row(s) differ from the base table)`);
 
 // Slot eligibility drives what the picker offers per slot, so a collapse to
 // zero in any category is worth catching here rather than in the UI.
