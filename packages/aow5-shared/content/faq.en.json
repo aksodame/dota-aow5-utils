@@ -2719,14 +2719,14 @@
      "rows": [
       [
        "Regular merchant",
-       "20 min",
-       "10 min (discount no more than −50%)",
+       "30 min",
+       "15 min (cap −50%); currently 24 min",
        "up to 31 slots"
       ],
       [
        "Ancient Merchant",
        "5 h",
-       "2.5 h (discount no more than −50%)",
+       "2.5 h (cap −50%); currently 4 h",
        "min(32, 27 + ancient_shop_count): eight permanent entries, the rest random"
       ],
       [
@@ -2759,7 +2759,7 @@
     },
     {
      "type": "text",
-     "text": "**Refresh cooldown: the shop never refreshes more than twice as fast.** Timer = `base time × (100 − shop_time) / 100`, where `shop_time` is the refresh speed-up talents (the tree has 2 of them at +10% = −20%), and the percent itself is clamped to 0…50. So even fully upgraded the discount is −20%, and the −50% cap is beyond that: the regular merchant's minimum is 10 min, the Ancient Merchant's 2.5 h. There are no other ways to speed up the refresh."
+     "text": "**Refresh cooldown: the shop never refreshes more than twice as fast.** Timer = `base time × (100 − shop_time) / 100`, where `shop_time` is the refresh speed-up talents (the tree has 2 of them at +10% = −20%), and the percent itself is clamped to 0…50. The regular merchant's base is 30 min; the −50% cap is a 15 min floor, but with the current −20% talents the achievable minimum is 24 min. The Ancient Merchant's base is 5 h; the −50% cap is a 2.5 h floor, and the achievable minimum is 4 h. There are no other ways to speed up the refresh."
     },
     {
      "type": "text",
