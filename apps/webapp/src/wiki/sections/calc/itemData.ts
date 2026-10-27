@@ -64,10 +64,13 @@ export function plainText(nodes: readonly RichNode[] | undefined): string {
  *
  * The partner wiki matched "сумка / рюкзак / мешок" on the Russian names, and
  * the stat `extra_backpack_slot_limit` is no sign — boots and bracers carry it
- * too. So does this page, whatever the reader's language: the Russian name
- * table is fetched once (it is the one the partner's rule was written for).
+ * too. The list is missing "ранец": the Venomdrinker's Pack (0661) and its
+ * Ancestral version (0890) are containers — the item table gives both a
+ * `GoldMax`, like every other bag — but their name kept them out of the slot.
+ * So does this page, whatever the reader's language: the Russian name table is
+ * fetched once (it is the one the partner's rule was written for).
  */
-const BAG_NAME = /(сумка|сумки|рюкзак|мешок\s)/i;
+const BAG_NAME = /(сумка|сумки|рюкзак|мешок\s|ранец|ранц)/i;
 
 let ruNames: Promise<Record<string, string>> | null = null;
 
