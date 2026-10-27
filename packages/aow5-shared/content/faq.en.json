@@ -2575,7 +2575,7 @@
      "blocks": [
       {
        "type": "text",
-       "text": "Some items do not work the way their tooltip says. Below are the mismatches found by comparing the item code with the tooltips. Numbers are for the current season (s2/s3); in s1 some values were different. This is a code review, not tested in combat. Where the tooltip is plainly wrong, the item card already shows corrected text; where the mechanic is simply not described, it is marked \"Per code\". The wiki does not change the in-game tooltip."
+       "text": "Some items do not work the way their tooltip says. Below are the mismatches found by comparing the item code with the tooltips. Numbers are for the current season s3; in s1 and s2 some values were different. This is a code review, not tested in combat. Where the tooltip is plainly wrong, the item card already shows corrected text; where the mechanic is simply not described, it is marked \"Per code\". The wiki does not change the in-game tooltip."
       },
       {
        "type": "text",
@@ -2590,24 +2590,14 @@
        ],
        "rows": [
         [
-         "[[item:item_0650|Tome of the Grand Magus]] / [[item:item_0878|Ancestral: Tome of the Grand Magus]]",
-         "\"1400% of intelligence\", step \"+1% per 3 mana\"",
-         "damage is based on **max mana**, step **+2%** per 3 mana"
-        ],
-        [
          "[[item:item_0856|Ancestral: Force Boots]] / [[item:item_0728|Ancestral: Hammer of Ruin]]",
          "\"damage based on the **target's** max health\"",
          "uses the **owner's** max health"
         ],
         [
          "[[item:item_0468|Thor's Wrath]] / [[item:item_0842|Ancestral: Thor's Wrath]]",
-         "— (a hit limit exists only in the data: `ability_storm_max_hits = 10`)",
+         "— (s2 had the limit in the data: `ability_storm_max_hits = 10`; s3 drops the key)",
          "no script reads the key: lightning strikes on every attack with no counter"
-        ],
-        [
-         "[[item:item_0523|Swift Shadow Gloves]] / [[item:item_0764|Ancestral: Swift Shadow Gloves]]",
-         "\"+1% per 3 movement speed\"",
-         "\"+2 %\""
         ],
         [
          "[[item:item_0367|Shadow Boots]]",
@@ -2628,6 +2618,11 @@
          "[[item:item_0471|Thunder Pendant]]",
          "not a word about lightning damage",
          "lightning deals 5% of the target's **current** health as pure damage (to monsters with a \"blue\" spell charge)"
+        ],
+        [
+         "[[item:item_0662|Spirit Dragon Cuirass]] / [[item:item_0667|Flame Dragon Longblade]]",
+         "\"Extra attacks such as Multishot or Cleave…\" — do not trigger it / do not add stacks",
+         "in s3 Multishot arrows (bow 0322/0323) count as basic attacks (`is_sub_attack = false`): 0662 heals 4% max health per arrow, 0667 stacks (up to +400%), 0679 applies corrosion"
         ]
        ]
       },
@@ -2660,7 +2655,7 @@
         ],
         [
          "[[item:item_0599|Shadow Dancer's Sash]] / [[item:item_0797|Ancestral: Shadow Dancer's Sash]]",
-         "evasion above 35% → +1% damage dealt per 1% (in s1 it was 50%/1.5%)"
+         "evasion above 35% → +1.5% damage dealt per 1% (in s2 it was +1%, in s1 50%/1.5%)"
         ],
         [
          "[[item:item_0246|Boots of Oblivion]]",
@@ -2668,7 +2663,7 @@
         ],
         [
          "[[item:item_0550|Desperate Fury]] / [[item:item_0770|Ancestral: Desperate Fury]]",
-         "lost health → up to +50% final damage"
+         "lost health → up to +40% final damage"
         ],
         [
          "[[item:item_0298|Swamp Shield]]",
