@@ -40,6 +40,15 @@ const tables = JSON.parse(
   fs.readFileSync(path.resolve(HERE, '../../public/data/rolls.json'), 'utf8'),
 ) as RollTables;
 
+/**
+ * v1.514 moved the reforge pricing out of the client bundle into a server-side
+ * module, so the emitted table has no `reforgeCost` to pin the arithmetic
+ * against. The cost tests re-arm by themselves if a later pak ships it again;
+ * until then the "no block, no rows" test below is the one that matters.
+ */
+const costSkip: string | false =
+  tables.reforgeCost === undefined ? 'the pak no longer ships the reforge cost table' : false;
+
 test('the shipped tables are the ones the maths expects', () => {
   assert.equal(tables.schema, 1);
   assert.ok(tables.maxReforgeLevel >= 1);
@@ -236,7 +245,7 @@ test('a passive number spans a real range, and reforging does not move it', () =
  * are the addon's and move when it rebalances — asserting those would be a
  * test that fails on every patch and says nothing.
  */
-test('a reforge costs more at every level, up to the ceiling', () => {
+test('a reforge costs more at every level, up to the ceiling', { skip: costSkip }, () => {
   const rows = reforgeCost(tables, { level: 6, quality: 5 });
   assert.equal(rows.length, tables.maxReforgeLevel);
   assert.deepEqual(rows.map((r) => r.level), [1, 2, 3, 4, 5, 6, 7, 8, 9]);
@@ -245,7 +254,7 @@ test('a reforge costs more at every level, up to the ceiling', () => {
   }
 });
 
-test('the two grade branches burn different essences', () => {
+test('the two grade branches burn different essences', { skip: costSkip }, () => {
   const common = reforgeCost(tables, { level: 9, quality: 5 })[0]!;
   const mythic = reforgeCost(tables, { level: 9, quality: 6 })[0]!;
   // Equipment Essence below the threshold, Mythic Gear Essence at or above it.
@@ -255,7 +264,7 @@ test('the two grade branches burn different essences', () => {
   assert.ok(!(ESSENCE_IDS.EQUIPMENT in mythic.materials));
 });
 
-test('a higher-level item costs more to reforge than a lower one', () => {
+test('a higher-level item costs more to reforge than a lower one', { skip: costSkip }, () => {
   const low = reforgeCost(tables, { level: 2, quality: 5 })[0]!;
   const high = reforgeCost(tables, { level: 9, quality: 5 })[0]!;
   assert.ok(high.gold > low.gold);
@@ -265,7 +274,7 @@ test('a higher-level item costs more to reforge than a lower one', () => {
 // burns 30, 34, 39, 45, 52, 60, 74, 84 and 96 legendary essence on its nine
 // steps — 514 in all. The steps scale by the level the item is *already* at
 // (`getReforgeLevelFromSeed`), so the first step is the base, not 15% above it.
-test('the reforge ladder steps from the item’s own level', () => {
+test('the reforge ladder steps from the item’s own level', { skip: costSkip }, () => {
   const rows = reforgeCost(tables, { level: 10, quality: 5 });
   assert.deepEqual(
     rows.map((r) => r.materials[ESSENCE_IDS.LEGENDARY]),
@@ -287,7 +296,7 @@ test('the reforge ladder steps from the item’s own level', () => {
 // ladder and a level-8 item's, and only in the two main essences. The addon's
 // tables for a level-1 item read 21, 45, 73, 105, 141, 183, 232, 288 and 352
 // legendary essence, and a level-8 item pays nothing at any level.
-test('a fate stone bills the difference to a level-8 ladder', () => {
+test('a fate stone bills the difference to a level-8 ladder', { skip: costSkip }, () => {
   const rows = ascensionCost(tables, { level: 1, quality: 5 });
   assert.deepEqual(
     rows.map((r) => r.materials[ESSENCE_IDS.LEGENDARY]),
@@ -304,7 +313,7 @@ test('a fate stone bills the difference to a level-8 ladder', () => {
   assert.equal(mythic.at(-1)?.materials[ESSENCE_IDS.MYTHIC], 95);
 });
 
-test('the total is the nine levels added up', () => {
+test('the total is the nine levels added up', { skip: costSkip }, () => {
   const rows = reforgeCost(tables, { level: 6, quality: 5 });
   const total = reforgeCostTotal(rows);
   assert.equal(total.gold, rows.reduce((sum, r) => sum + r.gold, 0));

@@ -1,6 +1,26 @@
 {
  "notes": [
   {
+   "version": "v1.514",
+   "date": "28.10.2026",
+   "game": [
+    "Dragon Knight: the fire form no longer grants +45/+100 p.p. to the attack coefficient — Breathe Fire and Dragon Tail add 18% of max health instead.",
+    "Enchanted Blade no longer costs 30% health on cast: each attack while active costs 0.5% of current health.",
+    "Poison form: one universal +7.5% crit instead of a separate 7.5% attack and spell crit.",
+    "G604 \"Frost Dragon's Breath\" rune: the 2 s root is gone; freeze stacks and +15% vulnerability per stack remain.",
+    "G619 \"Dragon Quake\" sigil: the first pulse deals 31/33/35/37% of Dragon Tail's damage (~496–592% of attack) instead of 210–340% of attack.",
+    "Dragon Knight movement speed: 250 → 275.",
+    "M025 \"Molten Abyss Fortress\": monsters gained health, damage and attack speed, some now deal percent-of-health damage; elite abilities hit 1.25–5.5x harder.",
+    "Room entry costs rose: M005/M011 — 1500, M007/M008 — 2000, M009/M010 — 2500, M013/M015/M025 — 3000 gold.",
+    "Axe: the \"Rallying Shout\" rune no longer stacks twice on the hero."
+   ],
+   "wiki": [
+    "Data rebuilt from v1.514: Dragon Knight abilities, rune G604 and sigil G619, M025 monster health, damage and attack speed, and room entry costs are updated.",
+    "FAQ: fixed the Dragon Knight numbers (fire form, Enchanted Blade, poison form), the G604 text without the root and G619 damage — in all three languages.",
+    "Reforge prices moved from the client bundle to a server module in v1.514; the wiki keeps showing the v1.513 table until the addon ships a new one."
+   ]
+  },
+  {
    "version": "v1.513",
    "date": "26.10.2026",
    "game": [

@@ -3721,7 +3721,7 @@
          "Enchanted Blade (`dragon_knight_003`)",
          "active · self",
          "CD 25 s",
-         "Costs 30% of current health. For 7 s attacks deal an extra 45% of attack damage as magic damage; each attack on the same target raises the bonus by 1% (switching targets resets it)."
+         "For 7 s each attack costs 0.5% of current health and deals an extra 45% of attack damage as physical damage; each attack on the same target raises the bonus by 1% (switching targets resets it)."
         ],
         [
          "W",
@@ -3796,13 +3796,13 @@
        "rows": [
         [
          "001 · Breathe Fire",
-         "Raises the attack coefficient by a further 45 p.p. and applies burn to targets.",
+         "Adds damage equal to 18% of max health and applies burn to targets.",
          "Slow raised to 40%.",
          "Applies 5 poison stacks on hit."
         ],
         [
          "002 · Dragon Tail",
-         "Raises the attack coefficient by a further 100 p.p. and applies burn to enemies hit.",
+         "Adds damage equal to 18% of max health and applies burn to enemies hit.",
          "Freezes enemies hit for 1 s.",
          "Applies 1 poison stack to enemies hit."
         ],
@@ -3828,7 +3828,7 @@
          "007 · Dragon Form",
          "Health +30%, armor +10%, max barrier +10%; attacks deal 45% physical cleave damage.",
          "Attack damage +30%, attack speed +10%, movement speed +10%; attacks apply a 1% movement and attack speed slow (up to 20 stacks). Duration: 5 s.",
-         "Attack crit chance and spell crit chance +7.5%, crit damage +50%, extra damage +20%; attacks apply 1 poison stack and deal 10% more damage to poisoned targets."
+         "Universal crit chance +7.5%, crit damage +50%, extra damage +20%; attacks apply 1 poison stack and deal 10% more damage to poisoned targets."
         ]
        ]
       },
@@ -3853,7 +3853,7 @@
         ],
         [
          "[[item:item_G604|Rune: Frost Dragon's Breath I]] ([[item:item_G604_2|II]], [[item:item_G604_3|III]], [[item:item_G604_4|IV]])",
-         "On hit, Breathe Fire applies 1 / 2 / 3 Freeze stack(s) and numbness for 2 s. Reapplying refreshes the duration. While frozen, each stack increases all damage taken by 15%. Freeze has a shared limit of 10 stacks."
+         "On hit, Breathe Fire applies 1 / 2 / 3 Freeze stack(s). While frozen, each stack increases all damage taken by 15%. Freeze has a shared limit of 10 stacks."
         ],
         [
          "[[item:item_G605|Rune: Absolute Zero I]] ([[item:item_G605_2|II]], [[item:item_G605_3|III]], [[item:item_G605_4|IV]])",
@@ -3909,7 +3909,7 @@
         ],
         [
          "[[item:item_G619|Sigil: Dragon Quake I]] ([[item:item_G619_2|II]], [[item:item_G619_3|III]], [[item:item_G619_4|IV]])",
-         "In dragon form, Dragon Tail triggers a quake around the hero: 6 pulses every 0.4 s, radius growing 350→500. The first pulse deals **210 / 250 / 280 / 340%** of attack damage as physical, each later pulse +10%. At most 2 quakes at once."
+         "In dragon form, Dragon Tail triggers a quake around the hero: 6 pulses every 0.4 s, radius growing 350→500. The first pulse deals **31 / 33 / 35 / 37%** of Dragon Tail's damage (about 496 / 528 / 560 / 592% of attack damage in dragon form) as physical, each later pulse +10%. At most 2 quakes at once."
         ]
        ]
       },
@@ -4185,7 +4185,7 @@
         ],
         [
          "New seal G619 \"Dragon Quake\"",
-         "I–IV: first pulse deals 210 / 250 / 280 / 340% of attack damage, 6 pulses every 0.4 s, radius 350→500, each later pulse +10%; up to 2 quakes."
+         "I–IV: first pulse deals 31 / 33 / 35 / 37% of Dragon Tail's damage (about 496 / 528 / 560 / 592% of attack damage), 6 pulses every 0.4 s, radius 350→500, each later pulse +10%; up to 2 quakes."
         ],
         [
          "G603 \"Fire Swamp\" and G607 \"Frostflame\" removed",

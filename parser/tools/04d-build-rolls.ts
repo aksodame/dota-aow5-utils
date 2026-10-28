@@ -53,7 +53,7 @@ try {
   const { carriedFields, ...tables } = extractRollTables(text, new Date().toISOString(), carried);
   if (carriedFields.length > 0) {
     warn(
-      `the bundle no longer rolls ${carriedFields.join(', ')} (the server does); ` +
+      `the bundle no longer carries ${carriedFields.join(', ')} (the server does); ` +
         'carried forward from the committed rolls.json',
     );
   }
@@ -83,10 +83,11 @@ try {
   );
 
   /*
-   * The reforge cost, which is the one table here that is allowed to go
-   * missing — it is optional on `RollTables` and a run without it emits a page
-   * with no cost table rather than a page of guessed prices. Still said out
-   * loud either way, because "quietly absent" is how it would stay absent.
+   * The reforge cost. Optional because a pak may stop carrying it, but when a
+   * committed table exists the extraction above carries it forward — the pages
+   * keep their prices, and the carried field is named in the warning. Only a
+   * run with neither a source nor a previous table ships no cost block; that
+   * one is said out loud, because "quietly absent" is how it would stay absent.
    */
   if (tables.reforgeCost === undefined) {
     warn('no reforge cost table: the pricing expressions have moved, and the item pages will show none');
