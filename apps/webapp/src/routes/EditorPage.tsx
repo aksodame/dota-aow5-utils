@@ -944,7 +944,9 @@ export function EditorPage() {
             so, like the notes, it is absent signed out rather than shown with
             its controls dead.
           */}
-          {me != null && <PriorityPanel slots={prioritySlots(state)} value={priority} onChange={setPriority} />}
+          {me != null && (
+            <PriorityPanel slots={prioritySlots(state)} value={priority} onChange={setPriority} season={season} />
+          )}
         </div>
       </div>
 

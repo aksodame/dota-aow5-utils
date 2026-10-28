@@ -4143,6 +4143,484 @@
      ]
     },
     {
+     "key": "changes",
+     "title": "现有物品改动",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "S3 补丁改动了 **95 件现有物品和符文**。新的巨龙与熔岩套装（0659–0682）是新增记录，不是覆盖，因此不在本表中。下面是数据里的全部 S3 覆盖，按类别列出；先祖物品单独成行，同时改动数值和等级/配方的物品会出现在两张表里。"
+      },
+      {
+       "type": "text",
+       "text": "**数值与被动**"
+      },
+      {
+       "type": "table",
+       "head": [
+        "物品",
+        "改动"
+       ],
+       "rows": [
+        [
+         "[[item:item_0232|★绝影之刃]]",
+         "连锁无法暴击: — → 1"
+        ],
+        [
+         "[[item:item_0658|本源之晶]]",
+         "暴击转化上限，%: 100 → 120"
+        ],
+        [
+         "[[item:item_0655|本源之刃]]",
+         "敏捷转伤害，%: 100 → 50"
+        ],
+        [
+         "[[item:item_0700|残影之绫]]",
+         "闪避阈值，%: 70 → 35; 等级: 7 → 6; 配方: [[item:item_0452|神秘纹章]] ×1, [[item:item_0450|神秘之刃]] ×1, [[item:item_M428|深渊皮革]] ×5, [[item:item_M322|神秘精华]] ×3 → [[item:item_0436|虚空之眼]] ×1, [[item:item_0434|虚空之刃]] ×1, [[item:item_M426|邪能皮革]] ×5, [[item:item_M335|星空溶剂]] ×3"
+        ],
+        [
+         "[[item:item_0550|炽怒之斧]]",
+         "最大伤害加成，%: 50 → 40"
+        ],
+        [
+         "[[item:item_0505|赫尔海姆之杖]]",
+         "每次暴击层数: — → 2"
+        ],
+        [
+         "[[item:item_0523|疾影手套]]",
+         "敏捷伤害，%: 1000 → 1800; 每层距离: 800 → 400"
+        ],
+        [
+         "[[item:item_0217|金箍棒]]",
+         "最大护甲层数: 30 → 20"
+        ],
+        [
+         "[[item:item_0468|雷神之怒]]",
+         "风暴最大命中: 10 → —"
+        ],
+        [
+         "[[item:item_M541|魔币]]",
+         "硬币兑换: 1 → 10"
+        ],
+        [
+         "[[item:item_0648|魔剑]]",
+         "连锁无法暴击: — → 1"
+        ],
+        [
+         "[[item:item_0656|凝时沙漏]]",
+         "扩展白名单: — → 1"
+        ],
+        [
+         "[[item:item_0323|凝心弓]]",
+         "额外目标: 2 → 1.22"
+        ],
+        [
+         "[[item:item_0282|蒲公英护符]]",
+         "毒伤减免，%: 99 → 45"
+        ],
+        [
+         "[[item:item_0581|审厄之瞳]]",
+         "每层减益伤害，%: 8 → 6; 统计减益种类: — → 1"
+        ],
+        [
+         "[[item:item_0218|圣剑]]",
+         "连锁无法暴击: — → 1"
+        ],
+        [
+         "[[item:item_0527|狮心王之冠]]",
+         "护甲加成上限: 50 → —"
+        ],
+        [
+         "[[item:item_0209|巫师之刃]]",
+         "魔法抗性降低，%: 8 → 4"
+        ],
+        [
+         "[[item:item_0884|先祖：本源之晶]]",
+         "暴击转化上限，%: 100 → 120"
+        ],
+        [
+         "[[item:item_0882|先祖：本源之刃]]",
+         "敏捷转伤害，%: 130 → 65"
+        ],
+        [
+         "[[item:item_0770|先祖：炽怒之斧]]",
+         "最大伤害加成，%: 50 → 40"
+        ],
+        [
+         "[[item:item_0849|先祖：赫尔海姆之杖]]",
+         "每次暴击层数: — → 2"
+        ],
+        [
+         "[[item:item_0866|先祖：灰烬圣典]]",
+         "减益持续时间，%: 208 → 33"
+        ],
+        [
+         "[[item:item_0764|先祖：疾影手套]]",
+         "敏捷伤害，%: 1000 → 1800; 每层距离: 800 → 400"
+        ],
+        [
+         "[[item:item_0853|先祖：金箍棒]]",
+         "最大护甲层数: 30 → 20"
+        ],
+        [
+         "[[item:item_0842|先祖：雷神之怒]]",
+         "风暴最大命中: 10 → —"
+        ],
+        [
+         "[[item:item_0874|先祖：魔剑]]",
+         "连锁无法暴击: — → 1"
+        ],
+        [
+         "[[item:item_0883|先祖：凝时沙漏]]",
+         "扩展白名单: — → 1"
+        ],
+        [
+         "[[item:item_0710|先祖：蒲公英护符]]",
+         "毒伤减免，%: 99 → 58"
+        ],
+        [
+         "[[item:item_0869|先祖：审厄之瞳]]",
+         "每层减益伤害，%: 8 → 6; 统计减益种类: — → 1"
+        ],
+        [
+         "[[item:item_0774|先祖：圣剑]]",
+         "连锁无法暴击: — → 1"
+        ],
+        [
+         "[[item:item_0766|先祖：狮心王之冠]]",
+         "护甲加成上限: 50 → —"
+        ],
+        [
+         "[[item:item_0831|先祖：巫师之刃]]",
+         "魔法抗性降低，%: 12 → 6"
+        ],
+        [
+         "[[item:item_0797|先祖：影舞者之绫]]",
+         "闪避阈值，%: 50 → 35"
+        ],
+        [
+         "[[item:item_0840|先祖：幽冥鬼刺]]",
+         "敏捷伤害，%: 260 → 175"
+        ],
+        [
+         "[[item:item_0345|引雷权杖]]",
+         "智力伤害，%: 120 → 170; 触发几率，%: 30 → 60"
+        ],
+        [
+         "[[item:item_0599|影舞者之绫]]",
+         "闪避阈值，%: 50 → 35; 等级: 7 → 6; 配方: [[item:item_0700|残影之绫]] ×1, [[item:item_0452|神秘纹章]] ×1, [[item:item_M428|深渊皮革]] ×10, [[item:item_M536|深渊结晶]] ×3 → [[item:item_0700|残影之绫]] ×1, [[item:item_0454|惊虹刃]] ×1, [[item:item_M426|邪能皮革]] ×10, [[item:item_M529|恶魔之心]] ×1"
+        ],
+        [
+         "[[item:item_0453|幽冥鬼刺]]",
+         "敏捷伤害，%: 180 → 120"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**冷却**"
+      },
+      {
+       "type": "table",
+       "head": [
+        "物品",
+        "改动"
+       ],
+       "rows": [
+        [
+         "[[item:item_H0025|多重棒击]]",
+         "冷却: 500 → 425"
+        ],
+        [
+         "[[item:item_H0026|多重棒击]]",
+         "冷却: 500 → 400"
+        ],
+        [
+         "[[item:item_H0019|风暴闪烁]]",
+         "冷却: 500 → 325"
+        ],
+        [
+         "[[item:item_H0020|风暴闪烁]]",
+         "冷却: 500 → 300"
+        ],
+        [
+         "[[item:item_H0005|巨浪]]",
+         "冷却: 500 → 525"
+        ],
+        [
+         "[[item:item_H0003|巨石终章]]",
+         "冷却: 500 → 425"
+        ],
+        [
+         "[[item:item_H0004|巨石终章]]",
+         "冷却: 500 → 400"
+        ],
+        [
+         "[[item:item_H0029|苦痛声波]]",
+         "冷却: 500 → 525"
+        ],
+        [
+         "[[item:item_H0027|猎影突袭]]",
+         "冷却: 500 → 325"
+        ],
+        [
+         "[[item:item_H0028|猎影突袭]]",
+         "冷却: 500 → 300"
+        ],
+        [
+         "[[item:item_H0015|流光震击]]",
+         "冷却: 500 → 525"
+        ],
+        [
+         "[[item:item_H0021|掠食之刃]]",
+         "冷却: 500 → 425"
+        ],
+        [
+         "[[item:item_H0022|掠食之刃]]",
+         "冷却: 500 → 400"
+        ],
+        [
+         "[[item:item_H0017|锚击]]",
+         "冷却: 500 → 425"
+        ],
+        [
+         "[[item:item_H0018|锚击]]",
+         "冷却: 500 → 400"
+        ],
+        [
+         "[[item:item_H0001|水鸟乱舞]]",
+         "冷却: 500 → 425"
+        ],
+        [
+         "[[item:item_H0002|水鸟乱舞]]",
+         "冷却: 500 → 400"
+        ],
+        [
+         "[[item:item_H0013|太虚之径]]",
+         "冷却: 500 → 525"
+        ],
+        [
+         "[[item:item_H0011|跳斩]]",
+         "冷却: 500 → 425"
+        ],
+        [
+         "[[item:item_H0012|跳斩]]",
+         "冷却: 500 → 400"
+        ],
+        [
+         "[[item:item_H0023|虚空领域]]",
+         "冷却: 500 → 425"
+        ],
+        [
+         "[[item:item_H0024|虚空领域]]",
+         "冷却: 500 → 400"
+        ],
+        [
+         "[[item:item_H0009|跃地重击]]",
+         "冷却: 500 → 425"
+        ],
+        [
+         "[[item:item_H0010|跃地重击]]",
+         "冷却: 500 → 400"
+        ],
+        [
+         "[[item:item_H0007|咤]]",
+         "冷却: 500 → 425"
+        ],
+        [
+         "[[item:item_H0008|咤]]",
+         "冷却: 500 → 400"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**符文**"
+      },
+      {
+       "type": "table",
+       "head": [
+        "物品",
+        "改动"
+       ],
+       "rows": [
+        [
+         "[[item:item_G514|符印：法尽归虚Ⅰ]]",
+         "改动 tag_gem_damage: — → 10; 改动 tag_gem_mana_cost: — → 80; 效果 void_spirit_009_cast_burst_int_damage_pct=500; 效果 void_spirit_009_cast_burst_max_count=12; 效果 void_spirit_009_cast_burst_trigger_count=12"
+        ],
+        [
+         "[[item:item_G514_2|符印：法尽归虚Ⅱ]]",
+         "改动 tag_gem_damage: — → 20; 改动 tag_gem_mana_cost: — → 110; 效果 void_spirit_009_cast_burst_int_damage_pct=750; 效果 void_spirit_009_cast_burst_max_count=10; 效果 void_spirit_009_cast_burst_trigger_count=10"
+        ],
+        [
+         "[[item:item_G514_3|符印：法尽归虚Ⅲ]]",
+         "改动 tag_gem_damage: — → 40; 改动 tag_gem_mana_cost: — → 150; 效果 void_spirit_009_cast_burst_int_damage_pct=1000; 效果 void_spirit_009_cast_burst_max_count=8; 效果 void_spirit_009_cast_burst_trigger_count=8"
+        ],
+        [
+         "[[item:item_G501|符印：分影残阴Ⅰ]]",
+         "改动 tag_gem_charge_restore_time: 25 → —"
+        ],
+        [
+         "[[item:item_G501_2|符印：分影残阴Ⅱ]]",
+         "改动 tag_gem_charge_restore_time: 20 → —"
+        ],
+        [
+         "[[item:item_G410|符印：合矢Ⅰ]]",
+         "改动 tag_gem_cooldown: -6 → -8; 改动 tag_gem_damage: 10 → 20; 改动 tag_gem_mana_cost: 20 → 30; 效果 drow_005_volley_arrow_merge_reduction=1; 效果 drow_005_volley_damage_pct=240; 效果 drow_005_volley_merge_floor=1; 效果 drow_005_volley_wave_merge_reduction=1; 等级: 3 → 4; 品质: 3 → 4; 价格: 600 → 1600"
+        ],
+        [
+         "[[item:item_G410_2|符印：合矢Ⅱ]]",
+         "改动 tag_gem_cooldown: -8 → -9; 改动 tag_gem_damage: 20 → 30; 改动 tag_gem_mana_cost: 30 → 35; 效果 drow_005_volley_arrow_merge_reduction=2; 效果 drow_005_volley_damage_pct=270; 效果 drow_005_volley_merge_floor=1; 效果 drow_005_volley_wave_merge_reduction=1; 等级: 4 → 5; 品质: 4 → 5; 价格: 1600 → 4000"
+        ],
+        [
+         "[[item:item_G410_3|符印：合矢Ⅲ]]",
+         "效果 drow_005_volley_arrow_merge_reduction=2; 效果 drow_005_volley_damage_pct=300; 效果 drow_005_volley_merge_floor=1; 效果 drow_005_volley_wave_merge_reduction=2; 等级: 5 → 6; 品质: 5 → 6; 价格: 4000 → 9600"
+        ],
+        [
+         "[[item:item_G406|符印：疾弦Ⅰ]]",
+         "效果 drow_005_swift_agi_amp_cap_pct=150; 效果 drow_005_swift_agi_amp_pct=5; 效果 drow_005_swift_max_bonus_waves=2"
+        ],
+        [
+         "[[item:item_G406_2|符印：疾弦Ⅱ]]",
+         "效果 drow_005_swift_agi_amp_cap_pct=180; 效果 drow_005_swift_agi_amp_pct=6; 效果 drow_005_swift_max_bonus_waves=4"
+        ],
+        [
+         "[[item:item_G406_3|符印：疾弦Ⅲ]]",
+         "效果 drow_005_swift_agi_amp_cap_pct=210; 效果 drow_005_swift_agi_amp_pct=7; 效果 drow_005_swift_max_bonus_waves=6"
+        ],
+        [
+         "[[item:item_G507|符印：双界易位Ⅰ]]",
+         "改动 tag_gem_charge_count: 1 → —; 改动 tag_gem_charge_restore_time: -10 → —; 改动 tag_gem_cooldown: — → -5; 效果 void_spirit_001_dual_shift_damage_pct=300; 效果 void_spirit_001_dual_shift_damage_tagged=1"
+        ],
+        [
+         "[[item:item_G507_2|符印：双界易位Ⅱ]]",
+         "改动 tag_gem_charge_count: 1 → —; 改动 tag_gem_charge_restore_time: -20 → —; 改动 tag_gem_cooldown: — → -8; 效果 void_spirit_001_dual_shift_damage_pct=500; 效果 void_spirit_001_dual_shift_damage_tagged=1"
+        ],
+        [
+         "[[item:item_G507_3|符印：双界易位Ⅲ]]",
+         "改动 tag_gem_charge_count: 1 → —; 改动 tag_gem_charge_restore_time: -30 → —; 改动 tag_gem_cooldown: — → -12; 效果 void_spirit_001_dual_shift_damage_pct=700; 效果 void_spirit_001_dual_shift_damage_tagged=1"
+        ],
+        [
+         "[[item:item_G407|符印：霜羽Ⅰ]]",
+         "效果 drow_005_feather_damage_pct=20"
+        ],
+        [
+         "[[item:item_G407_2|符印：霜羽Ⅱ]]",
+         "效果 drow_005_feather_damage_pct=30"
+        ],
+        [
+         "[[item:item_G407_3|符印：霜羽Ⅲ]]",
+         "效果 drow_005_feather_damage_pct=40"
+        ],
+        [
+         "[[item:item_G518|符印：先祖太虚步Ⅰ]]",
+         "效果 void_spirit_004_flurry_multiplier=1.5; 效果 void_spirit_004_flurry_side_cap_pct=100"
+        ],
+        [
+         "[[item:item_G518_2|符印：先祖太虚步Ⅱ]]",
+         "效果 void_spirit_004_flurry_multiplier=2.25; 效果 void_spirit_004_flurry_side_cap_pct=100"
+        ],
+        [
+         "[[item:item_G518_3|符印：先祖太虚步Ⅲ]]",
+         "效果 void_spirit_004_flurry_multiplier=3; 效果 void_spirit_004_flurry_side_cap_pct=100"
+        ],
+        [
+         "[[item:item_G500|符印：影子傀儡Ⅰ]]",
+         "效果 void_spirit_001_puppet_damage_pct=10; 效果 void_spirit_001_puppet_duration=6; 效果 void_spirit_001_shadow_puppet=1"
+        ],
+        [
+         "[[item:item_G500_2|符印：影子傀儡Ⅱ]]",
+         "效果 void_spirit_001_puppet_damage_pct=20; 效果 void_spirit_001_puppet_duration=8; 效果 void_spirit_001_shadow_puppet=1"
+        ],
+        [
+         "[[item:item_G500_3|符印：影子傀儡Ⅲ]]",
+         "效果 void_spirit_001_puppet_damage_pct=30; 效果 void_spirit_001_puppet_duration=10; 效果 void_spirit_001_shadow_puppet=1"
+        ],
+        [
+         "[[item:item_G413|符印：骤雨Ⅰ]]",
+         "改动 tag_gem_cooldown: -6 → -8; 改动 tag_gem_damage: 10 → 20; 改动 tag_gem_mana_cost: 50 → 75; 效果 drow_010_bonus_waves=4; 效果 drow_010_rain_rate_bonus_pct=75; 等级: 3 → 4; 品质: 3 → 4; 价格: 600 → 1600"
+        ],
+        [
+         "[[item:item_G413_2|符印：骤雨Ⅱ]]",
+         "改动 tag_gem_cooldown: -8 → -9; 改动 tag_gem_damage: 20 → 30; 改动 tag_gem_mana_cost: 75 → 90; 效果 drow_010_bonus_waves=6; 效果 drow_010_rain_extra_hits_per_wave=1; 效果 drow_010_rain_rate_bonus_pct=100; 等级: 4 → 5; 品质: 4 → 5; 价格: 1600 → 4000"
+        ],
+        [
+         "[[item:item_G413_3|符印：骤雨Ⅲ]]",
+         "效果 drow_010_bonus_waves=8; 效果 drow_010_rain_extra_hits_per_wave=2; 效果 drow_010_rain_rate_bonus_pct=150; 等级: 5 → 6; 品质: 5 → 6; 价格: 4000 → 9600"
+        ],
+        [
+         "[[item:item_G508|符印：追影折射Ⅰ]]",
+         "效果 void_spirit_001_chase_duration=6; 效果 void_spirit_001_chase_max_stacks=10; 效果 void_spirit_001_chase_multiplicative=1; 效果 void_spirit_001_chase_pct_per_stack=8"
+        ],
+        [
+         "[[item:item_G508_2|符印：追影折射Ⅱ]]",
+         "效果 void_spirit_001_chase_duration=6; 效果 void_spirit_001_chase_max_stacks=10; 效果 void_spirit_001_chase_multiplicative=1; 效果 void_spirit_001_chase_pct_per_stack=10"
+        ],
+        [
+         "[[item:item_G508_3|符印：追影折射Ⅲ]]",
+         "效果 void_spirit_001_chase_duration=6; 效果 void_spirit_001_chase_max_stacks=10; 效果 void_spirit_001_chase_multiplicative=1; 效果 void_spirit_001_chase_pct_per_stack=12"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**等级、品质、价格、配方**"
+      },
+      {
+       "type": "table",
+       "head": [
+        "物品",
+        "改动"
+       ],
+       "rows": [
+        [
+         "[[item:item_0700|残影之绫]]",
+         "闪避阈值，%: 70 → 35; 等级: 7 → 6; 配方: [[item:item_0452|神秘纹章]] ×1, [[item:item_0450|神秘之刃]] ×1, [[item:item_M428|深渊皮革]] ×5, [[item:item_M322|神秘精华]] ×3 → [[item:item_0436|虚空之眼]] ×1, [[item:item_0434|虚空之刃]] ×1, [[item:item_M426|邪能皮革]] ×5, [[item:item_M335|星空溶剂]] ×3"
+        ],
+        [
+         "[[item:item_G410|符印：合矢Ⅰ]]",
+         "改动 tag_gem_cooldown: -6 → -8; 改动 tag_gem_damage: 10 → 20; 改动 tag_gem_mana_cost: 20 → 30; 效果 drow_005_volley_arrow_merge_reduction=1; 效果 drow_005_volley_damage_pct=240; 效果 drow_005_volley_merge_floor=1; 效果 drow_005_volley_wave_merge_reduction=1; 等级: 3 → 4; 品质: 3 → 4; 价格: 600 → 1600"
+        ],
+        [
+         "[[item:item_G410_2|符印：合矢Ⅱ]]",
+         "改动 tag_gem_cooldown: -8 → -9; 改动 tag_gem_damage: 20 → 30; 改动 tag_gem_mana_cost: 30 → 35; 效果 drow_005_volley_arrow_merge_reduction=2; 效果 drow_005_volley_damage_pct=270; 效果 drow_005_volley_merge_floor=1; 效果 drow_005_volley_wave_merge_reduction=1; 等级: 4 → 5; 品质: 4 → 5; 价格: 1600 → 4000"
+        ],
+        [
+         "[[item:item_G410_3|符印：合矢Ⅲ]]",
+         "效果 drow_005_volley_arrow_merge_reduction=2; 效果 drow_005_volley_damage_pct=300; 效果 drow_005_volley_merge_floor=1; 效果 drow_005_volley_wave_merge_reduction=2; 等级: 5 → 6; 品质: 5 → 6; 价格: 4000 → 9600"
+        ],
+        [
+         "[[item:item_G413|符印：骤雨Ⅰ]]",
+         "改动 tag_gem_cooldown: -6 → -8; 改动 tag_gem_damage: 10 → 20; 改动 tag_gem_mana_cost: 50 → 75; 效果 drow_010_bonus_waves=4; 效果 drow_010_rain_rate_bonus_pct=75; 等级: 3 → 4; 品质: 3 → 4; 价格: 600 → 1600"
+        ],
+        [
+         "[[item:item_G413_2|符印：骤雨Ⅱ]]",
+         "改动 tag_gem_cooldown: -8 → -9; 改动 tag_gem_damage: 20 → 30; 改动 tag_gem_mana_cost: 75 → 90; 效果 drow_010_bonus_waves=6; 效果 drow_010_rain_extra_hits_per_wave=1; 效果 drow_010_rain_rate_bonus_pct=100; 等级: 4 → 5; 品质: 4 → 5; 价格: 1600 → 4000"
+        ],
+        [
+         "[[item:item_G413_3|符印：骤雨Ⅲ]]",
+         "效果 drow_010_bonus_waves=8; 效果 drow_010_rain_extra_hits_per_wave=2; 效果 drow_010_rain_rate_bonus_pct=150; 等级: 5 → 6; 品质: 5 → 6; 价格: 4000 → 9600"
+        ],
+        [
+         "[[item:item_1700|图纸:残影之绫]]",
+         "等级: 7 → 6"
+        ],
+        [
+         "[[item:item_1599|图纸:影舞者之绫]]",
+         "等级: 7 → 6"
+        ],
+        [
+         "[[item:item_0599|影舞者之绫]]",
+         "闪避阈值，%: 50 → 35; 等级: 7 → 6; 配方: [[item:item_0700|残影之绫]] ×1, [[item:item_0452|神秘纹章]] ×1, [[item:item_M428|深渊皮革]] ×10, [[item:item_M536|深渊结晶]] ×3 → [[item:item_0700|残影之绫]] ×1, [[item:item_0454|惊虹刃]] ×1, [[item:item_M426|邪能皮革]] ×10, [[item:item_M529|恶魔之心]] ×1"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "属性键保持游戏数据中的写法，便于在 `items-extra.json` 中查找。新的巨龙与熔岩物品不在表中：它们没有覆盖，只是在 S3 中新增。"
+      }
+     ]
+    },
+    {
      "key": "items",
      "title": "物品",
      "blocks": [

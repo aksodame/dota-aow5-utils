@@ -6,7 +6,6 @@ import {
   reforgeCost,
   reforgeCostTotal,
   LATEST_SEASON,
-  SEASON_KEYS,
   seasonLabel,
   type ItemSummary,
   type SeasonKey,
@@ -15,7 +14,12 @@ import {
 import type { ItemFull, LocaleDetail } from 'aow5-shared/types';
 // The two modules this page needs up front, by path rather than through the
 // wiki's barrel, which would pull every section's helpers into the main chunk.
-import { applySeasonalPatch, seasonalPatch, type ItemsExtraFile } from 'aow5-shared/wiki/items-extra.ts';
+import {
+  applySeasonalPatch,
+  seasonalPatch,
+  type ItemsExtraFile,
+  type ItemsExtraLocale,
+} from 'aow5-shared/wiki/items-extra.ts';
 import { newRollState, type RollState } from 'aow5-shared/wiki/itemroll.ts';
 import { CURRENT_RULESET } from 'aow5-shared/wiki/pools.ts';
 import { Badge, Button, Icon, Panel, cx } from '@/ui';
@@ -150,21 +154,30 @@ function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: bo
   /*
    * Which season's numbers the page shows.
    *
-   * `items.full.json` is built from the base tables, which are the first
-   * season's; a season's own copy of the table changes a few dozen items —
-   * stats, a recipe, a soul's cooldown, a glyph's grade. The page opens on the
-   * newest season the item is in and offers every season's table beside it,
-   * only for the items some season actually changes.
+   * The wiki describes S3, so an item S3 patches always reads S3 and there is
+   * no season control: the numbers in the prose and in the stat block have to
+   * be the same season. An item S3 does not carry keeps the newest season it is
+   * in (the base table is S1, so an S2-only item reads S2 rather than a season
+   * that does not have it).
    */
   const extra = useWikiData<[ItemsExtraFile]>(['items-extra.json']).data?.[0] ?? null;
   const patchOf = (s: SeasonKey) => (extra === null || s === 1 ? undefined : seasonalPatch(extra, item.id, `s${s}`));
-  const seasonal = SEASON_KEYS.some((s) => patchOf(s) !== undefined);
   // The newest season the item is in: an S2-only item opens on S2's numbers.
   const homeSeason: SeasonKey = (baseFull?.seasons?.at(-1) as SeasonKey | undefined) ?? LATEST_SEASON;
-  const [season, setSeason] = useState<SeasonKey>(homeSeason);
-  const shownSeason: SeasonKey = seasonal ? season : homeSeason;
+  const shownSeason: SeasonKey = patchOf(WIKI_SEASON) !== undefined ? WIKI_SEASON : homeSeason;
   const patch = patchOf(shownSeason);
   const full: ItemFull | undefined = baseFull !== undefined ? applySeasonalPatch(baseFull, patch) : baseFull;
+  /*
+   * The description is part of the season's data too. 04-build-items
+   * substituted the base table's values into the prose; the locale companion
+   * to `items-extra.json` carries the same tooltip re-substituted for each
+   * patched season, and this picks the one the page is showing.
+   */
+  const extraLocale =
+    useWikiData<[ItemsExtraLocale]>(patch !== undefined ? ['locale.{lang}.items-extra.json'] : []).data?.[0] ?? null;
+  const seasonalText = extraLocale?.seasonalDescriptions?.[item.id]?.[`s${shownSeason}` as 's1' | 's2' | 's3'];
+  const shownText: LocaleDetail | undefined =
+    seasonalText === undefined ? text : { ...text, desc: seasonalText.desc, descPlain: seasonalText.descPlain };
   const quality = full?.quality ?? item.quality;
   const level = full?.level ?? item.level;
   const cost = full?.cost ?? item.cost;
@@ -181,18 +194,18 @@ function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: bo
   useDocumentMeta(
     {
       kind: 'item',
-      item: factsOfItem(item, text, baseFull?.seasons),
+      item: factsOfItem(item, shownText, baseFull?.seasons),
       ...(core !== null ? { version: dataVersion(core.meta) } : {}),
     },
     lang,
   );
 
-  const stats = statRows(full, text, 'stats', store?.rolls, STAT_NAMES[lang]);
+  const stats = statRows(full, shownText, 'stats', store?.rolls, STAT_NAMES[lang]);
   const gems = gemRows(full);
-  const named = hasNamedSkill(full, text);
+  const named = hasNamedSkill(full, shownText);
   const behavior = named ? behaviorOf(full) : null;
   const affects = named ? affectsOf(full) : null;
-  const sections = splitDescription(text?.desc);
+  const sections = splitDescription(shownText?.desc);
   const rarity = qualityVar(quality);
   const layout = sectionsFor(item.type);
 
@@ -306,22 +319,6 @@ function ItemBody({ item, embedded = false }: { item: ItemSummary; embedded?: bo
             {full?.seasons !== undefined && full.seasons.length > 0 && !full.seasons.includes(WIKI_SEASON) && (
               <span className={styles.season}>
                 {t.seasonOnly(full.seasons.map((s) => seasonLabel(s as SeasonKey)).join(', '))}
-              </span>
-            )}
-            {seasonal && (
-              <span className={styles.seasonSwitch} role="group" aria-label={t.seasonValues} title={t.seasonValuesHint}>
-                <span className={styles.seasonLabel}>{t.seasonValues}</span>
-                {SEASON_KEYS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    className={cx(styles.seasonChip, shownSeason === s && styles.seasonChipOn)}
-                    aria-pressed={shownSeason === s}
-                    onClick={() => setSeason(s)}
-                  >
-                    {seasonLabel(s)}
-                  </button>
-                ))}
               </span>
             )}
           </div>
