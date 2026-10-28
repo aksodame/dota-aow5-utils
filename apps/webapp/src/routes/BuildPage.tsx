@@ -454,7 +454,9 @@ export function BuildPage({ slug }: { slug: string }) {
             and the notes below are everything neither of them can say. Draws
             nothing at all when the author wrote no per-item advice.
           */}
-          {decoded !== null && <PriorityPanel slots={prioritySlots(decoded)} value={build.priority} />}
+          {decoded !== null && (
+            <PriorityPanel slots={prioritySlots(decoded)} value={build.priority} season={build.season} />
+          )}
 
           {build.body.trim() !== '' && (
             <Panel title={strings.build.notes}>

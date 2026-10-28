@@ -209,6 +209,15 @@ export interface ItemsExtraLocale {
   towers: Record<string, string>;
   /** Soul skill id -> its name and its tooltip. */
   soulSkills: Record<string, { name?: string; desc?: RichNode[] }>;
+  /**
+   * Item id -> season -> the description with that season's numbers.
+   *
+   * `locale.<lang>.details.json` substitutes the base (S1) values into the
+   * prose, so a patched item would otherwise describe S1 while its stat block
+   * shows S3. The pipeline substitutes the raw tooltip again for each season
+   * that patches the item; the page uses the season it shows.
+   */
+  seasonalDescriptions?: Record<string, Partial<Record<RulesetId, { desc: RichNode[]; descPlain: string }>>>;
 }
 
 const sourceIndex = new WeakMap<ItemsExtraFile, Map<string, ItemSourceFile>>();

@@ -5,6 +5,8 @@ import { Vpk } from './lib/vpk.ts';
 import { extractPublishData } from './lib/publishData.ts';
 import { readRulesetManifest, readRulesetTable } from './lib/ruleset.ts';
 import { parseRichText } from './lib/richtext.ts';
+import { hasHan } from './lib/han.ts';
+import { substitute } from './lib/placeholders.ts';
 import { writeJson } from './lib/writeJson.ts';
 import { check, checkSoft, exitIfFailed, fail, info, ok, step, warn } from './lib/log.ts';
 import type { Pool, PoolBody, PoolEntry, PoolsFile, PoolsLocale, RulesetId, TreasureTier } from '../../packages/aow5-shared/src/wiki/pools.ts';
@@ -716,6 +718,18 @@ exitIfFailed();
 
 const coverage: string[] = [];
 const towerIds = [...new Set(Object.values(chests).map((c) => c.tower))].sort();
+/*
+ * The hand-written translations 04-build-items applies where the pak still
+ * speaks Chinese. Reproduced here for one decision only: where such an override
+ * exists, the seasonal description cannot be re-substituted from the Chinese
+ * raw token, so the base override stays and the item is counted as skipped.
+ */
+const overrides = JSON.parse(fs.readFileSync(path.join(DIRS.data, 'name-overrides.json'), 'utf8')) as {
+  text?: Record<string, Record<string, { desc?: string }>>;
+};
+const textOverrides = overrides.text ?? {};
+const TOKEN_PREFIX = 'dota_tooltip_ability_';
+let seasonalDescriptionsSkipped = 0;
 for (const lang of Object.keys(tokens)) {
   const t = tokens[lang]!;
 
@@ -752,6 +766,41 @@ for (const lang of Object.keys(tokens)) {
     loc.soulSkills[skill.id] = entry;
   }
 
+  /*
+   * Descriptions for the patched items, re-substituted with the season's own
+   * numbers. 04-build-items does this once against the base table; a season
+   * that changes an `ability_value_*` key would otherwise leave the prose
+   * quoting S1 while the stat block quotes S3. S1 is the base and needs none.
+   */
+  const seasonalDescriptions: NonNullable<ItemsExtraLocale['seasonalDescriptions']> = {};
+  for (const [id, { seasons }] of itemRows) {
+    if (seasonal[id] === undefined) continue;
+    const rawDesc = t[`${TOKEN_PREFIX}${id.toLowerCase()}_description`];
+    if (rawDesc === undefined || rawDesc.trim() === '') continue;
+    // The override is a finished translation, not a template; leave it alone
+    // and count the item rather than replacing its numbers by hand.
+    const override = lang === cfg.baseLanguage ? undefined : textOverrides[id]?.[lang]?.desc;
+    if (override !== undefined && hasHan(rawDesc)) {
+      seasonalDescriptionsSkipped++;
+      continue;
+    }
+    for (const r of RULESETS) {
+      if (r === 's1') continue;
+      const row = seasons[r];
+      if (row === undefined) continue;
+      const values = (row['AbilityValues'] ?? {}) as Record<string, number | string>;
+      const sub = substitute(rawDesc, { values, top: row });
+      if (sub.unresolved.length > 0) {
+        warn(`${lang} ${id} ${r}: unresolved description token(s) ${sub.unresolved.join(', ')}; description not emitted`);
+        continue;
+      }
+      const parsed = parseRichText(sub.text);
+      for (const issue of parsed.issues) warn(`${lang} ${id} ${r} description: ${issue.detail}`);
+      (seasonalDescriptions[id] ??= {})[r] = { desc: parsed.nodes, descPlain: parsed.plain };
+    }
+  }
+  if (Object.keys(seasonalDescriptions).length > 0) loc.seasonalDescriptions = seasonalDescriptions;
+
   const poolLocale: PoolsLocale = { schema: 1, lang, names: poolNames };
   writeJson(path.join(OUT, `locale.${lang}.pools.json`), poolLocale);
   writeJson(path.join(OUT, `locale.${lang}.items-extra.json`), loc);
@@ -760,7 +809,13 @@ for (const lang of Object.keys(tokens)) {
       `wearables ${Object.keys(loc.wearables).length}/${Object.keys(wearables).length}, ` +
       `towers ${Object.keys(loc.towers).length}/${towerIds.length}, ` +
       `qualities ${Object.keys(loc.qualities).join('')}, ` +
-      `soul skills ${Object.values(loc.soulSkills).filter((s) => s.name).length}/${Object.keys(soulSkills).length}`,
+      `soul skills ${Object.values(loc.soulSkills).filter((s) => s.name).length}/${Object.keys(soulSkills).length}, ` +
+      `seasonal descriptions ${Object.keys(loc.seasonalDescriptions ?? {}).length}`,
+  );
+}
+if (seasonalDescriptionsSkipped > 0) {
+  info(
+    `${seasonalDescriptionsSkipped} seasonal description(s) skipped: hand-written text overrides cannot be re-substituted`,
   );
 }
 for (const line of coverage) info(`locale ${line}`);

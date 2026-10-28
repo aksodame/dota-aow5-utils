@@ -1,8 +1,15 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import type { BuildItemPriority, BuildPriority } from 'aow5-api-contract';
 import { MAX_PRIORITY_NOTE } from 'aow5-api-contract';
-import { canBeDivine, iconUrl, statOutcomes, type StatOutcome } from 'aow5-shared/data';
+import { canBeDivine, iconUrl, statOutcomes, type SeasonKey, type StatOutcome } from 'aow5-shared/data';
 import type { ItemFull, LocaleDetail, RollTables } from 'aow5-shared/types';
+import {
+  applySeasonalPatch,
+  loadWikiFile,
+  seasonalPatch,
+  type ItemsExtraFile,
+  type RulesetId,
+} from 'aow5-shared/wiki';
 import { Icon, Panel, Select, Textarea, cx } from '@/ui';
 import { useApp } from '@/data/AppData';
 import { useItemDetailsStore } from '@/data/ItemDetailsProvider';
@@ -50,9 +57,15 @@ interface PriorityPanelProps {
   value: BuildPriority;
   /** Absent for a reader: the panel draws the same cards without controls. */
   onChange?: (next: BuildPriority) => void;
+  /**
+   * The build's season. An item's base table is the S1 copy; S3 patches some
+   * values (0209's magic-resistance cut is 4 there, not 8), and the ranges
+   * below have to be drawn from the season the build is for.
+   */
+  season: SeasonKey;
 }
 
-export function PriorityPanel({ slots, value, onChange }: PriorityPanelProps) {
+export function PriorityPanel({ slots, value, onChange, season }: PriorityPanelProps) {
   const { strings, core } = useApp();
   const store = useItemDetailsStore();
   const editing = onChange !== undefined;
@@ -86,6 +99,29 @@ export function PriorityPanel({ slots, value, onChange }: PriorityPanelProps) {
     if (wanted) request?.();
   }, [wanted, request]);
 
+  /*
+   * The season patches, asked for with the same open as the item table.
+   *
+   * `items.full.json` is the base (S1) table; a season may change an item's
+   * values, and the roll ranges read the value. The panel used to read the base
+   * table for every season, which made S3's 0209 (magic-resistance cut 4) show
+   * the S1 range for 8.
+   */
+  const [extra, setExtra] = useState<ItemsExtraFile | null>(null);
+  useEffect(() => {
+    if (!wanted || extra !== null) return;
+    let live = true;
+    loadWikiFile<ItemsExtraFile>('items-extra.json').then(
+      (file) => {
+        if (live) setExtra(file);
+      },
+      () => undefined,
+    );
+    return () => {
+      live = false;
+    };
+  }, [wanted, extra]);
+
   /**
    * The cards, with everything joined on.
    *
@@ -96,14 +132,17 @@ export function PriorityPanel({ slots, value, onChange }: PriorityPanelProps) {
   const cards = useMemo(() => {
     if (store?.full == null || store.rolls == null) return [];
     const rolls = store.rolls;
+    const ruleset = `s${season}` as RulesetId;
     return slots.flatMap(({ slot, id }) => {
-      const full = store.full?.[id];
-      if (full === undefined) return [];
+      const base = store.full?.[id];
+      if (base === undefined) return [];
+      const patch = extra !== null ? seasonalPatch(extra, id, ruleset) : undefined;
+      const full = applySeasonalPatch(base, patch);
       const entry = reconcile(rolls, full.values, entryAt(value, slot));
       if (!editing && !value.some((stored) => stored.slot === slot)) return [];
       return [{ slot, id, full, entry, detail: store.detail?.[id] }];
     });
-  }, [slots, value, store?.full, store?.detail, store?.rolls, editing]);
+  }, [slots, value, store?.full, store?.detail, store?.rolls, editing, extra, season]);
 
   if (slots.length === 0 && editing) {
     return (

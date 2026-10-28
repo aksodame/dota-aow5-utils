@@ -4143,6 +4143,484 @@
      ]
     },
     {
+     "key": "changes",
+     "title": "Changes to existing items",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "The S3 patch changes **95 existing items and runes**. The new dragon and lava sets (0659–0682) are new records, not overrides, so they are not in this list. Below are all S3 overrides in the data, by category; Ancestral items are separate rows, and an item whose value and level/recipe both changed appears in two tables."
+      },
+      {
+       "type": "text",
+       "text": "**Values and passives**"
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item",
+        "What changed"
+       ],
+       "rows": [
+        [
+         "[[item:item_0232|★Blade of Fleeting Shadow]]",
+         "chain cannot crit: — → 1"
+        ],
+        [
+         "[[item:item_0700|Afterimage Sash]]",
+         "evasion threshold, %: 70 → 35; level: 7 → 6; recipe: [[item:item_0452|Mystic Crest]] ×1, [[item:item_0450|Mystic Blade]] ×1, [[item:item_M428|Abyssal Leather]] ×5, [[item:item_M322|Mystic Essence]] ×3 → [[item:item_0436|Eye of the Void]] ×1, [[item:item_0434|Void Blade]] ×1, [[item:item_M426|Fel Leather]] ×5, [[item:item_M335|Starry Solvent]] ×3"
+        ],
+        [
+         "[[item:item_0866|Ancestral: Ashen Codex]]",
+         "debuff duration, %: 208 → 33"
+        ],
+        [
+         "[[item:item_0882|Ancestral: Blade of Essence]]",
+         "agility to damage, %: 130 → 65"
+        ],
+        [
+         "[[item:item_0770|Ancestral: Blazing Fury Axe]]",
+         "max damage bonus, %: 50 → 40"
+        ],
+        [
+         "[[item:item_0884|Ancestral: Crystal of Essence]]",
+         "crit conversion cap, %: 100 → 120"
+        ],
+        [
+         "[[item:item_0710|Ancestral: Dandelion Amulet]]",
+         "poison damage reduction, %: 99 → 58"
+        ],
+        [
+         "[[item:item_0874|Ancestral: Demon Sword]]",
+         "chain cannot crit: — → 1"
+        ],
+        [
+         "[[item:item_0774|Ancestral: Divine Rapier]]",
+         "chain cannot crit: — → 1"
+        ],
+        [
+         "[[item:item_0869|Ancestral: Eye of Judgment]]",
+         "damage per debuff, %: 8 → 6; count debuff kinds: — → 1"
+        ],
+        [
+         "[[item:item_0883|Ancestral: Hourglass of Lingering Time]]",
+         "extended whitelist: — → 1"
+        ],
+        [
+         "[[item:item_0766|Ancestral: Lionheart Crown]]",
+         "armor bonus cap: 50 → —"
+        ],
+        [
+         "[[item:item_0853|Ancestral: Monkey King Bar]]",
+         "max armor stacks: 30 → 20"
+        ],
+        [
+         "[[item:item_0797|Ancestral: Shadow Dancer's Sash]]",
+         "evasion threshold, %: 50 → 35"
+        ],
+        [
+         "[[item:item_0849|Ancestral: Staff of Helheim]]",
+         "stacks per crit: — → 2"
+        ],
+        [
+         "[[item:item_0840|Ancestral: Stygian Spike]]",
+         "agility damage, %: 260 → 175"
+        ],
+        [
+         "[[item:item_0764|Ancestral: Swift Shadow Gloves]]",
+         "agility damage, %: 1000 → 1800; distance per stack: 800 → 400"
+        ],
+        [
+         "[[item:item_0842|Ancestral: Thor's Wrath]]",
+         "storm max hits: 10 → —"
+        ],
+        [
+         "[[item:item_0831|Ancestral: Witch Blade]]",
+         "magic resistance reduction, %: 12 → 6"
+        ],
+        [
+         "[[item:item_0655|Blade of Essence]]",
+         "agility to damage, %: 100 → 50"
+        ],
+        [
+         "[[item:item_0550|Blazing Fury Axe]]",
+         "max damage bonus, %: 50 → 40"
+        ],
+        [
+         "[[item:item_0658|Crystal of Essence]]",
+         "crit conversion cap, %: 100 → 120"
+        ],
+        [
+         "[[item:item_0282|Dandelion Amulet]]",
+         "poison damage reduction, %: 99 → 45"
+        ],
+        [
+         "[[item:item_0648|Demon Sword]]",
+         "chain cannot crit: — → 1"
+        ],
+        [
+         "[[item:item_0218|Divine Rapier]]",
+         "chain cannot crit: — → 1"
+        ],
+        [
+         "[[item:item_0581|Eye of Judgment]]",
+         "damage per debuff, %: 8 → 6; count debuff kinds: — → 1"
+        ],
+        [
+         "[[item:item_0323|Focus Bow]]",
+         "extra targets: 2 → 1.22"
+        ],
+        [
+         "[[item:item_0656|Hourglass of Lingering Time]]",
+         "extended whitelist: — → 1"
+        ],
+        [
+         "[[item:item_0345|Lightning Scepter]]",
+         "intelligence damage, %: 120 → 170; trigger chance, %: 30 → 60"
+        ],
+        [
+         "[[item:item_0527|Lionheart Crown]]",
+         "armor bonus cap: 50 → —"
+        ],
+        [
+         "[[item:item_M541|Mana Coin]]",
+         "coin exchange: 1 → 10"
+        ],
+        [
+         "[[item:item_0217|Monkey King Bar]]",
+         "max armor stacks: 30 → 20"
+        ],
+        [
+         "[[item:item_0599|Shadow Dancer's Sash]]",
+         "evasion threshold, %: 50 → 35; level: 7 → 6; recipe: [[item:item_0700|Afterimage Sash]] ×1, [[item:item_0452|Mystic Crest]] ×1, [[item:item_M428|Abyssal Leather]] ×10, [[item:item_M536|Abyssal Crystal]] ×3 → [[item:item_0700|Afterimage Sash]] ×1, [[item:item_0454|Iridescent Blade]] ×1, [[item:item_M426|Fel Leather]] ×10, [[item:item_M529|Demon Heart]] ×1"
+        ],
+        [
+         "[[item:item_0505|Staff of Helheim]]",
+         "stacks per crit: — → 2"
+        ],
+        [
+         "[[item:item_0453|Stygian Spike]]",
+         "agility damage, %: 180 → 120"
+        ],
+        [
+         "[[item:item_0523|Swift Shadow Gloves]]",
+         "agility damage, %: 1000 → 1800; distance per stack: 800 → 400"
+        ],
+        [
+         "[[item:item_0468|Thor's Wrath]]",
+         "storm max hits: 10 → —"
+        ],
+        [
+         "[[item:item_0209|Witch Blade]]",
+         "magic resistance reduction, %: 8 → 4"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**Cooldowns**"
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item",
+        "What changed"
+       ],
+       "rows": [
+        [
+         "[[item:item_H0017|Anchor Slam]]",
+         "CD: 500 → 425"
+        ],
+        [
+         "[[item:item_H0018|Anchor Slam]]",
+         "CD: 500 → 400"
+        ],
+        [
+         "[[item:item_H0013|Astral Path]]",
+         "CD: 500 → 525"
+        ],
+        [
+         "[[item:item_H0003|Boulder Finale]]",
+         "CD: 500 → 425"
+        ],
+        [
+         "[[item:item_H0004|Boulder Finale]]",
+         "CD: 500 → 400"
+        ],
+        [
+         "[[item:item_H0011|Leaping Cleave]]",
+         "CD: 500 → 425"
+        ],
+        [
+         "[[item:item_H0012|Leaping Cleave]]",
+         "CD: 500 → 400"
+        ],
+        [
+         "[[item:item_H0009|Leaping Slam]]",
+         "CD: 500 → 425"
+        ],
+        [
+         "[[item:item_H0010|Leaping Slam]]",
+         "CD: 500 → 400"
+        ],
+        [
+         "[[item:item_H0025|Multi-Staff Strike]]",
+         "CD: 500 → 425"
+        ],
+        [
+         "[[item:item_H0026|Multi-Staff Strike]]",
+         "CD: 500 → 400"
+        ],
+        [
+         "[[item:item_H0021|Predator's Blade]]",
+         "CD: 500 → 425"
+        ],
+        [
+         "[[item:item_H0022|Predator's Blade]]",
+         "CD: 500 → 400"
+        ],
+        [
+         "[[item:item_H0015|Radiant Strike]]",
+         "CD: 500 → 525"
+        ],
+        [
+         "[[item:item_H0007|Roar]]",
+         "CD: 500 → 425"
+        ],
+        [
+         "[[item:item_H0008|Roar]]",
+         "CD: 500 → 400"
+        ],
+        [
+         "[[item:item_H0027|Shadow Hunt]]",
+         "CD: 500 → 325"
+        ],
+        [
+         "[[item:item_H0028|Shadow Hunt]]",
+         "CD: 500 → 300"
+        ],
+        [
+         "[[item:item_H0029|Sonic Wave of Agony]]",
+         "CD: 500 → 525"
+        ],
+        [
+         "[[item:item_H0019|Storm Blink]]",
+         "CD: 500 → 325"
+        ],
+        [
+         "[[item:item_H0020|Storm Blink]]",
+         "CD: 500 → 300"
+        ],
+        [
+         "[[item:item_H0005|Tidal Wave]]",
+         "CD: 500 → 525"
+        ],
+        [
+         "[[item:item_H0023|Void Domain]]",
+         "CD: 500 → 425"
+        ],
+        [
+         "[[item:item_H0024|Void Domain]]",
+         "CD: 500 → 400"
+        ],
+        [
+         "[[item:item_H0001|Waterfowl Dance]]",
+         "CD: 500 → 425"
+        ],
+        [
+         "[[item:item_H0002|Waterfowl Dance]]",
+         "CD: 500 → 400"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**Runes**"
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item",
+        "What changed"
+       ],
+       "rows": [
+        [
+         "[[item:item_G518|Rune: Ancestral Astral Step I]]",
+         "effect void_spirit_004_flurry_multiplier=1.5; effect void_spirit_004_flurry_side_cap_pct=100"
+        ],
+        [
+         "[[item:item_G518_2|Rune: Ancestral Astral Step II]]",
+         "effect void_spirit_004_flurry_multiplier=2.25; effect void_spirit_004_flurry_side_cap_pct=100"
+        ],
+        [
+         "[[item:item_G518_3|Rune: Ancestral Astral Step III]]",
+         "effect void_spirit_004_flurry_multiplier=3; effect void_spirit_004_flurry_side_cap_pct=100"
+        ],
+        [
+         "[[item:item_G413|Rune: Downpour I]]",
+         "change tag_gem_cooldown: -6 → -8; change tag_gem_damage: 10 → 20; change tag_gem_mana_cost: 50 → 75; effect drow_010_bonus_waves=4; effect drow_010_rain_rate_bonus_pct=75; level: 3 → 4; quality: 3 → 4; price: 600 → 1600"
+        ],
+        [
+         "[[item:item_G413_2|Rune: Downpour II]]",
+         "change tag_gem_cooldown: -8 → -9; change tag_gem_damage: 20 → 30; change tag_gem_mana_cost: 75 → 90; effect drow_010_bonus_waves=6; effect drow_010_rain_extra_hits_per_wave=1; effect drow_010_rain_rate_bonus_pct=100; level: 4 → 5; quality: 4 → 5; price: 1600 → 4000"
+        ],
+        [
+         "[[item:item_G413_3|Rune: Downpour III]]",
+         "effect drow_010_bonus_waves=8; effect drow_010_rain_extra_hits_per_wave=2; effect drow_010_rain_rate_bonus_pct=150; level: 5 → 6; quality: 5 → 6; price: 4000 → 9600"
+        ],
+        [
+         "[[item:item_G507|Rune: Dual Realm Shift I]]",
+         "change tag_gem_charge_count: 1 → —; change tag_gem_charge_restore_time: -10 → —; change tag_gem_cooldown: — → -5; effect void_spirit_001_dual_shift_damage_pct=300; effect void_spirit_001_dual_shift_damage_tagged=1"
+        ],
+        [
+         "[[item:item_G507_2|Rune: Dual Realm Shift II]]",
+         "change tag_gem_charge_count: 1 → —; change tag_gem_charge_restore_time: -20 → —; change tag_gem_cooldown: — → -8; effect void_spirit_001_dual_shift_damage_pct=500; effect void_spirit_001_dual_shift_damage_tagged=1"
+        ],
+        [
+         "[[item:item_G507_3|Rune: Dual Realm Shift III]]",
+         "change tag_gem_charge_count: 1 → —; change tag_gem_charge_restore_time: -30 → —; change tag_gem_cooldown: — → -12; effect void_spirit_001_dual_shift_damage_pct=700; effect void_spirit_001_dual_shift_damage_tagged=1"
+        ],
+        [
+         "[[item:item_G407|Rune: Frost Plume I]]",
+         "effect drow_005_feather_damage_pct=20"
+        ],
+        [
+         "[[item:item_G407_2|Rune: Frost Plume II]]",
+         "effect drow_005_feather_damage_pct=30"
+        ],
+        [
+         "[[item:item_G407_3|Rune: Frost Plume III]]",
+         "effect drow_005_feather_damage_pct=40"
+        ],
+        [
+         "[[item:item_G500|Rune: Shadow Puppet I]]",
+         "effect void_spirit_001_puppet_damage_pct=10; effect void_spirit_001_puppet_duration=6; effect void_spirit_001_shadow_puppet=1"
+        ],
+        [
+         "[[item:item_G500_2|Rune: Shadow Puppet II]]",
+         "effect void_spirit_001_puppet_damage_pct=20; effect void_spirit_001_puppet_duration=8; effect void_spirit_001_shadow_puppet=1"
+        ],
+        [
+         "[[item:item_G500_3|Rune: Shadow Puppet III]]",
+         "effect void_spirit_001_puppet_damage_pct=30; effect void_spirit_001_puppet_duration=10; effect void_spirit_001_shadow_puppet=1"
+        ],
+        [
+         "[[item:item_G508|Rune: Shadow Refraction I]]",
+         "effect void_spirit_001_chase_duration=6; effect void_spirit_001_chase_max_stacks=10; effect void_spirit_001_chase_multiplicative=1; effect void_spirit_001_chase_pct_per_stack=8"
+        ],
+        [
+         "[[item:item_G508_2|Rune: Shadow Refraction II]]",
+         "effect void_spirit_001_chase_duration=6; effect void_spirit_001_chase_max_stacks=10; effect void_spirit_001_chase_multiplicative=1; effect void_spirit_001_chase_pct_per_stack=10"
+        ],
+        [
+         "[[item:item_G508_3|Rune: Shadow Refraction III]]",
+         "effect void_spirit_001_chase_duration=6; effect void_spirit_001_chase_max_stacks=10; effect void_spirit_001_chase_multiplicative=1; effect void_spirit_001_chase_pct_per_stack=12"
+        ],
+        [
+         "[[item:item_G501|Rune: Split Shadows I]]",
+         "change tag_gem_charge_restore_time: 25 → —"
+        ],
+        [
+         "[[item:item_G501_2|Rune: Split Shadows II]]",
+         "change tag_gem_charge_restore_time: 20 → —"
+        ],
+        [
+         "[[item:item_G406|Rune: Swift String I]]",
+         "effect drow_005_swift_agi_amp_cap_pct=150; effect drow_005_swift_agi_amp_pct=5; effect drow_005_swift_max_bonus_waves=2"
+        ],
+        [
+         "[[item:item_G406_2|Rune: Swift String II]]",
+         "effect drow_005_swift_agi_amp_cap_pct=180; effect drow_005_swift_agi_amp_pct=6; effect drow_005_swift_max_bonus_waves=4"
+        ],
+        [
+         "[[item:item_G406_3|Rune: Swift String III]]",
+         "effect drow_005_swift_agi_amp_cap_pct=210; effect drow_005_swift_agi_amp_pct=7; effect drow_005_swift_max_bonus_waves=6"
+        ],
+        [
+         "[[item:item_G410|Rune: Unified Volley I]]",
+         "change tag_gem_cooldown: -6 → -8; change tag_gem_damage: 10 → 20; change tag_gem_mana_cost: 20 → 30; effect drow_005_volley_arrow_merge_reduction=1; effect drow_005_volley_damage_pct=240; effect drow_005_volley_merge_floor=1; effect drow_005_volley_wave_merge_reduction=1; level: 3 → 4; quality: 3 → 4; price: 600 → 1600"
+        ],
+        [
+         "[[item:item_G410_2|Rune: Unified Volley II]]",
+         "change tag_gem_cooldown: -8 → -9; change tag_gem_damage: 20 → 30; change tag_gem_mana_cost: 30 → 35; effect drow_005_volley_arrow_merge_reduction=2; effect drow_005_volley_damage_pct=270; effect drow_005_volley_merge_floor=1; effect drow_005_volley_wave_merge_reduction=1; level: 4 → 5; quality: 4 → 5; price: 1600 → 4000"
+        ],
+        [
+         "[[item:item_G410_3|Rune: Unified Volley III]]",
+         "effect drow_005_volley_arrow_merge_reduction=2; effect drow_005_volley_damage_pct=300; effect drow_005_volley_merge_floor=1; effect drow_005_volley_wave_merge_reduction=2; level: 5 → 6; quality: 5 → 6; price: 4000 → 9600"
+        ],
+        [
+         "[[item:item_G514|Rune: Void Depletion I]]",
+         "change tag_gem_damage: — → 10; change tag_gem_mana_cost: — → 80; effect void_spirit_009_cast_burst_int_damage_pct=500; effect void_spirit_009_cast_burst_max_count=12; effect void_spirit_009_cast_burst_trigger_count=12"
+        ],
+        [
+         "[[item:item_G514_2|Rune: Void Depletion II]]",
+         "change tag_gem_damage: — → 20; change tag_gem_mana_cost: — → 110; effect void_spirit_009_cast_burst_int_damage_pct=750; effect void_spirit_009_cast_burst_max_count=10; effect void_spirit_009_cast_burst_trigger_count=10"
+        ],
+        [
+         "[[item:item_G514_3|Rune: Void Depletion III]]",
+         "change tag_gem_damage: — → 40; change tag_gem_mana_cost: — → 150; effect void_spirit_009_cast_burst_int_damage_pct=1000; effect void_spirit_009_cast_burst_max_count=8; effect void_spirit_009_cast_burst_trigger_count=8"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "**Level, quality, price, recipe**"
+      },
+      {
+       "type": "table",
+       "head": [
+        "Item",
+        "What changed"
+       ],
+       "rows": [
+        [
+         "[[item:item_0700|Afterimage Sash]]",
+         "evasion threshold, %: 70 → 35; level: 7 → 6; recipe: [[item:item_0452|Mystic Crest]] ×1, [[item:item_0450|Mystic Blade]] ×1, [[item:item_M428|Abyssal Leather]] ×5, [[item:item_M322|Mystic Essence]] ×3 → [[item:item_0436|Eye of the Void]] ×1, [[item:item_0434|Void Blade]] ×1, [[item:item_M426|Fel Leather]] ×5, [[item:item_M335|Starry Solvent]] ×3"
+        ],
+        [
+         "[[item:item_1700|Recipe: Afterimage Sash]]",
+         "level: 7 → 6"
+        ],
+        [
+         "[[item:item_1599|Recipe: Shadow Dancer's Sash]]",
+         "level: 7 → 6"
+        ],
+        [
+         "[[item:item_G413|Rune: Downpour I]]",
+         "change tag_gem_cooldown: -6 → -8; change tag_gem_damage: 10 → 20; change tag_gem_mana_cost: 50 → 75; effect drow_010_bonus_waves=4; effect drow_010_rain_rate_bonus_pct=75; level: 3 → 4; quality: 3 → 4; price: 600 → 1600"
+        ],
+        [
+         "[[item:item_G413_2|Rune: Downpour II]]",
+         "change tag_gem_cooldown: -8 → -9; change tag_gem_damage: 20 → 30; change tag_gem_mana_cost: 75 → 90; effect drow_010_bonus_waves=6; effect drow_010_rain_extra_hits_per_wave=1; effect drow_010_rain_rate_bonus_pct=100; level: 4 → 5; quality: 4 → 5; price: 1600 → 4000"
+        ],
+        [
+         "[[item:item_G413_3|Rune: Downpour III]]",
+         "effect drow_010_bonus_waves=8; effect drow_010_rain_extra_hits_per_wave=2; effect drow_010_rain_rate_bonus_pct=150; level: 5 → 6; quality: 5 → 6; price: 4000 → 9600"
+        ],
+        [
+         "[[item:item_G410|Rune: Unified Volley I]]",
+         "change tag_gem_cooldown: -6 → -8; change tag_gem_damage: 10 → 20; change tag_gem_mana_cost: 20 → 30; effect drow_005_volley_arrow_merge_reduction=1; effect drow_005_volley_damage_pct=240; effect drow_005_volley_merge_floor=1; effect drow_005_volley_wave_merge_reduction=1; level: 3 → 4; quality: 3 → 4; price: 600 → 1600"
+        ],
+        [
+         "[[item:item_G410_2|Rune: Unified Volley II]]",
+         "change tag_gem_cooldown: -8 → -9; change tag_gem_damage: 20 → 30; change tag_gem_mana_cost: 30 → 35; effect drow_005_volley_arrow_merge_reduction=2; effect drow_005_volley_damage_pct=270; effect drow_005_volley_merge_floor=1; effect drow_005_volley_wave_merge_reduction=1; level: 4 → 5; quality: 4 → 5; price: 1600 → 4000"
+        ],
+        [
+         "[[item:item_G410_3|Rune: Unified Volley III]]",
+         "effect drow_005_volley_arrow_merge_reduction=2; effect drow_005_volley_damage_pct=300; effect drow_005_volley_merge_floor=1; effect drow_005_volley_wave_merge_reduction=2; level: 5 → 6; quality: 5 → 6; price: 4000 → 9600"
+        ],
+        [
+         "[[item:item_0599|Shadow Dancer's Sash]]",
+         "evasion threshold, %: 50 → 35; level: 7 → 6; recipe: [[item:item_0700|Afterimage Sash]] ×1, [[item:item_0452|Mystic Crest]] ×1, [[item:item_M428|Abyssal Leather]] ×10, [[item:item_M536|Abyssal Crystal]] ×3 → [[item:item_0700|Afterimage Sash]] ×1, [[item:item_0454|Iridescent Blade]] ×1, [[item:item_M426|Fel Leather]] ×10, [[item:item_M529|Demon Heart]] ×1"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "Stat keys are left as they are in the game data — that is what `items-extra.json` is keyed by. The new dragon and lava items are not here: they have no override, they were simply added in S3."
+      }
+     ]
+    },
+    {
      "key": "items",
      "title": "Items",
      "blocks": [
