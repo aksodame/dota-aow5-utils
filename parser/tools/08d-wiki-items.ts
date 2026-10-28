@@ -729,7 +729,18 @@ const overrides = JSON.parse(fs.readFileSync(path.join(DIRS.data, 'name-override
 };
 const textOverrides = overrides.text ?? {};
 const TOKEN_PREFIX = 'dota_tooltip_ability_';
+/*
+ * Corrections for the tooltips the pak has not caught up with: a hardcoded
+ * number a season changed, or a value the season no longer defines. They are
+ * applied to the season's own text, after substitution, per language. See the
+ * file's own comment for what each entry is based on.
+ */
+const descFixes = JSON.parse(fs.readFileSync(path.join(DIRS.data, 'desc-fixes.json'), 'utf8')) as {
+  items?: Record<string, Partial<Record<RulesetId, Partial<Record<string, { repl?: [string, string][] }>>>>>;
+};
+const fixes = descFixes.items ?? {};
 let seasonalDescriptionsSkipped = 0;
+let descFixMisses = 0;
 for (const lang of Object.keys(tokens)) {
   const t = tokens[lang]!;
 
@@ -773,7 +784,8 @@ for (const lang of Object.keys(tokens)) {
    * quoting S1 while the stat block quotes S3. S1 is the base and needs none.
    */
   const seasonalDescriptions: NonNullable<ItemsExtraLocale['seasonalDescriptions']> = {};
-  for (const [id, { seasons }] of itemRows) {
+  let fixHits = 0;
+  for (const [id, { base: baseRow, seasons }] of itemRows) {
     if (seasonal[id] === undefined) continue;
     const rawDesc = t[`${TOKEN_PREFIX}${id.toLowerCase()}_description`];
     if (rawDesc === undefined || rawDesc.trim() === '') continue;
@@ -788,13 +800,41 @@ for (const lang of Object.keys(tokens)) {
       if (r === 's1') continue;
       const row = seasons[r];
       if (row === undefined) continue;
+      const fix = fixes[id]?.[r]?.[lang];
       const values = (row['AbilityValues'] ?? {}) as Record<string, number | string>;
-      const sub = substitute(rawDesc, { values, top: row });
+      let sub = substitute(rawDesc, { values, top: row });
       if (sub.unresolved.length > 0) {
-        warn(`${lang} ${id} ${r}: unresolved description token(s) ${sub.unresolved.join(', ')}; description not emitted`);
-        continue;
+        /*
+         * A season that drops a key the prose names leaves the token with no
+         * value. A fix for that item says how to take the clause out; the base
+         * row still defines the token, so the rest of the text can be built
+         * from it and the fix applied on top. Without a fix the item keeps its
+         * base description and says so, as before.
+         */
+        if (fix === undefined || baseRow === undefined) {
+          warn(`${lang} ${id} ${r}: unresolved description token(s) ${sub.unresolved.join(', ')}; description not emitted`);
+          continue;
+        }
+        const baseValues = (baseRow['AbilityValues'] ?? {}) as Record<string, number | string>;
+        sub = substitute(rawDesc, { values: baseValues, top: baseRow });
+        if (sub.unresolved.length > 0) {
+          warn(
+            `${lang} ${id} ${r}: unresolved description token(s) ${sub.unresolved.join(', ')} even against the base row; description not emitted`,
+          );
+          continue;
+        }
       }
-      const parsed = parseRichText(sub.text);
+      let text = sub.text;
+      for (const [from, to] of fix?.repl ?? []) {
+        if (!text.includes(from)) {
+          warn(`desc fix ${lang} ${id} ${r}: fragment not found: ${JSON.stringify(from)}`);
+          descFixMisses++;
+          continue;
+        }
+        text = text.split(from).join(to);
+        fixHits++;
+      }
+      const parsed = parseRichText(text);
       for (const issue of parsed.issues) warn(`${lang} ${id} ${r} description: ${issue.detail}`);
       (seasonalDescriptions[id] ??= {})[r] = { desc: parsed.nodes, descPlain: parsed.plain };
     }
@@ -810,13 +850,17 @@ for (const lang of Object.keys(tokens)) {
       `towers ${Object.keys(loc.towers).length}/${towerIds.length}, ` +
       `qualities ${Object.keys(loc.qualities).join('')}, ` +
       `soul skills ${Object.values(loc.soulSkills).filter((s) => s.name).length}/${Object.keys(soulSkills).length}, ` +
-      `seasonal descriptions ${Object.keys(loc.seasonalDescriptions ?? {}).length}`,
+      `seasonal descriptions ${Object.keys(loc.seasonalDescriptions ?? {}).length}, ` +
+      `desc fixes ${fixHits}`,
   );
 }
 if (seasonalDescriptionsSkipped > 0) {
   info(
     `${seasonalDescriptionsSkipped} seasonal description(s) skipped: hand-written text overrides cannot be re-substituted`,
   );
+}
+if (descFixMisses > 0) {
+  info(`${descFixMisses} desc-fix fragment(s) no longer match — retire them from data/desc-fixes.json`);
 }
 for (const line of coverage) info(`locale ${line}`);
 

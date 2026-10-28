@@ -52,7 +52,7 @@ export const HEROES: Localised<HeroesStrings> = {
     talentTree: 'talent tree',
     talentTreeTitle: (tree) => `Profession tree: ${tree}`,
     note:
-      'Runes (seals) empower one specific ability of the hero, and the numbers depend on the tier: I–IV are separate items, each with its own card. ' +
+      'Runes empower one specific ability of the hero, and the numbers depend on the tier: I–IV are separate items, each with its own card. ' +
       '"Wiki translation" marks names the build left in Chinese or as a placeholder ("Ability 002").',
     passive: 'passive',
     passiveTitle: 'Passive ability',
@@ -87,7 +87,7 @@ export const HEROES: Localised<HeroesStrings> = {
     talentTree: 'ветка прокачки',
     talentTreeTitle: (tree) => `Дерево профессии: ${tree}`,
     note:
-      'Руны (печати) усиливают конкретную способность героя — числа зависят от ступени: ' +
+      'Руны усиливают конкретную способность героя — числа зависят от ступени: ' +
       'I–IV это отдельные предметы, каждый со своей карточкой. «Перевод вики» помечены ' +
       'названия, которые в русской локализации сборки остались китайскими или заглушкой ' +
       '(«Навык 002»).',

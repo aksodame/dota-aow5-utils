@@ -170,7 +170,7 @@
     "unresolvedAbilityTokensNote": "The addon's own English and Russian text for drow_008 references %attack_speed_threshold%, a value the ability never defines — its AbilityValues carry only attack_speed_per_bonus, base_interval, frequency_bonus_pct and search_radius. The Chinese baseline does not reference it at all, so this is a translation written against a stat that was removed or renamed. Nothing the pipeline can substitute; listed so verify fails on a NEW unresolved token. void_spirit_006 (Sigil Slash, pak 3011606331) is the same bug in all three languages: its text references %swing_intelligence_damage_pct% for the three opening slashes, and its AbilityValues define only seal_intelligence_damage_pct, knockback_distance, knockback_duration and vulnerable_duration."
   },
   "expected": {
-    "vpkBytes": 1019698846,
+    "vpkBytes": 1019701797,
     "treeSize": 611995,
     "entryCount": 14601,
     "archiveIndex": 32767,

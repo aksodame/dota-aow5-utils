@@ -38,6 +38,12 @@ test('a value carries its own sign and unit', () => {
   assert.equal(formatValue('bonus_armor', -4), '-4');
   assert.equal(formatValue('some_ratio', 1.5), '+1.5');
   assert.equal(formatValue('odd_one', 'text'), 'text');
+  // The suffix does not always tell the unit: Sage's Boots counts mana per 1%
+  // of magic damage, while its cap and step are percentages whose `_pct` is
+  // not the last word of the key.
+  assert.equal(formatValue('ability_value_c_mana_per_magic_damage_pct', 15), '+15');
+  assert.equal(formatValue('ability_value_bonus_magic_damage_pct_max', 40), '+40%');
+  assert.equal(formatValue('ability_bonus_magic_damage_pct_per_step', 1), '+1%');
 });
 
 test("the game's own label wins, without doubling the plus sign", () => {
