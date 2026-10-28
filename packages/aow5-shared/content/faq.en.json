@@ -498,7 +498,44 @@
      "blocks": [
       {
        "type": "text",
-       "text": "A **cat** can appear in the ordinary forest rooms. A **dragon** is found there too — it works the same way, and clicking it teleports you to room M026."
+       "text": "A **cat** can appear in the ordinary forest rooms (M001–M014) — an NPC on a random spawn point. It does not attack and cannot be killed; talking to it teleports you to the hidden room M021, the Cat Challenge. A **dragon** is found there too — it works the same way, and clicking it teleports you to room M026."
+      },
+      {
+       "type": "table",
+       "head": [
+        "Parameter",
+        "Value"
+       ],
+       "rows": [
+        [
+         "Spawn chance",
+         "2 % per room (rolled when the room is created)"
+        ],
+        [
+         "Cooldown",
+         "1 hour, shared by all players and rooms (from the moment it appears)"
+        ],
+        [
+         "Where it appears",
+         "forest rooms M001–M014, on a random SpawnPoint"
+        ],
+        [
+         "Patrol",
+         "walks around the room in 400-unit steps every 3 s"
+        ],
+        [
+         "Room M021",
+         "boss \"Panda Brewmaster\": 800,000 HP, 220 armor, 95 % magic resistance"
+        ],
+        [
+         "Reward",
+         "first drop — \"Crimson Heart\" (item_M504), plus 2 draws at 100 %; the regular pool is empty in the current data"
+        ]
+       ]
+      },
+      {
+       "type": "note",
+       "text": "Pet cats (Curious, Evil and Sly Kittens, and the Cat God) are different: autoloot companions from the item_pet_cat_* items. The Cat God is crafted from three kittens."
       }
      ]
     },
@@ -878,7 +915,7 @@
       {
        "type": "list",
        "items": [
-        "Checked every 16 seconds after a start delay.",
+        "Checked every 16 seconds after a start delay (if the map sets no StartDelay, it is 360 s — 6 minutes).",
         "Requires a living hero within WatchRange.",
         "With RandomProbability chance, a group of MinCount…MaxCount monsters appears.",
         "Hunters get extra health and damage (about +10% per room level) and are marked 🎯 in the creature list."

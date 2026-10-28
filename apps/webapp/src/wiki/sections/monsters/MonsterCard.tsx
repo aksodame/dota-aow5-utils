@@ -217,7 +217,10 @@ export function MonsterCard({ ctx, m, pools, diff, difficulty, diffLabel, noReci
               );
             })}
           </div>
-          <Note>{t.hunterNote}</Note>
+          <Note>
+            {t.hunterNote}
+            {hunts.some(({ hunter }) => hunter.other?.StartDlay !== undefined) && ` ${t.hunterTypo}`}
+          </Note>
         </Panel>
       )}
 

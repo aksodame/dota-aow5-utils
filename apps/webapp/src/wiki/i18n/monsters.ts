@@ -9,9 +9,10 @@ import type { Localised } from './index';
  * drop pool / 掉落池, weight / 权重, hunter / 猎手怪, recipe / 图纸.
  *
  * The data has no hunter `interval` or `watchRange` (the map does not set
- * them; the server's defaults are in encrypted code), so the hunter lines say
- * what the map does set and the note says "periodically" where the partner
- * printed a number.
+ * them; the server's defaults are in encrypted code). The note states those
+ * defaults — a 16 s check, a 5000 range and a 360 s start delay — because they
+ * are what the card would otherwise leave as "periodically". The FAQ's hunter
+ * tab says the same, so the two do not disagree.
  */
 export interface MonstersStrings {
   /**
@@ -116,6 +117,7 @@ export interface MonstersStrings {
   hunterSection: string;
   hunterOther: string;
   hunterNote: string;
+  hunterTypo: string;
   firstDrop: string;
   firstNote: string;
   drop: string;
@@ -261,7 +263,9 @@ export const MONSTERS: Localised<MonstersStrings> = {
     hunterSection: 'Hunter',
     hunterOther: 'other attributes',
     hunterNote:
-      'A hunter is not an ordinary spawn: a room component periodically checks whether a live hero is near this point and, with the given chance, brings a wave of monsters. Every wave makes them stronger: damage and health grow with the wave number (modifier modifier_hunter_tracker_boost).',
+      'A hunter is not an ordinary spawn: a room component checks every 16 s, after its start delay, whether a live hero is near this point and, with the given chance, brings a wave of monsters. If the map leaves the values unset, the server defaults are a 6 min start delay, a 5000 search range and a 50 % wave chance. Every wave makes them stronger: damage and health grow with the wave number (modifier modifier_hunter_tracker_boost).',
+    hunterTypo:
+      'Some maps spell the delay StartDlay; the server reads only StartDelay, so those rooms use the default 6 min.',
     firstDrop: 'First drop',
     firstNote:
       'A guaranteed item — one from the list drops, picked by weight (the share is shown). For ordinary monsters it is the first kill by this player; for bosses it repeats on the 1st, 3rd, 5th, 10th, 35th and 100th kill.',
@@ -411,7 +415,9 @@ export const MONSTERS: Localised<MonstersStrings> = {
     hunterSection: 'Охотник',
     hunterOther: 'прочие атрибуты',
     hunterNote:
-      'Охотник — это не обычный спавн: компонент комнаты периодически проверяет, есть ли живой герой рядом с этой точкой, и с указанным шансом приводит волну монстров. Каждая волна делает их сильнее: урон и запас здоровья растут с номером волны (модификатор modifier_hunter_tracker_boost).',
+      'Охотник — это не обычный спавн: компонент комнаты раз в 16 с после задержки запуска проверяет, есть ли живой герой рядом с этой точкой, и с указанным шансом приводит волну монстров. Если карта не задала значения, серверные по умолчанию — задержка 6 мин, радиус поиска 5000 и шанс волны 50 %. Каждая волна делает их сильнее: урон и запас здоровья растут с номером волны (модификатор modifier_hunter_tracker_boost).',
+    hunterTypo:
+      'В некоторых картах задержка записана с опечаткой StartDlay — сервер читает только StartDelay, поэтому там действует задержка по умолчанию 6 мин.',
     firstDrop: 'Первый дроп',
     firstNote:
       'Гарантированный предмет — выпадает один из списка, выбор по весу (доля указана в таблице). Для обычных монстров — за первое убийство этим игроком; для боссов повторяется на 1, 3, 5, 10, 35 и 100-м убийстве.',
@@ -562,7 +568,9 @@ export const MONSTERS: Localised<MonstersStrings> = {
     hunterSection: '猎手怪',
     hunterOther: '其他属性',
     hunterNote:
-      '猎手怪不是普通刷新：房间组件会周期性检查此点附近是否有存活的英雄，并以给定几率带来一波怪物。每一波都会更强：攻击力和生命值随波数增长（modifier_hunter_tracker_boost）。',
+      '猎手怪不是普通刷新：房间组件在启动延迟后每 16 秒检查此点附近是否有存活的英雄，并以给定几率带来一波怪物。若地图未设置数值，服务器默认为：启动延迟 6 分钟、搜索半径 5000、波次几率 50 %。每一波都会更强：攻击力和生命值随波数增长（modifier_hunter_tracker_boost）。',
+    hunterTypo:
+      '有些地图把延迟写成 StartDlay；服务器只读取 StartDelay，因此这些房间使用默认的 6 分钟。',
     firstDrop: '首次掉落',
     firstNote:
       '必掉物品——按权重从列表中掉落一件（表中为占比）。普通怪物为该玩家首次击杀时掉落；BOSS 在第 1、3、5、10、35 和 100 次击杀时重复掉落。',

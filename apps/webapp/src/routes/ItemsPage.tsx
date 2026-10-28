@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { iconUrl, type ItemSummary } from 'aow5-shared/data';
 import { SLOT_KIND } from 'aow5-shared/types';
 import { inConsumables, type ItemsExtraFile } from 'aow5-shared/wiki';
@@ -10,9 +10,9 @@ import {
   isItemFiltered,
   type ItemFilterState,
 } from '@/components/ItemFilters';
-import { itemPath } from '@/router';
+import { itemPath, navigateTo, wikiPath } from '@/router';
 import { rarityLabel } from '@/i18n/strings';
-import { WikiEmpty, WikiList, WikiRow, WikiShell, WikiSidebar, collate, useWikiData } from '@/wiki/kit';
+import { WikiEmpty, WikiList, WikiLoading, WikiRow, WikiShell, WikiSidebar, collate, useWikiData } from '@/wiki/kit';
 import { ItemPage } from './ItemPage';
 import styles from './ItemsPage.module.css';
 
@@ -67,6 +67,28 @@ export function ItemsPage({ itemId }: { itemId?: string }) {
      */
     return core.items.filter((i) => i.type !== 'blueprint' && !inConsumables(file, { id: i.id, type: i.type }));
   }, [core, extra]);
+
+  /*
+   * A direct link to a consumable lands here because `/wiki/items/<id>` is the
+   * one item address. Its card is the Consumables section's — that is where the
+   * pool a chest opens and a potion's own facts live — so send the reader there
+   * rather than drawing the catalogue's generic card without them.
+   *
+   * Hidden chests (the unsealed tower chest) are not in the builder's index, so
+   * the extra table is the fallback that still recognises them.
+   */
+  const redirect = useMemo(() => {
+    if (itemId === undefined || extra === null) return null;
+    const selected = core?.byId.get(itemId);
+    const consumable =
+      selected !== undefined
+        ? inConsumables(extra[0], selected)
+        : extra[0].items[itemId]?.chest !== undefined || extra[0].items[itemId]?.container !== undefined;
+    return consumable ? wikiPath('consumables', itemId) : null;
+  }, [itemId, extra, core]);
+  useEffect(() => {
+    if (redirect !== null) navigateTo(redirect, { replace: true });
+  }, [redirect]);
 
   /** The categories this table actually has, in the order the select draws them. */
   const types = useMemo(() => {
@@ -134,6 +156,8 @@ export function ItemsPage({ itemId }: { itemId?: string }) {
       <div className={styles.detail}>
         {itemId === undefined || core === null ? (
           <WikiEmpty>{t.pickItem}</WikiEmpty>
+        ) : redirect !== null ? (
+          <WikiLoading />
         ) : (
           <ItemPage itemId={itemId} embedded />
         )}
