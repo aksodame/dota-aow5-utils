@@ -107,11 +107,16 @@ function numberTable(source: string, name: string, what: string): Record<string,
  * Pak 3011606331 stopped rolling the enhancement and the divine forge in the
  * client: both now arrive pre-decided in the `item_attributes` net table, and
  * the server Lua that draws them is encrypted. Their bounds are therefore not
- * in the bundle to read. `carried` is the last extraction that did read them —
- * the committed `rolls.json` — and every field taken from it is named in
+ * in the bundle to read. Pak v1.514 did the same to the reforge price table:
+ * the expressions moved into `scripts/vscripts/shop/shop_price.lua`, which is
+ * encrypted too. `carried` is the last extraction that did read them — the
+ * committed `rolls.json` — and every field taken from it is named in
  * `carriedFields`, so the step can say so rather than pass it off as fresh.
  */
-export type CarriedRolls = Pick<RollTables, 'enhancedLevel' | 'enhancedBonusPct' | 'divine'>;
+export type CarriedRolls = Pick<
+  RollTables,
+  'enhancedLevel' | 'enhancedBonusPct' | 'divine' | 'reforgeCost'
+>;
 
 /**
  * Everything the browser needs to say what a stat can roll to.
@@ -282,6 +287,18 @@ export function extractRollTables(
     throw new MissingPattern(`one stable tail: the bundle now uses ${[...new Set(stable)].join(', ')}`);
   }
 
+  /*
+   * The reforge price table. Optional by design: a pak that no longer ships it
+   * must not stop the pipeline, but a table the site already displays is worth
+   * carrying forward until the server exposes a new one. The step names it in
+   * `carriedFields`, so the carried numbers are never passed off as fresh.
+   */
+  let reforgeCost = extractReforgeCost(source);
+  if (reforgeCost === undefined && carried?.reforgeCost !== undefined) {
+    reforgeCost = { ...carried.reforgeCost };
+    carriedFields.push('reforgeCost');
+  }
+
   return {
     schema: 1,
     generatedAt,
@@ -302,7 +319,7 @@ export function extractRollTables(
     abilityValuePct,
     random: randomTable,
     decimals: decimalsTable,
-    reforgeCost: extractReforgeCost(source),
+    reforgeCost,
     carriedFields,
   };
 }

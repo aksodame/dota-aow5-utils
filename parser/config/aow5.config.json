@@ -168,12 +168,12 @@
     "unresolvedAbilityTokensNote": "The addon's own English and Russian text for drow_008 references %attack_speed_threshold%, a value the ability never defines — its AbilityValues carry only attack_speed_per_bonus, base_interval, frequency_bonus_pct and search_radius. The Chinese baseline does not reference it at all, so this is a translation written against a stat that was removed or renamed. Nothing the pipeline can substitute; listed so verify fails on a NEW unresolved token. void_spirit_006 (Sigil Slash, pak 3011606331) is the same bug in all three languages: its text references %swing_intelligence_damage_pct% for the three opening slashes, and its AbilityValues define only seal_intelligence_damage_pct, knockback_distance, knockback_duration and vulnerable_duration."
   },
   "expected": {
-    "vpkBytes": 1018927907,
-    "treeSize": 611496,
-    "entryCount": 14587,
+    "vpkBytes": 1019698846,
+    "treeSize": 611995,
+    "entryCount": 14601,
     "archiveIndex": 32767,
-    "itemsPayloadOffset": 873632496,
-    "itemsPayloadLength": 1702583,
+    "itemsPayloadOffset": 873635831,
+    "itemsPayloadLength": 1702415,
     "flash3ItemPngCount": 2244,
     "panoramaItemVtexCount": 859,
     "itemCount": 2230,
@@ -210,12 +210,12 @@
     },
     "heroCount": 7,
     "abilityCount": 78,
-    "selectableAbilityCount": 67,
+    "selectableAbilityCount": 69,
     "abilitiesPerHero": {
       "axe": 13,
       "lina": 13,
       "phantom_assassin": 13,
-      "drow_ranger": 10,
+      "drow_ranger": 12,
       "crystal_maiden": 1,
       "void_spirit": 11,
       "dragon_knight": 12
