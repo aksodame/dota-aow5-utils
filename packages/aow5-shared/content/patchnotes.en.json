@@ -1,6 +1,23 @@
 {
  "notes": [
   {
+   "version": "v1.515",
+   "date": "28.10.2026",
+   "game": [
+    "Phantom Assassin’s “Boomerang” (`pa_013`) now destroys destructible objects — along its flight line and inside the spin radius where it stops.",
+    "Endless Greed Cave: the dragon set’s fate stones s_0659–s_0670 were added to the pools — boss rewards at levels 14–16 (waves 42, 45 and 48) and merchants at levels 14–15; “Dragon Fang” (`s_0670`) starts at level 15.",
+    "Runes G601, G602 and G617–G619 were renamed: “Sigil” → “Rune”; G602 is “Summon Whelp” instead of “Multibreath”.",
+    "Room M025: four groups of destructible objects and two monsters (`monster_13035`, `monster_13036`) were moved.",
+    "Aghanim’s Scepter’s passive was reworded (“Valor”, same numbers), and the Russian name of the Kobold Goblet’s passive is now “За здоровье!” instead of “Тосты”.",
+    "154 models and 36 particles were removed from the precache — the files themselves stay in the pak, so loading should get lighter."
+   ],
+   "wiki": [
+    "Data rebuilt from v1.515: the s_0659–s_0670 fate stones gained Sky sources (endless, levels 14–16), and M025’s spawn points for destructibles and two monsters were updated.",
+    "Runes G601, G602, G617, G618 and G619 were renamed with the game in English and Russian (the Chinese name is unchanged); G602 is now “Summon Whelp”.",
+    "Descriptions now follow the build’s data: Lionheart (0527/0766) lost the nonexistent armor cap, 0505/0849 grant 2 stacks per crit, the Drow Ranger and Void Spirit runes show the rebalanced numbers, and Sage’s Boots has its units right — mana per 1% of damage without a percent sign, the cap in %."
+   ]
+  },
+  {
    "version": "v1.514",
    "date": "28.10.2026",
    "game": [

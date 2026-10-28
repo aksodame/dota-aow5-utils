@@ -3472,7 +3472,7 @@
         ],
         [
          "Heroes",
-         "Dragon Knight is the seventh playable profession; Shadow Assassin and Lina gained new Q abilities and seals for them."
+         "Dragon Knight is the seventh playable profession; Shadow Assassin and Lina gained new Q abilities and runes for them."
         ],
         [
          "Equipment",
@@ -3484,7 +3484,7 @@
         ],
         [
          "Runes",
-         "Every Dragon Knight seal gained a tier IV; the new seal G619 \"Dragon Quake\" arrived. Seals G603 and G607 were removed."
+         "Every Dragon Knight rune gained a tier IV; the new rune G619 \"Dragon Quake\" arrived. Runes G603 and G607 were removed."
         ],
         [
          "Talents",
@@ -3507,10 +3507,10 @@
       {
        "type": "list",
        "items": [
-        "**s3 only** — 182 items: gear 0659–0682, Ancestral 0888–0899, fate stones s_0659–s_0670, materials M341–M346 and M556–M559, potions P058–P065 and P329–P331, every seal (G115/G116, G216–G219, G317–G320, G601–G619) and Triumphant Vintage P274.",
+        "**s3 only** — 182 items: gear 0659–0682, Ancestral 0888–0899, fate stones s_0659–s_0670, materials M341–M346 and M556–M559, potions P058–P065 and P329–P331, every rune (G115/G116, G216–G219, G317–G320, G601–G619) and Triumphant Vintage P274.",
         "**Now in s3 too** — what used to be s2-only: souls H0001–H0030, Ancestral 0881–0887, Magic Tower items 0654–0656, 0658 and MT001–MT006 with their stones, and rune essence M012.",
         "**s2 only** — 10 items: 0652 \"Spirit Snatch Fang\", 0657 \"Corrosion Oath\", 0880 \"Ancestral: Bow of Concentration\", G410_4/G410_5, G413_4/G413_5, P272, P273 and fate stone s_0323.",
-        "**Removed from the game** — seals G603 \"Fire Swamp\" and G607 \"Frostflame\" with all their tiers."
+        "**Removed from the game** — runes G603 \"Fire Swamp\" and G607 \"Frostflame\" with all their tiers."
        ]
       },
       {
@@ -3606,7 +3606,7 @@
       },
       {
        "type": "text",
-       "text": "**New Q abilities.** Shadow Assassin and Lina gained \"Boomerang\" (`pa_013`) and \"Burning Thunder\" (`lina_014`) — both in the Q slot with two charges; each has four seals (tiers I–IV, s3 only)."
+       "text": "**New Q abilities.** Shadow Assassin and Lina gained \"Boomerang\" (`pa_013`) and \"Burning Thunder\" (`lina_014`) — both in the Q slot with two charges; each has four runes (tiers I–IV, s3 only)."
       },
       {
        "type": "table",
@@ -3627,12 +3627,12 @@
       },
       {
        "type": "text",
-       "text": "**Seals for the new abilities** — four per profession, like the Dragon Knight's: each empowers one skill, tiers differ in numbers."
+       "text": "**Runes for the new abilities** — four per profession, like the Dragon Knight's: each empowers one skill, tiers differ in numbers."
       },
       {
        "type": "table",
        "head": [
-        "Sigil (I–IV)",
+        "Rune (I–IV)",
         "What it does"
        ],
        "rows": [
@@ -3672,7 +3672,7 @@
       },
       {
        "type": "note",
-       "text": "**Marci** ships in the data with two abilities but has no profession row, so she is not playable this season. The PA seal G215 \"Blade Fusion\" was removed — \"Blast\" (G219) replaced it."
+       "text": "**Marci** ships in the data with two abilities but has no profession row, so she is not playable this season. The PA rune G215 \"Blade Fusion\" was removed — \"Blast\" (G219) replaced it."
       }
      ]
     },
@@ -3682,7 +3682,7 @@
      "blocks": [
       {
        "type": "text",
-       "text": "**Dragon Knight** is the game's seventh profession and the only one set up exclusively in the **s3** rules (map `s3-1`). A melee strength hero: five profession tiers, his own talent tree `tree14` and special abilities unlocked by its nodes. The profession and the tree appeared in v1.488, v1.491 completed the set (three dragon elements, 11 abilities and 14 sigils), and v1.500 added two more sigils (G617, G618) and reworked \"Sweeping Strike\" and \"Dragon Charge\". In v1.502 ability 002 got its name \"Dragon Tail\" back, and all 14 sigils G603–G616 received official Russian text (before that it was Chinese and the wiki kept its own translation). In v1.503 sigils G601 and G602 were renamed (\"Multicast\" and \"Multibreath\"), and the G602 text describes a rework that has not shipped yet (see the table). In S3, seals G603 and G607 were removed, G619 \"Dragon Quake\" arrived, every seal gained tier IV, and G602, G609, G610, G615 and G618 were reworked."
+       "text": "**Dragon Knight** is the game's seventh profession and the only one set up exclusively in the **s3** rules (map `s3-1`). A melee strength hero: five profession tiers, his own talent tree `tree14` and special abilities unlocked by its nodes. The profession and the tree appeared in v1.488, v1.491 completed the set (three dragon elements, 11 abilities and 14 runes), and v1.500 added two more runes (G617, G618) and reworked \"Sweeping Strike\" and \"Dragon Charge\". In v1.502 ability 002 got its name \"Dragon Tail\" back, and all 14 runes G603–G616 received official Russian text (before that it was Chinese and the wiki kept its own translation). In v1.503 runes G601 and G602 were renamed (\"Multicast\" and \"Multibreath\"), and the G602 text describes a rework that has not shipped yet (see the table). In S3, runes G603 and G607 were removed, G619 \"Dragon Quake\" arrived, every rune gained tier IV, and G602, G609, G610, G615 and G618 were reworked."
       },
       {
        "type": "table",
@@ -3871,21 +3871,21 @@
       },
       {
        "type": "text",
-       "text": "**Seals** are profession runes (type `gem`, s3 only). There are seventeen families: G601, G602, G604–G616, G617, G618 and G619; each has four tiers — I/II/III/IV (600 / 1600 / 4000 / 9600 gold). S3 removed G603 \"Fire Swamp\" and G607 \"Frostflame\"; G602 became \"Summon Whelp\" and G618 \"Dragon's Might\"."
+       "text": "**Runes** are profession items (type `gem`, s3 only); before v1.515 the game called them seals. There are seventeen families: G601, G602, G604–G616, G617, G618 and G619; each has four tiers — I/II/III/IV (600 / 1600 / 4000 / 9600 gold). S3 removed G603 \"Fire Swamp\" and G607 \"Frostflame\"; G602 became \"Summon Whelp\" and G618 \"Dragon's Might\"."
       },
       {
        "type": "table",
        "head": [
-        "Sigil (tiers)",
+        "Rune (tiers)",
         "What it does"
        ],
        "rows": [
         [
-         "[[item:item_G601|Sigil: Multicast I]] ([[item:item_G601_2|II]], [[item:item_G601_3|III]], [[item:item_G601_4|IV]])",
+         "[[item:item_G601|Rune: Multicast I]] ([[item:item_G601_2|II]], [[item:item_G601_3|III]], [[item:item_G601_4|IV]])",
          "Each cast of \"Breathe Fire\" has a **30 / 40 / 50%** chance to breathe fire again at no resource cost."
         ],
         [
-         "[[item:item_G602|Sigil: Summon Whelp I]] ([[item:item_G602_2|II]], [[item:item_G602_3|III]], [[item:item_G602_4|IV]])",
+         "[[item:item_G602|Rune: Summon Whelp I]] ([[item:item_G602_2|II]], [[item:item_G602_3|III]], [[item:item_G602_4|IV]])",
          "Breathe Fire instead places a whelp at the target point: it breathes once at the nearest enemy within 700 for **50 / 100 / 120 / 150%** of Breathe Fire damage, then disappears; at most one whelp at a time."
         ],
         [
@@ -3937,15 +3937,15 @@
          "Each time you turn into a dragon, you randomly get 30% / 60% / 90% of the stats of another dragon form until the transformation ends. The other form's model, attacks and ability effects are not carried over."
         ],
         [
-         "[[item:item_G617|Sigil: Long Breath I]] ([[item:item_G617_2|II]], [[item:item_G617_3|III]], [[item:item_G617_4|IV]])",
+         "[[item:item_G617|Rune: Long Breath I]] ([[item:item_G617_2|II]], [[item:item_G617_3|III]], [[item:item_G617_4|IV]])",
          "\"Breathe Fire\" becomes a 4 s channel: the hero does not move or attack, the breath no longer knocks back or stuns, and only \"Dragon Charge\" can interrupt it. Breaths: **I**: one every 2 s; **II**: one per second (one more per 500 strength, up to two per second); **III**: one per second, one more per 500 strength (up to three); **IV**: one more per 500 strength (up to four per second)."
         ],
         [
-         "[[item:item_G618|Sigil: Dragon's Might I]] ([[item:item_G618_2|II]], [[item:item_G618_3|III]], [[item:item_G618_4|IV]])",
+         "[[item:item_G618|Rune: Dragon's Might I]] ([[item:item_G618_2|II]], [[item:item_G618_3|III]], [[item:item_G618_4|IV]])",
          "\"Dragon Tail\" deals **×1.2 / 1.4 / 1.6 / 1.8** damage and gains +**3 / 6 / 10 / 12%** damage per 300 strength (cap +30 / 60 / 100 / 120%). The old stacking shield-bash mechanic is gone."
         ],
         [
-         "[[item:item_G619|Sigil: Dragon Quake I]] ([[item:item_G619_2|II]], [[item:item_G619_3|III]], [[item:item_G619_4|IV]])",
+         "[[item:item_G619|Rune: Dragon Quake I]] ([[item:item_G619_2|II]], [[item:item_G619_3|III]], [[item:item_G619_4|IV]])",
          "In dragon form, Dragon Tail triggers a quake around the hero: 6 pulses every 0.4 s, radius growing 350→500. The first pulse deals **31 / 33 / 35 / 37%** of Dragon Tail's damage (about 496 / 528 / 560 / 592% of attack damage in dragon form) as physical, each later pulse +10%. At most 2 quakes at once."
         ]
        ]
@@ -4681,11 +4681,11 @@
     },
     {
      "key": "runes",
-     "title": "Runes and seals",
+     "title": "Runes",
      "blocks": [
       {
        "type": "text",
-       "text": "**Seals are profession runes**, allowed only in s3: 27 families — 17 for the Dragon Knight (G601–G619 without the removed G603/G607), 2 for Axe (G115/G116), 4 for Shadow Assassin (G216–G219) and 4 for Lina (G317–G320)."
+       "text": "**Runes are profession items**, allowed only in s3: 27 families — 17 for the Dragon Knight (G601–G619 without the removed G603/G607), 2 for Axe (G115/G116), 4 for Shadow Assassin (G216–G219) and 4 for Lina (G317–G320)."
       },
       {
        "type": "table",
@@ -4695,11 +4695,11 @@
        ],
        "rows": [
         [
-         "Every Dragon Knight seal gained tier IV",
+         "Every Dragon Knight rune gained tier IV",
          "Cost 9600 gold (I–III are 600 / 1600 / 4000)."
         ],
         [
-         "New seal G619 \"Dragon Quake\"",
+         "New rune G619 \"Dragon Quake\"",
          "I–IV: first pulse deals 31 / 33 / 35 / 37% of Dragon Tail's damage (about 496 / 528 / 560 / 592% of attack damage), 6 pulses every 0.4 s, radius 350→500, each later pulse +10%; up to 2 quakes."
         ],
         [
@@ -4730,7 +4730,7 @@
       },
       {
        "type": "note",
-       "text": "The other seals only gained tier IV with bigger numbers; details are on the item cards."
+       "text": "The other runes only gained tier IV with bigger numbers; details are on the item cards."
       }
      ]
     },

@@ -64,8 +64,27 @@ export function prettifyKey(key: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-function isPercent(key: string): boolean {
-  return /_(pct|percent)$/.test(key);
+/**
+ * Keys whose unit the suffix does not tell.
+ *
+ * A trailing `_pct` normally means the number is a percentage, but two shapes
+ * break that: a name that counts a resource *per one percent* (Sage's Boots:
+ * mana per 1% of magic damage), and a percentage whose qualifier follows the
+ * `_pct` (`…_pct_max`, `…_pct_per_step`). Listed explicitly rather than
+ * inferred, so one misread key does not quietly change every number on a card.
+ */
+const UNIT_OVERRIDES: Record<string, boolean> = {
+  ability_value_c_mana_per_magic_damage_pct: false,
+  ability_value_bonus_magic_damage_pct_max: true,
+  ability_bonus_magic_damage_pct_per_step: true,
+};
+
+/** Whether the number under `key` is a percentage. Exported so the stat namer
+ * (which prints its own values in the calculator) answers the same way. */
+export function isPercentKey(key: string): boolean {
+  const override = UNIT_OVERRIDES[key];
+  if (override !== undefined) return override;
+  return /_(pct|percent)(_\d+)?$/.test(key);
 }
 
 export function formatValue(key: string, value: number | string): string {
@@ -73,7 +92,7 @@ export function formatValue(key: string, value: number | string): string {
   const rounded = Number.isInteger(value) ? value : Math.round(value * 100) / 100;
   // Negative numbers bring their own sign; everything else is a bonus.
   const sign = rounded > 0 ? '+' : '';
-  return `${sign}${rounded}${isPercent(key) ? '%' : ''}`;
+  return `${sign}${rounded}${isPercentKey(key) ? '%' : ''}`;
 }
 
 /**

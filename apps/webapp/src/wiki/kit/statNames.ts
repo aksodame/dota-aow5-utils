@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { LocaleDetail } from 'aow5-shared/types';
 import { type ProgressionLocale } from 'aow5-shared/wiki';
-import { prettifyKey } from '@/lib/itemStats';
+import { isPercentKey, prettifyKey } from '@/lib/itemStats';
 import { useApp } from '@/data/AppData';
 import { useItemDetailsStore } from '@/data/ItemDetailsProvider';
 import { STAT_NAMES } from '../i18n/statNames';
@@ -65,7 +65,7 @@ export function useStatNamer(): (key: string, itemId?: string) => StatName {
        * on every item and in both views.
        */
       const raw = names[key] ?? (itemId !== undefined ? detail?.[itemId]?.values?.[key] : undefined) ?? union?.get(key) ?? panel?.[key];
-      const percentKey = /_(pct|percent)(_\d+)?$/.test(key);
+      const percentKey = isPercentKey(key);
       if (raw === undefined) return { text: prettifyKey(key), percent: percentKey };
       const percent = raw.trim().startsWith('%') || percentKey;
       return { text: raw.replace(/^[\s%+]+/, '').trim() || prettifyKey(key), percent };

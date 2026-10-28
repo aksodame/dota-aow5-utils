@@ -1,0 +1,703 @@
+{
+  "schema": 1,
+  "_comment": "Corrections to a season’s item tooltip where the pak’s prose has not caught up with the season’s own ruleset values — a hardcoded number the season changed, or a value the season no longer defines. Applied by parser step 08d after %placeholder% substitution, per season and language, as exact fragment replacements; a fragment that no longer matches is reported, so an entry can be retired when the pak catches up. The new numbers are the season’s own AbilityValues (equipment) or gemData (runes); nothing here is guessed.",
+  "_sourceComment": "0505/0849: S3 AbilityValues add ability_stacks_per_crit 2, while the tooltip hardcodes “1 stack”. 0527/0766: the S3 AbilityValues drop ability_value_armor_bonus_max, so the “Maximum: 50” clause no longer exists. G406/G407/G410/G500/G507/G514/G518: S3 gemData rebalances the ability parameters (drow_005_swift_agi_amp_pct and its cap, drow_005_feather_damage_pct, drow_005_volley_damage_pct, void_spirit_001_puppet_damage_pct, void_spirit_001_dual_shift_damage_pct, void_spirit_009_cast_burst_max_count, void_spirit_004_flurry_multiplier) while the tooltip still prints the base numbers; G518’s percentages are 200% × the multiplier, which is why they move 200/300/400 → 300/450/600.",
+  "items": {
+    "item_0505": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "получает 1 слой «Знаний»",
+              "получает 2 слоя «Знаний»"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "gain 1 stack of Wisdom",
+              "gain 2 stacks of Wisdom"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "获得1层",
+              "获得2层"
+            ]
+          ]
+        }
+      }
+    },
+    "item_0849": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "вы получаете 1 слой «Мудрости»",
+              "вы получаете 2 слоя «Мудрости»"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "gain 1 stack of Insight",
+              "gain 2 stacks of Insight"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "获得1层",
+              "获得2层"
+            ]
+          ]
+        }
+      }
+    },
+    "item_0527": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              " Максимум: 50 ед.",
+              ""
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              " Maximum: 50 armor.",
+              ""
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "上限50点，",
+              ""
+            ]
+          ]
+        }
+      },
+      "s2": {
+        "ru": {
+          "repl": [
+            [
+              " Максимум: 50 ед.",
+              ""
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              " Maximum: 50 armor.",
+              ""
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "上限50点，",
+              ""
+            ]
+          ]
+        }
+      }
+    },
+    "item_0766": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              " Максимум: 50 ед.",
+              ""
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              " Maximum: 50 armor; up to 3 items count.",
+              " Up to 3 items count."
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "上限50点，",
+              ""
+            ]
+          ]
+        }
+      },
+      "s2": {
+        "ru": {
+          "repl": [
+            [
+              " Максимум: 50 ед.",
+              ""
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              " Maximum: 50 armor; up to 3 items count.",
+              " Up to 3 items count."
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "上限50点，",
+              ""
+            ]
+          ]
+        }
+      }
+    },
+    "item_G406": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "на 10% (максимум на 300%)",
+              "на 5% (максимум на 150%)"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "by 10%, up to a maximum increase of 300%",
+              "by 5%, up to a maximum increase of 150%"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "提高10%，最多提高300%",
+              "提高5%，最多提高150%"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G406_2": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "на 10% (максимум на 300%)",
+              "на 6% (максимум на 180%)"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "by 10%, up to a maximum increase of 300%",
+              "by 6%, up to a maximum increase of 180%"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "提高10%，最多提高300%",
+              "提高6%，最多提高180%"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G406_3": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "на 10% (максимум на 300%)",
+              "на 7% (максимум на 210%)"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "by 10%, up to a maximum increase of 300%",
+              "by 7%, up to a maximum increase of 210%"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "提高10%，最多提高300%",
+              "提高7%，最多提高210%"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G407": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "наносит 50% урона стрелы",
+              "наносит 20% урона стрелы"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "deals 50% arrow damage",
+              "deals 20% arrow damage"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "造成50%箭矢伤害",
+              "造成20%箭矢伤害"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G407_2": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "наносит 60% урона стрелы",
+              "наносит 30% урона стрелы"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "deals 60% arrow damage",
+              "deals 30% arrow damage"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "造成60%箭矢伤害",
+              "造成30%箭矢伤害"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G407_3": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "наносит 70% урона стрелы",
+              "наносит 40% урона стрелы"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "deals 70% arrow damage",
+              "deals 40% arrow damage"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "造成70%箭矢伤害",
+              "造成40%箭矢伤害"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G410": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "наносят 300% урона стрелы",
+              "наносят 240% урона стрелы"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "deal 300% arrow damage",
+              "deal 240% arrow damage"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "造成300%箭矢伤害",
+              "造成240%箭矢伤害"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G410_2": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "наносят 330% урона стрелы",
+              "наносят 270% урона стрелы"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "deal 330% arrow damage",
+              "deal 270% arrow damage"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "造成330%箭矢伤害",
+              "造成270%箭矢伤害"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G410_3": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "наносят 360% урона стрелы",
+              "наносят 300% урона стрелы"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "deal 360% arrow damage",
+              "deal 300% arrow damage"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "造成360%箭矢伤害",
+              "造成300%箭矢伤害"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G507": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "в размере 200% от вашего интеллекта",
+              "в размере 300% от вашего интеллекта"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "equal to 200% of your Intelligence",
+              "equal to 300% of your Intelligence"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "造成200%智力的魔法伤害",
+              "造成300%智力的魔法伤害"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G507_2": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "в размере 250% от вашего интеллекта",
+              "в размере 500% от вашего интеллекта"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "equal to 250% of your Intelligence",
+              "equal to 500% of your Intelligence"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "造成250%智力的魔法伤害",
+              "造成500%智力的魔法伤害"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G507_3": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "в размере 300% от вашего интеллекта",
+              "в размере 700% от вашего интеллекта"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "equal to 300% of your Intelligence",
+              "equal to 700% of your Intelligence"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "造成300%智力的魔法伤害",
+              "造成700%智力的魔法伤害"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G514": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "до 10 раз",
+              "до 12 раз"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "up to 10 times",
+              "up to 12 times"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "最多累计10次",
+              "最多累计12次"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G514_3": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "до 10 раз",
+              "до 8 раз"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "up to 10 times",
+              "up to 8 times"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "最多累计10次",
+              "最多累计8次"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G500_2": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "равный 10% от базового урона",
+              "равный 20% от базового урона"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "equal to 10% of base impact damage",
+              "equal to 20% of base impact damage"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "基础撞击伤害10%",
+              "基础撞击伤害20%"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G500_3": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "равный 10% от базового урона",
+              "равный 30% от базового урона"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "equal to 10% of base impact damage",
+              "equal to 30% of base impact damage"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "基础撞击伤害10%",
+              "基础撞击伤害30%"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G518": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "равный 200% от интеллекта",
+              "равный 300% от интеллекта"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "equal to 200% of your Intelligence",
+              "equal to 300% of your Intelligence"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "造成200%智力的魔法伤害",
+              "造成300%智力的魔法伤害"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G518_2": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "равный 300% от интеллекта",
+              "равный 450% от интеллекта"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "equal to 300% of your Intelligence",
+              "equal to 450% of your Intelligence"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "造成300%智力的魔法伤害",
+              "造成450%智力的魔法伤害"
+            ]
+          ]
+        }
+      }
+    },
+    "item_G518_3": {
+      "s3": {
+        "ru": {
+          "repl": [
+            [
+              "равный 400% от интеллекта",
+              "равный 600% от интеллекта"
+            ]
+          ]
+        },
+        "en": {
+          "repl": [
+            [
+              "equal to 400% of your Intelligence",
+              "equal to 600% of your Intelligence"
+            ]
+          ]
+        },
+        "zh": {
+          "repl": [
+            [
+              "造成400%智力的魔法伤害",
+              "造成600%智力的魔法伤害"
+            ]
+          ]
+        }
+      }
+    }
+  }
+}
