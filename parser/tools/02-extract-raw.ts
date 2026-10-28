@@ -170,11 +170,14 @@ try {
 
   // --- per-season ruleset tables --------------------------------------------
   /*
-   * The season tree. S2 relaunched the addon as rulesets, and `ak_life_souls`
-   * is the one table here the site needs: it is the addon's own list of which
-   * items are Life Souls, and S1's copy being empty is what makes the Life Soul
-   * a second-season slot rather than thirty ids typed into a config. See
-   * lib/ruleset.ts for the rest of the tree and why it is not read.
+   * The season tree. S2 relaunched the addon as rulesets, and the site needs
+   * three tables from it. `ak_life_souls` is the addon's own list of which items
+   * are Life Souls, and S1's copy being empty is what makes the Life Soul a
+   * second-season slot rather than thirty ids typed into a config.
+   * `ak_abilities` supplies the key a few S3 abilities bind to, which the base
+   * payload leaves empty. `ak_talent` supplies the `profession_skills` nodes that
+   * are the only way to learn an ability beyond the hero entity's starting kit.
+   * See lib/ruleset.ts for the rest of the tree.
    */
   const rulesetTables: Record<string, Record<string, Record<string, unknown>>> = {};
   const manifestEntry = vpk.get(cfg.rulesets.manifestPath);

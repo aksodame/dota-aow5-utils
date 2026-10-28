@@ -16,11 +16,15 @@ import { scriptText } from './hudScript.ts';
  * object, `raw.manifest = {…}` for the manifest and
  * `ruleset["<table>"] = {…}` for a table. Hence a reader of their own.
  *
- * Only `ak_life_souls` is read today, because it is the addon's own answer to
+ * Three tables are read today. `ak_life_souls` is the addon's own answer to
  * which items are Life Souls — the client refuses to offer one that is not in
  * it — and the S1 copy being empty is what makes the slot a second-season slot
- * rather than a hardcoded list of thirty ids. The rest of the tree is here in
- * the comment rather than in code because nothing downstream asks for it yet.
+ * rather than a hardcoded list of thirty ids. `ak_abilities` supplies the
+ * `AbilitySlot` a few S3 abilities carry only in their season's copy.
+ * `ak_talent` supplies the `profession_skills` nodes that are the only way a
+ * hero learns an ability beyond the ones its entity starts with. The rest of the
+ * tree is here in the comment rather than in code because nothing downstream
+ * asks for it yet.
  */
 
 /** One season in `rulesets/manifest.vjs_c`. */

@@ -199,8 +199,9 @@ if (!fs.existsSync(heroesPath)) {
   const heroes = readJson<HeroesData>(heroesPath);
   const abilityIds = loadAbilityTable();
 
+  const selectableIds = new Set(heroes.heroes.flatMap((h) => h.abilities));
   checkSoft(heroes.heroes.length, cfg.expected.heroCount, 'hero count');
-  checkSoft(Object.keys(heroes.abilities).length, cfg.expected.selectableAbilityCount, 'selectable abilities');
+  checkSoft(selectableIds.size, cfg.expected.selectableAbilityCount, 'selectable abilities');
   check(heroes.heroes.length === meta.heroCount, `meta.heroCount agrees: ${meta.heroCount}`);
   check(
     Object.keys(heroes.abilities).length === meta.abilityCount,
