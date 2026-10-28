@@ -286,7 +286,7 @@
   "heroes": {
     "_comment": "Roster positions are baked into every shared guide, and the unfinished-ability filter decides what a hero may be built around.",
     "npc_dota_hero_axe": {
-      "_why": "Pins the frozen roster index and the grouping of abilities by the key they bind to — several candidates per key is the whole build decision.",
+      "_why": "Pins the frozen roster index and the grouping of abilities by the key they bind to — several candidates per key is the whole build decision. axe_009 is absent on purpose: no hero AbilityN or talent node grants it.",
       "idx": 1,
       "profession": "axe",
       "icon": "axe.png",
@@ -313,8 +313,36 @@
         "passive": [
           "axe_002",
           "axe_007",
-          "axe_009",
           "axe_010"
+        ],
+        "f": [
+          "ak_hero_heal"
+        ]
+      }
+    },
+    "npc_dota_hero_lina": {
+      "_why": "Pins two rules at once: the key a season ruleset assigns (Burning Thunder, lina_014, has no AbilitySlot in the base payload and must still land in q), and the obtainability filter (lina_002, lina_006, lina_007 and lina_010 have finished rows but no hero AbilityN or talent node grants them, so they must not be offered).",
+      "bySlot": {
+        "q": [
+          "lina_001",
+          "lina_013",
+          "lina_014"
+        ],
+        "w": [
+          "lina_009",
+          "lina_011"
+        ],
+        "e": [
+          "lina_012"
+        ],
+        "d": [
+          "lina_004"
+        ],
+        "r": [
+          "lina_005"
+        ],
+        "passive": [
+          "lina_003"
         ],
         "f": [
           "ak_hero_heal"

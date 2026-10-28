@@ -361,7 +361,11 @@ if (!fs.existsSync(heroesFile)) {
 
   heroCount = heroData.heroes.length;
   abilityCount = Object.keys(heroData.abilities).length;
-  ok(`emitted ${heroCount} heroes and ${abilityCount} selectable abilities; ability table ${abilityTableLength} entries`);
+  const offered = new Set(heroData.heroes.flatMap((h) => h.abilities));
+  ok(
+    `emitted ${heroCount} heroes and ${offered.size} selectable abilities ` +
+      `(${abilityCount} finished in the table); ability table ${abilityTableLength} entries`,
+  );
 }
 
 // --- maps -------------------------------------------------------------------

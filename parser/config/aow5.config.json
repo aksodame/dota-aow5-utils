@@ -32,11 +32,13 @@
     }
   },
   "rulesets": {
-    "_comment": "The addon's per-season tree. The manifest names the seasons, their maps and which rows each season overrides; each season then ships its own compiled copy of every table. Only ak_life_souls is read: it is the addon's own answer to which items are Life Souls, and S1's copy being empty is what makes the Life Soul slot a second-season slot rather than a hardcoded list of ids.",
+    "_comment": "The addon's per-season tree. The manifest names the seasons, their maps and which rows each season overrides; each season then ships its own compiled copy of every table. Three are read: ak_life_souls is the addon's own answer to which items are Life Souls (S1's copy being empty is what makes the Life Soul a second-season slot); ak_abilities supplies the key a few S3 abilities bind to, which the base payload leaves empty; ak_talent names the profession_skills nodes, the only way a hero learns an ability beyond the ones its entity starts with.",
     "dir": "panorama/layout/custom_game/vendor/data/rulesets",
     "manifestPath": "panorama/layout/custom_game/vendor/data/rulesets/manifest.vjs_c",
     "tables": [
-      "ak_life_souls"
+      "ak_life_souls",
+      "ak_abilities",
+      "ak_talent"
     ],
     "_seasonKeys": "Ruleset id -> the season number seasons.ts uses. A ruleset the addon adds and this does not name fails step 04 rather than being guessed at.",
     "seasonKeys": {
@@ -210,11 +212,11 @@
     },
     "heroCount": 7,
     "abilityCount": 78,
-    "selectableAbilityCount": 69,
+    "selectableAbilityCount": 64,
     "abilitiesPerHero": {
-      "axe": 13,
-      "lina": 13,
-      "phantom_assassin": 13,
+      "axe": 12,
+      "lina": 10,
+      "phantom_assassin": 12,
       "drow_ranger": 12,
       "crystal_maiden": 1,
       "void_spirit": 11,

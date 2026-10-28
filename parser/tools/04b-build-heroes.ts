@@ -69,6 +69,59 @@ const asNumber = (v: unknown): number | undefined => {
 const asString = (v: unknown): string | undefined =>
   typeof v === 'string' && v.trim() !== '' ? v.trim() : undefined;
 
+// --- ability keys from the season rulesets ----------------------------------
+/*
+ * A few abilities get their key from a season's ruleset rather than from the
+ * base payload this table is built from. S3's Burning Thunder (`lina_014`) and
+ * Boomerang (`pa_013`) are the current pair: the base row has no `AbilitySlot`
+ * and the season's copy has `q`, so without this merge they would be dropped as
+ * unfinished and never reach the planner.
+ *
+ * Only the key is taken. The rest of the season row stays out of scope:
+ * abilities are not season-scoped in the app yet, and the base row is what the
+ * site has always shown.
+ */
+const seasonAbilitiesFile = path.join(DIRS.cacheRaw, 'ak_abilities.rulesets.json');
+if (!fs.existsSync(seasonAbilitiesFile)) {
+  warn(
+    'missing cache/raw/ak_abilities.rulesets.json; ability keys that only a season ' +
+      'ruleset assigns (lina_014, pa_013) will be dropped — run 02-extract-raw',
+  );
+} else {
+  const perSeason = JSON.parse(fs.readFileSync(seasonAbilitiesFile, 'utf8')) as Record<
+    string,
+    Record<string, Record<string, unknown>>
+  >;
+  // Oldest season first, so a later season's key wins over an earlier one's.
+  // They only ever disagree for an ability the base table does not key.
+  const seasons = Object.entries(cfg.rulesets.seasonKeys)
+    .sort((a, b) => a[1] - b[1])
+    .map(([season]) => season);
+  const seasonSlot = new Map<string, string>();
+  for (const season of seasons) {
+    const table = perSeason[season];
+    if (table === undefined) continue;
+    for (const [id, row] of Object.entries(table)) {
+      const slot = asString(row['AbilitySlot']);
+      if (slot !== undefined && isAbilitySlot(slot)) seasonSlot.set(id, slot);
+    }
+  }
+
+  const filled: string[] = [];
+  for (const [id, src] of Object.entries(rawAbilities)) {
+    if (asString(src['AbilitySlot']) !== undefined) continue;
+    const slot = seasonSlot.get(id);
+    if (slot === undefined) continue;
+    src['AbilitySlot'] = slot;
+    filled.push(`${id} -> ${slot}`);
+  }
+  info(
+    filled.length > 0
+      ? `ability key(s) taken from the season rulesets: ${filled.sort().join(', ')}`
+      : 'no ability needs a key from a season ruleset',
+  );
+}
+
 // --- professions ------------------------------------------------------------
 // Keys look like `npc_dota_hero_axe_tier_3`; the hero is the key minus the tier
 // suffix, and the record names the profession the abilities are gated on.
@@ -172,11 +225,78 @@ if (!fs.existsSync(csvFile)) {
 
 const enTokens = tokens['en'] ?? {};
 
+// --- what a hero can actually learn ----------------------------------------
+/*
+ * An ability row existing is not the same as a hero being able to have it. A
+ * hero starts with whatever its own entity names in `Ability1…18`, and learns
+ * everything else from a talent node's `profession_skills`. The addon keeps rows
+ * for abilities no hero reaches — Lina's Fire Rain and Lava Bomb among them — and
+ * offering those in the planner would suggest builds the game refuses.
+ *
+ * Seasons are unioned rather than split per season: the app does not scope
+ * abilities to a season yet, and the skill-granting nodes are the same in all
+ * three today. Only ids that exist in the ability table are counted.
+ */
+const innateByHero = new Map<string, Set<string>>();
+for (const hero of roster) {
+  const ids = new Set<string>();
+  const row = rawHeroes[hero];
+  if (row !== undefined) {
+    for (let i = 1; i <= 18; i++) {
+      const id = asString(row[`Ability${i}`]);
+      if (id === undefined || /^ak_hero_blank(_|$)/.test(id)) continue;
+      if (rawAbilities[id] !== undefined) ids.add(id);
+    }
+  }
+  innateByHero.set(hero, ids);
+}
+
+const talentFile = path.join(DIRS.cacheRaw, 'ak_talent.rulesets.json');
+if (!fs.existsSync(talentFile)) {
+  throw new Error('missing cache/raw/ak_talent.rulesets.json; run 02-extract-raw first');
+}
+const talentByHero = new Map<string, Set<string>>();
+const talentSeasons = JSON.parse(fs.readFileSync(talentFile, 'utf8')) as Record<
+  string,
+  Record<string, Record<string, unknown>>
+>;
+for (const table of Object.values(talentSeasons)) {
+  for (const row of Object.values(table)) {
+    const hero = asString(row['profession']);
+    if (hero === undefined || !rosterSet.has(hero)) continue;
+    const skills = asArray(row['profession_skills'])
+      .flatMap((value) => value.split(/[|,]/))
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (skills.length === 0) continue;
+    let set = talentByHero.get(hero);
+    if (set === undefined) {
+      set = new Set<string>();
+      talentByHero.set(hero, set);
+    }
+    for (const id of skills) if (rawAbilities[id] !== undefined) set.add(id);
+  }
+}
+
+const grantedByHero = new Map<string, Set<string>>();
+for (const hero of roster) {
+  grantedByHero.set(
+    hero,
+    new Set([...(innateByHero.get(hero) ?? []), ...(talentByHero.get(hero) ?? [])]),
+  );
+}
+info(
+  `abilities a hero can have: ${roster
+    .map((h) => `${h.replace(/^npc_dota_hero_/, '')}=${grantedByHero.get(h)!.size}`)
+    .join(', ')}`,
+);
+
 // --- abilities --------------------------------------------------------------
 
 const abilities = new Map<string, AbilityFull>();
 const unfinishedByHero = new Map<string, number>();
 const unfinished: { id: string; hero: string; reason: string; name: string }[] = [];
+const unobtainable: { id: string; hero: string; reason: string; name: string }[] = [];
 
 /**
  * Shared abilities a hero actually equips, read off its own `AbilityN` list.
@@ -234,6 +354,15 @@ for (const [id, src] of Object.entries(rawAbilities)) {
     continue;
   }
 
+  /*
+   * Finished, but no hero can reach it. It stays in the ability map — the wiki
+   * still documents it and old shared links still resolve its index — but the
+   * hero slot lists below leave it out.
+   */
+  if (typeof hero === 'string' && !(grantedByHero.get(hero)?.has(id) ?? false)) {
+    unobtainable.push({ id, hero, reason: 'no hero AbilityN or talent node grants it', name });
+  }
+
   const values: Record<string, number | string> = {};
   const av = src['AbilityValues'];
   if (av && typeof av === 'object' && !Array.isArray(av)) {
@@ -279,12 +408,19 @@ if (unfinished.length > 0) {
   warn(`${unfinished.length} ability(ies) are unfinished in the addon data and are not offered:`);
   for (const u of unfinished) info(`  ${u.id} (${u.hero.replace('npc_dota_hero_', '')}) — ${u.reason}`);
 }
+if (unobtainable.length > 0) {
+  warn(`${unobtainable.length} finished ability(ies) cannot be learned and are not offered:`);
+  for (const u of unobtainable) info(`  ${u.id} (${u.hero.replace('npc_dota_hero_', '')}) — ${u.name}`);
+}
 
 // --- heroes -----------------------------------------------------------------
 
 const heroes: HeroInfo[] = roster.map((id, i) => {
   const profession = professionOfHero.get(id) ?? '';
-  const mine = [...abilities.values()].filter((a) => a.hero === id || a.hero === null);
+  const granted = grantedByHero.get(id) ?? new Set<string>();
+  const mine = [...abilities.values()].filter(
+    (a) => (a.hero === id || a.hero === null) && granted.has(a.id),
+  );
 
   const bySlot: Partial<Record<AbilitySlotKey, string[]>> = {};
   for (const slot of ABILITY_SLOTS) {
@@ -401,9 +537,10 @@ for (const lang of cfg.languages) {
 
 // --- counts -----------------------------------------------------------------
 
+const offered = new Set(heroes.flatMap((h) => h.abilities));
 checkSoft(heroes.length, cfg.expected.heroCount, 'hero count');
 checkSoft(abilities.size + unfinished.length, cfg.expected.abilityCount, 'hero abilities defined');
-checkSoft(abilities.size, cfg.expected.selectableAbilityCount, 'selectable abilities');
+checkSoft(offered.size, cfg.expected.selectableAbilityCount, 'selectable abilities');
 for (const [profession, expected] of Object.entries(cfg.expected.abilitiesPerHero)) {
   const hero = heroes.find((h) => h.profession === profession);
   checkSoft(hero?.abilities.length ?? 0, expected, `selectable abilities for ${profession}`);
@@ -426,7 +563,9 @@ for (const lang of cfg.languages) {
 
 writeJsonPretty(path.join(DIRS.reports, 'heroes.json'), {
   heroCount: heroes.length,
-  selectableAbilities: abilities.size,
+  selectableAbilities: offered.size,
+  finishedAbilities: abilities.size,
+  unobtainableAbilities: unobtainable.length,
   unfinishedAbilities: unfinished.length,
   heroes: heroes.map((h) => ({
     id: h.id,
@@ -437,10 +576,11 @@ writeJsonPretty(path.join(DIRS.reports, 'heroes.json'), {
     bySlot: Object.fromEntries(ABILITY_SLOTS.map((s) => [s, h.bySlot[s] ?? []])),
   })),
   unfinished,
+  unobtainable,
   missingNames,
   unresolvedTokens,
 });
 
-ok(`wrote cache/heroes.normalized.json (${heroes.length} heroes, ${abilities.size} selectable abilities)`);
+ok(`wrote cache/heroes.normalized.json (${heroes.length} heroes, ${offered.size} selectable abilities)`);
 
 exitIfFailed();
