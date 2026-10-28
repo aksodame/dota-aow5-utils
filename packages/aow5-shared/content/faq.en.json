@@ -5418,7 +5418,7 @@
     },
     {
      "type": "note",
-     "text": "**Poison has counters**: [[item:item_0282|Dandelion Amulet]] and [[item:item_P052|Poison Resistance Potion]] cut poison damage by 99%, [[item:item_P051|Nature's Elixir]] and [[item:item_0144|★Shadow Amulet]] remove poison and give immunity to new applications, and [[item:item_M225|Life Pod]] simply removes the stacks. What exactly they cut and what they do not is covered in the \"Damage and its multipliers\" section."
+     "text": "**Poison has counters**: [[item:item_0282|Dandelion Amulet]] cuts poison damage by 45% (its Ancestral [[item:item_0710|Ancestral: Dandelion Amulet]] by 58%), and [[item:item_P052|Poison Resistance Potion]] by 99%, [[item:item_P051|Nature's Elixir]] and [[item:item_0144|★Shadow Amulet]] remove poison and give immunity to new applications, and [[item:item_M225|Life Pod]] simply removes the stacks. What exactly they cut and what they do not is covered in the \"Damage and its multipliers\" section."
     },
     {
      "type": "note",
@@ -5960,7 +5960,7 @@
     },
     {
      "type": "text",
-     "text": "**What boosts and what cuts each damage type.** \"Poison is not boosted by crit\", \"bleed is not cut by armor\": all of that goes here:"
+     "text": "**What boosts and what cuts each damage type.** \"Poison does not crit — except with the Tome of the Poison Sect\", \"bleed is not cut by armor\": all of that goes here:"
     },
     {
      "type": "table",
@@ -5989,9 +5989,9 @@
       [
        "**Poison** (magic, ticks)",
        "the sum of your attributes (STR+AGI+INT) at the moment of application, then it grows with the number of stacks",
-       "stacks (all poisons on the target count), \"%DoT damage\", \"%Poison Damage\", general multipliers",
+       "stacks (all poisons on the target count), \"%DoT damage\", \"%Poison Damage\", general multipliers; magic crit only with the Tome of the Poison Sect (`item_0644`)",
        "magic resistance: against tanky bosses with 90%+ poison barely gets through",
-       "crit. And poison on you works differently: it is based on your health, not on the monster's stats"
+       "crit — normal and ability crit; the exception is the Tome of the Poison Sect (`item_0644`), whose passive lets poison crit with magic damage (the tome itself carries +18% magic crit). And poison on you works differently: it is based on your health, not on the monster's stats"
       ],
       [
        "**Bleed** (ticks)",
@@ -6077,12 +6077,32 @@
       [
        "100",
        "×36.4"
+      ],
+      [
+       "500",
+       "×65"
+      ],
+      [
+       "1,000",
+       "×72.1"
+      ],
+      [
+       "10,000",
+       "×80"
+      ],
+      [
+       "∞ (cap)",
+       "×81"
       ]
      ]
     },
     {
      "type": "text",
-     "text": "On top of that there is a second, shared multiplier for the **total stacks of all poisons on the target** (each hero or item has its own poison); it grows very slowly: with 10 of your own stacks and 30 total it gives about ×1.3. A tick happens every **0.25 s** and is sped up by the \"% poison damage speed\" stat (the interval is divided by 1 + %/100, but no more often than 0.03 s). Stacks decay constantly: **−20% every 3 s** (at least one stack), and when no stacks are left the poison ends. Of the defenses, poison only goes through magic resistance; neither armor nor \"damage reduction\" applies to it, and it does not crit. The game's glossary stresses that **all stacks** count toward total poison damage."
+     "text": "The ×81 cap is an asymptote: there is no final stack, and the curve approaches ×80 at roughly 10,000 stacks (1,000 already gives ×72)."
+    },
+    {
+     "type": "text",
+     "text": "On top of that there is a second, shared multiplier for the **total stacks of all poisons on the target** (each hero or item has its own poison); it grows very slowly: with 10 of your own stacks and 30 total it gives about ×1.3. A tick happens every **0.25 s** and is sped up by the \"% poison damage speed\" stat (the interval is divided by 1 + %/100, but no more often than 0.03 s). Stacks decay constantly: **−20% every 3 s** (at least one stack), and when no stacks are left the poison ends. Of the defenses, poison only goes through magic resistance; neither armor nor \"damage reduction\" applies to it, and it does not crit — except with the Tome of the Poison Sect (`item_0644`), which lets it crit with magic damage. The game's glossary stresses that **all stacks** count toward total poison damage."
     },
     {
      "type": "text",
@@ -6090,7 +6110,7 @@
     },
     {
      "type": "text",
-     "text": "**How to defend against poison.** \"Cutting the damage\" and \"not getting poisoned\" are different things. [[item:item_0282|Dandelion Amulet]] and its Ancestral version [[item:item_0710|Ancestral: Dandelion Amulet]] (both −99% poison damage), as well as [[item:item_P052|Poison Resistance Potion]] (−99% for 160 s, also removes all stacks on use), cut **only the magic part**; they do not touch the second, health-based one. **Application** is fully blocked by [[item:item_P051|Nature's Elixir]] (180 s, +25% base health) and [[item:item_0144|★Shadow Amulet]] (5 s): on use they remove the current stacks and grant immunity, and while the effect lasts a monster cannot poison you at all. [[item:item_M225|Life Pod]] (active \"Purify\") just removes stacks without immunity."
+     "text": "**How to defend against poison.** \"Cutting the damage\" and \"not getting poisoned\" are different things. [[item:item_0282|Dandelion Amulet]] (−45% poison damage) and its Ancestral version [[item:item_0710|Ancestral: Dandelion Amulet]] (−58%), as well as [[item:item_P052|Poison Resistance Potion]] (−99% for 160 s, also removes all stacks on use), cut **only the magic part**; they do not touch the second, health-based one. **Application** is fully blocked by [[item:item_P051|Nature's Elixir]] (180 s, +25% base health) and [[item:item_0144|★Shadow Amulet]] (5 s): on use they remove the current stacks and grant immunity, and while the effect lasts a monster cannot poison you at all. [[item:item_M225|Life Pod]] (active \"Purify\") just removes stacks without immunity."
     },
     {
      "type": "text",
@@ -6106,7 +6126,7 @@
     },
     {
      "type": "note",
-     "text": "**In Endless, poison works differently.** Its monsters are always level 6, but their attack grows with the floor: floor 1 ~530, floor 10 ~4,000, floor 25 ~31,000, floor 50 ~340,000, then another ×1.1 per floor and +30% outgoing damage for every floor after the 50th. Poison on the player is calculated from that same attack (`0.026 × stacks × attack`), so there it is almost entirely the magic part: on high floors without the amulet or a potion it wipes your health in a few ticks, and with them (−99%) only a small \"health-based\" part remains."
+     "text": "**In Endless, poison works differently.** Its monsters are always level 6, but their attack grows with the floor: floor 1 ~530, floor 10 ~4,000, floor 25 ~31,000, floor 50 ~340,000, then another ×1.1 per floor and +30% outgoing damage for every floor after the 50th. Poison on the player is calculated from that same attack (`0.026 × stacks × attack`), so there it is almost entirely the magic part: on high floors without the amulet or a potion it wipes your health in a few ticks, and with the potion (−99%) mostly a small \"health-based\" part remains; the amulet cuts only 45%, its Ancestral 58%."
     },
     {
      "type": "text",
