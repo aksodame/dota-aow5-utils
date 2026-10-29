@@ -49,6 +49,22 @@ export interface CalcStrings {
     /** Labels for buff keys that are not panel rows. */
     keys: Record<string, string>;
   };
+  /** The achievements dialog and the button that opens it. */
+  achievements: {
+    button: string;
+    buttonTitle: string;
+    title: string;
+    note: string;
+    /** The heading of the one series the game files under `level`. */
+    levelCategory: string;
+    reset: string;
+    close: string;
+    loading: string;
+    empty: string;
+    /** The bonus line when no level of a series is selected. */
+    notSelected: string;
+    selected: (n: number) => string;
+  };
   cell: {
     seasonRange: (max: number) => string;
     override: string;
@@ -312,7 +328,7 @@ export const CALC: Localised<CalcStrings> = {
     recalc: 'Пересчитать из героя',
     recalcTitle: 'Забыть ручные правки колонки «База» и снова посчитать статы от героя на 30 уровне',
     resetAll: 'Сбросить всё',
-    resetAllTitle: 'Очистить базу, слоты и руны',
+    resetAllTitle: 'Очистить базу, слоты и руны; достижения останутся',
     hint:
       'База считается сама: для выбранного героя на 30 уровне, со всеми ступенями профессии и всеми узлами — своей ветки и общих деревьев, взятыми целиком (что именно вошло — в блоке «Откуда база» под панелью). Поле можно править руками — у такой строки появляется пометка, а кнопка «Пересчитать из героя» возвращает расчёт. Дальше предметы прибавляются сами, а вклад атрибутов считается разницей — чтобы ничего не посчиталось дважды. Уровни сезона (вклад и мир) дают по +2 % урона и −2 % получаемого за уровень и работают в самом конце — после брони, независимыми множителями.',
     head: { stat: 'Стат', base: (level) => `База (герой, ${level} ур.)`, items: 'Предметы', buffs: 'Бафы', plus: 'Плюс сверху', total: 'Итого' },
@@ -332,6 +348,19 @@ export const CALC: Localised<CalcStrings> = {
         all_all_stats_pct: 'Все атрибуты, %',
         bonus_movespeed_pct: 'Скорость передвижения, %',
       },
+    },
+    achievements: {
+      button: 'Достижения',
+      buttonTitle: 'Отметить полученные достижения — их бонусы идут в колонку «Бафы»',
+      title: 'Достижения',
+      note: 'Отметьте полученные этапы. Этапы начисляются по порядку: III включает I и II; под названием видно, что даёт текущий выбор — этот бонус идёт в колонку «Бафы». Повторный клик по выбранному уровню снимает выбор серии.',
+      levelCategory: 'Уровень героя',
+      reset: 'Сбросить все',
+      close: 'Закрыть',
+      loading: 'Загрузка достижений…',
+      empty: 'Нет данных о достижениях.',
+      notSelected: 'Бонус не выбран',
+      selected: (n) => `Выбрано серий: ${n}`,
     },
     cell: {
       seasonRange: (max) => `От 0 до ${max}`,
@@ -522,7 +551,7 @@ export const CALC: Localised<CalcStrings> = {
     recalc: 'Recompute from hero',
     recalcTitle: 'Forget the manual edits in the "Base" column and compute the stats from the hero at level 30 again',
     resetAll: 'Reset all',
-    resetAllTitle: 'Clear the base, the slots and the runes',
+    resetAllTitle: 'Clear the base, the slots and the runes; achievements stay',
     hint:
       'The base computes itself: the chosen hero at level 30, with every profession tier and every node — their own tree and the common ones, taken in full (what went in is in "Where the base comes from" below the panel). You can edit a field by hand — the row gets a mark, and "Recompute from hero" brings the computed value back. Items then add on top by themselves, and the attributes\' contribution is counted as a difference, so nothing is counted twice. Season levels (contribution and world) give +2% damage dealt and −2% damage taken per level, applied last — after armor, as independent multipliers.',
     head: { stat: 'Stat', base: (level) => `Base (hero, lv. ${level})`, items: 'Items', buffs: 'Buffs', plus: 'On top', total: 'Total' },
@@ -542,6 +571,19 @@ export const CALC: Localised<CalcStrings> = {
         all_all_stats_pct: 'All Stats, %',
         bonus_movespeed_pct: 'Movement speed, %',
       },
+    },
+    achievements: {
+      button: 'Achievements',
+      buttonTitle: 'Mark the achievements you have claimed — their bonuses go into the “Buffs” column',
+      title: 'Achievements',
+      note: 'Mark the stages you have claimed. Stages are claimed in order: III includes I and II; under the name is what the current selection grants — that bonus goes into the “Buffs” column. Clicking the selected level again clears the series.',
+      levelCategory: 'Hero level',
+      reset: 'Clear all',
+      close: 'Close',
+      loading: 'Loading achievements…',
+      empty: 'No achievement data.',
+      notSelected: 'No bonus selected',
+      selected: (n) => `Series selected: ${n}`,
     },
     cell: {
       seasonRange: (max) => `0 to ${max}`,
@@ -722,7 +764,7 @@ export const CALC: Localised<CalcStrings> = {
     recalc: '按英雄重新计算',
     recalcTitle: '清除「基础」列的手动修改，重新按 30 级英雄计算',
     resetAll: '全部重置',
-    resetAllTitle: '清空基础、物品栏与符印',
+    resetAllTitle: '清空基础、物品栏与符印；成就保留',
     hint:
       '基础属性自动计算：所选英雄 30 级，含全部职业阶段与全部天赋节点——本职业天赋树与通用天赋树，全部点满（具体内容见面板下方「基础来源」）。字段可手动修改——该行会出现标记，「按英雄重新计算」可恢复计算值。之后物品自动叠加，属性的贡献按差值计算——避免重复计算。赛季等级（贡献与世界）每级提供 +2% 造成伤害与 −2% 承受伤害，在最后结算——护甲之后，作为独立乘区。',
     head: { stat: '属性', base: (level) => `基础（英雄 ${level} 级）`, items: '物品', buffs: '增益', plus: '额外', total: '合计' },
@@ -742,6 +784,19 @@ export const CALC: Localised<CalcStrings> = {
         all_all_stats_pct: '全属性，%',
         bonus_movespeed_pct: '移动速度，%',
       },
+    },
+    achievements: {
+      button: '成就',
+      buttonTitle: '标记已领取的成就——加成会计入「增益」列',
+      title: '成就',
+      note: '标记已领取的阶段。阶段按顺序领取：III 包含 I 和 II；名称下方显示当前选择提供的加成，该加成会计入「增益」列。再次点击已选等级可取消该系列的选择。',
+      levelCategory: '英雄等级',
+      reset: '全部清除',
+      close: '关闭',
+      loading: '正在加载成就…',
+      empty: '没有成就数据。',
+      notSelected: '未选择加成',
+      selected: (n) => `已选择系列：${n}`,
     },
     cell: {
       seasonRange: (max) => `0 至 ${max}`,

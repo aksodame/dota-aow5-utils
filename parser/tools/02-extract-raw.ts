@@ -151,6 +151,21 @@ try {
     ok(`${path.basename(cfg.greedCavePath)} (${data.length} bytes)`);
   }
 
+  // --- achievements ---------------------------------------------------------
+  // One row per stage, with the stat rewards a claimed stage grants. Plain KV,
+  // like the Greed Cave table above; step 08e reads it with the locale tokens.
+
+  let achievementBytes = 0;
+  const achievementEntry = vpk.get(cfg.achievementsPath);
+  if (!achievementEntry) {
+    warn(`achievement table missing: ${cfg.achievementsPath}`);
+  } else {
+    const data = vpk.read(achievementEntry);
+    fs.writeFileSync(path.join(DIRS.cacheRaw, path.basename(cfg.achievementsPath)), data);
+    achievementBytes = data.length;
+    ok(`${path.basename(cfg.achievementsPath)} (${data.length} bytes)`);
+  }
+
   // --- rooms ----------------------------------------------------------------
   // The map table and its difficulty modifiers. Plain KV rather than a publish
   // payload: both are small CSV-derived files the addon ships uncompiled.
@@ -235,6 +250,7 @@ try {
     roomSizes,
     kvSources: kvCount,
     greedCaveBytes,
+    achievementBytes,
     rulesetRows: Object.fromEntries(
       Object.entries(rulesetTables).map(([table, perSeason]) => [
         table,

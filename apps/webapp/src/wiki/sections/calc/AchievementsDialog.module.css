@@ -1,0 +1,123 @@
+/**
+ * The achievements dialog: series cards in three columns.
+ *
+ * A card is the art, the series name, the bonus the current selection grants,
+ * and the three level buttons pinned to its bottom edge. The bonus line takes
+ * the free space, so cards with short and long reward lists keep their buttons
+ * on one line across the grid.
+ */
+
+.note {
+  margin: 0 0 var(--space-3);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: 284px;
+  padding: var(--space-3) var(--space-2) var(--space-2);
+  text-align: center;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.icon {
+  flex: none;
+  width: 128px;
+  height: 128px;
+  object-fit: contain;
+  background: var(--wash-1);
+  border-radius: var(--radius-sm);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.bonus {
+  flex: 1;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.bonusNone {
+  color: var(--text-dim);
+}
+
+.levels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+  margin-top: auto;
+}
+
+.level {
+  padding: 4px 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-dim);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    background-color 100ms ease,
+    border-color 100ms ease,
+    color 100ms ease;
+}
+
+.level:hover {
+  background: var(--wash-2);
+}
+
+.levelOn,
+.levelOn:hover {
+  color: var(--accent);
+  background: var(--wash-3);
+  border-color: var(--accent);
+}
+
+.count {
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.empty {
+  padding: var(--space-6) 0;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+}

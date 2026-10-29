@@ -31,6 +31,7 @@ export const DIRS = {
   publicIconHeroes: path.join(SHARED, 'public', 'icons', 'heroes'),
   publicIconMaps: path.join(SHARED, 'public', 'icons', 'maps'),
   publicIconUi: path.join(SHARED, 'public', 'icons', 'ui'),
+  publicIconAchievements: path.join(SHARED, 'public', 'icons', 'achievements'),
 };
 
 export function ensureDirs(): void {
@@ -78,6 +79,10 @@ export interface Aow5Config {
   abilityLocaleColumns: Record<string, string>;
   /** The endless Greed Cave's reward tables; see the note beside it in the config. */
   greedCavePath: string;
+  /** The achievement table; see the note beside it in the config. */
+  achievementsPath: string;
+  /** The game's achievement art directory; step 05c reads the textures it names. */
+  achievementIconDir: string;
   /** The room table — every map a guide can be written for, and its tier. */
   roomsPath: string;
   /** Difficulty modifiers the room selection screen offers. Extracted, not yet emitted. */
@@ -140,6 +145,8 @@ export interface Aow5Config {
     /** How many items each dismantle rule claims. Keys are the addon's own ids. */
     dismantleRuleHistogram: Record<string, number>;
     enTokens: { names: number; descriptions: number; lore: number; values: number };
+    achievementSeriesCount: number;
+    achievementStageCount: number;
     heroCount: number;
     abilityCount: number;
     selectableAbilityCount: number;

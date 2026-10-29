@@ -15,6 +15,7 @@ import {
 } from '../../packages/aow5-shared/src/types/items.ts';
 import { ABILITY_SLOTS, type HeroesData, type LocaleAbilities } from '../../packages/aow5-shared/src/types/heroes.ts';
 import type { LocaleMaps, MapsData } from '../../packages/aow5-shared/src/types/maps.ts';
+import type { AchievementsFile, AchievementsLocale } from '../../packages/aow5-shared/src/wiki/achievements.ts';
 
 /**
  * Verifies the emitted artifacts. Exits non-zero on any failure.
@@ -616,5 +617,55 @@ ok(
   `golden fixtures: ${goldenChecked} field assertion(s) across ${Object.keys(golden.items).length} items, ` +
     `${goldenHeroChecked} across heroes and abilities`,
 );
+
+// --- achievements -----------------------------------------------------------
+
+const achievementsFile = path.join(DIRS.publicData, 'wiki', 'achievements.json');
+if (!fs.existsSync(achievementsFile)) {
+  check(false, 'wiki/achievements.json exists');
+} else {
+  const achievements = readJson<AchievementsFile>(achievementsFile);
+  checkSoft(achievements.series.length, cfg.expected.achievementSeriesCount, 'achievement series');
+  let stages = 0;
+  let badSeries = 0;
+  for (const series of achievements.series) {
+    stages += series.stages.length;
+    if (series.stages.length !== 3) badSeries++;
+    for (const stage of series.stages) if (stage.rewards.length === 0) badSeries++;
+  }
+  checkSoft(stages, cfg.expected.achievementStageCount, 'achievement stages');
+  check(badSeries === 0, `every achievement series has 3 stages with rewards (${badSeries} bad)`);
+
+  let badIcons = 0;
+  for (const series of achievements.series) {
+    for (const stage of series.stages) {
+      const file = path.join(DIRS.publicIcons, 'achievements', stage.icon);
+      if (stage.icon === '' || !fs.existsSync(file)) {
+        badIcons++;
+        continue;
+      }
+      const png = readPngInfo(fs.readFileSync(file));
+      if (png === null || png.width !== 128 || png.height !== 128) badIcons++;
+    }
+  }
+  check(badIcons === 0, `every achievement stage has a 128 px icon (${badIcons} bad)`);
+
+  for (const lang of meta.languages) {
+    const file = path.join(DIRS.publicData, 'wiki', `locale.${lang}.achievements.json`);
+    if (!fs.existsSync(file)) {
+      check(false, `locale.${lang}.achievements.json exists`);
+      continue;
+    }
+    const locale = readJson<AchievementsLocale>(file);
+    let missing = 0;
+    for (const series of achievements.series) {
+      for (const stage of series.stages) {
+        const text = locale.series[series.id]?.stages[stage.id];
+        if (text === undefined || text.name === '' || text.shortName === '' || text.description === '') missing++;
+      }
+    }
+    check(missing === 0, `${lang}: every achievement stage has text (${missing} missing)`);
+  }
+}
 
 exitIfFailed();

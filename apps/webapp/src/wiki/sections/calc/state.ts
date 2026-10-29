@@ -22,6 +22,11 @@ export interface CalcState {
   mode: AttrMode;
   /** Permanent consumables used, by item id; the page clamps them to `use_max`. */
   buffs: Record<string, number>;
+  /**
+   * Claimed achievement level per series (0–3). Account-wide, not the hero's:
+   * unlike the permanent buffs, these survive a hero change.
+   */
+  achievements: Record<string, number>;
   slots: Array<Entry | null>;
   neutral: Entry | null;
   pet: Entry | null;
@@ -44,6 +49,7 @@ export function freshState(): CalcState {
     base: {},
     mode: 'delta',
     buffs: {},
+    achievements: {},
     slots: Array.from({ length: 6 }, () => null),
     neutral: null,
     pet: null,
@@ -79,6 +85,12 @@ export function hydrate(raw: unknown): CalcState {
     for (const [id, v] of Object.entries(r.buffs as Record<string, unknown>)) {
       const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
       if (Number.isFinite(n) && n > 0) s.buffs[id] = Math.floor(n);
+    }
+  }
+  if (r.achievements !== null && typeof r.achievements === 'object') {
+    for (const [id, v] of Object.entries(r.achievements as Record<string, unknown>)) {
+      const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
+      if (Number.isFinite(n) && n > 0) s.achievements[id] = Math.min(3, Math.floor(n));
     }
   }
   s.mode = r.mode === 'full' || r.attrMode === 'full' ? 'full' : 'delta';
