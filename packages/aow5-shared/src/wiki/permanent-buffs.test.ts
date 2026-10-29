@@ -39,6 +39,13 @@ test('counts clamp to use_max and scale the pool', () => {
   assert.equal(permanentBuffPool([{ ...p207, used: 2 }]).bonus_health, 50);
 });
 
+test('permanent potions that move panel stats are all listed', () => {
+  const listed = new Set(PERMANENT_BUFFS.map((buff) => buff.id));
+  for (const id of ['item_P220', 'item_P221', 'item_P222', 'item_P223', 'item_P274']) {
+    assert.ok(listed.has(id), `${id} is in the permanent buffs list`);
+  }
+});
+
 test('the page gets the whole list even with nothing used', () => {
   const rows = permanentBuffRows(extra, {});
   assert.equal(rows.length, PERMANENT_BUFFS.length);
