@@ -8,6 +8,7 @@ import {
   permanentBuffPool,
   permanentBuffRows,
   seasonalPatch,
+  type AchievementsFile,
   type EffectsResult,
   type HeroStatsFile,
   type HeroesWikiFile,
@@ -25,6 +26,8 @@ import { useWikiStrings } from '../i18n';
 import { CALC, type SlotKind } from '../i18n/calc';
 import { DataFooter, Note, WikiError, WikiLoading, WikiMissing, day, num, useWikiData, useWikiPageMeta } from '../kit';
 import type { SectionProps } from '../WikiPage';
+import { AchievementsDialog } from './calc/AchievementsDialog';
+import { achievementContribution, useAchievementsData } from './calc/achievements';
 import { CalcPicker } from './calc/CalcPicker';
 import { HeroBase } from './calc/HeroBase';
 import { ItemStatsEditor } from './calc/ItemStatsEditor';
@@ -72,6 +75,8 @@ export default function CalcPage({ path }: SectionProps) {
   const [state, update] = useCalcState();
   const [sel, setSel] = useState<SlotRef | null>(null);
   const [pick, setPick] = useState<SlotRef | null>(null);
+  const [achOpen, setAchOpen] = useState(false);
+  const { file: achFile, locale: achLocale } = useAchievementsData();
   const { data, error } = useWikiData<[HeroStatsFile, HeroesWikiFile, HeroesWikiLocale, ProgressionLocale]>([
     'herostats.json',
     'heroes-wiki.json',
@@ -100,10 +105,11 @@ export default function CalcPage({ path }: SectionProps) {
   );
 
   // The build's pool: every equipped item's rolled stats, what item effects add,
-  // and the permanent buffs beside them (kept apart — they are not the base).
+  // and the account-wide buffs beside them (permanent consumables and claimed
+  // achievements — kept apart, they are not the base).
   const { sums, fx, buffs } = useMemo(
-    () => buildPool(state, input, full, tables, extra),
-    [state, input, full, tables, extra],
+    () => buildPool(state, input, full, tables, extra, achFile),
+    [state, input, full, tables, extra, achFile],
   );
 
   if (missing) return <WikiMissing />;
@@ -144,8 +150,12 @@ export default function CalcPage({ path }: SectionProps) {
               heroes={heroes}
               heroName={heroName}
               full={full}
+              achievementsCount={Object.values(state.achievements).filter((level) => level > 0).length}
+              onOpenAchievements={() => setAchOpen(true)}
               onReset={() => {
-                update(() => freshState());
+                // The achievements are the account's, not the build's: "reset
+                // all" clears the loadout but keeps what the reader claimed.
+                update((s) => ({ ...freshState(), achievements: s.achievements }));
                 setSel(null);
               }}
             />
@@ -183,6 +193,22 @@ export default function CalcPage({ path }: SectionProps) {
             onSelect={choose}
             onClose={() => setPick(null)}
           />
+          <AchievementsDialog
+            open={achOpen}
+            onClose={() => setAchOpen(false)}
+            file={achFile}
+            locale={achLocale}
+            selected={state.achievements}
+            onChange={(id, level) =>
+              update((s) => {
+                const achievements = { ...s.achievements };
+                if (level <= 0) delete achievements[id];
+                else achievements[id] = Math.min(3, Math.floor(level));
+                return { ...s, achievements };
+              })
+            }
+            onReset={() => update((s) => ({ ...s, achievements: {} }))}
+          />
         </>
       )}
     </div>
@@ -209,6 +235,7 @@ function buildPool(
   full: Record<string, ItemFull> | null,
   tables: RollTables | null,
   extra: ItemsExtraFile | null,
+  achievements: AchievementsFile | null,
 ): { sums: Record<string, number>; fx: EffectsResult; buffs: Record<string, number> } {
   const empty = { sums: {}, fx: { extra: {}, notes: [] }, buffs: {} };
   if (full === null || tables === null || input === null) return empty;
@@ -223,7 +250,16 @@ function buildPool(
     });
   const sums: Record<string, number> = {};
   for (const e of list) for (const [k, v] of Object.entries(e.stats)) sums[k] = (sums[k] ?? 0) + v;
-  const buffs = extra === null ? {} : permanentBuffPool(permanentBuffRows(extra, state.buffs));
+  // The "Buffs" column: permanent consumables plus the claimed achievements.
+  // Both are account progress, not the build, and both reach the panel the
+  // same way, so the table and the item effects see one pool.
+  const buffs: Record<string, number> = {};
+  if (extra !== null) {
+    for (const [k, v] of Object.entries(permanentBuffPool(permanentBuffRows(extra, state.buffs)))) buffs[k] = v;
+  }
+  for (const [k, v] of Object.entries(achievementContribution(achievements, state.achievements, input))) {
+    buffs[k] = (buffs[k] ?? 0) + v;
+  }
   // An item effect that reads the panel ("per point of mana") sees the buffs
   // too, as it would in the game.
   const withBuffs = (P: Record<string, number>): Record<string, number> => {
@@ -249,6 +285,8 @@ function StatsPanel({
   heroes,
   heroName,
   full,
+  achievementsCount,
+  onOpenAchievements,
   onReset,
 }: {
   state: CalcState;
@@ -260,6 +298,8 @@ function StatsPanel({
   heroes: Array<{ short: string; name: string }>;
   heroName: string;
   full: Record<string, ItemFull> | null;
+  achievementsCount: number;
+  onOpenAchievements: () => void;
   onReset: () => void;
 }) {
   const t = useWikiStrings(CALC);
@@ -286,7 +326,16 @@ function StatsPanel({
     });
 
   return (
-    <Panel title={t.title} className={styles.statsPanel}>
+    <Panel
+      title={t.title}
+      className={styles.statsPanel}
+      action={
+        <Button size="sm" variant="ghost" onClick={onOpenAchievements} title={t.achievements.buttonTitle}>
+          {t.achievements.button}
+          {achievementsCount > 0 && ` · ${achievementsCount}`}
+        </Button>
+      }
+    >
       <div className={styles.controls}>
         <label className={styles.heroField}>
           <span className={styles.heroLabel}>{t.hero}</span>
@@ -295,8 +344,8 @@ function StatsPanel({
             onChange={(event) => {
               const hero = event.target.value;
               // A new hero forgets the manual base and the permanent buffs
-              // (both are the old hero's), but not the season levels — those
-              // are the player's.
+              // (both are the old hero's), but not the season levels or the
+              // achievements — those are the player's account.
               update((s) => ({ ...s, hero, base: clearHeroOverrides(s.base), buffs: {} }));
             }}
           >

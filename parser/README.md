@@ -9,9 +9,9 @@ need to run it, because everything the pipeline produces is committed in `packag
 | written to | what |
 |---|---|
 | `packages/aow5-shared/public/data/` | items, heroes, abilities and locales as JSON |
-| `packages/aow5-shared/public/icons/` | item, spell and portrait PNGs |
+| `packages/aow5-shared/public/icons/` | item, spell, portrait and achievement PNGs |
 | `packages/aow5-shared/data/` | the frozen, append-only id tables the share codec indexes into |
-| `packages/aow5-shared/public/data/wiki/` | the wiki's tables — monsters, locations, talents, heroes, sky, vendors, pools, crafting (steps 08a–08d) |
+| `packages/aow5-shared/public/data/wiki/` | the wiki's tables — monsters, locations, talents, heroes, sky, vendors, pools, crafting, achievements (steps 08a–08e) |
 
 Its own inputs and scratch space stay here: `config/` (VPK path, CDN templates, frozen hero roster, expected
 counts), `assets/ability-icons/` (hand-supplied art), and — ignored by git — `cache/` (raw VPK extracts) and
@@ -23,7 +23,7 @@ plain Lua config files. The server code the addon ships encrypted is never decry
 only there, the wiki states the value its original author documented and says so. Every step that reads
 Lua refuses a file containing `XDecrypt`.
 
-## The wiki steps (08a–08d)
+## The wiki steps (08a–08e)
 
 The fan wiki merged into the site in 2026-10 had its own private generator. These steps replace it, read the
 same pak as everything above, and emit three languages where it emitted Russian. Each has a
@@ -36,6 +36,7 @@ same pak as everything above, and emit three languages where it emitted Russian.
 | `08b-wiki-progression.ts` | talent trees, professions, the heroes' kits and runes, level-30 hero stats |
 | `08c-wiki-sky-vendors.ts` | the Sky (greed cave) tiers, endless waves, spawn pools and combos; vendors; shop bundles and chests |
 | `08d-wiki-items.ts` | what the wiki needs beyond `items.full.json`: containers, tower chests, Life Souls, wearables, per-season patches, drop pools, crafting |
+| `08e-wiki-achievements.ts` | the achievement series and their three stages, the stat rewards each stage grants, and the stage names/descriptions |
 
 ## Which VPK
 

@@ -110,6 +110,9 @@ export const heroIconUrl = (icon: string): string =>
 /** The portal's painted scene for a room. Only rooms that ship art have one. */
 export const mapImageUrl = (image: string): string => `${base}icons/maps/${image}`;
 
+/** A stage's achievement art, decoded from the game by step 05c. */
+export const achievementIconUrl = (icon: string): string => `${base}icons/achievements/${icon}`;
+
 /**
  * The game's own gold coin, for anywhere the site shows an amount of it.
  *

@@ -14,8 +14,9 @@
     "extract:items": "node tools/04-build-items.ts",
     "extract:heroes": "node tools/04b-build-heroes.ts",
     "extract:rolls": "node tools/04d-build-rolls.ts",
-    "extract:icons": "node tools/05-icons-vpk.ts && node tools/05b-icons-ui.ts && node tools/06-icons-cdn.ts",
+    "extract:icons": "node tools/05-icons-vpk.ts && node tools/05b-icons-ui.ts && node tools/05c-icons-achievements.ts && node tools/06-icons-cdn.ts",
     "extract:emit": "node tools/07-emit.ts",
+    "extract:achievements": "node tools/08e-wiki-achievements.ts",
     "verify": "node tools/verify.ts",
     "test": "node --test \"tools/**/*.test.ts\"",
     "check-types": "tsc --noEmit"

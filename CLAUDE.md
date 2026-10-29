@@ -86,8 +86,9 @@ a new variable means a line there, not a `process.env` somewhere else.
 ## Where the data comes from
 
 `parser/tools/run-all.ts` drives the steps (`01` index the pak, `02` extract raw,
-`03`–`04d` build the tables, `05`–`06` icons, `07` emit, `08a`–`08d` the wiki
-files). The pak path comes from `AOW5_VPK` or `parser/config/aow5.config.json`;
+`03`–`04d` build the tables, `05`–`06` icons, `07` emit, `08a`–`08e` the wiki
+files, including the achievements the calculator reads). The pak path comes from
+`AOW5_VPK` or `parser/config/aow5.config.json`;
 the `expected` block in that config is a pin guard that warns rather than fails
 when a new build moves the numbers. `parser/tools/verify.ts` compares the emitted
 files against `golden.json`.

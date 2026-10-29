@@ -21,6 +21,7 @@ const STEPS = [
   'make-placeholder.ts',
   '05-icons-vpk.ts',
   '05b-icons-ui.ts',
+  '05c-icons-achievements.ts',
   '06-icons-cdn.ts',
   '07-emit.ts',
   // The wiki's tables. After the emit, because they read the emitted item
@@ -29,6 +30,7 @@ const STEPS = [
   '08b-wiki-progression.ts',
   '08c-wiki-sky-vendors.ts',
   '08d-wiki-items.ts',
+  '08e-wiki-achievements.ts',
   'verify.ts',
 ];
 
