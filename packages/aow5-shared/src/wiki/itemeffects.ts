@@ -31,7 +31,16 @@ export interface DerivedTotals {
   mana: number;
 }
 
-export type EffectId = 'prism' | 'crown' | 'sageBoots' | 'arcaneCloak' | 'nullifier' | 'primalCrystal' | 'usurerCodex';
+export type EffectId =
+  | 'prism'
+  | 'crown'
+  | 'sageBoots'
+  | 'arcaneCloak'
+  | 'nullifier'
+  | 'primalCrystal'
+  | 'overcrit'
+  | 'infinity'
+  | 'usurerCodex';
 
 /** What one effect did on the last pass, for the page to put into words. */
 export type EffectFacts =
@@ -49,6 +58,8 @@ export type EffectFacts =
   | { kind: 'arcaneCloak'; hp: number }
   | { kind: 'nullifier'; pct: number; lifesteal: number; step: number; per: number; cap: number }
   | { kind: 'primalCrystal'; total: number; moved: number; gained: number; convert: number; agi: number; stepAgi: number; perPct: number; cap: number }
+  | { kind: 'overcrit'; total: number; cap: number; overflow: number; step: number; perStep: number; amp: number }
+  | { kind: 'infinity'; physical: number; magical: number; convert: number; amp: number }
   | { kind: 'usurerCodex'; amp: number };
 
 export interface EffectNote {
@@ -69,6 +80,17 @@ const param = (P: Pool, key: string, fallback: number): number => {
 const add = (P: Pool, key: string, delta: number): void => {
   P[key] = (P[key] ?? 0) + delta;
 };
+
+/**
+ * The game's `GetTotalCritChancePct(type, omni)` as the item scripts use it:
+ * the type's own chance plus the omni chance. The base 5% attack crit is not
+ * part of this helper — the damage pipeline combines it with the type chance
+ * only when it rolls the hit (`ProcessCriticalStrike`), while item effects such
+ * as Overflow read the summed stat before that roll.
+ */
+export function totalCritChancePct(typePct: number, omniPct: number): number {
+  return (Number.isFinite(typePct) ? typePct : 0) + (Number.isFinite(omniPct) ? omniPct : 0);
+}
 
 interface EffectDef {
   conditional?: true;
@@ -176,6 +198,38 @@ const REG: Record<EffectId, EffectDef> = {
     },
   },
 
+  // Overflow (item_0610 / ancestor 0820): the physical crit chance above the
+  // cap becomes crit damage — floor((total − cap) / step) × perStep. The script
+  // reads `physical_crit_chance_pct + omni_crit_chance_pct` every 0.3 s, so in
+  // the fixed point it must see Primal Crystal's conversion and vice versa.
+  overcrit: {
+    apply(P) {
+      const cap = Math.max(1, param(P, 'ability_value_c_crit_cap_pct', 100));
+      const step = Math.max(1, param(P, 'ability_overflow_per_step', 2));
+      const perStep = Math.max(0, param(P, 'ability_value_crit_damage_per_step', 3));
+      const total = totalCritChancePct(P.physical_crit_chance_pct ?? 0, P.omni_crit_chance_pct ?? 0);
+      const overflow = Math.max(0, Math.floor(total - cap));
+      const amp = Math.floor(overflow / step) * perStep;
+      if (amp <= 0) return null;
+      add(P, 'crit_damage_pct', amp);
+      return { kind: 'overcrit', total, cap, overflow, step, perStep, amp };
+    },
+  },
+
+  // Infinity (item_0368 / ancestor 0779): both the physical and the magical
+  // total crit chance turn into crit damage, so omni counts in both halves.
+  infinity: {
+    apply(P) {
+      const convert = param(P, 'ability_value_crit_damage_convert_pct', 70);
+      const physical = totalCritChancePct(P.physical_crit_chance_pct ?? 0, P.omni_crit_chance_pct ?? 0);
+      const magical = totalCritChancePct(P.magical_crit_chance_pct ?? 0, P.omni_crit_chance_pct ?? 0);
+      const amp = ((physical + magical) * convert) / 100;
+      if (amp <= 0) return null;
+      add(P, 'crit_damage_pct', amp);
+      return { kind: 'infinity', physical, magical, convert, amp };
+    },
+  },
+
   // Usurer's Codex: magic damage % while the "debt" lasts (it grows with each
   // spell cast). Out of combat there is no debt, so it counts — with a caveat.
   usurerCodex: {
@@ -197,6 +251,8 @@ export const EFFECT_ITEMS: Readonly<Record<string, EffectId>> = {
   item_0335: 'arcaneCloak',
   item_0208: 'nullifier',
   item_0658: 'primalCrystal',
+  item_0610: 'overcrit',
+  item_0368: 'infinity',
   item_0615: 'usurerCodex',
 };
 
@@ -207,6 +263,8 @@ export const EFFECT_ALIASES: Readonly<Record<string, string>> = {
   item_0716: 'item_0336',
   item_0830: 'item_0208',
   item_0884: 'item_0658',
+  item_0820: 'item_0610',
+  item_0779: 'item_0368',
 };
 
 /**
