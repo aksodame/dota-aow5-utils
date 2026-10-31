@@ -22,3 +22,5 @@ export * from './monsters.ts';
 export * from './item-page.ts';
 export * from './itemroll.ts';
 export * from './itemeffects.ts';
+export * from './dps.ts';
+export * from './dps-mechanics.ts';

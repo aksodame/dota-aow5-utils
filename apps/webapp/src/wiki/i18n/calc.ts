@@ -1,4 +1,4 @@
-import type { AttrBonus, EffectFacts } from 'aow5-shared/wiki';
+import type { AttrBonus, DpsSourceId, EffectFacts, EnemyKind } from 'aow5-shared/wiki';
 import type { Localised } from './index';
 import { STAT_NAMES } from './statNames';
 
@@ -132,9 +132,85 @@ export interface CalcStrings {
     marks: string;
     notModelled: string;
   };
+  /** The DPS sub-tab: its target form, summary, source bars and caveats. */
+  dps: DpsStrings;
   /** Stat names the game's own tables leave unnamed. Keys are item/panel stat keys. */
   statNames: Record<string, string>;
   stats: StatsEditorStrings;
+}
+
+export interface DpsStrings {
+  tab: { stats: string; dps: string };
+  title: string;
+  note: string;
+  enemy: {
+    title: string;
+    preset: string;
+    presetBoss: string;
+    custom: string;
+    kind: string;
+    kinds: Record<EnemyKind, string>;
+    maxHp: string;
+    armor: string;
+    magicResistance: string;
+    healthRegen: string;
+    damageReduction: string;
+    damageResistance: string;
+    physicalIncrease: string;
+    duration: string;
+    durationHint: string;
+    reset: string;
+  };
+  summary: {
+    title: string;
+    windowDps: string;
+    windowDamage: string;
+    ttk: string;
+    ttkNone: string;
+    attacks: string;
+    killAttacks: string;
+    killDamage: string;
+    attackSpeed: string;
+    aps: string;
+    critChance: string;
+    critMultiplier: string;
+    armor: string;
+    armorBreak: string;
+    penetration: string;
+    poisonStacks: string;
+    doomStacks: string;
+    noItems: string;
+  };
+  sources: {
+    title: string;
+    share: string;
+    damage: string;
+    dps: string;
+    labels: Record<DpsSourceId, string>;
+  };
+  /** Actives that the reader can tick to use on cooldown. */
+  active: {
+    title: string;
+    note: string;
+    feather: string;
+    featherAncestor: string;
+    meta: (cooldown: string, duration: string, interval: string, pct: string) => string;
+  };
+  /** Per-second window and the kill's event log. */
+  timeline: {
+    title: string;
+    windowTab: string;
+    killTab: string;
+    second: string;
+    time: string;
+    source: string;
+    damage: string;
+    hp: string;
+    note: string;
+    empty: string;
+    firstOnly: string;
+  };
+  notes: { title: string; lines: string[] };
 }
 
 /** The item editor. */
@@ -301,12 +377,318 @@ const ATTR_ZH: Record<AttrName, string> = { str: '力量', agi: '敏捷', int: '
 const ATTRS: AttrName[] = ['str', 'agi', 'int'];
 const signed = (v: number, n: N): string => (v >= 0 ? `+${n(v)}` : `−${n(-v)}`);
 
+const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
+  ru: {
+    tab: { stats: 'Статы', dps: 'DPS' },
+    title: 'DPS по цели',
+    note: 'Окно урона по выбранной цели: автоатаки и проки предметов. Способности героя, ванильные таланты, яд и сеты пока не входят.',
+    enemy: {
+      title: 'Цель',
+      preset: 'Пресет',
+      presetBoss: 'Босс 60-й волны',
+      custom: 'Свои значения',
+      kind: 'Тип цели',
+      kinds: { normal: 'Обычный', elite: 'Элитный', miniboss: 'Мини-босс', boss: 'Босс' },
+      maxHp: 'HP',
+      armor: 'Броня',
+      magicResistance: 'Маг. сопротивление, %',
+      healthRegen: 'Реген HP/с',
+      damageReduction: 'Снижение урона, %',
+      damageResistance: 'Сопротивление урону, %',
+      physicalIncrease: 'Физ. урон по цели, %',
+      duration: 'Окно расчёта, с',
+      durationHint: 'DPS считается по манекену за это время; смерть цели учитывается отдельным расчётом.',
+      reset: 'Сбросить к боссу 60-й волны',
+    },
+    summary: {
+      title: 'Итог',
+      windowDps: 'DPS в окне',
+      windowDamage: 'Урон за окно',
+      ttk: 'Время убийства',
+      ttkNone: 'не умирает за окно',
+      attacks: 'Автоатак в окне',
+      killAttacks: 'Автоатак до смерти',
+      killDamage: 'Урон до смерти',
+      attackSpeed: 'Скорость атаки',
+      aps: 'Атак/с',
+      critChance: 'Шанс крита',
+      critMultiplier: 'Множитель крита',
+      armor: 'Броня после пробития (конец окна)',
+      armorBreak: 'Броня после раскола (конец окна)',
+      penetration: 'Пробитие брони',
+      poisonStacks: 'Слоёв яда (конец окна)',
+      doomStacks: 'Слоёв рока (конец окна)',
+      noItems: 'Наденьте предметы — считать пока нечего.',
+    },
+    sources: {
+      title: 'Источники урона',
+      share: 'Доля',
+      damage: 'Урон',
+      dps: 'DPS',
+      labels: {
+        auto: 'Автоатаки',
+        talonsLight: 'Когти дракона — лёгкий удар',
+        talonsHeavy: 'Когти дракона — тяжёлый удар (ожидание 1 %)',
+        bleed: 'Кровотечение',
+        bloodEcho: 'Эхо кровавого пула',
+        burn: 'Горение (сумка)',
+        poison: 'Яд — тики',
+        poisonBurst: 'Всплеск Кобры (ожидание)',
+        witchBlade: 'Клинок ведьмы — тик (ожидание)',
+        feather: 'Кулон небесных перьев — актив',
+        flatProc: 'Прок Дротика / Хрустального меча',
+      },
+    },
+    active: {
+      title: 'Активные предметы',
+      note: 'Галочка — использовать предмет по КД; перезарядка уменьшается на cooldown_reduction_pct.',
+      feather: 'Кулон небесных перьев',
+      featherAncestor: 'Предок: Кулон небесных перьев',
+      meta: (cd, duration, interval, pct) => `КД ${cd} с · ${duration} с, тик ${interval} с, ${pct} % статов`,
+    },
+    timeline: {
+      title: 'Таймлайн',
+      windowTab: 'Окно по секундам',
+      killTab: 'Убийство: события',
+      second: 'Секунда',
+      time: 'Время, с',
+      source: 'Источник',
+      damage: 'Урон',
+      hp: 'HP после',
+      note: 'Оба вида — один и тот же событийный движок. В окне урон складывается по секундам, в убийстве показываются отдельные удары и тики до смерти.',
+      empty: 'Событий нет.',
+      firstOnly: 'Показаны первые 30 событий.',
+    },
+    notes: {
+      title: 'Что учтено и что нет',
+      lines: [
+        'Считаются автоатаки и эффекты предметов. Способности героя, ванильные таланты, яд и сеты не входят.',
+        'Окно и убийство — два независимых прогона: число атак в окне не применяется к цели целиком. В расчёте убийства события идут по времени и останавливаются на смерти.',
+        'Первый удар не получает уязвимость, раскол и метку: Посох и сумка накладывают их после него. Поэтому первая автоатака ниже установившейся.',
+        'Крит: базовые 5 % обычной атаки, шанс физ. крита и омни складываются по формуле игры; множитель — 180 % + «Урон от крита» с панели.',
+        'Кровотечение: 70 % финального урона в пул, 10 тиков; 0467 срабатывает по шансу при полном HP, 0398 — по критам. 0504 превращает часть тика в физ. урон, но он помечен NO_PROC и новых кровотечений не вызывает.',
+        'Эхо 0504 — обычный физический удар: на него работают крит, физ. усилители и броня, поэтому при высоком крите оно даёт основную долю урона.',
+        'Горение сумки — 0,75 % макс. HP босса за тик, но не больше 10× суммы характеристик; метка даёт +4,6 % за слой, до 10.',
+        'Броня: 1 − броня/(26,66 + |броня|); пробитие режет только положительную броню; раскол 0853 — до 31 % брони.',
+        'Маг. сопротивление показано для будущих магических источников: сейчас все источники физические, на расчёт оно не влияет.',
+        'Из предметов учтены перечисленные проки и пассивные статы; активные способности, ауры и сеты не входят.',
+        'Когти дракона: лёгкий удар срабатывает на каждую автоатаку, тяжёлый — с шансом 1 %; в расчёте тяжёлый показан матожиданием 1 %, а не отдельным проком.',
+        'Яд: тики каждые 0,25 с, каждые 3 с сгорает 20 % слоёв и этот тик пропускается. Урон считает сумму статов, магическое сопротивление, коррозию 0365 (до +30 % магического урона), «Урон ядом» и «Периодический урон». Шанс слоя и размер всплеска 0365 берутся из прокрутки предмета; 0238 даёт свой слой со своим шансом. Защитный яд 0238 на атакующего в расчёт не входит: манекен не бьёт.',
+        '0209: шанс тика из прокрутки (80 % статов), повторный прок сразу наносит тик; шанс «рока» — до 5 слоёв, каждый снижает маг. сопротивление (здесь 6 % за слой, до 30). 0402: каждый новый слой яда сразу вызывает дополнительный тик, не более одного на атаку.',
+        'Актив 0646/0827 считается только при включённой галочке: 10 тиков по 50 % статов чистым уроном, КД 30 с уменьшается на cooldown_reduction_pct (кап 80 %).',
+        '0129/0131: физ. прок 25 % × 50; у 0129 числа захардкожены в скрипте, у 0131 берутся из прокрутки. AoE 0131 считается по одной цели; вторичные прок-эффекты от этого удара не разворачиваются.',
+      ],
+    },
+  },
+  en: {
+    tab: { stats: 'Stats', dps: 'DPS' },
+    title: 'DPS against a target',
+    note: 'A damage window against the chosen target: auto-attacks and item procs. Hero abilities, stock talents, poison and sets are not in yet.',
+    enemy: {
+      title: 'Target',
+      preset: 'Preset',
+      presetBoss: 'Wave-60 boss',
+      custom: 'Custom values',
+      kind: 'Target kind',
+      kinds: { normal: 'Normal', elite: 'Elite', miniboss: 'Mini-boss', boss: 'Boss' },
+      maxHp: 'HP',
+      armor: 'Armor',
+      magicResistance: 'Magic resistance, %',
+      healthRegen: 'HP regen/s',
+      damageReduction: 'Damage reduction, %',
+      damageResistance: 'Damage resistance, %',
+      physicalIncrease: 'Physical damage taken, %',
+      duration: 'Window, s',
+      durationHint: 'DPS is measured on a dummy for this window; the kill is a separate calculation.',
+      reset: 'Reset to the wave-60 boss',
+    },
+    summary: {
+      title: 'Result',
+      windowDps: 'Window DPS',
+      windowDamage: 'Damage in window',
+      ttk: 'Time to kill',
+      ttkNone: 'survives the window',
+      attacks: 'Auto-attacks in window',
+      killAttacks: 'Auto-attacks to kill',
+      killDamage: 'Damage to kill',
+      attackSpeed: 'Attack speed',
+      aps: 'Attacks/s',
+      critChance: 'Crit chance',
+      critMultiplier: 'Crit multiplier',
+      armor: 'Armor after penetration (end of window)',
+      armorBreak: 'Armor after break (end of window)',
+      penetration: 'Armor penetration',
+      poisonStacks: 'Poison stacks (end of window)',
+      doomStacks: 'Doom stacks (end of window)',
+      noItems: 'Equip items — there is nothing to calculate yet.',
+    },
+    sources: {
+      title: 'Damage sources',
+      share: 'Share',
+      damage: 'Damage',
+      dps: 'DPS',
+      labels: {
+        auto: 'Auto-attacks',
+        talonsLight: 'Dragon talons — light strike',
+        talonsHeavy: 'Dragon talons — heavy strike (1 % expected)',
+        bleed: 'Bleed',
+        bloodEcho: 'Blood-pool echo',
+        burn: 'Burn (bag)',
+        poison: 'Poison — ticks',
+        poisonBurst: 'Cobra burst (expected)',
+        witchBlade: 'Witch Blade tick (expected)',
+        feather: 'Feather pendant — active',
+        flatProc: 'Dart / Crystal Sword proc',
+      },
+    },
+    active: {
+      title: 'Active items',
+      note: 'Tick to use the item on cooldown; cooldown is reduced by cooldown_reduction_pct.',
+      feather: 'Feather pendant',
+      featherAncestor: 'Ancestor: Feather pendant',
+      meta: (cd, duration, interval, pct) => `CD ${cd} s · ${duration} s, ${interval} s tick, ${pct} % of stats`,
+    },
+    timeline: {
+      title: 'Timeline',
+      windowTab: 'Window by second',
+      killTab: 'Kill: events',
+      second: 'Second',
+      time: 'Time, s',
+      source: 'Source',
+      damage: 'Damage',
+      hp: 'HP after',
+      note: 'Both views are the same event-driven engine. The window sums damage per second; the kill log shows individual hits and ticks until death.',
+      empty: 'No events.',
+      firstOnly: 'Showing the first 30 events.',
+    },
+    notes: {
+      title: 'What is and is not modelled',
+      lines: [
+        'Auto-attacks and item effects are counted. Hero abilities, stock talents, poison and sets are not.',
+        'The window and the kill are two independent runs: the window\'s attack count is not applied to the target in one go. The kill run walks events in time and stops on death.',
+        'The first hit gets no vulnerable, armor break or mark: the staff and the bag apply them after it. That is why the first auto-attack is lower than the steady state.',
+        'Crit: the 5 % base attack chance, the physical chance and omni combine the way the game does; the multiplier is 180 % + the panel\'s crit damage.',
+        'Bleed: 70 % of the final damage goes into a pool, ten ticks; 0467 rolls at full HP, 0398 on crits. 0504 turns part of a tick into physical damage, but it is tagged NO_PROC and starts no new bleeds.',
+        '0504\'s echo is an ordinary physical hit: crit, physical amplifiers and armor all apply to it, so with a high crit chance it carries the bulk of the damage.',
+        'The bag\'s burn is 0.75 % of the boss\'s maximum HP per tick, capped at 10× the attribute total; its mark adds 4.6 % per stack, up to 10.',
+        'Armor: 1 − armor/(26.66 + |armor|); penetration cuts positive armor only; 0853\'s break removes up to 31 %.',
+        'Magic resistance is there for future magical sources: every source modelled today is physical, so it does not move the result.',
+        'Item passives and the procs listed above are in; active abilities, auras and sets are not.',
+        'Dragon talons: the light strike fires on every auto-attack, the heavy one has a 1 % chance; the figure uses its 1 % expected value, not a separate proc roll.',
+        'Poison: ticks every 0.25 s, 20 % of the stacks decay every 3 s and that tick is skipped. Damage reads the attribute total, magic resistance, 0365 corrosion (up to +30 % magic damage), poison and DoT outgoing. 0365\'s stack chance and burst size come from the item roll; 0238 adds its own stack at its own chance. 0238\'s defensive poison on attackers is not in the DPS run: the dummy does not attack.',
+      ],
+    },
+  },
+  zh: {
+    tab: { stats: '属性', dps: 'DPS' },
+    title: '对目标 DPS',
+    note: '按所选目标计算一段时间的伤害：普通攻击与物品触发。英雄技能、原版天赋、毒与套装暂未计入。',
+    enemy: {
+      title: '目标',
+      preset: '预设',
+      presetBoss: '第 60 波 Boss',
+      custom: '自定义',
+      kind: '目标类型',
+      kinds: { normal: '普通', elite: '精英', miniboss: '小头目', boss: 'Boss' },
+      maxHp: '生命',
+      armor: '护甲',
+      magicResistance: '魔法抗性，%',
+      healthRegen: '生命回复/秒',
+      damageReduction: '伤害减免，%',
+      damageResistance: '伤害抗性，%',
+      physicalIncrease: '受到物理伤害，%',
+      duration: '计算窗口，秒',
+      durationHint: 'DPS 按木桩在窗口内的伤害计算；击杀时间单独计算。',
+      reset: '重置为第 60 波 Boss',
+    },
+    summary: {
+      title: '结果',
+      windowDps: '窗口 DPS',
+      windowDamage: '窗口伤害',
+      ttk: '击杀时间',
+      ttkNone: '窗口内未击杀',
+      attacks: '窗口内普攻次数',
+      killAttacks: '击杀所需普攻',
+      killDamage: '击杀所需伤害',
+      attackSpeed: '攻击速度',
+      aps: '攻击/秒',
+      critChance: '暴击率',
+      critMultiplier: '暴击倍率',
+      armor: '穿透后护甲（窗口结束）',
+      armorBreak: '破甲后护甲（窗口结束）',
+      penetration: '护甲穿透',
+      poisonStacks: '毒层数（窗口结束）',
+      doomStacks: '厄运层数（窗口结束）',
+      noItems: '请先装备物品——暂无可计算内容。',
+    },
+    sources: {
+      title: '伤害来源',
+      share: '占比',
+      damage: '伤害',
+      dps: 'DPS',
+      labels: {
+        auto: '普通攻击',
+        talonsLight: '龙爪——轻击',
+        talonsHeavy: '龙爪——重击（1% 期望）',
+        bleed: '流血',
+        bloodEcho: '血池回响',
+        burn: '灼烧（背包）',
+        poison: '毒——跳伤',
+        poisonBurst: '眼镜蛇爆发（期望）',
+        witchBlade: '女巫之刃——跳伤（期望）',
+        feather: '天羽护符——主动',
+        flatProc: '飞镖／水晶剑触发',
+      },
+    },
+    active: {
+      title: '主动物品',
+      note: '勾选后按冷却使用；冷却受 cooldown_reduction_pct 缩减。',
+      feather: '天羽护符',
+      featherAncestor: '先祖：天羽护符',
+      meta: (cd, duration, interval, pct) => `冷却 ${cd} 秒 · ${duration} 秒，${interval} 秒一跳，${pct}% 属性`,
+    },
+    timeline: {
+      title: '时间线',
+      windowTab: '按秒窗口',
+      killTab: '击杀：事件',
+      second: '秒',
+      time: '时间，秒',
+      source: '来源',
+      damage: '伤害',
+      hp: '剩余生命',
+      note: '两种视图使用同一套事件驱动引擎：窗口按秒汇总伤害，击杀日志显示死亡前的每次命中与跳伤。',
+      empty: '没有事件。',
+      firstOnly: '仅显示前 30 个事件。',
+    },
+    notes: {
+      title: '已计入与未计入',
+      lines: [
+        '计入普通攻击与物品效果；英雄技能、原版天赋、毒与套装暂未计入。',
+        '窗口与击杀是两次独立演算：窗口内的攻击次数不会一次性全部打到目标上；击杀演算按时间推进并在死亡时停止。',
+        '第一次命中不吃易伤、破甲与焚印：法杖和背包是在命中之后才施加。因此第一下普攻低于稳定值。',
+        '暴击：普通攻击基础 5%、物理暴击率与全能按游戏公式合并；倍率为 180% + 面板暴击伤害。',
+        '流血：最终伤害的 70% 进入池，10 次跳伤；0467 按满血几率触发，0398 按暴击触发。0504 将部分跳伤转为物理伤害，但标记为 NO_PROC，不会再次触发流血。',
+        '0504 的回响是普通物理伤害：暴击、物理增幅与护甲都会作用于它，因此高暴击时会成为主要伤害来源。',
+        '背包灼烧每次跳伤为 Boss 最大生命的 0.75%，不超过属性总和的 10 倍；焚印每层 +4.6%，最多 10 层。',
+        '护甲：1 − 护甲/(26.66 + |护甲|)；穿透只削减正护甲；0853 的破甲最多 31%。',
+        '魔法抗性为后续魔法伤害预留：当前所有来源均为物理，不影响结果。',
+        '物品只计入上述触发与被动属性；主动技能、光环与套装未计入。',
+        '龙爪：轻击每次普通攻击都会触发，重击有 1% 几率；计算中重击按 1% 期望值显示，而不是单独掷骰。',
+        '毒：每 0.25 秒跳伤，每 3 秒衰减 20% 层数且该次跳伤跳过。伤害读取属性总和、魔法抗性、0365 的腐蚀（最多 +30% 魔法伤害）、毒与持续伤害增幅。0365 的加层几率与爆发比例取自物品随机值；0238 按自身几率加 1 层。0238 对攻击者的防御性施毒不计入 DPS：木桩不会攻击。',
+        '0209：跳伤几率取自随机值（80% 属性），再次触发会立即结算一次；厄运最多 5 层，每层降低魔法抗性（此处每层 6%，最多 30）。0402：每次新增毒层立即额外结算一次跳伤，每次攻击最多一次。',
+        '0646/0827 的主动仅在勾选时计入：10 次跳伤，每次为 50% 属性的纯粹伤害；30 秒冷却受 cooldown_reduction_pct 缩减（上限 80%）。',
+        '0129/0131：25% × 50 的物理触发；0129 的数值写死在脚本中，0131 读取随机值。0131 的 AoE 只按单体计算；该次命中的二次触发效果不展开。',
+      ],
+    },
+  },
+};
+
 export const CALC: Localised<CalcStrings> = {
   ru: {
     title: 'Статы персонажа',
     wipTitle: 'Вкладка в работе (WIP)',
     wip:
-      'База героя считается сама — для выбранного героя на 30 уровне, со своей веткой профессии и всеми общими деревьями (взятыми целиком), но её можно править руками. Ещё считает предметы в 6 слотах, нейтральном, у питомца, в сумке и у души, 3 руны, прокрутку статов как в карточке предмета (у предков настраивается и наложенная грань: своя прокрутка и «фикс»). Пока не учитываются: ванильные таланты героя, сеты, способности и боевые эффекты предметов; руны статов не добавляют — они правят параметры способностей героя.',
+      'База героя считается сама — для выбранного героя на 30 уровне, со своей веткой профессии и всеми общими деревьями (взятыми целиком), но её можно править руками. Ещё считает предметы в 6 слотах, нейтральном, у питомца, в сумке и у души, 3 руны, прокрутку статов как в карточке предмета (у предков настраивается и наложенная грань: своя прокрутка и «фикс»). Пока не учитываются: ванильные таланты героя, сеты и способности; боевые эффекты предметов считает подвкладка DPS; руны статов не добавляют — они правят параметры способностей героя.',
     hero: 'Герой:',
     note: {
       computed: (level) => `${level} уровень · посчитано из игры`,
@@ -527,13 +909,14 @@ export const CALC: Localised<CalcStrings> = {
           stone ? ' Свойства грани — своей группой: «Грань» — её вклад, «Итог» — сумма со свойством предмета; перековка и «усил» на грань не действуют.' : ''
         }`,
     },
+    dps: DPS_TEXT.ru,
   },
 
   en: {
     title: 'Character stats',
     wipTitle: 'Work in progress',
     wip:
-      "The hero's base is computed for you — the chosen hero at level 30, with their own profession tree and every common tree taken in full — and you can still edit it by hand. Items in the 6 slots, the neutral slot, the pet, the bag and the soul are counted, plus 3 runes, with stats rolled exactly as on the item card (an ancestral item's fate stone has its own roll and fixed stat too). Not counted yet: the hero's stock talents, sets, item abilities and combat effects; runes add no stats — they change the hero's abilities.",
+      "The hero's base is computed for you — the chosen hero at level 30, with their own profession tree and every common tree taken in full — and you can still edit it by hand. Items in the 6 slots, the neutral slot, the pet, the bag and the soul are counted, plus 3 runes, with stats rolled exactly as on the item card (an ancestral item's fate stone has its own roll and fixed stat too). Not counted yet: the hero's stock talents, sets and abilities; item combat effects are the DPS sub-tab's job; runes add no stats — they change the hero's abilities.",
     hero: 'Hero:',
     note: {
       computed: (level) => `level ${level} · computed from the game`,
@@ -746,13 +1129,14 @@ export const CALC: Localised<CalcStrings> = {
           stone ? ' Fate stone stats are their own group: "Stone" is its share, "Total" the sum with the item\'s stat; the item\'s reforge and "enh." do not apply to the stone.' : ''
         }`,
     },
+    dps: DPS_TEXT.en,
   },
 
   zh: {
     title: '角色属性',
     wipTitle: '施工中',
     wip:
-      '英雄的基础属性自动计算：所选英雄 30 级，含本职业天赋树与全部通用天赋树（全部点满），也可以手动修改。另计 6 个物品栏、中立物品栏、宠物、背包与命魂中的物品以及 3 个符印，属性随机值与物品卡片一致（先祖物品还可调节其命石：独立随机值与「固定」）。暂未计入：英雄原版天赋、套装、物品技能与战斗效果；符印不加属性——它们修改英雄技能的参数。',
+      '英雄的基础属性自动计算：所选英雄 30 级，含本职业天赋树与全部通用天赋树（全部点满），也可以手动修改。另计 6 个物品栏、中立物品栏、宠物、背包与命魂中的物品以及 3 个符印，属性随机值与物品卡片一致（先祖物品还可调节其命石：独立随机值与「固定」）。暂未计入：英雄原版天赋、套装与技能；物品战斗效果由 DPS 子标签计算；符印不加属性——它们修改英雄技能的参数。',
     hero: '英雄：',
     note: {
       computed: (level) => `${level} 级 · 按游戏数据计算`,
@@ -954,5 +1338,6 @@ export const CALC: Localised<CalcStrings> = {
           stone ? ' 命石属性自成一组：「命石」列为贡献，「合计」为与物品属性之和；物品的重铸与「强化」不作用于命石。' : ''
         }`,
     },
+    dps: DPS_TEXT.zh,
   },
 };

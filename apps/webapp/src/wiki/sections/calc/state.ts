@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { hydrateRollState, type RollState } from 'aow5-shared/wiki';
+import { WAVE60_BOSS, hydrateRollState, type DpsEnemy, type EnemyKind, type RollState } from 'aow5-shared/wiki';
 import type { SlotKind } from '../../i18n/calc';
 import type { AttrMode } from './model';
 
@@ -35,7 +35,18 @@ export interface CalcState {
   soul: Entry | null;
   /** Runes give no panel stats; only which one is kept. */
   runes: Array<{ id: string } | null>;
+  /** The DPS sub-tab's target and its calculation window. */
+  dps: DpsState;
 }
+
+export interface DpsState {
+  enemy: DpsEnemy;
+  duration: number;
+  /** Item id -> use its active on cooldown. */
+  active: Record<string, boolean>;
+}
+
+export const DPS_DURATION_DEFAULT = 60;
 
 /** Where a slot is: its kind, and its index for the two kinds that have several. */
 export interface SlotRef {
@@ -56,6 +67,7 @@ export function freshState(): CalcState {
     bag: null,
     soul: null,
     runes: Array.from({ length: 3 }, () => null),
+    dps: { enemy: { ...WAVE60_BOSS }, duration: DPS_DURATION_DEFAULT, active: {} },
   };
 }
 
@@ -105,6 +117,35 @@ export function hydrate(raw: unknown): CalcState {
     const id = (runes[i] as { id?: unknown } | null | undefined)?.id;
     return typeof id === 'string' && id !== '' ? { id } : null;
   });
+  const dps = r.dps !== null && typeof r.dps === 'object' ? (r.dps as Record<string, unknown>) : null;
+  const target = dps?.enemy !== null && typeof dps?.enemy === 'object' ? (dps.enemy as Record<string, unknown>) : null;
+  if (target !== null) {
+    const pick = (key: string, fallback: number): number => {
+      const v = target[key];
+      return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+    };
+    const kind = target.kind;
+    s.dps.enemy = {
+      maxHp: Math.max(1, pick('maxHp', s.dps.enemy.maxHp)),
+      armor: pick('armor', s.dps.enemy.armor),
+      magicResistancePct: pick('magicResistancePct', s.dps.enemy.magicResistancePct),
+      healthRegen: Math.max(0, pick('healthRegen', s.dps.enemy.healthRegen)),
+      kind: kind === 'normal' || kind === 'elite' || kind === 'miniboss' || kind === 'boss' ? (kind as EnemyKind) : 'boss',
+      damageReductionPct: pick('damageReductionPct', s.dps.enemy.damageReductionPct),
+      damageResistancePct: Math.max(0, pick('damageResistancePct', s.dps.enemy.damageResistancePct)),
+      physicalDamageIncreasePct: pick('physicalDamageIncreasePct', s.dps.enemy.physicalDamageIncreasePct),
+    };
+  }
+  const duration = dps?.duration;
+  if (typeof duration === 'number' && Number.isFinite(duration)) {
+    s.dps.duration = Math.min(3600, Math.max(1, duration));
+  }
+  const active = dps?.active;
+  if (active !== null && typeof active === 'object') {
+    for (const [id, on] of Object.entries(active as Record<string, unknown>)) {
+      if (on === true) s.dps.active[id] = true;
+    }
+  }
   return s;
 }
 
