@@ -1,6 +1,25 @@
 {
  "notes": [
   {
+   "version": "v1.519",
+   "date": "31.10.2026",
+   "game": [
+    "27 tier-IV runes were added: Axe’s “Second Strike IV”, nine Drow runes (G400–G412) and seventeen Void Spirit runes (G500–G520). All are level 8 and cost 9,600 gold.",
+    "Dragon Knight: Dragon Form still blocks a lethal hit, but after such a save “Dormant Dragon Soul” is applied for 60 seconds — while it lasts, the form no longer prevents death. Breathe Fire and Dragon Tail deal half their former damage in Dragon Form: 650% and 800% instead of 1300% and 1600%.",
+    "Beastmaw Ring and Ancestral: Beastmaw Ring: the active attack-damage bonus is reduced from 150% to 60% for 10 seconds.",
+    "Monsters in level 7–8 rooms now have slow resistance equal to 100 − stability (capped at 99). In M009 “Sanctum of Fading Shadows”, the Crystal Golem at 1% stability or lower additionally gets 99 resistance and +50 movement speed.",
+    "Four bosses — Black Feather Apostle, Void Spirit, Shark Bully and Soul Lantern — can now drop rune G219 “Explosive Dagger”. Runes G116 “Rallying Roar”, G216–G219 and G317–G320 were also added to the rune pools.",
+    "Referral rewards: the number of Mystery Keys was reduced in 22 tiers (for example, 6 → 1 and 3 → 1).",
+    "Devourer Warlord now moves at full speed and stomps every 140 units travelled instead of once per second. The missing Shadow Strike Resonance script (item_0553) was restored, and Phantom Assassin’s shuriken now hits targets standing on blocker tiles."
+   ],
+   "wiki": [
+    "Data rebuilt from v1.519: 27 new tier-IV runes in Items and on the Heroes tab.",
+    "Beastmaw Ring (150% → 60%) and Dragon Knight ability cards were updated.",
+    "Drops of four bosses and the rune pools (G116, G216–G219, G317–G320) were updated.",
+    "FAQ gained a note on slow resistance in level 7–8 rooms and a note on Dormant Dragon Soul."
+   ]
+  },
+  {
    "version": "v1.515",
    "date": "28.10.2026",
    "game": [

@@ -143,6 +143,10 @@
       },
       {
        "type": "text",
+       "text": "**Slows in level 7–8 rooms.** Monsters in these rooms have slow resistance equal to `100 − stability` (capped at 99): the lower the stability, the less movement- and attack-speed slows work. In M009 \"Sanctum of Fading Shadows\", the Crystal Golem at ≤1% stability additionally gets 99 resistance and +50 movement speed."
+      },
+      {
+       "type": "text",
        "text": "Entering an unstable room is **not forbidden**: the game asks for confirmation (\"Unstable Room\", \"The room's environment is unstable, the monster threat will rise significantly\") and waits 20 seconds for an answer, after which the request closes by itself."
       },
       {
@@ -3744,14 +3748,14 @@
          "Breathe Fire (`dragon_knight_001`)",
          "active · area",
          "CD 13 s · mana 25",
-         "Breathes fire at the target point (range 950): 300% of attack damage as physical damage along the path (up to 600% in Dragon Form), triggers attack effects, knocks back and stuns for 0.3 s, slows by 25% for 4 s."
+         "Breathes fire at the target point (range 950): 650% of attack damage as physical damage along the path (the same 650% in Dragon Form), triggers attack effects, knocks back and stuns for 0.3 s, slows by 25% for 4 s."
         ],
         [
          "Q",
          "Dragon Tail (`dragon_knight_002`)",
          "active · area · charges",
          "CD 0.5 s · mana 25",
-         "Dragon Tail (called \"Sweeping Strike\" in v1.500, renamed back in v1.502) at the target point (radius 350, 90° cone): 400% of attack damage to enemies in the area. In Dragon Form: radius 550, 120° cone, damage up to 800%. Two charges, charge restore 6 s. Unlocked in place of \"Breathe Fire\"."
+         "Dragon Tail (called \"Sweeping Strike\" in v1.500, renamed back in v1.502) at the target point (radius 350, 90° cone): 800% of attack damage to enemies in the area. In Dragon Form: radius 550, 120° cone, the same 800% damage. Two charges, charge restore 6 s. Unlocked in place of \"Breathe Fire\"."
         ],
         [
          "W",
@@ -3817,6 +3821,10 @@
          "The number of poison stacks you apply is doubled, and each stack deals an extra 5% of attack damage as magic damage per second (shared decay). Sets the hero's element to **poison**."
         ]
        ]
+      },
+      {
+       "type": "note",
+       "text": "**Lethal damage.** While Dragon Form is active, a lethal hit does not kill: the form ends and the hero is left at 50% of max health. After such a save, \"Dormant Dragon Soul\" is applied for 60 seconds — while it lasts, Dragon Form no longer blocks lethal damage."
       },
       {
        "type": "text",
