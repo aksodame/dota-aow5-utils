@@ -400,7 +400,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
   ru: {
     tab: { stats: 'Статы', dps: 'DPS' },
     title: 'DPS по цели',
-    note: 'Окно урона по выбранной цели: автоатаки, проки предметов, яд и активные предметы. Способности героя, ванильные таланты и сеты пока не входят.',
+    note: 'Окно урона по выбранной цели: автоатаки, проки предметов до 4-го уровня включительно и их предков, яд и активные предметы. Способности героя, ванильные таланты и сеты пока не входят.',
     enemy: {
       title: 'Цель',
       preset: 'Пресет',
@@ -521,7 +521,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
     notes: {
       title: 'Что учтено и что нет',
       lines: [
-        'Считаются автоатаки, проки предметов, яд и активные предметы. Способности героя, ванильные таланты и сеты не входят.',
+        'Считаются автоатаки, проки предметов до 4-го уровня включительно, яд и активные предметы. Способности героя, ванильные таланты и сеты не входят.',
         'Окно и убийство — два независимых прогона: число атак в окне не применяется к цели целиком. В расчёте убийства события идут по времени и останавливаются на смерти.',
         'Первый удар не получает уязвимость, раскол и метку: Посох и сумка накладывают их после него. Поэтому первая автоатака ниже установившейся.',
         'Крит: базовые 5 % обычной атаки, шанс физ. крита и омни складываются по формуле игры; множитель — 180 % + «Урон от крита» с панели.',
@@ -553,7 +553,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
   en: {
     tab: { stats: 'Stats', dps: 'DPS' },
     title: 'DPS against a target',
-    note: 'A damage window against the chosen target: auto-attacks, item procs, poison and active items. Hero abilities, stock talents and sets are not in yet.',
+    note: 'A damage window against the chosen target: auto-attacks, item procs for items up to level 4 inclusive and their ancestors, poison and active items. Hero abilities, stock talents and sets are not in yet.',
     enemy: {
       title: 'Target',
       preset: 'Preset',
@@ -674,7 +674,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
     notes: {
       title: 'What is and is not modelled',
       lines: [
-        'Auto-attacks, item procs, poison and active items are counted. Hero abilities, stock talents and sets are not.',
+        'Auto-attacks, item procs for items up to level 4 inclusive, poison and active items are counted. Hero abilities, stock talents and sets are not.',
         'The window and the kill are two independent runs: the window\'s attack count is not applied to the target in one go. The kill run walks events in time and stops on death.',
         'The first hit gets no vulnerable, armor break or mark: the staff and the bag apply them after it. That is why the first auto-attack is lower than the steady state.',
         'Crit: the 5 % base attack chance, the physical chance and omni combine the way the game does; the multiplier is 180 % + the panel\'s crit damage.',
@@ -697,7 +697,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
   zh: {
     tab: { stats: '属性', dps: 'DPS' },
     title: '对目标 DPS',
-    note: '按所选目标计算一段时间的伤害：普通攻击、物品触发、毒与主动物品。英雄技能、原版天赋与套装暂未计入。',
+    note: '按所选目标计算一段时间的伤害：普通攻击、4 级及以下物品及其先祖的触发、毒与主动物品。英雄技能、原版天赋与套装暂未计入。',
     enemy: {
       title: '目标',
       preset: '预设',
@@ -818,7 +818,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
     notes: {
       title: '已计入与未计入',
       lines: [
-        '计入普通攻击、物品触发、毒与主动物品；英雄技能、原版天赋与套装暂未计入。',
+        '计入普通攻击、4 级及以下物品的触发、毒与主动物品；英雄技能、原版天赋与套装暂未计入。',
         '窗口与击杀是两次独立演算：窗口内的攻击次数不会一次性全部打到目标上；击杀演算按时间推进并在死亡时停止。',
         '第一次命中不吃易伤、破甲与焚印：法杖和背包是在命中之后才施加。因此第一下普攻低于稳定值。',
         '暴击：普通攻击基础 5%、物理暴击率与全能按游戏公式合并；倍率为 180% + 面板暴击伤害。',
