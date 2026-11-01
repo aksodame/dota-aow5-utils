@@ -515,7 +515,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         'Маг. сопротивление считается для яда, 0209, 0307 и 0161; физические источники его не читают.',
         'Из предметов учтены перечисленные проки, активные баффы и пассивные статы; способности героя, ауры и сеты не входят.',
         'Когти дракона: лёгкий удар срабатывает на каждую автоатаку, тяжёлый — с шансом 1 %; в расчёте тяжёлый показан матожиданием 1 %, а не отдельным проком.',
-        'Яд: тики каждые 0,25 с, каждые 3 с сгорает 20 % слоёв и этот тик пропускается. Урон считает сумму статов, магическое сопротивление, коррозию 0365 (до +30 % магического урона), «Урон ядом» и «Периодический урон». Шанс слоя и размер всплеска 0365 берутся из прокрутки предмета; 0238 даёт свой слой со своим шансом. Защитный яд 0238 на атакующего в расчёт не входит: манекен не бьёт.',
+        'Яд: тики каждые 0,25 с, каждые 3 с сгорает 20 % слоёв; если слои остались, тик всё равно бьёт уже с меньшим числом слоёв, а на нуле модификатор снимается. Урон считает сумму статов, магическое сопротивление, коррозию 0365 (до +30 % магического урона), «Урон ядом» и «Периодический урон». Шанс слоя и размер всплеска 0365 берутся из прокрутки предмета; 0238 даёт свой слой со своим шансом. 0382/0780 при наложении любого дебаффа с шансом 50/65 % добавляют ещё 1 слой яда — в расчёт входят яды, кровотечения 0467/0398, уязвимость 0217, горение сумки и 0209. Защитный яд 0238 на атакующего в расчёт не входит: манекен не бьёт.',
         '0209: шанс тика из прокрутки (80 % статов), повторный прок сразу наносит тик; шанс «рока» — до 5 слоёв, каждый снижает маг. сопротивление (здесь 6 % за слой, до 30). 0402: каждый новый слой яда сразу вызывает дополнительный тик, не более одного на атаку.',
         'Актив 0646/0827 считается только при включённой галочке: 10 тиков по 50 % статов чистым уроном, КД 30 с уменьшается на cooldown_reduction_pct (кап 80 %).',
         '0129/0131: физ. прок 25 % × 50; у 0129 числа захардкожены в скрипте, у 0131 берутся из прокрутки. AoE 0131 считается по одной цели; вторичные прок-эффекты от этого удара не разворачиваются.',
@@ -652,7 +652,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         'Magic resistance applies to poison, 0209, 0307 and 0161; physical sources do not read it.',
         'Item procs, active buffs and passives are in; hero abilities, auras and sets are not.',
         'Dragon talons: the light strike fires on every auto-attack, the heavy one has a 1 % chance; the figure uses its 1 % expected value, not a separate proc roll.',
-        'Poison: ticks every 0.25 s, 20 % of the stacks decay every 3 s and that tick is skipped. Damage reads the attribute total, magic resistance, 0365 corrosion (up to +30 % magic damage), poison and DoT outgoing. 0365\'s stack chance and burst size come from the item roll; 0238 adds its own stack at its own chance. 0238\'s defensive poison on attackers is not in the DPS run: the dummy does not attack.',
+        'Poison: ticks every 0.25 s; 20 % of the stacks decay every 3 s, the tick still lands with the reduced count while any stack remains, and the modifier is removed at zero. Damage reads the attribute total, magic resistance, 0365 corrosion (up to +30 % magic damage), poison and DoT outgoing. 0365\'s stack chance and burst size come from the item roll; 0238 adds its own stack at its own chance. 0382/0780 rolls once per debuff status and adds one more poison stack at 50/65 % — poisons, 0467/0398 bleeds, 0217 vulnerable, the bag\'s burn and 0209 are counted. 0238\'s defensive poison on attackers is not in the DPS run: the dummy does not attack.',
       ],
     },
   },
@@ -780,7 +780,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         '魔法抗性作用于毒、0209、0307 与 0161；物理来源不读取。',
         '物品计入上述触发、主动增益与被动属性；英雄技能、光环与套装未计入。',
         '龙爪：轻击每次普通攻击都会触发，重击有 1% 几率；计算中重击按 1% 期望值显示，而不是单独掷骰。',
-        '毒：每 0.25 秒跳伤，每 3 秒衰减 20% 层数且该次跳伤跳过。伤害读取属性总和、魔法抗性、0365 的腐蚀（最多 +30% 魔法伤害）、毒与持续伤害增幅。0365 的加层几率与爆发比例取自物品随机值；0238 按自身几率加 1 层。0238 对攻击者的防御性施毒不计入 DPS：木桩不会攻击。',
+        '毒：每 0.25 秒跳伤；每 3 秒衰减 20% 层数，只要还有层数，该次跳伤仍按减少后的层数结算，减到零时移除。伤害读取属性总和、魔法抗性、0365 的腐蚀（最多 +30% 魔法伤害）、毒与持续伤害增幅。0365 的加层几率与爆发比例取自物品随机值；0238 按自身几率加 1 层。0382/0780 每施加一次负面状态时按 50/65% 几率再加 1 层毒——计入毒、0467/0398 流血、0217 易伤、背包灼烧与 0209。0238 对攻击者的防御性施毒不计入 DPS：木桩不会攻击。',
         '0209：跳伤几率取自随机值（80% 属性），再次触发会立即结算一次；厄运最多 5 层，每层降低魔法抗性（此处每层 6%，最多 30）。0402：每次新增毒层立即额外结算一次跳伤，每次攻击最多一次。',
         '0646/0827 的主动仅在勾选时计入：10 次跳伤，每次为 50% 属性的纯粹伤害；30 秒冷却受 cooldown_reduction_pct 缩减（上限 80%）。',
         '0129/0131：25% × 50 的物理触发；0129 的数值写死在脚本中，0131 读取随机值。0131 的 AoE 只按单体计算；该次命中的二次触发效果不展开。',
@@ -800,7 +800,7 @@ export const CALC: Localised<CalcStrings> = {
     title: 'Статы персонажа',
     wipTitle: 'Вкладка в работе (WIP)',
     wip:
-      'База героя считается сама — для выбранного героя на 30 уровне, со своей веткой профессии и всеми общими деревьями (взятыми целиком), но её можно править руками. Ещё считает предметы в 6 слотах, нейтральном, у питомца, в сумке и у души, 3 руны, прокрутку статов как в карточке предмета (у предков настраивается и наложенная грань: своя прокрутка и «фикс»). Пока не учитываются: ванильные таланты героя, сеты и способности; боевые эффекты предметов считает подвкладка DPS; руны статов не добавляют — они правят параметры способностей героя.\n\nВ подвкладке DPS считаются все предметы до 3-го уровня включительно и их предки — статы, прок-эффекты, яды, активы и ауры.',
+      'База героя считается сама — для выбранного героя на 30 уровне, со своей веткой профессии и всеми общими деревьями (взятыми целиком), но её можно править руками. Ещё считает предметы в 6 слотах, нейтральном, у питомца, в сумке и у души, 3 руны, прокрутку статов как в карточке предмета (у предков настраивается и наложенная грань: своя прокрутка и «фикс»). Пока не учитываются: ванильные таланты героя, сеты и способности; боевые эффекты предметов считает подвкладка DPS; руны статов не добавляют — они правят параметры способностей героя.\n\nВ подвкладке DPS считаются все предметы до 3-го уровня включительно и их предки — статы, прок-эффекты, яды, активы и ауры; отдельно учтён Скипетр огненного яда (0382) и его предок 0780.',
     hero: 'Герой:',
     note: {
       computed: (level) => `${level} уровень · посчитано из игры`,
@@ -1030,7 +1030,7 @@ export const CALC: Localised<CalcStrings> = {
     title: 'Character stats',
     wipTitle: 'Work in progress',
     wip:
-      "The hero's base is computed for you — the chosen hero at level 30, with their own profession tree and every common tree taken in full — and you can still edit it by hand. Items in the 6 slots, the neutral slot, the pet, the bag and the soul are counted, plus 3 runes, with stats rolled exactly as on the item card (an ancestral item's fate stone has its own roll and fixed stat too). Not counted yet: the hero's stock talents, sets and abilities; item combat effects are the DPS sub-tab's job; runes add no stats — they change the hero's abilities.\n\nThe DPS sub-tab counts every item up to level 3 inclusive and their ancestors — stats, procs, poisons, actives and auras.",
+      "The hero's base is computed for you — the chosen hero at level 30, with their own profession tree and every common tree taken in full — and you can still edit it by hand. Items in the 6 slots, the neutral slot, the pet, the bag and the soul are counted, plus 3 runes, with stats rolled exactly as on the item card (an ancestral item's fate stone has its own roll and fixed stat too). Not counted yet: the hero's stock talents, sets and abilities; item combat effects are the DPS sub-tab's job; runes add no stats — they change the hero's abilities.\n\nThe DPS sub-tab counts every item up to level 3 inclusive and their ancestors — stats, procs, poisons, actives and auras; the Fire Venom Scepter (0382) and its ancestor 0780 are modelled separately.",
     hero: 'Hero:',
     note: {
       computed: (level) => `level ${level} · computed from the game`,
@@ -1252,7 +1252,7 @@ export const CALC: Localised<CalcStrings> = {
     title: '角色属性',
     wipTitle: '施工中',
     wip:
-      '英雄的基础属性自动计算：所选英雄 30 级，含本职业天赋树与全部通用天赋树（全部点满），也可以手动修改。另计 6 个物品栏、中立物品栏、宠物、背包与命魂中的物品以及 3 个符印，属性随机值与物品卡片一致（先祖物品还可调节其命石：独立随机值与「固定」）。暂未计入：英雄原版天赋、套装与技能；物品战斗效果由 DPS 子标签计算；符印不加属性——它们修改英雄技能的参数。\n\nDPS 子标签计算到 3 级为止的所有物品及其先祖——属性、触发效果、毒、主动与光环。',
+      '英雄的基础属性自动计算：所选英雄 30 级，含本职业天赋树与全部通用天赋树（全部点满），也可以手动修改。另计 6 个物品栏、中立物品栏、宠物、背包与命魂中的物品以及 3 个符印，属性随机值与物品卡片一致（先祖物品还可调节其命石：独立随机值与「固定」）。暂未计入：英雄原版天赋、套装与技能；物品战斗效果由 DPS 子标签计算；符印不加属性——它们修改英雄技能的参数。\n\nDPS 子标签计算到 3 级为止的所有物品及其先祖——属性、触发效果、毒、主动与光环；火毒权杖（0382）及其先祖 0780 单独计入。',
     hero: '英雄：',
     note: {
       computed: (level) => `${level} 级 · 按游戏数据计算`,

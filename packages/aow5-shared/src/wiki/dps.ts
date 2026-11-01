@@ -18,7 +18,10 @@ import { dpsItemIds } from './dps-mechanics.ts';
  *   target's maximum health (halved on a boss);
  * - the bag's burn is pure HP loss capped by the caster's attributes, and its
  *   mark multiplies every non-HP_LOSS hit from the caster while the target
- *   burns.
+ *   burns;
+ * - 0382 rolls whenever the hero applies any debuff status and adds one more
+ *   poison stack at its chance; the script guards its own application, so the
+ *   extra stacks do not chain.
  *
  * The engine is deterministic and works in expectations: a 77 % proc adds
  * 0.77 of its effect per hit instead of rolling. That is what a DPS figure
@@ -242,6 +245,7 @@ const COBRA = dpsItemIds('cobra');
 const GLOOM = dpsItemIds('gloom');
 const WITCH = dpsItemIds('witch');
 const PENDANT = dpsItemIds('pendant');
+const CHAOS = dpsItemIds('chaosPoison');
 const MOVE_HUNT = ['item_0360', 'item_0718'] as const;
 const PHASE_BOOTS = ['item_0152'] as const;
 const MADNESS = ['item_0155'] as const;
@@ -333,6 +337,9 @@ interface Constants {
   doomDecay: number;
   pendant: DpsItemStats | undefined;
   poisonSettleChance: number;
+  chaos: DpsItemStats | undefined;
+  /** 0382's roll per debuff status, as a fraction. */
+  chaosChance: number;
   flatProcs: ReadonlyArray<{ source: 'dartProc' | 'crystalProc' | 'valorSword'; chance: number; raw: number }>;
   feather: DpsItemStats | undefined;
   featherPct: number;
@@ -377,6 +384,15 @@ function constants(build: DpsBuild): Constants {
   const gloom = findItem(build, GLOOM);
   const witch = findItem(build, WITCH);
   const pendant = findItem(build, PENDANT);
+  const chaos = findItem(build, CHAOS);
+  const chaosChance = clamp(
+    Math.max(
+      0,
+      value(chaos, 'ability_value_trigger_chance_pct') || value(chaos, 'ability_trigger_chance_pct'),
+    ),
+    0,
+    100,
+  ) / 100;
   const feather = findItem(build, FEATHER);
   const bleedFaster = findItem(build, BLEED_FASTER);
   const fasterPct = value(bleedFaster, 'ability_value_bleed_damage_faster_pct');
@@ -529,6 +545,8 @@ function constants(build: DpsBuild): Constants {
     doomMax: Math.max(1, Math.floor(value(witch, 'ability_max_stacks') || 1)),
     doomDecay: Math.max(0.1, value(witch, 'ability_decay_interval') || 3),
     pendant,
+    chaos,
+    chaosChance,
     flatProcs,
     feather,
     featherPct: Math.max(0, value(feather, 'ability_all_stats_damage_pct')),
@@ -903,6 +921,10 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   let poisonStacks = 0;
   let poisonAt: number | null = null;
   let poisonDecayAt = 0;
+  /** Expected non-poison debuff applications in the current attack. */
+  let chaosEvents = 0;
+  /** `∏(1 − 0382 chance × p)` over those events: at least one extra stack. */
+  let chaosProcMiss = 1;
   let doomStacks = 0;
   let doomAt: number | null = null;
   const featherOn =
@@ -950,6 +972,16 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     if (bleedAt === null) bleedAt = time + c.bleedInterval;
   };
 
+  // 0382 (`乱毒`): each debuff status the hero applies to an enemy rolls once
+  // for one extra poison stack. Its own stack is wrapped in a flag in the
+  // script, so the extra application cannot roll again.
+  const chaosEvent = (p: number): void => {
+    if (!(c.chaos && c.chaosChance > 0 && p > 0)) return;
+    const chance = Math.min(1, p);
+    chaosEvents += chance;
+    chaosProcMiss *= 1 - c.chaosChance * chance;
+  };
+
   // Every physical damage instance can feed the on-damage passives: 0467
   // bleeds from any physical hit, 0398 only from physical crits, and 0217
   // rolls its vulnerable/armour break from physical crits. They are evaluated
@@ -960,11 +992,13 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     if (!(hit > 0)) return;
     if (c.bleedProc && c.bleedProcChance > 0) {
       applyBleed(hit * (c.bleedProcChance / 100) * (BLEED_POOL_PCT / 100));
+      chaosEvent(c.bleedProcChance / 100);
     }
     if (c.critBleed && critChancePct > 0 && c.critBleedChance > 0) {
       const critFactor = 1 + (critChancePct / 100) * (c.critMultiplier - 1);
       const critHit = (hit / critFactor) * c.critMultiplier;
       applyBleed(critHit * (critChancePct / 100) * (c.critBleedChance / 100) * (BLEED_POOL_PCT / 100));
+      chaosEvent((critChancePct / 100) * (c.critBleedChance / 100));
     }
     if (mkb && c.mkb && c.mkbChance > 0 && critChancePct > 0 && time + EPS >= mkbReady) {
       const proc = (critChancePct / 100) * (c.mkbChance / 100);
@@ -974,6 +1008,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         lastVuln = time;
         lastArmor = time;
         mkbReady = time + c.mkbCooldown;
+        chaosEvent(proc);
       }
     }
   };
@@ -989,6 +1024,8 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
 
   const onAttack = (): void => {
     attacks += 1;
+    chaosEvents = 0;
+    chaosProcMiss = 1;
     if (c.mkb && time - lastVuln > c.mkbVulnDuration) vulnStacks = 0;
     if (c.mkb && time - lastArmor > c.mkbArmorDuration) armorStacks = 0;
     if (time - lastArmorDebuff > 5) armorDebuff = 0;
@@ -1142,10 +1179,19 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       burnReady = time + c.burnInterval;
       markStacks = Math.min(c.markMax, markStacks + 1);
       if (burnAt === null) burnAt = time + BURN_TICK;
+      chaosEvent(1);
     }
 
     // Witch Blade's doom lowers magic resistance for every magical source.
-    // It is applied after the hit and decays one stack every 3 s.
+    // It is applied after the hit and decays one stack every 3 s. The item
+    // asks for a custom-debuff query once per attack when either the dot or
+    // the doom rolls, so that is the 0382 event probability.
+    if (c.witch) {
+      const dot = c.witchPct > 0 ? Math.min(1, Math.max(0, c.witchChance / 100)) : 0;
+      const doom = Math.min(1, Math.max(0, c.doomChance / 100));
+      const application = 1 - (1 - dot) * (1 - doom);
+      if (application > 0) chaosEvent(application);
+    }
     if (c.witch && c.doomChance > 0) {
       doomStacks = Math.min(c.doomMax, doomStacks + c.doomChance / 100);
       if (doomAt === null) doomAt = time + c.doomDecay;
@@ -1170,6 +1216,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     // Poison is applied after the hit. The Cobra burst sees the stacks that
     // were already there; the new stack only feeds the ticks that follow.
     let poisonApplicationChance = 0;
+    let poisonApplications = 0;
     if (c.poisonPerAuto > 0) {
       if (c.cobra && c.cobraBurstPct > 0 && c.cobraChance > 0) {
         const burstRaw = b.totalAttributes * (c.cobraBurstPct / 100) * (c.cobraChance / 100);
@@ -1185,18 +1232,28 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         add('poisonBurst', burst, c.cobraChance);
       }
       addPoisonStacks(c.poisonPerAuto);
+      poisonApplications += c.poisonPerAuto;
       poisonApplicationChance = c.poisonSettleChance;
     }
     // 0166 / 0303: one poison stack whenever their 1 s cooldown is ready.
     c.poisonProcs.forEach((proc, i) => {
       if (time + EPS < poisonReady[i]!) return;
       addPoisonStacks(1);
+      poisonApplications += 1;
       poisonReady[i] = time + proc.cooldown;
       poisonApplicationChance = 1;
     });
+    // 0382: every poison application above and every non-poison debuff applied
+    // in this attack rolls for one more stack. The script's own stack is
+    // guarded, so these cannot chain.
+    const chaosStacks = c.chaosChance * (poisonApplications + chaosEvents);
+    if (chaosStacks > 0) addPoisonStacks(chaosStacks);
     // Poison Pendant: one extra tick after a poison application, one per
-    // attack even if several poison items applied together.
-    if (c.pendant && poisonApplicationChance > 0) applyPoisonTick(false, poisonApplicationChance);
+    // attack even if several poisons applied together. A 0382 stack from a
+    // non-poison debuff can also create the first stack.
+    const settleChance =
+      1 - (1 - poisonApplicationChance) * (1 - (c.chaosChance > 0 ? 1 - chaosProcMiss : 0));
+    if (c.pendant && settleChance > 0) applyPoisonTick(false, settleChance);
 
     if (c.aps > 0) attackAt += 1 / c.aps;
   };
@@ -1239,15 +1296,17 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   // 1 for a real tick and the chance of a pendant tick otherwise.
   const applyPoisonTick = (advance: boolean, expected: number): void => {
     if (poisonStacks <= 0) return;
-    // The modifier decays on the 3-second boundary and skips that tick's
-    // damage entirely (`ApplyStackDecay` returns before the hit).
+    // `ApplyStackDecay` drops 20 % of the stacks on the 3-second boundary and
+    // only stops the tick when the last stack is gone; otherwise the hit still
+    // lands with the reduced stack count.
     if (time + EPS >= poisonDecayAt) {
       const decay = Math.max(1, Math.floor(poisonStacks * 0.2));
       poisonStacks = Math.max(0, poisonStacks - decay);
-      poisonDecayAt += 3;
-      if (advance) poisonAt = poisonAt === null ? time + c.poisonTick : poisonAt + c.poisonTick;
-      if (poisonStacks <= 0) poisonAt = null;
-      return;
+      poisonDecayAt = time + 3;
+      if (poisonStacks <= 0) {
+        poisonAt = null;
+        return;
+      }
     }
     const stacks = poisonStacks;
     const base = (0.4 * (stacks - 1)) / (0.4 * (stacks - 1) + 50) * 80 + 1;

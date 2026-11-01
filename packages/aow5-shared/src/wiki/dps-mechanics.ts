@@ -18,6 +18,7 @@ export type DpsRole =
   | 'gloom'
   | 'witch'
   | 'pendant'
+  | 'chaosPoison'
   | 'feather'
   | 'armorPen'
   | 'brokenArmor'
@@ -75,7 +76,7 @@ export interface PanelFamily {
 export type MechanicFamily = DpsFamily | PanelFamily;
 
 /**
- * The DPS mechanics: 49 families, base + ancestor = 78 item ids. Sorrow is
+ * The DPS mechanics: 50 families, base + ancestor = 80 item ids. Sorrow is
  * included because its armour penetration is read in `dpsInput.ts`, not
  * because it has a proc.
  */
@@ -92,6 +93,7 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'gloom', base: 'item_0238', ancestor: 'item_0704', sources: ['poison'] },
   { kind: 'dps', role: 'witch', base: 'item_0209', ancestor: 'item_0831', sources: ['witchBlade'] },
   { kind: 'dps', role: 'pendant', base: 'item_0402', ancestor: 'item_0836', sources: ['poison'] },
+  { kind: 'dps', role: 'chaosPoison', base: 'item_0382', ancestor: 'item_0780', sources: ['poison'] },
   { kind: 'dps', role: 'feather', base: 'item_0646', ancestor: 'item_0827', sources: ['feather'] },
   { kind: 'dps', role: 'armorPen', base: 'item_0444', ancestor: 'item_0723', sources: [] },
   { kind: 'dps', role: 'brokenArmor', base: 'item_0124', sources: [] },

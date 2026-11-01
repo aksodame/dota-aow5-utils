@@ -245,6 +245,74 @@ test('Witch Blade pays a spellblade tick and its doom stacks', () => {
   assert.equal(r.doomStacks, 1);
 });
 
+test('a decay tick still hits while any poison stacks remain', () => {
+  const poisonBuild = build({
+    attackDamage: 0,
+    totalAttributes: 1000,
+    items: [
+      item('item_0365', {
+        ability_value_poison_trigger_chance_pct: 100,
+        ability_value_all_stats_damage_pct: 0,
+      }),
+    ],
+  });
+  // The first stack lands at 1 s, so the modifier decays at 4 s; the tick at
+  // that boundary must still deal damage with the reduced stack count.
+  const r = simulateDps(poisonBuild, enemy({ kind: 'boss', magicResistancePct: 0 }), {
+    duration: 4.2,
+    mode: 'dummy',
+  });
+  const tick = r.events.find((e) => e.source === 'poison' && Math.abs(e.time - 4) < 1e-6);
+  assert.ok(tick !== undefined, 'the decay tick is missing');
+  assert.ok((tick?.damage ?? 0) > 0);
+});
+
+test('0382 adds one poison stack per debuff application and does not chain', () => {
+  const base = build({
+    attackDamage: 0,
+    totalAttributes: 1000,
+    items: [
+      item('item_0365', {
+        ability_value_poison_trigger_chance_pct: 100,
+        ability_value_all_stats_damage_pct: 0,
+      }),
+    ],
+  });
+  const half = build({
+    ...base,
+    items: [...base.items, item('item_0382', { ability_value_trigger_chance_pct: 50 })],
+  });
+  const always = build({
+    ...base,
+    items: [...base.items, item('item_0382', { ability_value_trigger_chance_pct: 100 })],
+  });
+  const plain = simulateDps(base, enemy({ kind: 'boss', magicResistancePct: 0 }), { duration: 1.6, mode: 'dummy' });
+  const halfRoll = simulateDps(half, enemy({ kind: 'boss', magicResistancePct: 0 }), { duration: 1.6, mode: 'dummy' });
+  const alwaysRoll = simulateDps(always, enemy({ kind: 'boss', magicResistancePct: 0 }), { duration: 1.6, mode: 'dummy' });
+  near(plain.poisonStacks, 1);
+  near(halfRoll.poisonStacks, 1.5);
+  // The extra stack is guarded in the script: it does not roll again.
+  near(alwaysRoll.poisonStacks, 2);
+});
+
+test('0382 turns a non-poison debuff into poison and a pendant tick', () => {
+  const r = simulateDps(
+    build({
+      totalAttributes: 1000,
+      critChancePct: 100,
+      items: [
+        item('item_0217', { ability_value_trigger_chance_pct: 100 }),
+        item('item_0382', { ability_value_trigger_chance_pct: 100 }),
+        item('item_0402', {}),
+      ],
+    }),
+    enemy({ kind: 'boss', magicResistancePct: 0 }),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(r.poisonStacks, 1);
+  assert.ok(source(r, 'poison') > 0);
+});
+
 test('the poison pendant settles an extra tick on a poison application', () => {
   const base = build({
     attackDamage: 0,
@@ -610,14 +678,15 @@ test('level-3 self-buffs use their cooldowns and scale attack damage', () => {
 });
 
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 49);
-  assert.equal(DPS_ITEM_COUNT, 78);
+  assert.equal(DPS_FAMILY_COUNT, 50);
+  assert.equal(DPS_ITEM_COUNT, 80);
   assert.equal(PANEL_FAMILY_COUNT, 9);
   assert.equal(PANEL_ITEM_COUNT, 16);
-  assert.equal(MODELED_ITEM_COUNT, 94);
+  assert.equal(MODELED_ITEM_COUNT, 96);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
+  assert.equal(mechanicFamilyOf('item_0780')?.base, 'item_0382');
   assert.equal(mechanicFamilyOf('item_0827')?.base, 'item_0646');
   assert.equal(mechanicFamilyOf('item_0730')?.base, 'item_0300');
   assert.equal(mechanicFamilyOf('item_0728')?.base, 'item_0340');
