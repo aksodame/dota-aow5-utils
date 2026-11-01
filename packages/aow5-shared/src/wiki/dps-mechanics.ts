@@ -28,6 +28,7 @@ export type DpsRole =
   | 'lionheartHammer'
   | 'bloodRite'
   | 'legionShield'
+  | 'reaperSlash'
   | 'feather'
   | 'armorPen'
   | 'brokenArmor'
@@ -85,7 +86,7 @@ export interface PanelFamily {
 export type MechanicFamily = DpsFamily | PanelFamily;
 
 /**
- * The DPS mechanics: 59 families, base + ancestor = 94 item ids. Sorrow is
+ * The DPS mechanics: 60 families, base + ancestor = 96 item ids. Sorrow is
  * included because its armour penetration is read in `dpsInput.ts`, not
  * because it has a proc.
  */
@@ -112,6 +113,7 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'lionheartHammer', base: 'item_0460', ancestor: 'item_0726', sources: ['lionheartHammer'] },
   { kind: 'dps', role: 'bloodRite', base: 'item_0332', ancestor: 'item_0715', sources: [] },
   { kind: 'dps', role: 'legionShield', base: 'item_0255', ancestor: 'item_0707', sources: [] },
+  { kind: 'dps', role: 'reaperSlash', base: 'item_0362', ancestor: 'item_0778', sources: ['reaperSlash'] },
   { kind: 'dps', role: 'feather', base: 'item_0646', ancestor: 'item_0827', sources: ['feather'] },
   { kind: 'dps', role: 'armorPen', base: 'item_0444', ancestor: 'item_0723', sources: [] },
   { kind: 'dps', role: 'brokenArmor', base: 'item_0124', sources: [] },

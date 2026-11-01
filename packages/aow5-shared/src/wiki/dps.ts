@@ -110,6 +110,8 @@ export interface DpsBuild {
   attackDamagePerStr: number;
   /** Total energy shield before the fight; 0377 turns it into physical damage. */
   energyShield: number;
+  /** Every lifesteal type summed; 0362's slash scales with it. */
+  anyLifestealPct: number;
   /** 0392 / 0240 turn critical strikes off for their owner. */
   noCrit: boolean;
   agilityAttackSpeedCap: number;
@@ -155,7 +157,8 @@ export type DpsSourceId =
   | 'soulBlade'
   | 'shatterProc'
   | 'defenderHammer'
-  | 'lionheartHammer';
+  | 'lionheartHammer'
+  | 'reaperSlash';
 
 export interface DpsSource {
   id: DpsSourceId;
@@ -359,7 +362,7 @@ interface Constants {
   /** Flat armour reduction from 0124 / 0234 / 0300, positive amount. */
   armorDebuffPerHit: number;
   armorProcs: ReadonlyArray<{ source: 'corrosiveSpike' | 'feast'; raw: number; armor: number }>;
-  cooldownProcs: ReadonlyArray<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer' | 'havocHammer' | 'defenderHammer' | 'lionheartHammer'; raw: number; cooldown: number }>;
+  cooldownProcs: ReadonlyArray<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer' | 'havocHammer' | 'defenderHammer' | 'lionheartHammer' | 'reaperSlash'; raw: number; cooldown: number }>;
   vortexChance: number;
   vortexRaw: number;
   vortexDotRaw: number;
@@ -439,7 +442,7 @@ function constants(build: DpsBuild): Constants {
   }
   const armorDebuffPerHit =
     (brokenArmor ? 2 : 0) + armorProcs.reduce((sum, proc) => sum + proc.armor, 0);
-  const cooldownProcs: Array<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer' | 'havocHammer' | 'defenderHammer' | 'lionheartHammer'; raw: number; cooldown: number }> = [];
+  const cooldownProcs: Array<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer' | 'havocHammer' | 'defenderHammer' | 'lionheartHammer' | 'reaperSlash'; raw: number; cooldown: number }> = [];
   const sharpAxe = findItem(build, ['item_0121']);
   if (sharpAxe) {
     cooldownProcs.push({
@@ -514,6 +517,23 @@ function constants(build: DpsBuild): Constants {
           (1 + armorPct / 100),
       ),
       cooldown: effCd(lionhammer, 0.6),
+    });
+  }
+  const reaper = findItem(build, ['item_0362', 'item_0778']);
+  if (reaper) {
+    const lifestealBonus = Math.min(
+      Math.max(0, value(reaper, 'ability_value_lifesteal_damage_bonus_max_pct')),
+      Math.max(0, build.anyLifestealPct) * Math.max(0, value(reaper, 'ability_lifesteal_damage_bonus_pct')),
+    );
+    cooldownProcs.push({
+      source: 'reaperSlash',
+      raw: Math.max(
+        0,
+        build.totalAttributes *
+          value(reaper, 'ability_value_damage_pct') / 100 *
+          (1 + lifestealBonus / 100),
+      ),
+      cooldown: effCd(reaper, 4.5),
     });
   }
   const flatProcs: Array<{ source: 'dartProc' | 'crystalProc' | 'valorSword' | 'shatterProc'; chance: number; raw: number; armor?: number; duration?: number }> =
@@ -935,6 +955,7 @@ function sourceRecord(): Record<DpsSourceId, number> {
     shatterProc: 0,
     defenderHammer: 0,
     lionheartHammer: 0,
+    reaperSlash: 0,
   };
 }
 
@@ -971,6 +992,7 @@ function hitRecord(): Record<DpsSourceId, number> {
     shatterProc: 0,
     defenderHammer: 0,
     lionheartHammer: 0,
+    reaperSlash: 0,
   };
 }
 
@@ -1012,6 +1034,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   let havocReady = 0;
   let defenderReady = 0;
   let lionhammerReady = 0;
+  let reaperReady = 0;
   let mjollnirReady = 0;
   let gazeAt = c.gazePct > 0 ? c.gazeCooldown : Number.POSITIVE_INFINITY;
   const poisonReady = c.poisonProcs.map(() => 0);
@@ -1240,16 +1263,30 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
                 ? havocReady
                 : proc.source === 'defenderHammer'
                   ? defenderReady
-                  : lionhammerReady;
+                  : proc.source === 'reaperSlash'
+                    ? reaperReady
+                    : lionhammerReady;
       if (time + EPS < ready) continue;
-      const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
-      add(proc.source, hit, 1);
-      physicalTriggers(hit, c.abilityCrit);
+      if (proc.source === 'reaperSlash') {
+        // 0362: the slash is pure damage (type 4), so no armour, magic
+        // resistance, crit or physical on-hit triggers.
+        const hit = pureDamage(b, enemy, c, proc.raw, {
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks,
+        });
+        add(proc.source, hit, 1);
+      } else {
+        const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
+        add(proc.source, hit, 1);
+        physicalTriggers(hit, c.abilityCrit);
+      }
       if (proc.source === 'sharpAxe') sharpAxeReady = time + proc.cooldown;
       else if (proc.source === 'skullcrusher') skullReady = time + proc.cooldown;
       else if (proc.source === 'ruinHammer') ruinReady = time + proc.cooldown;
       else if (proc.source === 'havocHammer') havocReady = time + proc.cooldown;
       else if (proc.source === 'defenderHammer') defenderReady = time + proc.cooldown;
+      else if (proc.source === 'reaperSlash') reaperReady = time + proc.cooldown;
       else lionhammerReady = time + proc.cooldown;
     }
 

@@ -53,6 +53,7 @@ const build = (over: Partial<DpsBuild> = {}): DpsBuild => ({
   attackDamagePerAgi: 0,
   attackDamagePerStr: 0,
   energyShield: 0,
+  anyLifestealPct: 0,
   noCrit: false,
   agilityAttackSpeedCap: 240,
   agilityAttackSpeedDecay: 500,
@@ -817,6 +818,51 @@ test('0332 active adds attack speed and movement on its duty cycle', () => {
   near(r.attackSpeed, 110);
 });
 
+test('0362 pays 350 % of all attributes as pure damage on its cooldown', () => {
+  const r = simulateDps(
+    build({
+      totalAttributes: 1000,
+      items: [
+        item(
+          'item_0362',
+          {
+            ability_value_damage_pct: 350,
+            ability_lifesteal_damage_bonus_pct: 0.5,
+            ability_value_lifesteal_damage_bonus_max_pct: 50,
+          },
+          4.5,
+        ),
+      ],
+    }),
+    enemy({ kind: 'boss', armor: 188, magicResistancePct: 91 }),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(source(r, 'reaperSlash'), 3500);
+});
+
+test('0362 scales its slash with every lifesteal type', () => {
+  const r = simulateDps(
+    build({
+      totalAttributes: 1000,
+      anyLifestealPct: 20,
+      items: [
+        item(
+          'item_0362',
+          {
+            ability_value_damage_pct: 350,
+            ability_lifesteal_damage_bonus_pct: 0.5,
+            ability_value_lifesteal_damage_bonus_max_pct: 50,
+          },
+          4.5,
+        ),
+      ],
+    }),
+    enemy({ kind: 'boss' }),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(source(r, 'reaperSlash'), 3850);
+});
+
 test('0255 active shield feeds 0331', () => {
   const without = simulateDps(
     build({
@@ -848,11 +894,11 @@ test('0255 active shield feeds 0331', () => {
 });
 
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 59);
-  assert.equal(DPS_ITEM_COUNT, 94);
+  assert.equal(DPS_FAMILY_COUNT, 60);
+  assert.equal(DPS_ITEM_COUNT, 96);
   assert.equal(PANEL_FAMILY_COUNT, 11);
   assert.equal(PANEL_ITEM_COUNT, 18);
-  assert.equal(MODELED_ITEM_COUNT, 112);
+  assert.equal(MODELED_ITEM_COUNT, 114);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
@@ -862,6 +908,7 @@ test('the mechanics registry counts and resolves both sides of every pair', () =
   assert.equal(mechanicFamilyOf('item_0707')?.base, 'item_0255');
   assert.equal(mechanicFamilyOf('item_0726')?.base, 'item_0460');
   assert.equal(mechanicFamilyOf('item_0727')?.base, 'item_0461');
+  assert.equal(mechanicFamilyOf('item_0778')?.base, 'item_0362');
   assert.equal(mechanicFamilyOf('item_0827')?.base, 'item_0646');
   assert.equal(mechanicFamilyOf('item_0730')?.base, 'item_0300');
   assert.equal(mechanicFamilyOf('item_0728')?.base, 'item_0340');

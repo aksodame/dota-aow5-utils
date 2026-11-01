@@ -476,6 +476,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         shatterProc: 'Дезолятор — прок',
         defenderHammer: 'Молот защитника — щит',
         lionheartHammer: 'Молот Львиного сердца — щит',
+        reaperSlash: 'Коса смерти — удар',
       },
     },
     active: {
@@ -543,6 +544,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         '4 уровень: 0165 — 20 маг. урона с атаки (в скрипте хардкод 20, в описании 60); 0206 — 25 % × 250 физ. + броня −5 на 3 с; 0270 — 40 % яд с атаки.',
         '0211 — +1 AS за 3 MS сверх 250; 0461 — +1 % урона за 4 MS ниже 380 (до 30 %); 0314/0315 — аура +10/+15 ко всем статам, включая владельца.',
         '0331 — 50 % текущего щита по КД 0,5 с; 0460 — 100 % щита с бонусом за броню до 80 %; 0332 — актив +100 AS/+50 MS на 6 с, КД 100, цена 30 % HP, +15 % КДР идёт средним за окно; 0255 — активный щит 30 % макс. HP на 10 с.',
+        '0362/0778: каждые 4,5 с следующая базовая атака — 350 % суммы атрибутов чистым уроном по цели и области; +0,5 % за каждый 1 % любого вампиризма, до +50 %.',
         '0446 (стеки за потерю HP от своих эффектов), 0212/0459/0339 (стеки за каст), 0273 (горение атакующего) и активная пыльца 0270 (промахи) в DPS не входят.',
         '0296 и MT006 срабатывают после получения урона/каста, а 0406 и 0296 в тёмных/холодных комнатах — вне окна автоатак; эти условия не считаются.',
       ],
@@ -627,6 +629,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         shatterProc: 'Desolator — proc',
         defenderHammer: 'Guardian Hammer — shield hit',
         lionheartHammer: 'Lionheart Hammer — shield hit',
+        reaperSlash: 'Reaper\'s Scythe — slash',
       },
     },
     active: {
@@ -686,6 +689,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         'Level 4: 0165 — 20 magic per landed attack (the script hardcodes 20, the text says 60); 0206 — 25 % × 250 physical + armour −5 for 3 s; 0270 — 40 % poison stack per attack.',
         '0211 — +1 AS per 3 movement above 250; 0461 — +1 % damage per 4 movement below 380 (up to 30 %); 0314/0315 — an aura of +10/+15 to all stats that reaches the owner.',
         '0331 — 50 % of the current shield on a 0.5 s cooldown; 0460 — 100 % of the shield with the armour bonus up to 80 %; 0332 — active +100 AS/+50 movement for 6 s, CD 100, costs 30 % HP, its +15 % CDR is averaged over the window; 0255 — active 30 % max HP shield for 10 s.',
+        '0362/0778: every 4.5 s the next base attack calls down 350 % of the attribute total as pure damage to the target and its area; +0.5 % per 1 % of any lifesteal, up to +50 %.',
         '0446 (health-cost stacks), 0212/0459/0339 (per-cast stacks), 0273 (burn on attackers) and 0270\'s active pollen (miss chance) are not in the DPS run.',
       ],
     },
@@ -769,6 +773,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         shatterProc: '★暗灭——触发',
         defenderHammer: '守护之锤——护盾打击',
         lionheartHammer: '狮心王锤——护盾打击',
+        reaperSlash: '死神之镰——斩击',
       },
     },
     active: {
@@ -836,6 +841,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         '4 级：0165——每次命中附加 20 点魔法伤害（脚本写死 20，描述写 60）；0206——25% 几率造成 250 物理伤害并使护甲 −5，持续 3 秒；0270——每次攻击 40% 几率加 1 层毒。',
         '0211——移速高于 250 时每 3 点提供 +1 攻速；0461——移速低于 380 时每 4 点提供 +1% 伤害（最多 30%）；0314/0315——全属性 +10/+15 的光环，对持有者也生效。',
         '0331——每 0.5 秒按当前护盾的 50% 造成物理伤害；0460——按护盾 100% 并受护甲加成（最多 80%）；0332——主动：6 秒内 +100 攻速、+50 移速，冷却 100 秒，消耗 30% 生命，+15% 冷却缩减按窗口平均计入；0255——主动：10 秒内获得最大生命 30% 的护盾。',
+        '0362/0778：每 4.5 秒，下一次普通攻击对目标及周围造成 350% 全属性的纯粹伤害；每 1% 任意吸血使该伤害 +0.5%，最多 +50%。',
         '0446（生命消耗叠层）、0212/0459/0339（施法叠层）、0273（攻击者灼烧）以及 0270 的主动花粉（致盲）不计入 DPS。',
         '0296 与 MT006 在受伤/施法后触发，0406 与 0296 在黑暗/寒冷房间的效果不在普攻窗口内；这些条件未计入。',
       ],
@@ -848,7 +854,7 @@ export const CALC: Localised<CalcStrings> = {
     title: 'Статы персонажа',
     wipTitle: 'Вкладка в работе (WIP)',
     wip:
-      'База героя считается сама — для выбранного героя на 30 уровне, со своей веткой профессии и всеми общими деревьями (взятыми целиком), но её можно править руками. Ещё считает предметы в 6 слотах, нейтральном, у питомца, в сумке и у души, 3 руны, прокрутку статов как в карточке предмета (у предков настраивается и наложенная грань: своя прокрутка и «фикс»). Пока не учитываются: ванильные таланты героя, сеты и способности; боевые эффекты предметов считает подвкладка DPS; руны статов не добавляют — они правят параметры способностей героя.\n\nВ подвкладке DPS считаются статы всех предметов до 4-го уровня включительно и их предков; из боевых эффектов — перечисленные в примечаниях проки, яды, активы и ауры. Скипетр огненного яда (0382) и его предок 0780 учтены отдельно.',
+      'База героя считается сама — для выбранного героя на 30 уровне, со своей веткой профессии и всеми общими деревьями (взятыми целиком), но её можно править руками. Ещё считает предметы в 6 слотах, нейтральном, у питомца, в сумке и у души, 3 руны, прокрутку статов как в карточке предмета (у предков настраивается и наложенная грань: своя прокрутка и «фикс»). Пока не учитываются: ванильные таланты героя, сеты и способности; боевые эффекты предметов считает подвкладка DPS; руны статов не добавляют — они правят параметры способностей героя.\n\nВ подвкладке DPS считаются статы всех предметов до 4-го уровня включительно и их предков; из боевых эффектов — перечисленные в примечаниях проки, яды, активы и ауры. Скипетр огненного яда (0382/0780) и Коса смерти (0362/0778) учтены отдельно.',
     hero: 'Герой:',
     note: {
       computed: (level) => `${level} уровень · посчитано из игры`,
@@ -1080,7 +1086,7 @@ export const CALC: Localised<CalcStrings> = {
     title: 'Character stats',
     wipTitle: 'Work in progress',
     wip:
-      "The hero's base is computed for you — the chosen hero at level 30, with their own profession tree and every common tree taken in full — and you can still edit it by hand. Items in the 6 slots, the neutral slot, the pet, the bag and the soul are counted, plus 3 runes, with stats rolled exactly as on the item card (an ancestral item's fate stone has its own roll and fixed stat too). Not counted yet: the hero's stock talents, sets and abilities; item combat effects are the DPS sub-tab's job; runes add no stats — they change the hero's abilities.\n\nThe DPS sub-tab counts the stats of every item up to level 4 inclusive and their ancestors; of the combat effects, the procs, poisons, actives and auras listed in the notes are modelled. The Fire Venom Scepter (0382) and its ancestor 0780 are modelled separately.",
+      "The hero's base is computed for you — the chosen hero at level 30, with their own profession tree and every common tree taken in full — and you can still edit it by hand. Items in the 6 slots, the neutral slot, the pet, the bag and the soul are counted, plus 3 runes, with stats rolled exactly as on the item card (an ancestral item's fate stone has its own roll and fixed stat too). Not counted yet: the hero's stock talents, sets and abilities; item combat effects are the DPS sub-tab's job; runes add no stats — they change the hero's abilities.\n\nThe DPS sub-tab counts the stats of every item up to level 4 inclusive and their ancestors; of the combat effects, the procs, poisons, actives and auras listed in the notes are modelled. The Fire Venom Scepter (0382/0780) and Reaper's Scythe (0362/0778) are modelled separately.",
     hero: 'Hero:',
     note: {
       computed: (level) => `level ${level} · computed from the game`,
@@ -1304,7 +1310,7 @@ export const CALC: Localised<CalcStrings> = {
     title: '角色属性',
     wipTitle: '施工中',
     wip:
-      '英雄的基础属性自动计算：所选英雄 30 级，含本职业天赋树与全部通用天赋树（全部点满），也可以手动修改。另计 6 个物品栏、中立物品栏、宠物、背包与命魂中的物品以及 3 个符印，属性随机值与物品卡片一致（先祖物品还可调节其命石：独立随机值与「固定」）。暂未计入：英雄原版天赋、套装与技能；物品战斗效果由 DPS 子标签计算；符印不加属性——它们修改英雄技能的参数。\n\nDPS 子标签计算到 4 级为止所有物品及其先祖的属性；战斗效果只计入说明中列出的触发、毒、主动与光环。火毒权杖（0382）及其先祖 0780 单独计入。',
+      '英雄的基础属性自动计算：所选英雄 30 级，含本职业天赋树与全部通用天赋树（全部点满），也可以手动修改。另计 6 个物品栏、中立物品栏、宠物、背包与命魂中的物品以及 3 个符印，属性随机值与物品卡片一致（先祖物品还可调节其命石：独立随机值与「固定」）。暂未计入：英雄原版天赋、套装与技能；物品战斗效果由 DPS 子标签计算；符印不加属性——它们修改英雄技能的参数。\n\nDPS 子标签计算到 4 级为止所有物品及其先祖的属性；战斗效果只计入说明中列出的触发、毒、主动与光环。火毒权杖（0382/0780）与死神之镰（0362/0778）单独计入。',
     hero: '英雄：',
     note: {
       computed: (level) => `${level} 级 · 按游戏数据计算`,
