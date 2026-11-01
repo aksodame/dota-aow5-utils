@@ -313,14 +313,14 @@ test('the dart and crystal sword pay one flat physical proc on one target', () =
   });
   const dartRun = simulateDps(dart, enemy(), { duration: 1.6, mode: 'dummy' });
   // 25 % × 50, one auto-attack at 1 s; no crit, armour or amplifiers.
-  near(source(dartRun, 'flatProc'), 12.5);
+  near(source(dartRun, 'dartProc'), 12.5);
 
   const crystal = build({
     attackDamage: 0,
     items: [item('item_0131', { ability_ps_chance: 100, ability_ps_damage: 50 })],
   });
   const crystalRun = simulateDps(crystal, enemy(), { duration: 1.6, mode: 'dummy' });
-  near(source(crystalRun, 'flatProc'), 50);
+  near(source(crystalRun, 'crystalProc'), 50);
 });
 
 test('0853 lowers armor and adds vulnerable only after its first proc', () => {

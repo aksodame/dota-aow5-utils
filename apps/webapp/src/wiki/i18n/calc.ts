@@ -436,7 +436,8 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         poisonBurst: 'Всплеск Кобры (ожидание)',
         witchBlade: 'Клинок ведьмы — тик (ожидание)',
         feather: 'Кулон небесных перьев — актив',
-        flatProc: 'Прок Дротика / Хрустального меча',
+        dartProc: 'Дротик — прок',
+        crystalProc: 'Хрустальный меч — прок',
       },
     },
     active: {
@@ -538,7 +539,8 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         poisonBurst: 'Cobra burst (expected)',
         witchBlade: 'Witch Blade tick (expected)',
         feather: 'Feather pendant — active',
-        flatProc: 'Dart / Crystal Sword proc',
+        dartProc: 'Dart — proc',
+        crystalProc: 'Crystal Sword — proc',
       },
     },
     active: {
@@ -637,7 +639,8 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         poisonBurst: '眼镜蛇爆发（期望）',
         witchBlade: '女巫之刃——跳伤（期望）',
         feather: '天羽护符——主动',
-        flatProc: '飞镖／水晶剑触发',
+        dartProc: '飞镖——触发',
+        crystalProc: '水晶剑——触发',
       },
     },
     active: {

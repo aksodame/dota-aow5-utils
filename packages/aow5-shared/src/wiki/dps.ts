@@ -115,7 +115,8 @@ export type DpsSourceId =
   | 'poisonBurst'
   | 'witchBlade'
   | 'feather'
-  | 'flatProc';
+  | 'dartProc'
+  | 'crystalProc';
 
 export interface DpsSource {
   id: DpsSourceId;
@@ -288,7 +289,7 @@ interface Constants {
   doomDecay: number;
   pendant: DpsItemStats | undefined;
   poisonSettleChance: number;
-  flatProcs: ReadonlyArray<{ chance: number; raw: number }>;
+  flatProcs: ReadonlyArray<{ source: 'dartProc' | 'crystalProc'; chance: number; raw: number }>;
   feather: DpsItemStats | undefined;
   featherPct: number;
   featherDuration: number;
@@ -373,6 +374,7 @@ function constants(build: DpsBuild): Constants {
       .filter((item) => FLAT_PROC.includes(item.id))
       .map((item) => ({
         // 0129's script hardcodes 25 % / 50; 0131 reads the rolled values.
+        source: item.id === 'item_0129' ? 'dartProc' as const : 'crystalProc' as const,
         chance: item.id === 'item_0129' ? 0.25 : Math.max(0, value(item, 'ability_ps_chance')) / 100,
         raw: item.id === 'item_0129' ? 50 : Math.max(0, value(item, 'ability_ps_damage')),
       })),
@@ -527,7 +529,8 @@ function sourceRecord(): Record<DpsSourceId, number> {
     poisonBurst: 0,
     witchBlade: 0,
     feather: 0,
-    flatProc: 0,
+    dartProc: 0,
+    crystalProc: 0,
   };
 }
 
@@ -543,7 +546,8 @@ function hitRecord(): Record<DpsSourceId, number> {
     poisonBurst: 0,
     witchBlade: 0,
     feather: 0,
-    flatProc: 0,
+    dartProc: 0,
+    crystalProc: 0,
   };
 }
 
@@ -661,7 +665,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     for (const proc of c.flatProcs) {
       if (proc.chance > 0 && proc.raw > 0) {
         const hit = directDamage(build, enemy, c, proc.raw, ctx(burnUntil > time));
-        add('flatProc', hit * proc.chance, proc.chance);
+        add(proc.source, hit * proc.chance, proc.chance);
       }
     }
 
