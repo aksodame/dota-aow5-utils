@@ -2673,6 +2673,18 @@
       },
       {
        "type": "text",
+       "text": "**Harsher than the tooltip.** [[item:item_0239|★Stonebreaker]]: the tooltip says «−5 % movement speed only», but the code's modifier returns `attack_speed_pct = −10` and `bonus_movespeed_pct = −10`; the script never reads `ability_sdjd = 5`. In practice the item also cuts attack speed by 10 %."
+      },
+      {
+       "type": "text",
+       "text": "**A passive that is not there.** [[item:item_0455|Veil of Discord]] uses the Blade Mail thorns script `item_0226`: it reads `ability_damage` and returns when it is zero. 0455 has no such key (only armor, health, intelligence and mana), and its description is just “The strife never ceases.” There is no passive damage reflection; only the stats work."
+      },
+      {
+       "type": "text",
+       "text": "**A hidden “no crits”.** [[item:item_0392|Boots of Tolerance]]: the tooltip promises only damage from lost movement speed, but the code sets `force_no_crit = true` in `OnDamageCritQuery` for every hit the owner makes. Critical strikes do not trigger with these boots; the calculator models that."
+      },
+      {
+       "type": "text",
        "text": "**Minus into plus.** Several items turn a penalty or a lost resource into a bonus:"
       },
       {

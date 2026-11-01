@@ -259,10 +259,13 @@ export function rowTotal(
    */
   if (key === 'bonus_movespeed') {
     const base = baseVal(input, key);
-    const noBuff = base + items;
+    // Items' `bonus_movespeed_pct` (Stonebreaker's −10 %, boots' +%) applies
+    // to the flat total; only the buffs' percent used to be handled here.
+    const itemPct = sums['bonus_movespeed_pct'] ?? 0;
+    const noBuff = (base + items) * (1 + itemPct / 100);
     const flat = buffs['bonus_movespeed'] ?? 0;
     const pct = buffs['bonus_movespeed_pct'] ?? 0;
-    const sum = (base + items + flat) * (1 + pct / 100);
+    const sum = (base + items + flat) * (1 + (itemPct + pct) / 100);
     return { base, items, buffs: sum - noBuff, fromAttrs: 0, sum };
   }
 

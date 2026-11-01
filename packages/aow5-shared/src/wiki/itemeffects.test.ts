@@ -229,6 +229,18 @@ test('Primal Crystal conversion happens before Overflow reads the crit chance', 
   assert.equal(got.extra.crit_damage_pct, 6);
 });
 
+test('Stonebreaker follows the script, not its −5 % tooltip', () => {
+  const got = applyEffects([{ id: 'item_0239', stats: { ability_sdjd: 5 } }], derive);
+  assert.equal(got.extra.attack_speed_pct, -10);
+  assert.equal(got.extra.bonus_movespeed_pct, -10);
+  assert.deepEqual(got.notes.find((n) => n.itemId === 'item_0239')?.facts, {
+    kind: 'stoneGolem',
+    attackSpeed: 10,
+    moveSpeed: 10,
+    tooltipPct: 5,
+  });
+});
+
 test('Infinity turns both crit chances into crit damage', () => {
   const got = applyEffects(
     [

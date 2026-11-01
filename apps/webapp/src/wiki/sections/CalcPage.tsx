@@ -29,9 +29,11 @@ import type { SectionProps } from '../WikiPage';
 import { AchievementsDialog } from './calc/AchievementsDialog';
 import { achievementContribution, useAchievementsData } from './calc/achievements';
 import { CalcPicker } from './calc/CalcPicker';
+import { DpsPanel } from './calc/DpsPanel';
+import { buildDpsInput } from './calc/dpsInput';
 import { HeroBase } from './calc/HeroBase';
 import { ItemStatsEditor } from './calc/ItemStatsEditor';
-import { ancestralBase, itemValues, linksOf, plainText, useItemsExtra } from './calc/itemData';
+import { ancestralBase, itemCooldown, itemValues, linksOf, plainText, useItemsExtra } from './calc/itemData';
 import {
   GROUPS,
   autoBase,
@@ -76,6 +78,7 @@ export default function CalcPage({ path }: SectionProps) {
   const [sel, setSel] = useState<SlotRef | null>(null);
   const [pick, setPick] = useState<SlotRef | null>(null);
   const [achOpen, setAchOpen] = useState(false);
+  const [tab, setTab] = useState<'stats' | 'dps'>('stats');
   const { file: achFile, locale: achLocale } = useAchievementsData();
   const { data, error } = useWikiData<[HeroStatsFile, HeroesWikiFile, HeroesWikiLocale, ProgressionLocale]>([
     'herostats.json',
@@ -107,9 +110,17 @@ export default function CalcPage({ path }: SectionProps) {
   // The build's pool: every equipped item's rolled stats, what item effects add,
   // and the account-wide buffs beside them (permanent consumables and claimed
   // achievements — kept apart, they are not the base).
-  const { sums, fx, buffs } = useMemo(
+  const { sums, fx, buffs, list } = useMemo(
     () => buildPool(state, input, full, tables, extra, achFile),
     [state, input, full, tables, extra, achFile],
+  );
+
+  const dpsInput = useMemo(
+    () =>
+      input === null
+        ? null
+        : buildDpsInput(input, sums, buffs, list, input.file.heroes[state.hero]?.kv.attackRate ?? 1.7),
+    [input, sums, buffs, list, state.hero],
   );
 
   if (missing) return <WikiMissing />;
@@ -131,13 +142,41 @@ export default function CalcPage({ path }: SectionProps) {
   return (
     <div className={styles.page}>
       <Note>
-        <b className={styles.wip}>{t.wipTitle}.</b> {t.wip}
+        <b className={styles.wip}>{t.wipTitle}.</b>{' '}
+        {t.wip.split('\n\n').map((paragraph, index) => (
+          <span key={paragraph}>
+            {index > 0 && (
+              <>
+                <br />
+                <br />
+              </>
+            )}
+            {paragraph}
+          </span>
+        ))}
       </Note>
       {error !== null && <WikiError message={error} />}
       {data === null || input === null ? (
         error === null && <WikiLoading />
       ) : (
         <>
+          <div className={styles.tabs} role="tablist" aria-label={t.title}>
+            {(['stats', 'dps'] as const).map((id) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={tab === id}
+                className={cx(styles.tab, tab === id && styles.tabActive)}
+                onClick={() => setTab(id)}
+              >
+                {t.dps.tab[id]}
+              </button>
+            ))}
+          </div>
+          {tab === 'dps' && dpsInput !== null ? (
+            <DpsPanel t={t.dps} lang={lang} state={state} update={update} build={dpsInput} />
+          ) : (
           <div className={styles.grid}>
             <Buffs state={state} update={update} extra={extra} />
             <StatsPanel
@@ -184,6 +223,7 @@ export default function CalcPage({ path }: SectionProps) {
               </Panel>
             </div>
           </div>
+          )}
           <HeroBase file={data[0]} short={state.hero} level={level} heroName={heroName} prog={data[3]} base={state.base} />
           <DataFooter ruleset={CURRENT_RULESET} built={day(data[0].generatedAt, lang)} />
           <CalcPicker
@@ -236,8 +276,13 @@ function buildPool(
   tables: RollTables | null,
   extra: ItemsExtraFile | null,
   achievements: AchievementsFile | null,
-): { sums: Record<string, number>; fx: EffectsResult; buffs: Record<string, number> } {
-  const empty = { sums: {}, fx: { extra: {}, notes: [] }, buffs: {} };
+): {
+  sums: Record<string, number>;
+  fx: EffectsResult;
+  buffs: Record<string, number>;
+  list: Array<{ id: string; stats: Record<string, number>; cooldown?: number }>;
+} {
+  const empty = { sums: {}, fx: { extra: {}, notes: [] }, buffs: {}, list: [] };
   if (full === null || tables === null || input === null) return empty;
   const links = linksOf(full);
   const list = equipped(state)
@@ -246,7 +291,11 @@ function buildPool(
       const item = full[e.id]!;
       const stoneId = links.fromStone.get(e.id);
       const stone = stoneId !== undefined ? full[stoneId] : undefined;
-      return { id: e.id, stats: copyStats(tables, itemValues(item, extra), stone !== undefined ? itemValues(stone, extra) : null, e) };
+      return {
+        id: e.id,
+        stats: copyStats(tables, itemValues(item, extra), stone !== undefined ? itemValues(stone, extra) : null, e),
+        cooldown: itemCooldown(item, extra),
+      };
     });
   const sums: Record<string, number> = {};
   for (const e of list) for (const [k, v] of Object.entries(e.stats)) sums[k] = (sums[k] ?? 0) + v;
@@ -269,7 +318,7 @@ function buildPool(
   };
   const fx = applyEffects(list, (P) => derivePools(input, withBuffs(P)), (id) => ancestralBase(full, id));
   for (const [k, v] of Object.entries(fx.extra)) sums[k] = (sums[k] ?? 0) + v;
-  return { sums, fx, buffs };
+  return { sums, fx, buffs, list };
 }
 
 // ---------------------------------------------------------------------------

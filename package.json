@@ -15,7 +15,8 @@
     "test:parser": "pnpm --dir parser test",
     "check-types": "turbo run check-types",
     "preview": "turbo run preview",
-    "bootstrap-deploy": "node scripts/bootstrap-deploy.ts"
+    "bootstrap-deploy": "node scripts/bootstrap-deploy.ts",
+    "dps": "node --experimental-strip-types scripts/dps-lookup.mjs"
   },
   "devDependencies": {
     "turbo": "^2.10.8"
