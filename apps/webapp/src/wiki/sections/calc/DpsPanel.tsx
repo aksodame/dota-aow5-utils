@@ -39,7 +39,8 @@ export function DpsPanel({
     [build.items],
   );
   const isActive = (id: string): boolean =>
-    state.dps.active[id] ?? (id === 'item_0152' || id === 'item_0155');
+    state.dps.active[id] ??
+    (id === 'item_0152' || id === 'item_0155' || id === 'item_0317' || id === 'item_0305' || id === 'item_0289');
   const activeIds = useMemo(
     () => new Set(activeItems.filter((item) => isActive(item.id)).map((item) => item.id)),
     [activeItems, state.dps.active],
@@ -146,21 +147,33 @@ export function DpsPanel({
                         ? t.active.phase
                         : item.id === 'item_0155'
                           ? t.active.madness
-                          : item.id === 'item_0827'
-                            ? t.active.featherAncestor
-                            : t.active.feather}
+                          : item.id === 'item_0317'
+                            ? t.active.shadowMask
+                            : item.id === 'item_0305'
+                              ? t.active.shatteredAxe
+                              : item.id === 'item_0289'
+                                ? t.active.viciousHorn
+                                : item.id === 'item_0827'
+                                  ? t.active.featherAncestor
+                                  : t.active.feather}
                     </b>
                     <small>
                       {item.id === 'item_0152'
                         ? t.active.phaseMeta(num(item.cooldown, lang, 0), num(item.stats.ability_phase_duration, lang, 0))
                         : item.id === 'item_0155'
                           ? t.active.madnessMeta(num(item.cooldown, lang, 0), num(item.stats.ability_duration, lang, 0))
-                          : t.active.meta(
-                              num(item.cooldown, lang, 0),
-                              num(item.stats.ability_duration, lang, 0),
-                              num(item.stats.ability_interval, lang, 0),
-                              num(item.stats.ability_all_stats_damage_pct, lang, 0),
-                            )}
+                          : item.id === 'item_0317'
+                            ? t.active.shadowMaskMeta(num(item.cooldown, lang, 0), num(item.stats.ability_duration, lang, 0))
+                            : item.id === 'item_0305'
+                              ? t.active.shatteredAxeMeta(num(item.cooldown, lang, 0), num(item.stats.ability_duration, lang, 0))
+                              : item.id === 'item_0289'
+                                ? t.active.viciousHornMeta(num(item.cooldown, lang, 0), num(item.stats.ability_duration, lang, 0))
+                                : t.active.meta(
+                                    num(item.cooldown, lang, 0),
+                                    num(item.stats.ability_duration, lang, 0),
+                                    num(item.stats.ability_interval, lang, 0),
+                                    num(item.stats.ability_all_stats_damage_pct, lang, 0),
+                                  )}
                     </small>
                   </span>
                 </label>

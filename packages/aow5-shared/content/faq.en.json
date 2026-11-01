@@ -2681,6 +2681,10 @@
       },
       {
        "type": "text",
+       "text": "**A hidden “no crits”.** [[item:item_0392|Boots of Tolerance]]: the tooltip promises only damage from lost movement speed, but the code sets `force_no_crit = true` in `OnDamageCritQuery` for every hit the owner makes. Critical strikes do not trigger with these boots; the calculator models that."
+      },
+      {
+       "type": "text",
        "text": "**Minus into plus.** Several items turn a penalty or a lost resource into a bonus:"
       },
       {

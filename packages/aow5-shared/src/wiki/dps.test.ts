@@ -50,6 +50,9 @@ const build = (over: Partial<DpsBuild> = {}): DpsBuild => ({
   baseMoveSpeed: 0,
   primaryAttr: 'str',
   attackDamagePerAgi: 0,
+  attackDamagePerStr: 0,
+  energyShield: 0,
+  noCrit: false,
   agilityAttackSpeedCap: 240,
   agilityAttackSpeedDecay: 500,
   magicalDamageAddPct: 0,
@@ -383,12 +386,166 @@ test('Phase Boots and Mask of Madness respect cooldown reduction over a full win
   assert.ok(reduced.damage > normal.damage);
 });
 
+test('Maelstrom, Moon Shard and Mjollnir scale their hits from attack damage', () => {
+  const baseBuild = build({ attackSpeed: 100 });
+  const maelstrom = simulateDps(
+    build({ attackSpeed: 100, items: [item('item_0117', { ability_trigger_chance_pct: 30, ability_damage: 150 })] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  const moon = simulateDps(
+    build({ attackSpeed: 100, items: [item('item_0158', { ability_trigger_chance_pct: 30, ability_damage: 100 })] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  const mjollnir = simulateDps(
+    build({ attackSpeed: 100, items: [item('item_0428', { ability_trigger_chance_pct: 50, ability_value_damage: 250 }, 1)] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  assert.ok(source(maelstrom, 'maelstrom') > 0);
+  assert.ok(source(moon, 'moonShard') > 0);
+  assert.ok(source(mjollnir, 'mjollnir') > 0);
+  // The procs are counted once per attack with their expected chance, not
+  // multiplied by the chain-lightning jump count.
+  near(source(maelstrom, 'maelstrom'), 20 * 1500 * 0.3);
+  near(source(moon, 'moonShard'), 20 * 1000 * 0.3);
+  assert.ok(source(mjollnir, 'mjollnir') <= 10 * 2500 * 0.5 + 1e-6);
+  assert.ok(source(simulateDps(baseBuild, enemy(), { duration: 10, mode: 'dummy' }), 'auto') > 0);
+});
+
+test('0351 and 0406 pay their attack-combo bonus on the following attack', () => {
+  const gale = simulateDps(
+    build({ items: [item('item_0351', { ability_required_attack_count: 5, ability_damage_multiplier: 200 })] }),
+    enemy(),
+    { duration: 12, mode: 'dummy' },
+  );
+  const evernight = simulateDps(
+    build({ items: [item('item_0406', { ability_value_c_required_attack_count: 4, ability_value_damage_multiplier: 250 })] }),
+    enemy(),
+    { duration: 12, mode: 'dummy' },
+  );
+  // 12 one-second attacks: Gale fires on 6 and 11, Evernight on 5 and 9.
+  near(source(gale, 'galeStrike'), 2 * 1000 * 2);
+  near(source(evernight, 'evernight'), 2 * 1000 * 2.5);
+});
+
+test('0319 Carnage Spike adds a poison stack on its 0.5 s cooldown', () => {
+  const r = simulateDps(
+    build({
+      totalAttributes: 100,
+      items: [item('item_0319', { ability_cold_duration: 5 }, 0.5)],
+    }),
+    enemy(),
+    { duration: 1.5, mode: 'dummy' },
+  );
+  // One auto at t = 1 s; the poison tick then runs from the added stack.
+  near(r.poisonStacks, 1);
+  assert.ok(source(r, 'poison') > 0);
+});
+
+test('0377 Havoc Hammer converts the energy shield on its 2 s cooldown', () => {
+  const r = simulateDps(
+    build({
+      attackSpeed: 100,
+      energyShield: 1000,
+      items: [item('item_0377', { ability_current_shield_damage_pct: 80 }, 2)],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  near(source(r, 'havocHammer'), 5 * 800);
+  assert.equal(r.sources.find((s) => s.id === 'havocHammer')?.hits, 5);
+});
+
+test('0392 and 0240 turn crits off; 0392 adds damage from lost movement', () => {
+  const plain = simulateDps(build({ baseMoveSpeed: 300 }), enemy(), { duration: 10, mode: 'dummy' });
+  const tolerance = simulateDps(
+    build({
+      baseMoveSpeed: 300,
+      items: [
+        item('item_0392', {
+          ability_movespeed_threshold: 340,
+          ability_movespeed_step: 5,
+          ability_bonus_pct_per_step: 1,
+          ability_bonus_pct_max: 30,
+        }),
+      ],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  const unyielding = simulateDps(
+    build({ items: [item('item_0240', { ability_value_movespeed_threshold: 340, ability_movespeed_step: 3 })] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  assert.equal(tolerance.critChancePct, 0);
+  assert.equal(unyielding.critChancePct, 0);
+  assert.ok(tolerance.damage > plain.damage);
+});
+
+test('0349 gives its owner twice the aura attack speed', () => {
+  const plain = simulateDps(build({ attackSpeed: 100 }), enemy(), { duration: 10, mode: 'dummy' });
+  const pendant = simulateDps(
+    build({ attackSpeed: 100, items: [item('item_0349', { ability_attack_speed: 15 })] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  assert.ok(pendant.attackSpeed >= plain.attackSpeed + 30);
+});
+
+test('level-3 self-buffs use their cooldowns and scale attack damage', () => {
+  const baseBuild = simulateDps(
+    build({ attackDamage: 1000, attackSpeed: 100, totalAttributes: 100, maxHealth: 1000 }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  const shadow = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 100,
+      totalAttributes: 100,
+      maxHealth: 1000,
+      items: [item('item_0317', { ability_duration: 10, ability_bonus_attack_speed: 100, ability_bonus_move_speed: 25 }, 100)],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy', active: new Set(['item_0317']) },
+  );
+  const axe = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 100,
+      totalAttributes: 100,
+      maxHealth: 1000,
+      items: [item('item_0305', { ability_duration: 10, ability_value_all_attack_damage_percent: 30, ability_value_base_health_pct: 20 }, 30)],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy', active: new Set(['item_0305']) },
+  );
+  const horn = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 100,
+      totalAttributes: 100,
+      attackDamagePerStr: 0.8,
+      maxHealth: 1000,
+      items: [item('item_0289', { ability_duration: 30, ability_bonus_strength: 35 }, 120)],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy', active: new Set(['item_0289']) },
+  );
+  assert.ok(shadow.attackSpeed > baseBuild.attackSpeed);
+  assert.ok(axe.damage > baseBuild.damage);
+  assert.ok(horn.damage > baseBuild.damage);
+});
+
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 28);
-  assert.equal(DPS_ITEM_COUNT, 45);
+  assert.equal(DPS_FAMILY_COUNT, 43);
+  assert.equal(DPS_ITEM_COUNT, 60);
   assert.equal(PANEL_FAMILY_COUNT, 9);
   assert.equal(PANEL_ITEM_COUNT, 16);
-  assert.equal(MODELED_ITEM_COUNT, 61);
+  assert.equal(MODELED_ITEM_COUNT, 76);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');

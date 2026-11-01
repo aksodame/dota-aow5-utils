@@ -102,6 +102,11 @@ export interface DpsBuild {
   baseMoveSpeed: number;
   primaryAttr: 'str' | 'agi' | 'int' | 'uni';
   attackDamagePerAgi: number;
+  attackDamagePerStr: number;
+  /** Total energy shield before the fight; 0377 turns it into physical damage. */
+  energyShield: number;
+  /** 0392 / 0240 turn critical strikes off for their owner. */
+  noCrit: boolean;
   agilityAttackSpeedCap: number;
   agilityAttackSpeedDecay: number;
   magicalDamageAddPct: number;
@@ -135,7 +140,13 @@ export type DpsSourceId =
   | 'ruinHammer'
   | 'vortex'
   | 'vortexDot'
-  | 'gaze';
+  | 'gaze'
+  | 'maelstrom'
+  | 'moonShard'
+  | 'mjollnir'
+  | 'galeStrike'
+  | 'evernight'
+  | 'havocHammer';
 
 export interface DpsSource {
   id: DpsSourceId;
@@ -234,6 +245,14 @@ const PENDANT = dpsItemIds('pendant');
 const MOVE_HUNT = ['item_0360', 'item_0718'] as const;
 const PHASE_BOOTS = ['item_0152'] as const;
 const MADNESS = ['item_0155'] as const;
+const SHADOW_MASK = ['item_0317'] as const;
+const SHATTERED_AXE = ['item_0305'] as const;
+const VICIOUS_HORN = ['item_0289'] as const;
+const TOLERANCE = ['item_0392'] as const;
+const UNYIELDING = ['item_0240'] as const;
+const BEAST_BOOTS = ['item_0350'] as const;
+const BEAST_PENDANT = ['item_0349'] as const;
+const LIONHEART = ['item_0329'] as const;
 
 function findItem(build: DpsBuild, ids: readonly string[]): DpsItemStats | undefined {
   return build.items.find((item) => ids.includes(item.id));
@@ -322,13 +341,22 @@ interface Constants {
   /** Flat armour reduction from 0124 / 0234 / 0300, positive amount. */
   armorDebuffPerHit: number;
   armorProcs: ReadonlyArray<{ source: 'corrosiveSpike' | 'feast'; raw: number; armor: number }>;
-  cooldownProcs: ReadonlyArray<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer'; raw: number; cooldown: number }>;
+  cooldownProcs: ReadonlyArray<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer' | 'havocHammer'; raw: number; cooldown: number }>;
   vortexChance: number;
   vortexRaw: number;
   vortexDotRaw: number;
   gazePct: number;
   gazeCooldown: number;
   poisonProcs: ReadonlyArray<{ id: string; cooldown: number }>;
+  maelstromChance: number;
+  maelstromPct: number;
+  moonShardChance: number;
+  moonShardPct: number;
+  mjollnirChance: number;
+  mjollnirPct: number;
+  mjollnirCooldown: number;
+  galeStrike: { every: number; multiplier: number } | undefined;
+  evernight: { every: number; multiplier: number } | undefined;
 }
 
 function constants(build: DpsBuild): Constants {
@@ -352,8 +380,12 @@ function constants(build: DpsBuild): Constants {
   const bleedFaster = findItem(build, BLEED_FASTER);
   const fasterPct = value(bleedFaster, 'ability_value_bleed_damage_faster_pct');
   const speed = clamp(1 + fasterPct / 100, 0.05, 10);
-  const autoCrit = critChancePct(build.critChancePct, build.physicalCritChancePct, build.omniCritChancePct);
-  const abilityCrit = critChancePct(build.abilityCritChancePct, build.physicalCritChancePct, build.omniCritChancePct);
+  const autoCrit = build.noCrit
+    ? 0
+    : critChancePct(build.critChancePct, build.physicalCritChancePct, build.omniCritChancePct);
+  const abilityCrit = build.noCrit
+    ? 0
+    : critChancePct(build.abilityCritChancePct, build.physicalCritChancePct, build.omniCritChancePct);
   const cdr = 1 - Math.min(80, Math.max(0, build.cooldownReductionPct)) / 100;
   const effCd = (item: DpsItemStats | undefined, fallback: number): number =>
     Math.max(0.1, (item?.cooldown ?? fallback) * cdr);
@@ -377,7 +409,7 @@ function constants(build: DpsBuild): Constants {
   }
   const armorDebuffPerHit =
     (brokenArmor ? 2 : 0) + armorProcs.reduce((sum, proc) => sum + proc.armor, 0);
-  const cooldownProcs: Array<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer'; raw: number; cooldown: number }> = [];
+  const cooldownProcs: Array<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer' | 'havocHammer'; raw: number; cooldown: number }> = [];
   const sharpAxe = findItem(build, ['item_0121']);
   if (sharpAxe) {
     cooldownProcs.push({
@@ -412,9 +444,22 @@ function constants(build: DpsBuild): Constants {
     : 0;
   const gaze = findItem(build, ['item_0161']);
   const poisonProcs: Array<{ id: string; cooldown: number }> = [];
-  for (const id of ['item_0166', 'item_0303']) {
+  for (const id of ['item_0166', 'item_0303', 'item_0319']) {
     const item = build.items.find((x) => x.id === id);
-    if (item) poisonProcs.push({ id, cooldown: effCd(item, 1) });
+    if (item) poisonProcs.push({ id, cooldown: effCd(item, id === 'item_0319' ? 0.5 : 1) });
+  }
+  const maelstrom = findItem(build, ['item_0117']);
+  const moonShard = findItem(build, ['item_0158']);
+  const mjollnir = findItem(build, ['item_0428']);
+  const gale = findItem(build, ['item_0351']);
+  const evernight = findItem(build, ['item_0406']);
+  const havoc = findItem(build, ['item_0377']);
+  if (havoc) {
+    cooldownProcs.push({
+      source: 'havocHammer',
+      raw: Math.max(0, build.energyShield * value(havoc, 'ability_current_shield_damage_pct') / 100),
+      cooldown: effCd(havoc, 2),
+    });
   }
   const flatProcs: Array<{ source: 'dartProc' | 'crystalProc' | 'valorSword'; chance: number; raw: number }> =
     build.items
@@ -507,6 +552,25 @@ function constants(build: DpsBuild): Constants {
     gazePct: Math.max(0, value(gaze, 'ability_damage')),
     gazeCooldown: effCd(gaze, 4),
     poisonProcs,
+    maelstromChance: maelstrom ? Math.max(0, value(maelstrom, 'ability_trigger_chance_pct')) / 100 : 0,
+    maelstromPct: Math.max(0, value(maelstrom, 'ability_damage')),
+    moonShardChance: moonShard ? Math.max(0, value(moonShard, 'ability_trigger_chance_pct')) / 100 : 0,
+    moonShardPct: Math.max(0, value(moonShard, 'ability_damage')),
+    mjollnirChance: mjollnir ? Math.max(0, value(mjollnir, 'ability_trigger_chance_pct')) / 100 : 0,
+    mjollnirPct: Math.max(0, value(mjollnir, 'ability_value_damage')),
+    mjollnirCooldown: effCd(mjollnir, 1),
+    galeStrike: gale
+      ? {
+          every: Math.max(1, Math.floor(value(gale, 'ability_required_attack_count'))),
+          multiplier: Math.max(0, value(gale, 'ability_damage_multiplier')) / 100,
+        }
+      : undefined,
+    evernight: evernight
+      ? {
+          every: Math.max(1, Math.floor(value(evernight, 'ability_value_c_required_attack_count'))),
+          multiplier: Math.max(0, value(evernight, 'ability_value_damage_multiplier')) / 100,
+        }
+      : undefined,
   };
 }
 
@@ -561,7 +625,7 @@ function magicalDamage(
   },
 ): number {
   if (!(raw > 0)) return 0;
-  const chance = opts.dot
+  const chance = opts.dot || build.noCrit
     ? 0
     : critChancePct(build.abilityCritChancePct, build.magicalCritChancePct, build.omniCritChancePct);
   const crit = 1 + (chance / 100) * (c.critMultiplier - 1);
@@ -642,6 +706,14 @@ function armorAfterBreakAt(armor: number, stacks: number): number {
 function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, duration: number): DpsBuild {
   const phase = findItem(build, PHASE_BOOTS);
   const madness = findItem(build, MADNESS);
+  const shadow = findItem(build, SHADOW_MASK);
+  const shattered = findItem(build, SHATTERED_AXE);
+  const horn = findItem(build, VICIOUS_HORN);
+  const tolerance = findItem(build, TOLERANCE);
+  const unyielding = findItem(build, UNYIELDING);
+  const beastBoots = findItem(build, BEAST_BOOTS);
+  const beastPendant = findItem(build, BEAST_PENDANT);
+  const lionheart = findItem(build, LIONHEART);
   const cdr = 1 - Math.min(80, Math.max(0, build.cooldownReductionPct)) / 100;
   const duty = (item: DpsItemStats | undefined, durationKey: string): number => {
     if (!item || active?.has(item.id) !== true) return 0;
@@ -654,32 +726,63 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   };
   const phaseDuty = duty(phase, 'ability_phase_duration');
   const madnessDuty = duty(madness, 'ability_duration');
-  const phasePct = Math.max(0, value(phase, 'ability_phase_ms_pct'));
-  const madnessMs = Math.max(0, value(madness, 'ability_bonus_move_speed'));
-  const averageMovespeed = build.baseMoveSpeed * (1 + (phasePct * phaseDuty) / 100) + madnessMs * madnessDuty;
+  const shadowDuty = duty(shadow, 'ability_duration');
+  const shatteredDuty = duty(shattered, 'ability_duration');
+  const hornDuty = duty(horn, 'ability_duration');
+
+  // Percent movement buffs and penalties first, then the flat grants. The
+  // exact order only matters a little, but it keeps 0152 + 0305 sensible.
+  let averageMovespeed = build.baseMoveSpeed;
+  if (phase) averageMovespeed *= 1 + (Math.max(0, value(phase, 'ability_phase_ms_pct')) * phaseDuty) / 100;
+  if (shattered) averageMovespeed *= 1 - (Math.max(0, value(shattered, 'ability_self_movespeed_pct')) * shatteredDuty) / 100;
+  if (madness) averageMovespeed += Math.max(0, value(madness, 'ability_bonus_move_speed')) * madnessDuty;
+  if (shadow) averageMovespeed += Math.max(0, value(shadow, 'ability_bonus_move_speed')) * shadowDuty;
+  if (beastBoots) averageMovespeed += Math.max(0, value(beastBoots, 'ability_bonus_movespeed'));
 
   const hunt = findItem(build, MOVE_HUNT);
-  const threshold = Math.max(0, value(hunt, 'ability_value_c_movespeed_threshold'));
-  const per = Math.max(1, value(hunt, 'ability_value_c_movespeed_per_attack_damage') || 1);
-  const step = Math.max(0, value(hunt, 'ability_bonus_attack_damage_per_step'));
+  const huntThreshold = Math.max(0, value(hunt, 'ability_value_c_movespeed_threshold'));
+  const huntPer = Math.max(1, value(hunt, 'ability_value_c_movespeed_per_attack_damage') || 1);
+  const huntStep = Math.max(0, value(hunt, 'ability_bonus_attack_damage_per_step'));
   const dynamicAgility =
-    hunt !== undefined ? Math.floor(Math.max(0, averageMovespeed - threshold) / per) * step : 0;
+    hunt !== undefined ? Math.floor(Math.max(0, averageMovespeed - huntThreshold) / huntPer) * huntStep : 0;
   const effectiveDynamicAgility = dynamicAgility * (1 + build.agilityPct / 100);
 
   const baseAgility = Math.max(0, build.totalAgility);
   const agility = baseAgility + effectiveDynamicAgility;
   const cap = Math.max(0, build.agilityAttackSpeedCap);
   const decay = Math.max(1, build.agilityAttackSpeedDecay);
-  const agilityAsDelta =
-    cap * (agility / (agility + decay) - baseAgility / (baseAgility + decay));
+  const agilityAsDelta = cap * (agility / (agility + decay) - baseAgility / (baseAgility + decay));
+
   const madnessAs = Math.max(0, value(madness, 'ability_bonus_attack_speed')) * madnessDuty;
+  const shadowAs = Math.max(0, value(shadow, 'ability_bonus_attack_speed')) * shadowDuty;
+  const pendantAs = beastPendant !== undefined ? Math.max(0, value(beastPendant, 'ability_attack_speed')) * 2 : 0;
+  const hornStrength = Math.max(0, value(horn, 'ability_bonus_strength')) * hornDuty;
+  const shatteredAd = shattered !== undefined ? build.attackDamage * Math.max(0, value(shattered, 'ability_value_all_attack_damage_percent')) / 100 * shatteredDuty : 0;
+  const shatteredHp = shattered !== undefined ? build.maxHealth * Math.max(0, value(shattered, 'ability_value_base_health_pct')) / 100 * shatteredDuty : 0;
+  const toleranceBonus = tolerance !== undefined
+    ? Math.min(
+        Math.max(0, value(tolerance, 'ability_bonus_pct_max')),
+        Math.floor(Math.max(0, Math.max(0, value(tolerance, 'ability_movespeed_threshold')) - averageMovespeed) / Math.max(1, value(tolerance, 'ability_movespeed_step'))) *
+          Math.max(0, value(tolerance, 'ability_bonus_pct_per_step')),
+      )
+    : 0;
 
   return {
     ...build,
-    attackDamage: build.attackDamage + effectiveDynamicAgility * build.attackDamagePerAgi,
-    attackSpeed: build.attackSpeed + agilityAsDelta + madnessAs,
+    maxHealth: build.maxHealth + shatteredHp + hornStrength * 6,
+    attackDamage:
+      build.attackDamage +
+      effectiveDynamicAgility * build.attackDamagePerAgi +
+      shatteredAd +
+      hornStrength * build.attackDamagePerStr,
+    attackSpeed: build.attackSpeed + agilityAsDelta + madnessAs + shadowAs + pendantAs,
     totalAgility: agility,
-    totalAttributes: build.totalAttributes + effectiveDynamicAgility,
+    totalAttributes: build.totalAttributes + effectiveDynamicAgility + hornStrength,
+    energyShield:
+      build.energyShield +
+      (lionheart !== undefined ? hornStrength * Math.max(0, value(lionheart, 'ability_shield_per_strength')) : 0),
+    outgoingMultiplier: build.outgoingMultiplier * (1 + toleranceBonus / 100),
+    noCrit: build.noCrit || tolerance !== undefined || unyielding !== undefined,
   };
 }
 
@@ -706,6 +809,12 @@ function sourceRecord(): Record<DpsSourceId, number> {
     vortex: 0,
     vortexDot: 0,
     gaze: 0,
+    maelstrom: 0,
+    moonShard: 0,
+    mjollnir: 0,
+    galeStrike: 0,
+    evernight: 0,
+    havocHammer: 0,
   };
 }
 
@@ -732,6 +841,12 @@ function hitRecord(): Record<DpsSourceId, number> {
     vortex: 0,
     vortexDot: 0,
     gaze: 0,
+    maelstrom: 0,
+    moonShard: 0,
+    mjollnir: 0,
+    galeStrike: 0,
+    evernight: 0,
+    havocHammer: 0,
   };
 }
 
@@ -767,6 +882,8 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   let sharpAxeReady = 0;
   let skullReady = 0;
   let ruinReady = 0;
+  let havocReady = 0;
+  let mjollnirReady = 0;
   let gazeAt = c.gazePct > 0 ? c.gazeCooldown : Number.POSITIVE_INFINITY;
   const poisonReady = c.poisonProcs.map(() => 0);
   let lastVuln = Number.NEGATIVE_INFINITY;
@@ -872,16 +989,69 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       }
     }
 
-    // 0121 / 0210 / 0340: one max-health hit when their own cooldown is ready.
+    // 0117 / 0158 / 0428: attack-damage-scaled procs. The first two are
+    // straight rolls; Mjollnir also has a 1 s trigger cooldown.
+    if (c.maelstromChance > 0 && c.maelstromPct > 0) {
+      const raw = autoRaw * c.maelstromPct / 100;
+      const hit = magicalDamage(b, enemy, c, raw, {
+        dot: false,
+        poisonSource: false,
+        corrosionStacks: poisonStacks,
+        vulnStacks,
+        burning: burnUntil > time,
+        markStacks,
+        doomStacks,
+      });
+      add('maelstrom', hit * c.maelstromChance, c.maelstromChance);
+    }
+    if (c.moonShardChance > 0 && c.moonShardPct > 0) {
+      const raw = autoRaw * c.moonShardPct / 100;
+      const hit = directDamage(b, enemy, c, raw, ctx(burnUntil > time));
+      add('moonShard', hit * c.moonShardChance, c.moonShardChance);
+    }
+    if (c.mjollnirChance > 0 && c.mjollnirPct > 0 && time + EPS >= mjollnirReady) {
+      const raw = autoRaw * c.mjollnirPct / 100;
+      const hit = magicalDamage(b, enemy, c, raw, {
+        dot: false,
+        poisonSource: false,
+        corrosionStacks: poisonStacks,
+        vulnStacks,
+        burning: burnUntil > time,
+        markStacks,
+        doomStacks,
+      });
+      add('mjollnir', hit * c.mjollnirChance, c.mjollnirChance);
+      mjollnirReady = time + c.mjollnirCooldown;
+    }
+
+    // 0351 / 0406: every N consecutive base attacks arms the next one. The
+    // bonus therefore lands on attack N+1, N*2+1, ...; one target only.
+    if (c.galeStrike && attacks > c.galeStrike.every && (attacks - 1) % c.galeStrike.every === 0) {
+      const hit = directDamage(b, enemy, c, autoRaw * c.galeStrike.multiplier, ctx(burnUntil > time, true));
+      add('galeStrike', hit, 1);
+    }
+    if (c.evernight && attacks > c.evernight.every && (attacks - 1) % c.evernight.every === 0) {
+      const hit = directDamage(b, enemy, c, autoRaw * c.evernight.multiplier, ctx(burnUntil > time));
+      add('evernight', hit, 1);
+    }
+
+    // 0121 / 0210 / 0340 / 0377: one hit when their own cooldown is ready.
     for (const proc of c.cooldownProcs) {
       const ready =
-        proc.source === 'sharpAxe' ? sharpAxeReady : proc.source === 'skullcrusher' ? skullReady : ruinReady;
+        proc.source === 'sharpAxe'
+          ? sharpAxeReady
+          : proc.source === 'skullcrusher'
+            ? skullReady
+            : proc.source === 'ruinHammer'
+              ? ruinReady
+              : havocReady;
       if (time + EPS < ready) continue;
       const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
       add(proc.source, hit, 1);
       if (proc.source === 'sharpAxe') sharpAxeReady = time + proc.cooldown;
       else if (proc.source === 'skullcrusher') skullReady = time + proc.cooldown;
-      else ruinReady = time + proc.cooldown;
+      else if (proc.source === 'ruinHammer') ruinReady = time + proc.cooldown;
+      else havocReady = time + proc.cooldown;
     }
 
     // 0234 / 0300: agility-scaled physical damage on every attack, then their

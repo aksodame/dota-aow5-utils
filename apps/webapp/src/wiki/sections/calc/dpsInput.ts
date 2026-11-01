@@ -81,6 +81,17 @@ export function buildDpsInput(
         : input.primary === 'uni'
           ? input.file.attrBonus.universal_attr_attack_damage
           : 0,
+    attackDamagePerStr:
+      input.primary === 'str'
+        ? input.file.attrBonus.primary_attr_attack_damage
+        : input.primary === 'uni'
+          ? input.file.attrBonus.universal_attr_attack_damage
+          : 0,
+    energyShield:
+      extra('base_energy_shield') +
+      panel('bonus_strength') *
+        (items.find((item) => item.id === 'item_0329')?.stats.ability_shield_per_strength ?? 0),
+    noCrit: false,
     agilityAttackSpeedCap: input.file.attrBonus.agility_attack_speed_cap,
     agilityAttackSpeedDecay: input.file.attrBonus.agility_attack_speed_decay,
     magicalDamageAddPct: panel('magical_damage_add_pct'),

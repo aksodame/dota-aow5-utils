@@ -196,9 +196,15 @@ export interface DpsStrings {
     featherAncestor: string;
     phase: string;
     madness: string;
+    shadowMask: string;
+    shatteredAxe: string;
+    viciousHorn: string;
     meta: (cooldown: string, duration: string, interval: string, pct: string) => string;
     phaseMeta: (cooldown: string, duration: string) => string;
     madnessMeta: (cooldown: string, duration: string) => string;
+    shadowMaskMeta: (cooldown: string, duration: string) => string;
+    shatteredAxeMeta: (cooldown: string, duration: string) => string;
+    viciousHornMeta: (cooldown: string, duration: string) => string;
   };
   /** Per-second window and the kill's event log. */
   timeline: {
@@ -451,6 +457,12 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         vortex: 'Перчатки вихря — магия',
         vortexDot: 'Перчатки вихря — вихрь',
         gaze: 'Корона Селемены — удар',
+        maelstrom: 'Вихрь — молния',
+        moonShard: 'Осколок луны — прок',
+        mjollnir: 'Мьёльнир — молния',
+        galeStrike: 'Удар бури — серия',
+        evernight: 'Меч вечной ночи — серия',
+        havocHammer: '★Молот разрушения — щит',
       },
     },
     active: {
@@ -460,9 +472,15 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       featherAncestor: 'Предок: Кулон небесных перьев',
       phase: 'Фазовые сапоги',
       madness: 'Маска безумия',
+      shadowMask: 'Теневая маска',
+      shatteredAxe: 'Сломанный топор',
+      viciousHorn: 'Рог злобного быка',
       meta: (cd, duration, interval, pct) => `КД ${cd} с · ${duration} с, тик ${interval} с, ${pct} % статов`,
       phaseMeta: (cd, duration) => `КД ${cd} с · ${duration} с: +35 % скорости передвижения, +20 % уклонения`,
       madnessMeta: (cd, duration) => `КД ${cd} с · ${duration} с: +100 к скорости атаки, +25 к скорости бега, −10 брони`,
+      shadowMaskMeta: (cd, duration) => `КД ${cd} с · ${duration} с: +100 к скорости атаки, +25 к скорости бега, −5 брони`,
+      shatteredAxeMeta: (cd, duration) => `КД ${cd} с · ${duration} с: +30 % к урону от атак, +20 % к здоровью, −25 % к скорости бега`,
+      viciousHornMeta: (cd, duration) => `КД ${cd} с · ${duration} с: +35 силы`,
     },
     timeline: {
       title: 'Таймлайн',
@@ -498,6 +516,8 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         'Проки 2 уровня: 0124/0234/0300 снижают броню (2/5/6, 5 с); 0121/0210/0340 бьют по макс. HP на своём КД; 0457 — 30 % × 80; 0307 — магия (лов+инт)×120 % и вихрь 3 с; 0161 — удар каждые 4 с.',
         '0152 и 0155 используются по КД (12/60 и 6/60 с, CDR): учитываются средние +35 % скорости бега, +100 скорости атаки и +25 бега. 0360/0718 дают ловкость за каждые 5 скорости сверх 250 (1/2 за шаг), и она идёт в урон и скорость атаки.',
         '0166/0303 добавляют по слою яда, когда их КД 1 с готов; 0402 вызывает дополнительный тик. 0124 не наносит урона — только броня.',
+        '3 уровень: 0117/0428 — молния от урона атаки (по одной цели), 0158 — физ. прок, 0351/0406 — бонус на следующую атаку после серии, 0377 — удар от запаса щита, 0319 — слой яда; 0317/0305/0289 — активы; 0349/0350 — ауры; 0392/0240 отключают криты, 0392 даёт урон от потерянной скорости.',
+        '0296 и MT006 срабатывают после получения урона/каста, а 0406 и 0296 в тёмных/холодных комнатах — вне окна автоатак; эти условия не считаются.',
       ],
     },
   },
@@ -570,6 +590,12 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         vortex: 'Vortex Gloves — magic hit',
         vortexDot: 'Vortex Gloves — vortex ticks',
         gaze: "Selimone's Crown — hit",
+        maelstrom: 'Maelstrom — lightning',
+        moonShard: 'Moon Shard — proc',
+        mjollnir: 'Mjollnir — lightning',
+        galeStrike: 'Gale Strike — combo',
+        evernight: 'Evernight Sword — combo',
+        havocHammer: '★Havoc Hammer — shield hit',
       },
     },
     active: {
@@ -579,9 +605,15 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       featherAncestor: 'Ancestor: Feather pendant',
       phase: 'Phase Boots',
       madness: 'Mask of Madness',
+      shadowMask: 'Shadow Mask',
+      shatteredAxe: 'Shattered Axe',
+      viciousHorn: 'Vicious Horn',
       meta: (cd, duration, interval, pct) => `CD ${cd} s · ${duration} s, ${interval} s tick, ${pct} % of stats`,
       phaseMeta: (cd, duration) => `CD ${cd} s · ${duration} s: +35 % movement, +20 % evasion`,
       madnessMeta: (cd, duration) => `CD ${cd} s · ${duration} s: +100 attack speed, +25 movement, −10 armor`,
+      shadowMaskMeta: (cd, duration) => `CD ${cd} s · ${duration} s: +100 attack speed, +25 movement, −5 armor`,
+      shatteredAxeMeta: (cd, duration) => `CD ${cd} s · ${duration} s: +30 % attack damage, +20 % health, −25 % movement`,
+      viciousHornMeta: (cd, duration) => `CD ${cd} s · ${duration} s: +35 strength`,
     },
     timeline: {
       title: 'Timeline',
@@ -683,6 +715,12 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         vortex: '涡流手套——魔法伤害',
         vortexDot: '涡流手套——持续伤害',
         gaze: '赛莉蒙妮之冠——攻击',
+        maelstrom: '漩涡——闪电',
+        moonShard: '银月之晶——触发',
+        mjollnir: '雷神之锤——闪电',
+        galeStrike: '狂风之击——连击',
+        evernight: '永夜剑——连击',
+        havocHammer: '★浩劫重锤——护盾打击',
       },
     },
     active: {
@@ -692,9 +730,15 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       featherAncestor: '先祖：天羽护符',
       phase: '相位鞋',
       madness: '疯狂面具',
+      shadowMask: '暗影假面',
+      shatteredAxe: '破碎之斧',
+      viciousHorn: '恶牛角',
       meta: (cd, duration, interval, pct) => `冷却 ${cd} 秒 · ${duration} 秒，${interval} 秒一跳，${pct}% 属性`,
       phaseMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒：移动速度 +35%，闪避 +20%`,
       madnessMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒：攻击速度 +100，移动速度 +25，护甲 −10`,
+      shadowMaskMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒：攻击速度 +100，移动速度 +25，护甲 −5`,
+      shatteredAxeMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒：攻击伤害 +30%，生命 +20%，移动速度 −25%`,
+      viciousHornMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒：力量 +35`,
     },
     timeline: {
       title: '时间线',
@@ -730,6 +774,8 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         '2 级触发：0124/0234/0300 破甲（2/5/6，持续 5 秒）；0121/0210/0340 按自身冷却造成最大生命伤害；0457 为 30% × 80；0307 造成（敏捷+智力）×120% 魔法伤害并附加 3 秒涡流；0161 每 4 秒攻击一次。',
         '0152 和 0155 按冷却使用（12/60 与 6/60 秒，受 CDR）：计入平均 +35% 移速、+100 攻速与 +25 移速。0360/0718 每超出 250 的 5 点移速提供敏捷（每步 1/2），并转化为伤害与攻速。',
         '0166/0303 在 1 秒冷却就绪时增加 1 层毒；0402 额外结算一次跳伤。0124 不造成伤害，只破甲。',
+        '3 级：0117/0428 为基于攻击伤害的闪电（单体），0158 为物理触发，0351/0406 在连击后强化下一击，0377 按护盾造成伤害，0319 加毒层；0317/0305/0289 为主动；0349/0350 为光环；0392/0240 禁用暴击，0392 按损失移速增伤。',
+        '0296 与 MT006 在受伤/施法后触发，0406 与 0296 在黑暗/寒冷房间的效果不在普攻窗口内；这些条件未计入。',
       ],
     },
   },
