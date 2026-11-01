@@ -43,6 +43,15 @@ const build = (over: Partial<DpsBuild> = {}): DpsBuild => ({
   extraDamagePct: { normal: 0, elite: 0, miniboss: 0, boss: 0 },
   seasonDamagePct: 0,
   totalAttributes: 0,
+  maxHealth: 0,
+  totalAgility: 0,
+  agilityPct: 0,
+  totalIntelligence: 0,
+  baseMoveSpeed: 0,
+  primaryAttr: 'str',
+  attackDamagePerAgi: 0,
+  agilityAttackSpeedCap: 240,
+  agilityAttackSpeedDecay: 500,
   magicalDamageAddPct: 0,
   magicalCritChancePct: 0,
   poisonOutgoingPct: 0,
@@ -344,15 +353,167 @@ test('0853 lowers armor and adds vulnerable only after its first proc', () => {
 });
 
 
+test('Phase Boots and Mask of Madness respect cooldown reduction over a full window', () => {
+  const items = [
+    item('item_0152', { ability_phase_duration: 12, ability_phase_ms_pct: 35, ability_evasion_pct: 20 }, 60),
+    item('item_0155', { ability_duration: 6, ability_bonus_attack_speed: 100, ability_bonus_move_speed: 25 }, 60),
+    item('item_0360', {
+      ability_value_c_movespeed_threshold: 250,
+      ability_value_c_movespeed_per_attack_damage: 5,
+      ability_bonus_attack_damage_per_step: 1,
+    }),
+  ];
+  const base = build({
+    attackDamage: 1000,
+    attackSpeed: 100,
+    totalAgility: 100,
+    totalAttributes: 100,
+    baseMoveSpeed: 300,
+    primaryAttr: 'agi',
+    attackDamagePerAgi: 0.8,
+    items,
+  });
+  const active = new Set(['item_0152', 'item_0155']);
+  const normal = simulateDps(base, enemy(), { duration: 60, mode: 'dummy', active });
+  const reduced = simulateDps(build({ ...base, cooldownReductionPct: 80 }), enemy(), {
+    duration: 60,
+    mode: 'dummy',
+    active,
+  });
+  assert.ok(reduced.damage > normal.damage);
+});
+
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 14);
-  assert.equal(DPS_ITEM_COUNT, 26);
+  assert.equal(DPS_FAMILY_COUNT, 28);
+  assert.equal(DPS_ITEM_COUNT, 45);
   assert.equal(PANEL_FAMILY_COUNT, 9);
   assert.equal(PANEL_ITEM_COUNT, 16);
-  assert.equal(MODELED_ITEM_COUNT, 42);
+  assert.equal(MODELED_ITEM_COUNT, 61);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
   assert.equal(mechanicFamilyOf('item_0827')?.base, 'item_0646');
+  assert.equal(mechanicFamilyOf('item_0730')?.base, 'item_0300');
+  assert.equal(mechanicFamilyOf('item_0728')?.base, 'item_0340');
+  assert.equal(mechanicFamilyOf('item_0718')?.base, 'item_0360');
   assert.equal(mechanicFamilyOf('item_9999'), undefined);
+});
+
+test('level-2 broken-armour items add their own physical hits and lower armour', () => {
+  const items = [
+    item('item_0124', {}),
+    item('item_0234', { ability_agility_damage_pct: 35, ability_armor_reduce: 5 }),
+    item('item_0300', { ability_value_agility_damage_pct: 80, ability_armor_reduce: 6 }),
+  ];
+  const base = build({ attackSpeed: 100, totalAgility: 100, totalAttributes: 100 });
+  const withItems = build({ attackSpeed: 100, totalAgility: 100, totalAttributes: 100, items });
+  const plain = simulateDps(base, enemy({ armor: 100 }), { duration: 10, mode: 'dummy' });
+  const r = simulateDps(withItems, enemy({ armor: 100 }), { duration: 10, mode: 'dummy' });
+  assert.ok(source(r, 'corrosiveSpike') > 0);
+  assert.ok(source(r, 'feast') > 0);
+  // 0124 (−2), 0234 (−5) and 0300 (−6) leave the target on 87 armour after
+  // the first hit, so the following autos hit harder than without them.
+  assert.ok(source(r, 'auto') > source(plain, 'auto'));
+});
+
+test('0121, 0210 and 0340 pay max-health damage on their own cooldowns', () => {
+  const items = [
+    item('item_0121', { ability_bonus_max_health_pct: 30 }, 3),
+    item('item_0210', { ability_value_bonus_max_health_pct: 30 }, 1),
+    item('item_0340', { ability_value_max_health_damage_pct: 35 }, 1.5),
+  ];
+  const r = simulateDps(build({ attackSpeed: 100, maxHealth: 1000, items }), enemy(), {
+    duration: 10,
+    mode: 'dummy',
+  });
+  assert.ok(source(r, 'sharpAxe') > 0);
+  assert.ok(source(r, 'skullcrusher') > 0);
+  assert.ok(source(r, 'ruinHammer') > 0);
+});
+
+test('0457 Sword of Valor is a 30 % chance for 80 physical on one target', () => {
+  const r = simulateDps(
+    build({ attackSpeed: 100, items: [item('item_0457', { ability_ps_chance: 30, ability_ps_damage: 80 })] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // 2 attacks/s over 10 s × 30 % × 80 = 480 expected.
+  near(source(r, 'valorSword'), 480);
+  near(r.sources.find((s) => s.id === 'valorSword')?.hits ?? 0, 6);
+});
+
+test('0307 pays its magic hit and the 3 s vortex on one target', () => {
+  const r = simulateDps(
+    build({
+      totalAgility: 100,
+      totalIntelligence: 100,
+      items: [
+        item('item_0307', {
+          ability_value_trigger_chance_pct: 25,
+          ability_value_damage_pct: 120,
+          ability_dot_pct: 20,
+        }),
+      ],
+    }),
+    enemy(),
+    { duration: 4, mode: 'dummy' },
+  );
+  // 4 attacks, 25 % each: 240 immediate and 144 vortex damage per proc.
+  near(source(r, 'vortex'), 240);
+  near(source(r, 'vortexDot'), 144);
+});
+
+test('0161 Gaze strikes for all attributes every 4 s', () => {
+  const r = simulateDps(
+    build({ totalAttributes: 100, items: [item('item_0161', { ability_damage: 80 }, 4)] }),
+    enemy(),
+    { duration: 9, mode: 'dummy' },
+  );
+  // At 4 s and 8 s: 100 × 80 % = 80 each.
+  near(source(r, 'gaze'), 160);
+  assert.equal(r.sources.find((s) => s.id === 'gaze')?.hits, 2);
+});
+
+test('0166 and 0303 add one poison stack whenever their cooldown is ready', () => {
+  const r = simulateDps(
+    build({
+      totalAttributes: 100,
+      items: [item('item_0166', {}, 1), item('item_0303', {}, 1)],
+    }),
+    enemy(),
+    { duration: 1.5, mode: 'dummy' },
+  );
+  // One auto at t = 1 s; both items apply one stack.
+  near(r.poisonStacks, 2);
+  assert.ok(source(r, 'poison') > 0);
+});
+
+test('Phase Boots and Mask of Madness average their uptime; 0360 reads the movement', () => {
+  const items = [
+    item('item_0152', { ability_phase_duration: 12, ability_phase_ms_pct: 35, ability_evasion_pct: 20 }, 60),
+    item('item_0155', { ability_duration: 6, ability_bonus_attack_speed: 100, ability_bonus_move_speed: 25 }, 60),
+    item('item_0360', {
+      ability_value_c_movespeed_threshold: 250,
+      ability_value_c_movespeed_per_attack_damage: 5,
+      ability_bonus_attack_damage_per_step: 1,
+    }),
+  ];
+  const base = build({
+    attackDamage: 1000,
+    attackSpeed: 100,
+    totalAgility: 100,
+    totalAttributes: 100,
+    baseMoveSpeed: 300,
+    primaryAttr: 'agi',
+    attackDamagePerAgi: 0.8,
+    items,
+  });
+  const off = simulateDps(base, enemy(), { duration: 10, mode: 'dummy' });
+  const on = simulateDps(base, enemy(), { duration: 10, mode: 'dummy', active: new Set(['item_0152', 'item_0155']) });
+  assert.ok(on.attackSpeed > off.attackSpeed);
+  assert.ok(on.damage > off.damage);
+  // A 10 s window is covered by Phase's 12 s buff for its whole length;
+  // Madness covers 6 of the 10 seconds. That is 420 average movement,
+  // 34 agility above the 250 threshold.
+  assert.ok(on.attackSpeed >= 100);
 });

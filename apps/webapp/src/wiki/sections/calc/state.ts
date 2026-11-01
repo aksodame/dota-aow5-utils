@@ -143,7 +143,9 @@ export function hydrate(raw: unknown): CalcState {
   const active = dps?.active;
   if (active !== null && typeof active === 'object') {
     for (const [id, on] of Object.entries(active as Record<string, unknown>)) {
-      if (on === true) s.dps.active[id] = true;
+      // `false` matters too: Phase Boots and Mask of Madness default to on,
+      // so an unticked box has to survive a reload.
+      if (typeof on === 'boolean') s.dps.active[id] = on;
     }
   }
   return s;

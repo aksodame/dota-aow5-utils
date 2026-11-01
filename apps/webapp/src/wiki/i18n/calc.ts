@@ -194,7 +194,11 @@ export interface DpsStrings {
     note: string;
     feather: string;
     featherAncestor: string;
+    phase: string;
+    madness: string;
     meta: (cooldown: string, duration: string, interval: string, pct: string) => string;
+    phaseMeta: (cooldown: string, duration: string) => string;
+    madnessMeta: (cooldown: string, duration: string) => string;
   };
   /** Per-second window and the kill's event log. */
   timeline: {
@@ -381,7 +385,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
   ru: {
     tab: { stats: 'Статы', dps: 'DPS' },
     title: 'DPS по цели',
-    note: 'Окно урона по выбранной цели: автоатаки и проки предметов. Способности героя, ванильные таланты, яд и сеты пока не входят.',
+    note: 'Окно урона по выбранной цели: автоатаки, проки предметов, яд и активные предметы. Способности героя, ванильные таланты и сеты пока не входят.',
     enemy: {
       title: 'Цель',
       preset: 'Пресет',
@@ -438,6 +442,15 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         feather: 'Кулон небесных перьев — актив',
         dartProc: 'Дротик — прок',
         crystalProc: 'Хрустальный меч — прок',
+        valorSword: 'Меч отваги — прок',
+        corrosiveSpike: 'Шип разложения — удар',
+        feast: 'Пиршество — удар',
+        sharpAxe: 'Острая секира — удар по здоровью',
+        skullcrusher: 'Череполом — удар по здоровью',
+        ruinHammer: 'Молот разрушения — удар по здоровью',
+        vortex: 'Перчатки вихря — магия',
+        vortexDot: 'Перчатки вихря — вихрь',
+        gaze: 'Корона Селемены — удар',
       },
     },
     active: {
@@ -445,7 +458,11 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       note: 'Галочка — использовать предмет по КД; перезарядка уменьшается на cooldown_reduction_pct.',
       feather: 'Кулон небесных перьев',
       featherAncestor: 'Предок: Кулон небесных перьев',
+      phase: 'Фазовые сапоги',
+      madness: 'Маска безумия',
       meta: (cd, duration, interval, pct) => `КД ${cd} с · ${duration} с, тик ${interval} с, ${pct} % статов`,
+      phaseMeta: (cd, duration) => `КД ${cd} с · ${duration} с: +35 % скорости передвижения, +20 % уклонения`,
+      madnessMeta: (cd, duration) => `КД ${cd} с · ${duration} с: +100 к скорости атаки, +25 к скорости бега, −10 брони`,
     },
     timeline: {
       title: 'Таймлайн',
@@ -463,7 +480,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
     notes: {
       title: 'Что учтено и что нет',
       lines: [
-        'Считаются автоатаки и эффекты предметов. Способности героя, ванильные таланты, яд и сеты не входят.',
+        'Считаются автоатаки, проки предметов, яд и активные предметы. Способности героя, ванильные таланты и сеты не входят.',
         'Окно и убийство — два независимых прогона: число атак в окне не применяется к цели целиком. В расчёте убийства события идут по времени и останавливаются на смерти.',
         'Первый удар не получает уязвимость, раскол и метку: Посох и сумка накладывают их после него. Поэтому первая автоатака ниже установившейся.',
         'Крит: базовые 5 % обычной атаки, шанс физ. крита и омни складываются по формуле игры; множитель — 180 % + «Урон от крита» с панели.',
@@ -471,20 +488,23 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         'Эхо 0504 — обычный физический удар: на него работают крит, физ. усилители и броня, поэтому при высоком крите оно даёт основную долю урона.',
         'Горение сумки — 0,75 % макс. HP босса за тик, но не больше 10× суммы характеристик; метка даёт +4,6 % за слой, до 10.',
         'Броня: 1 − броня/(26,66 + |броня|); пробитие режет только положительную броню; раскол 0853 — до 31 % брони.',
-        'Маг. сопротивление показано для будущих магических источников: сейчас все источники физические, на расчёт оно не влияет.',
-        'Из предметов учтены перечисленные проки и пассивные статы; активные способности, ауры и сеты не входят.',
+        'Маг. сопротивление считается для яда, 0209, 0307 и 0161; физические источники его не читают.',
+        'Из предметов учтены перечисленные проки, активные баффы и пассивные статы; способности героя, ауры и сеты не входят.',
         'Когти дракона: лёгкий удар срабатывает на каждую автоатаку, тяжёлый — с шансом 1 %; в расчёте тяжёлый показан матожиданием 1 %, а не отдельным проком.',
         'Яд: тики каждые 0,25 с, каждые 3 с сгорает 20 % слоёв и этот тик пропускается. Урон считает сумму статов, магическое сопротивление, коррозию 0365 (до +30 % магического урона), «Урон ядом» и «Периодический урон». Шанс слоя и размер всплеска 0365 берутся из прокрутки предмета; 0238 даёт свой слой со своим шансом. Защитный яд 0238 на атакующего в расчёт не входит: манекен не бьёт.',
         '0209: шанс тика из прокрутки (80 % статов), повторный прок сразу наносит тик; шанс «рока» — до 5 слоёв, каждый снижает маг. сопротивление (здесь 6 % за слой, до 30). 0402: каждый новый слой яда сразу вызывает дополнительный тик, не более одного на атаку.',
         'Актив 0646/0827 считается только при включённой галочке: 10 тиков по 50 % статов чистым уроном, КД 30 с уменьшается на cooldown_reduction_pct (кап 80 %).',
         '0129/0131: физ. прок 25 % × 50; у 0129 числа захардкожены в скрипте, у 0131 берутся из прокрутки. AoE 0131 считается по одной цели; вторичные прок-эффекты от этого удара не разворачиваются.',
+        'Проки 2 уровня: 0124/0234/0300 снижают броню (2/5/6, 5 с); 0121/0210/0340 бьют по макс. HP на своём КД; 0457 — 30 % × 80; 0307 — магия (лов+инт)×120 % и вихрь 3 с; 0161 — удар каждые 4 с.',
+        '0152 и 0155 используются по КД (12/60 и 6/60 с, CDR): учитываются средние +35 % скорости бега, +100 скорости атаки и +25 бега. 0360/0718 дают ловкость за каждые 5 скорости сверх 250 (1/2 за шаг), и она идёт в урон и скорость атаки.',
+        '0166/0303 добавляют по слою яда, когда их КД 1 с готов; 0402 вызывает дополнительный тик. 0124 не наносит урона — только броня.',
       ],
     },
   },
   en: {
     tab: { stats: 'Stats', dps: 'DPS' },
     title: 'DPS against a target',
-    note: 'A damage window against the chosen target: auto-attacks and item procs. Hero abilities, stock talents, poison and sets are not in yet.',
+    note: 'A damage window against the chosen target: auto-attacks, item procs, poison and active items. Hero abilities, stock talents and sets are not in yet.',
     enemy: {
       title: 'Target',
       preset: 'Preset',
@@ -541,6 +561,15 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         feather: 'Feather pendant — active',
         dartProc: 'Dart — proc',
         crystalProc: 'Crystal Sword — proc',
+        valorSword: 'Sword of Courage — proc',
+        corrosiveSpike: 'Corrosive Spine — hit',
+        feast: 'Night Banquet — hit',
+        sharpAxe: 'Keen Greataxe — max-health hit',
+        skullcrusher: 'Skull Basher — max-health hit',
+        ruinHammer: 'Hammer of Ruin — max-health hit',
+        vortex: 'Vortex Gloves — magic hit',
+        vortexDot: 'Vortex Gloves — vortex ticks',
+        gaze: "Selimone's Crown — hit",
       },
     },
     active: {
@@ -548,7 +577,11 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       note: 'Tick to use the item on cooldown; cooldown is reduced by cooldown_reduction_pct.',
       feather: 'Feather pendant',
       featherAncestor: 'Ancestor: Feather pendant',
+      phase: 'Phase Boots',
+      madness: 'Mask of Madness',
       meta: (cd, duration, interval, pct) => `CD ${cd} s · ${duration} s, ${interval} s tick, ${pct} % of stats`,
+      phaseMeta: (cd, duration) => `CD ${cd} s · ${duration} s: +35 % movement, +20 % evasion`,
+      madnessMeta: (cd, duration) => `CD ${cd} s · ${duration} s: +100 attack speed, +25 movement, −10 armor`,
     },
     timeline: {
       title: 'Timeline',
@@ -566,7 +599,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
     notes: {
       title: 'What is and is not modelled',
       lines: [
-        'Auto-attacks and item effects are counted. Hero abilities, stock talents, poison and sets are not.',
+        'Auto-attacks, item procs, poison and active items are counted. Hero abilities, stock talents and sets are not.',
         'The window and the kill are two independent runs: the window\'s attack count is not applied to the target in one go. The kill run walks events in time and stops on death.',
         'The first hit gets no vulnerable, armor break or mark: the staff and the bag apply them after it. That is why the first auto-attack is lower than the steady state.',
         'Crit: the 5 % base attack chance, the physical chance and omni combine the way the game does; the multiplier is 180 % + the panel\'s crit damage.',
@@ -574,8 +607,8 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         '0504\'s echo is an ordinary physical hit: crit, physical amplifiers and armor all apply to it, so with a high crit chance it carries the bulk of the damage.',
         'The bag\'s burn is 0.75 % of the boss\'s maximum HP per tick, capped at 10× the attribute total; its mark adds 4.6 % per stack, up to 10.',
         'Armor: 1 − armor/(26.66 + |armor|); penetration cuts positive armor only; 0853\'s break removes up to 31 %.',
-        'Magic resistance is there for future magical sources: every source modelled today is physical, so it does not move the result.',
-        'Item passives and the procs listed above are in; active abilities, auras and sets are not.',
+        'Magic resistance applies to poison, 0209, 0307 and 0161; physical sources do not read it.',
+        'Item procs, active buffs and passives are in; hero abilities, auras and sets are not.',
         'Dragon talons: the light strike fires on every auto-attack, the heavy one has a 1 % chance; the figure uses its 1 % expected value, not a separate proc roll.',
         'Poison: ticks every 0.25 s, 20 % of the stacks decay every 3 s and that tick is skipped. Damage reads the attribute total, magic resistance, 0365 corrosion (up to +30 % magic damage), poison and DoT outgoing. 0365\'s stack chance and burst size come from the item roll; 0238 adds its own stack at its own chance. 0238\'s defensive poison on attackers is not in the DPS run: the dummy does not attack.',
       ],
@@ -584,7 +617,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
   zh: {
     tab: { stats: '属性', dps: 'DPS' },
     title: '对目标 DPS',
-    note: '按所选目标计算一段时间的伤害：普通攻击与物品触发。英雄技能、原版天赋、毒与套装暂未计入。',
+    note: '按所选目标计算一段时间的伤害：普通攻击、物品触发、毒与主动物品。英雄技能、原版天赋与套装暂未计入。',
     enemy: {
       title: '目标',
       preset: '预设',
@@ -641,6 +674,15 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         feather: '天羽护符——主动',
         dartProc: '飞镖——触发',
         crystalProc: '水晶剑——触发',
+        valorSword: '勇气剑——触发',
+        corrosiveSpike: '侵蚀之刺——攻击',
+        feast: '夜宴——攻击',
+        sharpAxe: '锐利巨斧——最大生命伤害',
+        skullcrusher: '碎颅锤——最大生命伤害',
+        ruinHammer: '毁灭之锤——最大生命伤害',
+        vortex: '涡流手套——魔法伤害',
+        vortexDot: '涡流手套——持续伤害',
+        gaze: '赛莉蒙妮之冠——攻击',
       },
     },
     active: {
@@ -648,7 +690,11 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       note: '勾选后按冷却使用；冷却受 cooldown_reduction_pct 缩减。',
       feather: '天羽护符',
       featherAncestor: '先祖：天羽护符',
+      phase: '相位鞋',
+      madness: '疯狂面具',
       meta: (cd, duration, interval, pct) => `冷却 ${cd} 秒 · ${duration} 秒，${interval} 秒一跳，${pct}% 属性`,
+      phaseMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒：移动速度 +35%，闪避 +20%`,
+      madnessMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒：攻击速度 +100，移动速度 +25，护甲 −10`,
     },
     timeline: {
       title: '时间线',
@@ -666,7 +712,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
     notes: {
       title: '已计入与未计入',
       lines: [
-        '计入普通攻击与物品效果；英雄技能、原版天赋、毒与套装暂未计入。',
+        '计入普通攻击、物品触发、毒与主动物品；英雄技能、原版天赋与套装暂未计入。',
         '窗口与击杀是两次独立演算：窗口内的攻击次数不会一次性全部打到目标上；击杀演算按时间推进并在死亡时停止。',
         '第一次命中不吃易伤、破甲与焚印：法杖和背包是在命中之后才施加。因此第一下普攻低于稳定值。',
         '暴击：普通攻击基础 5%、物理暴击率与全能按游戏公式合并；倍率为 180% + 面板暴击伤害。',
@@ -674,13 +720,16 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         '0504 的回响是普通物理伤害：暴击、物理增幅与护甲都会作用于它，因此高暴击时会成为主要伤害来源。',
         '背包灼烧每次跳伤为 Boss 最大生命的 0.75%，不超过属性总和的 10 倍；焚印每层 +4.6%，最多 10 层。',
         '护甲：1 − 护甲/(26.66 + |护甲|)；穿透只削减正护甲；0853 的破甲最多 31%。',
-        '魔法抗性为后续魔法伤害预留：当前所有来源均为物理，不影响结果。',
-        '物品只计入上述触发与被动属性；主动技能、光环与套装未计入。',
+        '魔法抗性作用于毒、0209、0307 与 0161；物理来源不读取。',
+        '物品计入上述触发、主动增益与被动属性；英雄技能、光环与套装未计入。',
         '龙爪：轻击每次普通攻击都会触发，重击有 1% 几率；计算中重击按 1% 期望值显示，而不是单独掷骰。',
         '毒：每 0.25 秒跳伤，每 3 秒衰减 20% 层数且该次跳伤跳过。伤害读取属性总和、魔法抗性、0365 的腐蚀（最多 +30% 魔法伤害）、毒与持续伤害增幅。0365 的加层几率与爆发比例取自物品随机值；0238 按自身几率加 1 层。0238 对攻击者的防御性施毒不计入 DPS：木桩不会攻击。',
         '0209：跳伤几率取自随机值（80% 属性），再次触发会立即结算一次；厄运最多 5 层，每层降低魔法抗性（此处每层 6%，最多 30）。0402：每次新增毒层立即额外结算一次跳伤，每次攻击最多一次。',
         '0646/0827 的主动仅在勾选时计入：10 次跳伤，每次为 50% 属性的纯粹伤害；30 秒冷却受 cooldown_reduction_pct 缩减（上限 80%）。',
         '0129/0131：25% × 50 的物理触发；0129 的数值写死在脚本中，0131 读取随机值。0131 的 AoE 只按单体计算；该次命中的二次触发效果不展开。',
+        '2 级触发：0124/0234/0300 破甲（2/5/6，持续 5 秒）；0121/0210/0340 按自身冷却造成最大生命伤害；0457 为 30% × 80；0307 造成（敏捷+智力）×120% 魔法伤害并附加 3 秒涡流；0161 每 4 秒攻击一次。',
+        '0152 和 0155 按冷却使用（12/60 与 6/60 秒，受 CDR）：计入平均 +35% 移速、+100 攻速与 +25 移速。0360/0718 每超出 250 的 5 点移速提供敏捷（每步 1/2），并转化为伤害与攻速。',
+        '0166/0303 在 1 秒冷却就绪时增加 1 层毒；0402 额外结算一次跳伤。0124 不造成伤害，只破甲。',
       ],
     },
   },

@@ -19,7 +19,21 @@ export type DpsRole =
   | 'witch'
   | 'pendant'
   | 'feather'
-  | 'armorPen';
+  | 'armorPen'
+  | 'brokenArmor'
+  | 'poisonOrb'
+  | 'phase'
+  | 'viper'
+  | 'madness'
+  | 'sharpAxe'
+  | 'corrosiveSpike'
+  | 'valor'
+  | 'gaze'
+  | 'skullcrusher'
+  | 'feast'
+  | 'vortex'
+  | 'ruinHammer'
+  | 'moveHunt';
 
 export interface DpsFamily {
   kind: 'dps';
@@ -40,7 +54,7 @@ export interface PanelFamily {
 export type MechanicFamily = DpsFamily | PanelFamily;
 
 /**
- * The DPS mechanics: 11 families, base + ancestor = 22 item ids. Sorrow is
+ * The DPS mechanics: 28 families, base + ancestor = 45 item ids. Sorrow is
  * included because its armour penetration is read in `dpsInput.ts`, not
  * because it has a proc.
  */
@@ -59,6 +73,20 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'pendant', base: 'item_0402', ancestor: 'item_0836', sources: ['poison'] },
   { kind: 'dps', role: 'feather', base: 'item_0646', ancestor: 'item_0827', sources: ['feather'] },
   { kind: 'dps', role: 'armorPen', base: 'item_0444', ancestor: 'item_0723', sources: [] },
+  { kind: 'dps', role: 'brokenArmor', base: 'item_0124', sources: [] },
+  { kind: 'dps', role: 'poisonOrb', base: 'item_0166', sources: ['poison'] },
+  { kind: 'dps', role: 'phase', base: 'item_0152', sources: [] },
+  { kind: 'dps', role: 'viper', base: 'item_0303', sources: ['poison'] },
+  { kind: 'dps', role: 'madness', base: 'item_0155', sources: [] },
+  { kind: 'dps', role: 'sharpAxe', base: 'item_0121', sources: ['sharpAxe'] },
+  { kind: 'dps', role: 'corrosiveSpike', base: 'item_0234', sources: ['corrosiveSpike'] },
+  { kind: 'dps', role: 'valor', base: 'item_0457', sources: ['valorSword'] },
+  { kind: 'dps', role: 'gaze', base: 'item_0161', sources: ['gaze'] },
+  { kind: 'dps', role: 'skullcrusher', base: 'item_0210', ancestor: 'item_0729', sources: ['skullcrusher'] },
+  { kind: 'dps', role: 'feast', base: 'item_0300', ancestor: 'item_0730', sources: ['feast'] },
+  { kind: 'dps', role: 'vortex', base: 'item_0307', ancestor: 'item_0731', sources: ['vortex', 'vortexDot'] },
+  { kind: 'dps', role: 'ruinHammer', base: 'item_0340', ancestor: 'item_0728', sources: ['ruinHammer'] },
+  { kind: 'dps', role: 'moveHunt', base: 'item_0360', ancestor: 'item_0718', sources: [] },
 ];
 
 /**
@@ -90,7 +118,11 @@ export function mechanicFamilyOf(itemId: string): MechanicFamily | undefined {
 }
 
 export const DPS_ITEM_IDS: ReadonlySet<string> = new Set(DPS_FAMILIES.flatMap(ids));
-export const ACTIVE_ITEM_IDS: ReadonlySet<string> = new Set(dpsItemIds('feather'));
+export const ACTIVE_ITEM_IDS: ReadonlySet<string> = new Set([
+  ...dpsItemIds('feather'),
+  ...dpsItemIds('phase'),
+  ...dpsItemIds('madness'),
+]);
 export const PANEL_ITEM_IDS: ReadonlySet<string> = new Set(PANEL_FAMILIES.flatMap(ids));
 export const MODELED_ITEM_IDS: ReadonlySet<string> = new Set([...DPS_ITEM_IDS, ...PANEL_ITEM_IDS]);
 

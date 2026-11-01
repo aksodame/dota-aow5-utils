@@ -34,15 +34,20 @@ export function DpsPanel({
   build: DpsBuild;
 }) {
   const enemy = state.dps.enemy;
+  const activeItems = useMemo(
+    () => build.items.filter((item) => ACTIVE_ITEM_IDS.has(item.id)),
+    [build.items],
+  );
+  const isActive = (id: string): boolean =>
+    state.dps.active[id] ?? (id === 'item_0152' || id === 'item_0155');
   const activeIds = useMemo(
-    () => new Set(Object.entries(state.dps.active).filter(([, on]) => on).map(([id]) => id)),
-    [state.dps.active],
+    () => new Set(activeItems.filter((item) => isActive(item.id)).map((item) => item.id)),
+    [activeItems, state.dps.active],
   );
   const result = useMemo(
     () => analyzeDps(build, enemy, state.dps.duration, activeIds),
     [build, enemy, state.dps.duration, activeIds],
   );
-  const activeItems = build.items.filter((item) => ACTIVE_ITEM_IDS.has(item.id));
   const setActive = (id: string, on: boolean) =>
     update((s) => ({ ...s, dps: { ...s.dps, active: { ...s.dps.active, [id]: on } } }));
   const window = result.window;
@@ -132,18 +137,30 @@ export function DpsPanel({
                 <label key={item.id} className={styles.activeRow}>
                   <input
                     type="checkbox"
-                    checked={state.dps.active[item.id] === true}
+                    checked={isActive(item.id)}
                     onChange={(event) => setActive(item.id, event.target.checked)}
                   />
                   <span>
-                    <b>{item.id === 'item_0827' ? t.active.featherAncestor : t.active.feather}</b>
+                    <b>
+                      {item.id === 'item_0152'
+                        ? t.active.phase
+                        : item.id === 'item_0155'
+                          ? t.active.madness
+                          : item.id === 'item_0827'
+                            ? t.active.featherAncestor
+                            : t.active.feather}
+                    </b>
                     <small>
-                      {t.active.meta(
-                        num(item.cooldown, lang, 0),
-                        num(item.stats.ability_duration, lang, 0),
-                        num(item.stats.ability_interval, lang, 0),
-                        num(item.stats.ability_all_stats_damage_pct, lang, 0),
-                      )}
+                      {item.id === 'item_0152'
+                        ? t.active.phaseMeta(num(item.cooldown, lang, 0), num(item.stats.ability_phase_duration, lang, 0))
+                        : item.id === 'item_0155'
+                          ? t.active.madnessMeta(num(item.cooldown, lang, 0), num(item.stats.ability_duration, lang, 0))
+                          : t.active.meta(
+                              num(item.cooldown, lang, 0),
+                              num(item.stats.ability_duration, lang, 0),
+                              num(item.stats.ability_interval, lang, 0),
+                              num(item.stats.ability_all_stats_damage_pct, lang, 0),
+                            )}
                     </small>
                   </span>
                 </label>

@@ -94,6 +94,16 @@ export interface DpsBuild {
   seasonDamagePct: number;
   /** `str + agi + int`, the cap for the bag's burn tick and the poison source value. */
   totalAttributes: number;
+  maxHealth: number;
+  totalAgility: number;
+  /** `all_agility_pct + all_all_stats_pct`; 0360's dynamic grant passes through it. */
+  agilityPct: number;
+  totalIntelligence: number;
+  baseMoveSpeed: number;
+  primaryAttr: 'str' | 'agi' | 'int' | 'uni';
+  attackDamagePerAgi: number;
+  agilityAttackSpeedCap: number;
+  agilityAttackSpeedDecay: number;
   magicalDamageAddPct: number;
   magicalCritChancePct: number;
   poisonOutgoingPct: number;
@@ -116,7 +126,16 @@ export type DpsSourceId =
   | 'witchBlade'
   | 'feather'
   | 'dartProc'
-  | 'crystalProc';
+  | 'crystalProc'
+  | 'valorSword'
+  | 'corrosiveSpike'
+  | 'feast'
+  | 'sharpAxe'
+  | 'skullcrusher'
+  | 'ruinHammer'
+  | 'vortex'
+  | 'vortexDot'
+  | 'gaze';
 
 export interface DpsSource {
   id: DpsSourceId;
@@ -181,6 +200,8 @@ interface HitContext {
   vulnStacks: number;
   markStacks: number;
   burning: boolean;
+  /** Flat armour reduction from 0124 / 0234 / 0300, positive amount. */
+  armorDebuff: number;
 }
 
 const EPS = 1e-9;
@@ -210,6 +231,9 @@ const COBRA = dpsItemIds('cobra');
 const GLOOM = dpsItemIds('gloom');
 const WITCH = dpsItemIds('witch');
 const PENDANT = dpsItemIds('pendant');
+const MOVE_HUNT = ['item_0360', 'item_0718'] as const;
+const PHASE_BOOTS = ['item_0152'] as const;
+const MADNESS = ['item_0155'] as const;
 
 function findItem(build: DpsBuild, ids: readonly string[]): DpsItemStats | undefined {
   return build.items.find((item) => ids.includes(item.id));
@@ -289,12 +313,22 @@ interface Constants {
   doomDecay: number;
   pendant: DpsItemStats | undefined;
   poisonSettleChance: number;
-  flatProcs: ReadonlyArray<{ source: 'dartProc' | 'crystalProc'; chance: number; raw: number }>;
+  flatProcs: ReadonlyArray<{ source: 'dartProc' | 'crystalProc' | 'valorSword'; chance: number; raw: number }>;
   feather: DpsItemStats | undefined;
   featherPct: number;
   featherDuration: number;
   featherInterval: number;
   featherPeriod: number;
+  /** Flat armour reduction from 0124 / 0234 / 0300, positive amount. */
+  armorDebuffPerHit: number;
+  armorProcs: ReadonlyArray<{ source: 'corrosiveSpike' | 'feast'; raw: number; armor: number }>;
+  cooldownProcs: ReadonlyArray<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer'; raw: number; cooldown: number }>;
+  vortexChance: number;
+  vortexRaw: number;
+  vortexDotRaw: number;
+  gazePct: number;
+  gazeCooldown: number;
+  poisonProcs: ReadonlyArray<{ id: string; cooldown: number }>;
 }
 
 function constants(build: DpsBuild): Constants {
@@ -320,6 +354,85 @@ function constants(build: DpsBuild): Constants {
   const speed = clamp(1 + fasterPct / 100, 0.05, 10);
   const autoCrit = critChancePct(build.critChancePct, build.physicalCritChancePct, build.omniCritChancePct);
   const abilityCrit = critChancePct(build.abilityCritChancePct, build.physicalCritChancePct, build.omniCritChancePct);
+  const cdr = 1 - Math.min(80, Math.max(0, build.cooldownReductionPct)) / 100;
+  const effCd = (item: DpsItemStats | undefined, fallback: number): number =>
+    Math.max(0.1, (item?.cooldown ?? fallback) * cdr);
+  const brokenArmor = findItem(build, ['item_0124']);
+  const corrosive = findItem(build, ['item_0234']);
+  const feast = findItem(build, ['item_0300']);
+  const armorProcs: Array<{ source: 'corrosiveSpike' | 'feast'; raw: number; armor: number }> = [];
+  if (corrosive) {
+    armorProcs.push({
+      source: 'corrosiveSpike',
+      raw: Math.max(0, build.totalAgility * value(corrosive, 'ability_agility_damage_pct') / 100),
+      armor: Math.max(0, value(corrosive, 'ability_armor_reduce')),
+    });
+  }
+  if (feast) {
+    armorProcs.push({
+      source: 'feast',
+      raw: Math.max(0, build.totalAgility * value(feast, 'ability_value_agility_damage_pct') / 100),
+      armor: Math.max(0, value(feast, 'ability_armor_reduce')),
+    });
+  }
+  const armorDebuffPerHit =
+    (brokenArmor ? 2 : 0) + armorProcs.reduce((sum, proc) => sum + proc.armor, 0);
+  const cooldownProcs: Array<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer'; raw: number; cooldown: number }> = [];
+  const sharpAxe = findItem(build, ['item_0121']);
+  if (sharpAxe) {
+    cooldownProcs.push({
+      source: 'sharpAxe',
+      raw: Math.max(0, build.maxHealth * value(sharpAxe, 'ability_bonus_max_health_pct') / 100),
+      cooldown: effCd(sharpAxe, 3),
+    });
+  }
+  for (const [source, ids] of [
+    ['skullcrusher', ['item_0210', 'item_0729']],
+    ['ruinHammer', ['item_0340', 'item_0728']],
+  ] as const) {
+    const item = findItem(build, ids);
+    if (!item) continue;
+    const pct =
+      source === 'skullcrusher'
+        ? value(item, 'ability_value_bonus_max_health_pct')
+        : value(item, 'ability_value_max_health_damage_pct');
+    cooldownProcs.push({
+      source,
+      raw: Math.max(0, build.maxHealth * pct / 100),
+      cooldown: effCd(item, source === 'skullcrusher' ? 1 : 1.5),
+    });
+  }
+  const vortex = findItem(build, ['item_0307', 'item_0731']);
+  const vortexChance = Math.max(0, value(vortex, 'ability_value_trigger_chance_pct') / 100);
+  const vortexRaw = vortex
+    ? Math.max(0, (build.totalAgility + build.totalIntelligence) * value(vortex, 'ability_value_damage_pct') / 100)
+    : 0;
+  const vortexDotRaw = vortex
+    ? Math.max(0, vortexRaw * value(vortex, 'ability_dot_pct') / 100 * 3)
+    : 0;
+  const gaze = findItem(build, ['item_0161']);
+  const poisonProcs: Array<{ id: string; cooldown: number }> = [];
+  for (const id of ['item_0166', 'item_0303']) {
+    const item = build.items.find((x) => x.id === id);
+    if (item) poisonProcs.push({ id, cooldown: effCd(item, 1) });
+  }
+  const flatProcs: Array<{ source: 'dartProc' | 'crystalProc' | 'valorSword'; chance: number; raw: number }> =
+    build.items
+      .filter((item) => FLAT_PROC.includes(item.id))
+      .map((item) => ({
+        // 0129's script hardcodes 25 % / 50; 0131 reads the rolled values.
+        source: item.id === 'item_0129' ? 'dartProc' as const : 'crystalProc' as const,
+        chance: item.id === 'item_0129' ? 0.25 : Math.max(0, value(item, 'ability_ps_chance')) / 100,
+        raw: item.id === 'item_0129' ? 50 : Math.max(0, value(item, 'ability_ps_damage')),
+      }));
+  const valor = findItem(build, ['item_0457']);
+  if (valor) {
+    flatProcs.push({
+      source: 'valorSword',
+      chance: Math.max(0, value(valor, 'ability_ps_chance')) / 100,
+      raw: Math.max(0, value(valor, 'ability_ps_damage')),
+    });
+  }
   return {
     aps: (1 + attackSpeed / 100) / bat,
     attackSpeed,
@@ -370,14 +483,7 @@ function constants(build: DpsBuild): Constants {
     doomMax: Math.max(1, Math.floor(value(witch, 'ability_max_stacks') || 1)),
     doomDecay: Math.max(0.1, value(witch, 'ability_decay_interval') || 3),
     pendant,
-    flatProcs: build.items
-      .filter((item) => FLAT_PROC.includes(item.id))
-      .map((item) => ({
-        // 0129's script hardcodes 25 % / 50; 0131 reads the rolled values.
-        source: item.id === 'item_0129' ? 'dartProc' as const : 'crystalProc' as const,
-        chance: item.id === 'item_0129' ? 0.25 : Math.max(0, value(item, 'ability_ps_chance')) / 100,
-        raw: item.id === 'item_0129' ? 50 : Math.max(0, value(item, 'ability_ps_damage')),
-      })),
+    flatProcs,
     feather,
     featherPct: Math.max(0, value(feather, 'ability_all_stats_damage_pct')),
     featherDuration: Math.max(0, value(feather, 'ability_duration')),
@@ -392,6 +498,15 @@ function constants(build: DpsBuild): Constants {
           (1 - (cobra ? Math.max(0, value(cobra, 'ability_value_poison_trigger_chance_pct')) / 100 : 0)) *
             (1 - (gloom ? Math.max(0, value(gloom, 'ability_value_poison_chance_pct')) / 100 : 0))
         : 0,
+    armorDebuffPerHit,
+    armorProcs,
+    cooldownProcs,
+    vortexChance,
+    vortexRaw,
+    vortexDotRaw,
+    gazePct: Math.max(0, value(gaze, 'ability_damage')),
+    gazeCooldown: effCd(gaze, 4),
+    poisonProcs,
   };
 }
 
@@ -410,7 +525,7 @@ function directDamage(
   const extra = 1 + enemyExtraPct(build, enemy.kind) / 100;
   const reduction = Math.max(0.001, 1 - (enemy.damageReductionPct - enemy.physicalDamageIncreasePct) / 100);
   const resistance = 1 / (1 + Math.max(0, enemy.damageResistancePct) / 100);
-  const armor = armorMultiplier(armorAfterPenAt(armorAfterBreakAt(enemy.armor, ctx.armorStacks), build.armorPenetrationPct));
+  const armor = armorMultiplier(armorAfterPenAt(armorAfterBreakAt(enemy.armor - ctx.armorDebuff, ctx.armorStacks), build.armorPenetrationPct));
   const vulnerable = c.mkb && ctx.vulnStacks > 0 ? 1 + Math.min(25, 15 + 2 * ctx.vulnStacks) / 100 : 1;
   const mark = c.bag && ctx.burning ? 1 + Math.min(c.markMax, ctx.markStacks) * c.markPerStack / 100 : 1;
   const season = 1 + build.seasonDamagePct / 100;
@@ -517,6 +632,57 @@ function armorAfterBreakAt(armor: number, stacks: number): number {
   return armor > 0 ? armor * (1 - clamp(stacks * 0.01, 0, 1)) : armor;
 }
 
+/**
+ * Applies the two movement-speed actives on their cooldowns and, with 0360 /
+ * 0718 equipped, turns the resulting average movement speed into agility. The
+ * active is used at t = 0 and again whenever its cooldown is ready, so a
+ * 10-second window sees a 12-second Phase buff for its whole length while a
+ * 60-second window gets its 12/60 duty cycle.
+ */
+function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, duration: number): DpsBuild {
+  const phase = findItem(build, PHASE_BOOTS);
+  const madness = findItem(build, MADNESS);
+  const cdr = 1 - Math.min(80, Math.max(0, build.cooldownReductionPct)) / 100;
+  const duty = (item: DpsItemStats | undefined, durationKey: string): number => {
+    if (!item || active?.has(item.id) !== true) return 0;
+    const activeFor = Math.max(0, value(item, durationKey));
+    const cooldown = Math.max(0.1, (item.cooldown ?? 0) * cdr);
+    if (activeFor <= 0 || cooldown <= 0 || duration <= 0) return 0;
+    let uptime = 0;
+    for (let at = 0; at < duration; at += cooldown) uptime += Math.min(activeFor, duration - at);
+    return Math.min(1, uptime / duration);
+  };
+  const phaseDuty = duty(phase, 'ability_phase_duration');
+  const madnessDuty = duty(madness, 'ability_duration');
+  const phasePct = Math.max(0, value(phase, 'ability_phase_ms_pct'));
+  const madnessMs = Math.max(0, value(madness, 'ability_bonus_move_speed'));
+  const averageMovespeed = build.baseMoveSpeed * (1 + (phasePct * phaseDuty) / 100) + madnessMs * madnessDuty;
+
+  const hunt = findItem(build, MOVE_HUNT);
+  const threshold = Math.max(0, value(hunt, 'ability_value_c_movespeed_threshold'));
+  const per = Math.max(1, value(hunt, 'ability_value_c_movespeed_per_attack_damage') || 1);
+  const step = Math.max(0, value(hunt, 'ability_bonus_attack_damage_per_step'));
+  const dynamicAgility =
+    hunt !== undefined ? Math.floor(Math.max(0, averageMovespeed - threshold) / per) * step : 0;
+  const effectiveDynamicAgility = dynamicAgility * (1 + build.agilityPct / 100);
+
+  const baseAgility = Math.max(0, build.totalAgility);
+  const agility = baseAgility + effectiveDynamicAgility;
+  const cap = Math.max(0, build.agilityAttackSpeedCap);
+  const decay = Math.max(1, build.agilityAttackSpeedDecay);
+  const agilityAsDelta =
+    cap * (agility / (agility + decay) - baseAgility / (baseAgility + decay));
+  const madnessAs = Math.max(0, value(madness, 'ability_bonus_attack_speed')) * madnessDuty;
+
+  return {
+    ...build,
+    attackDamage: build.attackDamage + effectiveDynamicAgility * build.attackDamagePerAgi,
+    attackSpeed: build.attackSpeed + agilityAsDelta + madnessAs,
+    totalAgility: agility,
+    totalAttributes: build.totalAttributes + effectiveDynamicAgility,
+  };
+}
+
 function sourceRecord(): Record<DpsSourceId, number> {
   return {
     auto: 0,
@@ -531,6 +697,15 @@ function sourceRecord(): Record<DpsSourceId, number> {
     feather: 0,
     dartProc: 0,
     crystalProc: 0,
+    valorSword: 0,
+    corrosiveSpike: 0,
+    feast: 0,
+    sharpAxe: 0,
+    skullcrusher: 0,
+    ruinHammer: 0,
+    vortex: 0,
+    vortexDot: 0,
+    gaze: 0,
   };
 }
 
@@ -548,6 +723,15 @@ function hitRecord(): Record<DpsSourceId, number> {
     feather: 0,
     dartProc: 0,
     crystalProc: 0,
+    valorSword: 0,
+    corrosiveSpike: 0,
+    feast: 0,
+    sharpAxe: 0,
+    skullcrusher: 0,
+    ruinHammer: 0,
+    vortex: 0,
+    vortexDot: 0,
+    gaze: 0,
   };
 }
 
@@ -556,11 +740,12 @@ function hitRecord(): Record<DpsSourceId, number> {
  * target at full health, which is what the source bars use.
  */
 export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOptions): DpsResult {
-  const c = constants(build);
   const duration = Math.max(1, Math.min(3600, options.duration));
+  const b = activeBuild(build, options.active, duration);
+  const c = constants(b);
   const dummy = options.mode === 'dummy';
   const maxHp = Math.max(1, enemy.maxHp);
-  const attrs = Math.max(0, build.totalAttributes);
+  const attrs = Math.max(0, b.totalAttributes);
   const seconds = Math.ceil(duration);
   const secondDamage = Array.from({ length: seconds }, () => 0);
   const events: DpsEvent[] = [];
@@ -577,6 +762,13 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   let markStacks = 0;
   let vulnStacks = 0;
   let armorStacks = 0;
+  let armorDebuff = 0;
+  let lastArmorDebuff = Number.NEGATIVE_INFINITY;
+  let sharpAxeReady = 0;
+  let skullReady = 0;
+  let ruinReady = 0;
+  let gazeAt = c.gazePct > 0 ? c.gazeCooldown : Number.POSITIVE_INFINITY;
+  const poisonReady = c.poisonProcs.map(() => 0);
   let lastVuln = Number.NEGATIVE_INFINITY;
   let lastArmor = Number.NEGATIVE_INFINITY;
   let mkbReady = 0;
@@ -606,6 +798,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     vulnStacks,
     markStacks,
     burning,
+    armorDebuff,
   });
 
   const add = (id: DpsSourceId, amount: number, count = 0): void => {
@@ -634,13 +827,23 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     if (bleedAt === null) bleedAt = time + c.bleedInterval;
   };
 
+  const addPoisonStacks = (count: number): void => {
+    if (!(count > 0)) return;
+    poisonStacks += count;
+    if (poisonAt === null) {
+      poisonAt = time + c.poisonTick;
+      poisonDecayAt = time + 3;
+    }
+  };
+
   const onAttack = (): void => {
     attacks += 1;
     if (c.mkb && time - lastVuln > c.mkbVulnDuration) vulnStacks = 0;
     if (c.mkb && time - lastArmor > c.mkbArmorDuration) armorStacks = 0;
+    if (time - lastArmorDebuff > 5) armorDebuff = 0;
     const burning = burnUntil > time;
-    const autoRaw = Math.max(0, build.attackDamage) * (1 + build.allAttackDamagePct / 100);
-    const auto = directDamage(build, enemy, c, autoRaw, ctx(burning, true));
+    const autoRaw = Math.max(0, b.attackDamage) * (1 + b.allAttackDamagePct / 100);
+    const auto = directDamage(b, enemy, c, autoRaw, ctx(burning, true));
     add('auto', auto, 1);
     // On-hit items check the target is still alive; a killing auto-attack does
     // not also get its talons strike or start a bleed.
@@ -664,8 +867,62 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     // deliberately counts one target only; 0131's radius is not multiplied.
     for (const proc of c.flatProcs) {
       if (proc.chance > 0 && proc.raw > 0) {
-        const hit = directDamage(build, enemy, c, proc.raw, ctx(burnUntil > time));
+        const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
         add(proc.source, hit * proc.chance, proc.chance);
+      }
+    }
+
+    // 0121 / 0210 / 0340: one max-health hit when their own cooldown is ready.
+    for (const proc of c.cooldownProcs) {
+      const ready =
+        proc.source === 'sharpAxe' ? sharpAxeReady : proc.source === 'skullcrusher' ? skullReady : ruinReady;
+      if (time + EPS < ready) continue;
+      const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
+      add(proc.source, hit, 1);
+      if (proc.source === 'sharpAxe') sharpAxeReady = time + proc.cooldown;
+      else if (proc.source === 'skullcrusher') skullReady = time + proc.cooldown;
+      else ruinReady = time + proc.cooldown;
+    }
+
+    // 0234 / 0300: agility-scaled physical damage on every attack, then their
+    // broken-armour debuff. Each source has its own bar.
+    for (const proc of c.armorProcs) {
+      if (!(proc.raw > 0)) continue;
+      const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
+      add(proc.source, hit, 1);
+    }
+    // 0124 / 0234 / 0300 stack one broken-armour modifier; it is refreshed by
+    // every attack and expires after 5 s without one. The first hit of the
+    // fight therefore lands before the debuff exists.
+    if (c.armorDebuffPerHit > 0) {
+      armorDebuff = c.armorDebuffPerHit;
+      lastArmorDebuff = time;
+    }
+
+    // 0307 / 0731: a chance-based magic hit and a 3 s vortex. The vortex is
+    // counted as one target; its 0.5 s ticks are shown separately.
+    if (c.vortexChance > 0 && c.vortexRaw > 0) {
+      const vortex = magicalDamage(b, enemy, c, c.vortexRaw, {
+        dot: false,
+        poisonSource: false,
+        corrosionStacks: poisonStacks,
+        vulnStacks,
+        burning: burnUntil > time,
+        markStacks,
+        doomStacks,
+      });
+      add('vortex', vortex * c.vortexChance, c.vortexChance);
+      if (c.vortexDotRaw > 0) {
+        const dot = magicalDamage(b, enemy, c, c.vortexDotRaw, {
+          dot: false,
+          poisonSource: false,
+          corrosionStacks: poisonStacks,
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks,
+          doomStacks,
+        });
+        add('vortexDot', dot * c.vortexChance, c.vortexChance);
       }
     }
 
@@ -674,11 +931,11 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
 
     if (c.talons) {
       const scaled = maxHp * (enemy.kind === 'boss' ? c.talonsBossPct / 100 : 1);
-      const light = directDamage(build, enemy, c, (scaled * c.talonsLightPct) / 100, ctx(burnUntil > time));
+      const light = directDamage(b, enemy, c, (scaled * c.talonsLightPct) / 100, ctx(burnUntil > time));
       add('talonsLight', light, 1);
       const heavyChance = c.talonsHeavyChance / 100;
       if (heavyChance > 0) {
-        const heavy = directDamage(build, enemy, c, (scaled * c.talonsHeavyPct) / 100, ctx(burnUntil > time));
+        const heavy = directDamage(b, enemy, c, (scaled * c.talonsHeavyPct) / 100, ctx(burnUntil > time));
         add('talonsHeavy', heavy * heavyChance, heavyChance);
       }
     }
@@ -700,8 +957,8 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     // Witch Blade's spellblade proc: with a fast attack it refreshes faster
     // than the 1 s tick, so each proc pays the full all-stats tick.
     if (c.witch && c.witchChance > 0 && c.witchPct > 0) {
-      const witchRaw = build.totalAttributes * (c.witchPct / 100) * (c.witchChance / 100);
-      const witch = magicalDamage(build, enemy, c, witchRaw, {
+      const witchRaw = b.totalAttributes * (c.witchPct / 100) * (c.witchChance / 100);
+      const witch = magicalDamage(b, enemy, c, witchRaw, {
         dot: true,
         poisonSource: false,
         corrosionStacks: poisonStacks,
@@ -715,10 +972,11 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
 
     // Poison is applied after the hit. The Cobra burst sees the stacks that
     // were already there; the new stack only feeds the ticks that follow.
+    let poisonApplicationChance = 0;
     if (c.poisonPerAuto > 0) {
       if (c.cobra && c.cobraBurstPct > 0 && c.cobraChance > 0) {
-        const burstRaw = build.totalAttributes * (c.cobraBurstPct / 100) * (c.cobraChance / 100);
-        const burst = magicalDamage(build, enemy, c, burstRaw, {
+        const burstRaw = b.totalAttributes * (c.cobraBurstPct / 100) * (c.cobraChance / 100);
+        const burst = magicalDamage(b, enemy, c, burstRaw, {
           dot: false,
           poisonSource: true,
           corrosionStacks: poisonStacks,
@@ -729,15 +987,19 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         });
         add('poisonBurst', burst, c.cobraChance);
       }
-      poisonStacks += c.poisonPerAuto;
-      if (poisonAt === null) {
-        poisonAt = time + c.poisonTick;
-        poisonDecayAt = time + 3;
-      }
-      // Poison Pendant: one extra tick after a poison application, expected
-      // over the chance that at least one of the two poison items rolled.
-      if (c.pendant && c.poisonSettleChance > 0) applyPoisonTick(false, c.poisonSettleChance);
+      addPoisonStacks(c.poisonPerAuto);
+      poisonApplicationChance = c.poisonSettleChance;
     }
+    // 0166 / 0303: one poison stack whenever their 1 s cooldown is ready.
+    c.poisonProcs.forEach((proc, i) => {
+      if (time + EPS < poisonReady[i]!) return;
+      addPoisonStacks(1);
+      poisonReady[i] = time + proc.cooldown;
+      poisonApplicationChance = 1;
+    });
+    // Poison Pendant: one extra tick after a poison application, one per
+    // attack even if several poison items applied together.
+    if (c.pendant && poisonApplicationChance > 0) applyPoisonTick(false, poisonApplicationChance);
 
     if (c.aps > 0) attackAt += 1 / c.aps;
   };
@@ -748,12 +1010,12 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       return;
     }
     const base = bleedPool / bleedLeft;
-    const tick = base * (1 + build.bleedOutgoingPct / 100) * (1 + build.dotOutgoingPct / 100);
+    const tick = base * (1 + b.bleedOutgoingPct / 100) * (1 + b.dotOutgoingPct / 100);
     add('bleed', tick, 1);
     bleedPool = Math.max(0, bleedPool - base);
     bleedLeft -= 1;
     if (c.bloodEcho && tick > 0 && c.bloodEchoPct > 0 && (dummy || hp > 0)) {
-      const echo = directDamage(build, enemy, c, tick * (c.bloodEchoPct / 100), ctx(burnUntil > time));
+      const echo = directDamage(b, enemy, c, tick * (c.bloodEchoPct / 100), ctx(burnUntil > time));
       add('bloodEcho', echo, 1);
     }
     if (bleedLeft <= 0 || bleedPool <= 0 || bleedAt === null) {
@@ -794,9 +1056,9 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     const base = (0.4 * (stacks - 1)) / (0.4 * (stacks - 1) + 50) * 80 + 1;
     const total = (1 * (stacks - 1)) / (1 * (stacks - 1) + 120) * 4 + 1;
     // Monster path: poisonDamagePerSecond × 0.25 × 0.5 per tick.
-    const perSecond = Math.floor(base * total * build.totalAttributes * 0.25 * 1.3);
+    const perSecond = Math.floor(base * total * b.totalAttributes * 0.25 * 1.3);
     const tick = perSecond * 0.25 * 0.5;
-    const damage = magicalDamage(build, enemy, c, tick, {
+    const damage = magicalDamage(b, enemy, c, tick, {
       dot: true,
       poisonSource: true,
       corrosionStacks: stacks,
@@ -821,6 +1083,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       burnAt ?? Number.POSITIVE_INFINITY,
       poisonAt ?? Number.POSITIVE_INFINITY,
       doomAt ?? Number.POSITIVE_INFINITY,
+      gazeAt,
       featherActivateAt,
       featherTickAt ?? Number.POSITIVE_INFINITY,
     );
@@ -841,6 +1104,22 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       doomAt = doomStacks <= 0 ? null : nextDoom + c.doomDecay;
     }
     if (poisonAt !== null && Math.abs(time - poisonAt) <= EPS) onPoisonTick();
+    if (Math.abs(time - gazeAt) <= EPS) {
+      const raw = b.totalAttributes * c.gazePct / 100;
+      if (raw > 0) {
+        const hit = magicalDamage(b, enemy, c, raw, {
+          dot: false,
+          poisonSource: false,
+          corrosionStacks: poisonStacks,
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks,
+          doomStacks,
+        });
+        add('gaze', hit, 1);
+      }
+      gazeAt = time + c.gazeCooldown;
+    }
     if (featherOn && Math.abs(time - featherActivateAt) <= EPS) {
       featherUntil = time + c.featherDuration;
       featherTickAt = time + c.featherInterval;
@@ -848,8 +1127,8 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     }
     if (featherOn && featherTickAt !== null && Math.abs(time - featherTickAt) <= EPS) {
       if (time <= featherUntil + EPS) {
-        const raw = build.totalAttributes * (c.featherPct / 100);
-        const hit = pureDamage(build, enemy, c, raw, {
+        const raw = b.totalAttributes * (c.featherPct / 100);
+        const hit = pureDamage(b, enemy, c, raw, {
           vulnStacks,
           burning: burnUntil > time,
           markStacks,
@@ -891,8 +1170,8 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     });
   }
 
-  const armorAfterBreak = armorAfterBreakAt(enemy.armor, c.mkb ? armorStacks : 0);
-  const armorAfterPen = armorAfterPenAt(armorAfterBreak, build.armorPenetrationPct);
+  const armorAfterBreak = armorAfterBreakAt(enemy.armor - armorDebuff, c.mkb ? armorStacks : 0);
+  const armorAfterPen = armorAfterPenAt(armorAfterBreak, b.armorPenetrationPct);
 
   return {
     duration: covered,

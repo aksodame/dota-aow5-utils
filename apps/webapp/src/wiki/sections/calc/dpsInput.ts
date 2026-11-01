@@ -69,6 +69,20 @@ export function buildDpsInput(
     },
     seasonDamagePct: (panel('season_contribution') + panel('season_world')) * 2,
     totalAttributes: panel('bonus_strength') + panel('bonus_agility') + panel('bonus_intelligence'),
+    maxHealth: panel('bonus_health'),
+    totalAgility: panel('bonus_agility'),
+    agilityPct: extra('all_agility_pct') + extra('all_all_stats_pct'),
+    totalIntelligence: panel('bonus_intelligence'),
+    baseMoveSpeed: panel('bonus_movespeed'),
+    primaryAttr: input.primary,
+    attackDamagePerAgi:
+      input.primary === 'agi'
+        ? input.file.attrBonus.primary_attr_attack_damage
+        : input.primary === 'uni'
+          ? input.file.attrBonus.universal_attr_attack_damage
+          : 0,
+    agilityAttackSpeedCap: input.file.attrBonus.agility_attack_speed_cap,
+    agilityAttackSpeedDecay: input.file.attrBonus.agility_attack_speed_decay,
     magicalDamageAddPct: panel('magical_damage_add_pct'),
     magicalCritChancePct: panel('magical_crit_chance_pct'),
     poisonOutgoingPct: panel('poison_outgoing_damage_pct'),

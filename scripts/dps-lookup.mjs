@@ -43,6 +43,20 @@ const ROLE_LABEL = {
   pendant: 'Кулон яда: мгновенный тик',
   feather: 'Кулон небесных перьев: актив',
   armorPen: 'Скорбь: пробитие брони',
+  brokenArmor: '0124: броня −2 за удар',
+  poisonOrb: '0166: слой яда по КД 1 с',
+  phase: '0152: фазовый рывок по КД',
+  viper: '0303: слой яда по КД 1 с',
+  madness: '0155: безумие по КД',
+  sharpAxe: '0121 Острая секира: удар по макс. HP, КД 3 с',
+  corrosiveSpike: '0234 Шип разложения: урон от ловкости, броня −5',
+  valor: '0457 Меч отваги: 30 % × 80 физ.',
+  gaze: '0161 Корона Селемены: магия каждые 4 с',
+  skullcrusher: '0210/0729 Череполом: удар по макс. HP, КД 1 с',
+  feast: '0300/0730 Пиршество: урон от ловкости, броня −6',
+  vortex: '0307/0731 Перчатки вихря: магия и вихрь 3 с',
+  ruinHammer: '0340/0728: удар по макс. HP, КД 1,5 с',
+  moveHunt: '0360/0718 Сапоги преследователя: ловкость от скорости',
 };
 
 const PANEL_LABEL = {
@@ -78,7 +92,7 @@ function printList() {
   console.log(`DPS mechanics: ${DPS_FAMILY_COUNT} families / ${DPS_ITEM_COUNT} item ids`);
   for (const f of DPS_FAMILIES) {
     const ids = f.ancestor ? `${f.base} / ${f.ancestor}` : f.base;
-    console.log(`  ${f.role.padEnd(11)} ${ids.padEnd(25)} ${ROLE_LABEL[f.role] ?? f.role}`);
+    console.log(`  ${f.role.padEnd(13)} ${ids.padEnd(25)} ${ROLE_LABEL[f.role] ?? f.role}`);
   }
   console.log(`\nPanel passives: ${PANEL_FAMILY_COUNT} families / ${PANEL_ITEM_COUNT} item ids`);
   for (const f of PANEL_FAMILIES) {
