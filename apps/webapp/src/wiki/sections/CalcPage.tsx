@@ -142,7 +142,18 @@ export default function CalcPage({ path }: SectionProps) {
   return (
     <div className={styles.page}>
       <Note>
-        <b className={styles.wip}>{t.wipTitle}.</b> {t.wip}
+        <b className={styles.wip}>{t.wipTitle}.</b>{' '}
+        {t.wip.split('\n\n').map((paragraph, index) => (
+          <span key={paragraph}>
+            {index > 0 && (
+              <>
+                <br />
+                <br />
+              </>
+            )}
+            {paragraph}
+          </span>
+        ))}
       </Note>
       {error !== null && <WikiError message={error} />}
       {data === null || input === null ? (

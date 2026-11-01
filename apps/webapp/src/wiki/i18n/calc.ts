@@ -800,7 +800,7 @@ export const CALC: Localised<CalcStrings> = {
     title: 'Статы персонажа',
     wipTitle: 'Вкладка в работе (WIP)',
     wip:
-      'База героя считается сама — для выбранного героя на 30 уровне, со своей веткой профессии и всеми общими деревьями (взятыми целиком), но её можно править руками. Ещё считает предметы в 6 слотах, нейтральном, у питомца, в сумке и у души, 3 руны, прокрутку статов как в карточке предмета (у предков настраивается и наложенная грань: своя прокрутка и «фикс»). Пока не учитываются: ванильные таланты героя, сеты и способности; боевые эффекты предметов считает подвкладка DPS; руны статов не добавляют — они правят параметры способностей героя.',
+      'База героя считается сама — для выбранного героя на 30 уровне, со своей веткой профессии и всеми общими деревьями (взятыми целиком), но её можно править руками. Ещё считает предметы в 6 слотах, нейтральном, у питомца, в сумке и у души, 3 руны, прокрутку статов как в карточке предмета (у предков настраивается и наложенная грань: своя прокрутка и «фикс»). Пока не учитываются: ванильные таланты героя, сеты и способности; боевые эффекты предметов считает подвкладка DPS; руны статов не добавляют — они правят параметры способностей героя.\n\nВ подвкладке DPS считаются все предметы до 3-го уровня включительно и их предки — статы, прок-эффекты, яды, активы и ауры.',
     hero: 'Герой:',
     note: {
       computed: (level) => `${level} уровень · посчитано из игры`,
@@ -1030,7 +1030,7 @@ export const CALC: Localised<CalcStrings> = {
     title: 'Character stats',
     wipTitle: 'Work in progress',
     wip:
-      "The hero's base is computed for you — the chosen hero at level 30, with their own profession tree and every common tree taken in full — and you can still edit it by hand. Items in the 6 slots, the neutral slot, the pet, the bag and the soul are counted, plus 3 runes, with stats rolled exactly as on the item card (an ancestral item's fate stone has its own roll and fixed stat too). Not counted yet: the hero's stock talents, sets and abilities; item combat effects are the DPS sub-tab's job; runes add no stats — they change the hero's abilities.",
+      "The hero's base is computed for you — the chosen hero at level 30, with their own profession tree and every common tree taken in full — and you can still edit it by hand. Items in the 6 slots, the neutral slot, the pet, the bag and the soul are counted, plus 3 runes, with stats rolled exactly as on the item card (an ancestral item's fate stone has its own roll and fixed stat too). Not counted yet: the hero's stock talents, sets and abilities; item combat effects are the DPS sub-tab's job; runes add no stats — they change the hero's abilities.\n\nThe DPS sub-tab counts every item up to level 3 inclusive and their ancestors — stats, procs, poisons, actives and auras.",
     hero: 'Hero:',
     note: {
       computed: (level) => `level ${level} · computed from the game`,
@@ -1252,7 +1252,7 @@ export const CALC: Localised<CalcStrings> = {
     title: '角色属性',
     wipTitle: '施工中',
     wip:
-      '英雄的基础属性自动计算：所选英雄 30 级，含本职业天赋树与全部通用天赋树（全部点满），也可以手动修改。另计 6 个物品栏、中立物品栏、宠物、背包与命魂中的物品以及 3 个符印，属性随机值与物品卡片一致（先祖物品还可调节其命石：独立随机值与「固定」）。暂未计入：英雄原版天赋、套装与技能；物品战斗效果由 DPS 子标签计算；符印不加属性——它们修改英雄技能的参数。',
+      '英雄的基础属性自动计算：所选英雄 30 级，含本职业天赋树与全部通用天赋树（全部点满），也可以手动修改。另计 6 个物品栏、中立物品栏、宠物、背包与命魂中的物品以及 3 个符印，属性随机值与物品卡片一致（先祖物品还可调节其命石：独立随机值与「固定」）。暂未计入：英雄原版天赋、套装与技能；物品战斗效果由 DPS 子标签计算；符印不加属性——它们修改英雄技能的参数。\n\nDPS 子标签计算到 3 级为止的所有物品及其先祖——属性、触发效果、毒、主动与光环。',
     hero: '英雄：',
     note: {
       computed: (level) => `${level} 级 · 按游戏数据计算`,
