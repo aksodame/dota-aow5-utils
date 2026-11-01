@@ -849,14 +849,19 @@ test('0255 active shield feeds 0331', () => {
 
 test('the mechanics registry counts and resolves both sides of every pair', () => {
   assert.equal(DPS_FAMILY_COUNT, 59);
-  assert.equal(DPS_ITEM_COUNT, 89);
+  assert.equal(DPS_ITEM_COUNT, 94);
   assert.equal(PANEL_FAMILY_COUNT, 11);
   assert.equal(PANEL_ITEM_COUNT, 18);
-  assert.equal(MODELED_ITEM_COUNT, 107);
+  assert.equal(MODELED_ITEM_COUNT, 112);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
   assert.equal(mechanicFamilyOf('item_0780')?.base, 'item_0382');
+  assert.equal(mechanicFamilyOf('item_0708')?.base, 'item_0270');
+  assert.equal(mechanicFamilyOf('item_0715')?.base, 'item_0332');
+  assert.equal(mechanicFamilyOf('item_0707')?.base, 'item_0255');
+  assert.equal(mechanicFamilyOf('item_0726')?.base, 'item_0460');
+  assert.equal(mechanicFamilyOf('item_0727')?.base, 'item_0461');
   assert.equal(mechanicFamilyOf('item_0827')?.base, 'item_0646');
   assert.equal(mechanicFamilyOf('item_0730')?.base, 'item_0300');
   assert.equal(mechanicFamilyOf('item_0728')?.base, 'item_0340');

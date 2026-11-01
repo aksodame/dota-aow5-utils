@@ -159,9 +159,13 @@ export function DpsPanel({
                                     ? t.active.vanguardAncestor
                                     : item.id === 'item_0332'
                                       ? t.active.bloodRite
-                                      : item.id === 'item_0255'
-                                        ? t.active.legionShield
-                                        : item.id === 'item_0827'
+                                      : item.id === 'item_0715'
+                                        ? t.active.bloodRiteAncestor
+                                        : item.id === 'item_0255'
+                                          ? t.active.legionShield
+                                          : item.id === 'item_0707'
+                                            ? t.active.legionShieldAncestor
+                                            : item.id === 'item_0827'
                                           ? t.active.featherAncestor
                                           : t.active.feather}
                     </b>
@@ -184,12 +188,12 @@ export function DpsPanel({
                                       num(item.stats.ability_value_max_health_pct, lang, 0),
                                       num(item.stats.ability_self_movespeed_pct, lang, 0),
                                     )
-                                  : item.id === 'item_0332'
+                                  : item.id === 'item_0332' || item.id === 'item_0715'
                                     ? t.active.bloodRiteMeta(
                                         num(item.cooldown, lang, 0),
                                         num(item.stats.ability_value_duration, lang, 0),
                                       )
-                                    : item.id === 'item_0255'
+                                    : item.id === 'item_0255' || item.id === 'item_0707'
                                       ? t.active.legionShieldMeta(
                                           num(item.cooldown, lang, 0),
                                           num(item.stats.ability_duration, lang, 0),

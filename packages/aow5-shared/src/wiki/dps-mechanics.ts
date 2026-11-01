@@ -85,7 +85,7 @@ export interface PanelFamily {
 export type MechanicFamily = DpsFamily | PanelFamily;
 
 /**
- * The DPS mechanics: 59 families, base + ancestor = 89 item ids. Sorrow is
+ * The DPS mechanics: 59 families, base + ancestor = 94 item ids. Sorrow is
  * included because its armour penetration is read in `dpsInput.ts`, not
  * because it has a proc.
  */
@@ -104,14 +104,14 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'pendant', base: 'item_0402', ancestor: 'item_0836', sources: ['poison'] },
   { kind: 'dps', role: 'chaosPoison', base: 'item_0382', ancestor: 'item_0780', sources: ['poison'] },
   { kind: 'dps', role: 'inertia', base: 'item_0211', sources: [] },
-  { kind: 'dps', role: 'fearless', base: 'item_0461', sources: [] },
-  { kind: 'dps', role: 'pollen', base: 'item_0270', sources: ['poison'] },
+  { kind: 'dps', role: 'fearless', base: 'item_0461', ancestor: 'item_0727', sources: [] },
+  { kind: 'dps', role: 'pollen', base: 'item_0270', ancestor: 'item_0708', sources: ['poison'] },
   { kind: 'dps', role: 'soulBlade', base: 'item_0165', sources: ['soulBlade'] },
   { kind: 'dps', role: 'shatter', base: 'item_0206', sources: ['shatterProc'] },
   { kind: 'dps', role: 'defenderHammer', base: 'item_0331', sources: ['defenderHammer'] },
-  { kind: 'dps', role: 'lionheartHammer', base: 'item_0460', sources: ['lionheartHammer'] },
-  { kind: 'dps', role: 'bloodRite', base: 'item_0332', sources: [] },
-  { kind: 'dps', role: 'legionShield', base: 'item_0255', sources: [] },
+  { kind: 'dps', role: 'lionheartHammer', base: 'item_0460', ancestor: 'item_0726', sources: ['lionheartHammer'] },
+  { kind: 'dps', role: 'bloodRite', base: 'item_0332', ancestor: 'item_0715', sources: [] },
+  { kind: 'dps', role: 'legionShield', base: 'item_0255', ancestor: 'item_0707', sources: [] },
   { kind: 'dps', role: 'feather', base: 'item_0646', ancestor: 'item_0827', sources: ['feather'] },
   { kind: 'dps', role: 'armorPen', base: 'item_0444', ancestor: 'item_0723', sources: [] },
   { kind: 'dps', role: 'brokenArmor', base: 'item_0124', sources: [] },

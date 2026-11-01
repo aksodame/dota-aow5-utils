@@ -209,8 +209,10 @@ export interface DpsStrings {
     viciousHornMeta: (cooldown: string, duration: string) => string;
     vanguardMeta: (cooldown: string, duration: string, shield: string, pct: string, move: string) => string;
     bloodRite: string;
+    bloodRiteAncestor: string;
     bloodRiteMeta: (cooldown: string, duration: string) => string;
     legionShield: string;
+    legionShieldAncestor: string;
     legionShieldMeta: (cooldown: string, duration: string, shield: string, move: string) => string;
   };
   /** Per-second window and the kill's event log. */
@@ -496,8 +498,10 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       viciousHornMeta: (cd, duration) => `КД ${cd} с · ${duration} с: +35 силы`,
       vanguardMeta: (cd, duration, shield, pct, move) => `КД ${cd} с · ${duration} с: щит ${shield} + ${pct} % макс. HP, −${move} % скорости бега`,
       bloodRite: 'Кровь жертвоприношения',
+      bloodRiteAncestor: 'Предок: Кровь жертвоприношения',
       bloodRiteMeta: (cd, duration) => `КД ${cd} с · ${duration} с: +100 к скорости атаки, +50 к скорости бега, +15 % КДР; цена 30 % HP`,
       legionShield: 'Боевой щит легиона пепла',
+      legionShieldAncestor: 'Предок: Боевой щит легиона пепла',
       legionShieldMeta: (cd, duration, shield, move) => `КД ${cd} с · ${duration} с: щит ${shield} % макс. HP, −${move} к скорости бега`,
     },
     timeline: {
@@ -645,8 +649,10 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       viciousHornMeta: (cd, duration) => `CD ${cd} s · ${duration} s: +35 strength`,
       vanguardMeta: (cd, duration, shield, pct, move) => `CD ${cd} s · ${duration} s: ${shield} shield + ${pct} % max HP, −${move} % movement`,
       bloodRite: 'Blood of Sacrifice',
+      bloodRiteAncestor: 'Ancestor: Blood of Sacrifice',
       bloodRiteMeta: (cd, duration) => `CD ${cd} s · ${duration} s: +100 attack speed, +50 movement, +15 % CDR; costs 30 % HP`,
       legionShield: 'Ember Legion Battle Shield',
+      legionShieldAncestor: 'Ancestor: Ember Legion Battle Shield',
       legionShieldMeta: (cd, duration, shield, move) => `CD ${cd} s · ${duration} s: ${shield} % max HP shield, −${move} movement`,
     },
     timeline: {
@@ -785,8 +791,10 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       viciousHornMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒：力量 +35`,
       vanguardMeta: (cd, duration, shield, pct, move) => `冷却 ${cd} 秒 · ${duration} 秒：护盾 ${shield} + 最大生命 ${pct}%，移动速度 −${move}%`,
       bloodRite: '献祭之血',
+      bloodRiteAncestor: '先祖：献祭之血',
       bloodRiteMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒：攻击速度 +100、移动速度 +50、冷却缩减 +15%；消耗 30% 生命值`,
       legionShield: '余烬军团战盾',
+      legionShieldAncestor: '先祖：余烬军团战盾',
       legionShieldMeta: (cd, duration, shield, move) => `冷却 ${cd} 秒 · ${duration} 秒：最大生命 ${shield}% 护盾，移动速度 −${move}`,
     },
     timeline: {
