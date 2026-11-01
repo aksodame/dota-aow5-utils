@@ -178,3 +178,79 @@ test('the codex is conditional and nothing else is', () => {
   const { notes } = applyEffects([{ id: 'item_0615', stats: {} }, { id: 'item_0335', stats: {} }], derive);
   assert.deepEqual(notes.map((n) => n.conditional), [true, false]);
 });
+
+test('Overflow turns physical crit above the cap into crit damage', () => {
+  const got = applyEffects(
+    [
+      {
+        id: 'item_0610',
+        stats: {
+          physical_crit_chance_pct: 124,
+          ability_value_c_crit_cap_pct: 100,
+          ability_overflow_per_step: 2,
+          ability_value_crit_damage_per_step: 3,
+        },
+      },
+    ],
+    derive,
+  );
+  assert.equal(got.extra.crit_damage_pct, 36);
+  assert.deepEqual(got.notes.find((n) => n.itemId === 'item_0610')?.facts, {
+    kind: 'overcrit',
+    total: 124,
+    cap: 100,
+    overflow: 24,
+    step: 2,
+    perStep: 3,
+    amp: 36,
+  });
+  assert.equal(effectOf('item_0820'), 'overcrit');
+});
+
+test('Primal Crystal conversion happens before Overflow reads the crit chance', () => {
+  const got = applyEffects(
+    [
+      {
+        id: 'item_0610',
+        stats: {
+          physical_crit_chance_pct: 130,
+          ability_value_c_crit_cap_pct: 100,
+          ability_overflow_per_step: 2,
+          ability_value_crit_damage_per_step: 3,
+        },
+      },
+      { id: 'item_0658', stats: { bonus_agility: 600 } },
+    ],
+    derive,
+  );
+  // 658 converts 20% of 130 = 26 physical into magical, so 610 sees 104 and
+  // adds floor((104 − 100) / 2) × 3 = 6, not 45 from the pre-conversion 130.
+  assert.equal(got.extra.physical_crit_chance_pct, -26);
+  assert.equal(got.extra.crit_damage_pct, 6);
+});
+
+test('Infinity turns both crit chances into crit damage', () => {
+  const got = applyEffects(
+    [
+      {
+        id: 'item_0368',
+        stats: {
+          physical_crit_chance_pct: 50,
+          magical_crit_chance_pct: 20,
+          omni_crit_chance_pct: 10,
+          ability_value_crit_damage_convert_pct: 70,
+        },
+      },
+    ],
+    derive,
+  );
+  assert.equal(got.extra.crit_damage_pct, 63);
+  assert.deepEqual(got.notes.find((n) => n.itemId === 'item_0368')?.facts, {
+    kind: 'infinity',
+    physical: 60,
+    magical: 30,
+    convert: 70,
+    amp: 63,
+  });
+  assert.equal(effectOf('item_0779'), 'infinity');
+});

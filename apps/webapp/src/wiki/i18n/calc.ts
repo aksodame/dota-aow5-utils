@@ -403,6 +403,10 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.pct)}% маг. урона: вампиризм ${n(f.lifesteal)}% → шаг ${n(f.step)}% = +${n(f.per)}% (потолок ${n(f.cap)}%)`;
           case 'primalCrystal':
             return `физ. крит ${n(f.total)}% → −${n(f.moved)}% физ, +${n(f.gained)}% маг-крита (перевод ${n(f.convert)}%: ${n(f.agi)} ловкости / ${n(f.stepAgi)} × ${n(f.perPct)}, потолок ${n(f.cap)}%)`;
+          case 'overcrit':
+            return `физ. крит ${n(f.total)}% при капе ${n(f.cap)}%: превышение ${n(f.overflow)}% → +${n(f.amp)}% урона крита (${n(f.perStep)}% за каждые ${n(f.step)}%)`;
+          case 'infinity':
+            return `+${n(f.amp)}% урона крита: ${n(f.physical)}% физ. + ${n(f.magical)}% маг. крита × ${n(f.convert)}%`;
           case 'usurerCodex':
             return `+${n(f.amp)}% маг. урона, пока не исчерпан «долг» (он растёт за применения заклинаний)`;
         }
@@ -626,6 +630,10 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.pct)}% magical damage: lifesteal ${n(f.lifesteal)}% → every ${n(f.step)}% = +${n(f.per)}% (cap ${n(f.cap)}%)`;
           case 'primalCrystal':
             return `physical crit ${n(f.total)}% → −${n(f.moved)}% physical, +${n(f.gained)}% magical crit (converts ${n(f.convert)}%: ${n(f.agi)} agility / ${n(f.stepAgi)} × ${n(f.perPct)}, cap ${n(f.cap)}%)`;
+          case 'overcrit':
+            return `physical crit ${n(f.total)}% against a ${n(f.cap)}% cap: ${n(f.overflow)}% over → +${n(f.amp)}% crit damage (${n(f.perStep)}% per ${n(f.step)}%)`;
+          case 'infinity':
+            return `+${n(f.amp)}% crit damage: ${n(f.physical)}% physical + ${n(f.magical)}% magical crit × ${n(f.convert)}%`;
           case 'usurerCodex':
             return `+${n(f.amp)}% magical damage until the "debt" runs out (it grows with every spell cast)`;
         }
@@ -839,6 +847,10 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.pct)}% 魔法伤害：吸血 ${n(f.lifesteal)}% → 每 ${n(f.step)}% = +${n(f.per)}%（上限 ${n(f.cap)}%）`;
           case 'primalCrystal':
             return `物理暴击 ${n(f.total)}% → −${n(f.moved)}% 物理，+${n(f.gained)}% 魔法暴击（转化 ${n(f.convert)}%：${n(f.agi)} 敏捷 / ${n(f.stepAgi)} × ${n(f.perPct)}，上限 ${n(f.cap)}%）`;
+          case 'overcrit':
+            return `物理暴击 ${n(f.total)}%，上限 ${n(f.cap)}%：溢出 ${n(f.overflow)}% → 暴击伤害 +${n(f.amp)}%（每 ${n(f.step)}% +${n(f.perStep)}%）`;
+          case 'infinity':
+            return `暴击伤害 +${n(f.amp)}%：物理 ${n(f.physical)}% + 魔法 ${n(f.magical)}% 暴击 × ${n(f.convert)}%`;
           case 'usurerCodex':
             return `+${n(f.amp)}% 魔法伤害，直到「债务」耗尽（每次施法都会增加债务）`;
         }
