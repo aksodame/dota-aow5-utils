@@ -791,6 +791,8 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.amp)}% урона крита: ${n(f.physical)}% физ. + ${n(f.magical)}% маг. крита × ${n(f.convert)}%`;
           case 'usurerCodex':
             return `+${n(f.amp)}% маг. урона, пока не исчерпан «долг» (он растёт за применения заклинаний)`;
+          case 'stoneGolem':
+            return `Скрипт: −${n(f.attackSpeed)}% скорости атаки и −${n(f.moveSpeed)}% передвижения; в описании — только −${n(f.tooltipPct)}% передвижения`;
         }
       },
     },
@@ -1019,6 +1021,8 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.amp)}% crit damage: ${n(f.physical)}% physical + ${n(f.magical)}% magical crit × ${n(f.convert)}%`;
           case 'usurerCodex':
             return `+${n(f.amp)}% magical damage until the "debt" runs out (it grows with every spell cast)`;
+          case 'stoneGolem':
+            return `Script: −${n(f.attackSpeed)}% attack speed and −${n(f.moveSpeed)}% movement; the tooltip says only −${n(f.tooltipPct)}% movement`;
         }
       },
     },
@@ -1237,6 +1241,8 @@ export const CALC: Localised<CalcStrings> = {
             return `暴击伤害 +${n(f.amp)}%：物理 ${n(f.physical)}% + 魔法 ${n(f.magical)}% 暴击 × ${n(f.convert)}%`;
           case 'usurerCodex':
             return `+${n(f.amp)}% 魔法伤害，直到「债务」耗尽（每次施法都会增加债务）`;
+          case 'stoneGolem':
+            return `脚本：攻击速度 −${n(f.attackSpeed)}%、移动速度 −${n(f.moveSpeed)}%；描述只写移动速度 −${n(f.tooltipPct)}%`;
         }
       },
     },

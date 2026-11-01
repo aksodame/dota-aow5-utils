@@ -40,7 +40,8 @@ export type EffectId =
   | 'primalCrystal'
   | 'overcrit'
   | 'infinity'
-  | 'usurerCodex';
+  | 'usurerCodex'
+  | 'stoneGolem';
 
 /** What one effect did on the last pass, for the page to put into words. */
 export type EffectFacts =
@@ -60,7 +61,8 @@ export type EffectFacts =
   | { kind: 'primalCrystal'; total: number; moved: number; gained: number; convert: number; agi: number; stepAgi: number; perPct: number; cap: number }
   | { kind: 'overcrit'; total: number; cap: number; overflow: number; step: number; perStep: number; amp: number }
   | { kind: 'infinity'; physical: number; magical: number; convert: number; amp: number }
-  | { kind: 'usurerCodex'; amp: number };
+  | { kind: 'usurerCodex'; amp: number }
+  | { kind: 'stoneGolem'; attackSpeed: number; moveSpeed: number; tooltipPct: number };
 
 export interface EffectNote {
   itemId: string;
@@ -230,6 +232,16 @@ const REG: Record<EffectId, EffectDef> = {
     },
   },
 
+  // Stonebreaker (0239): the script hardcodes −10 % attack speed and −10 %
+  // movement; the tooltip and `ability_sdjd` say only −5 % movement.
+  stoneGolem: {
+    apply(P) {
+      add(P, 'attack_speed_pct', -10);
+      add(P, 'bonus_movespeed_pct', -10);
+      return { kind: 'stoneGolem', attackSpeed: 10, moveSpeed: 10, tooltipPct: param(P, 'ability_sdjd', 5) };
+    },
+  },
+
   // Usurer's Codex: magic damage % while the "debt" lasts (it grows with each
   // spell cast). Out of combat there is no debt, so it counts — with a caveat.
   usurerCodex: {
@@ -254,6 +266,7 @@ export const EFFECT_ITEMS: Readonly<Record<string, EffectId>> = {
   item_0610: 'overcrit',
   item_0368: 'infinity',
   item_0615: 'usurerCodex',
+  item_0239: 'stoneGolem',
 };
 
 /** Ancestral item → its base item: an ancestor carries the base's passive with its own numbers. */

@@ -2673,6 +2673,10 @@
       },
       {
        "type": "text",
+       "text": "**Harsher than the tooltip.** [[item:item_0239|★Stonebreaker]]: the tooltip says «−5 % movement speed only», but the code's modifier returns `attack_speed_pct = −10` and `bonus_movespeed_pct = −10`; the script never reads `ability_sdjd = 5`. In practice the item also cuts attack speed by 10 %."
+      },
+      {
+       "type": "text",
        "text": "**Minus into plus.** Several items turn a penalty or a lost resource into a bonus:"
       },
       {
