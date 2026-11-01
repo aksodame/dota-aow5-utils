@@ -41,7 +41,9 @@ export type EffectId =
   | 'overcrit'
   | 'infinity'
   | 'usurerCodex'
-  | 'stoneGolem';
+  | 'stoneGolem'
+  | 'emperorCrown'
+  | 'kingBackpack';
 
 /** What one effect did on the last pass, for the page to put into words. */
 export type EffectFacts =
@@ -62,7 +64,8 @@ export type EffectFacts =
   | { kind: 'overcrit'; total: number; cap: number; overflow: number; step: number; perStep: number; amp: number }
   | { kind: 'infinity'; physical: number; magical: number; convert: number; amp: number }
   | { kind: 'usurerCodex'; amp: number }
-  | { kind: 'stoneGolem'; attackSpeed: number; moveSpeed: number; tooltipPct: number };
+  | { kind: 'stoneGolem'; attackSpeed: number; moveSpeed: number; tooltipPct: number }
+  | { kind: 'allStatsAura'; stats: number };
 
 export interface EffectNote {
   itemId: string;
@@ -253,6 +256,25 @@ const REG: Record<EffectId, EffectDef> = {
       return { kind: 'usurerCodex', amp };
     },
   },
+
+  // 0314 / 0315: a friendly aura that also lands on its owner. The panel is
+  // the hero's own, so the aura value is added to all stats.
+  emperorCrown: {
+    apply(P) {
+      const stats = param(P, 'ability_aura_all_stats', 10);
+      if (stats <= 0) return null;
+      add(P, 'bonus_all_stats', stats);
+      return { kind: 'allStatsAura', stats };
+    },
+  },
+  kingBackpack: {
+    apply(P) {
+      const stats = param(P, 'ability_value_aura_all_stats', 15);
+      if (stats <= 0) return null;
+      add(P, 'bonus_all_stats', stats);
+      return { kind: 'allStatsAura', stats };
+    },
+  },
 };
 
 /** The base item of each modelled effect. */
@@ -267,6 +289,8 @@ export const EFFECT_ITEMS: Readonly<Record<string, EffectId>> = {
   item_0368: 'infinity',
   item_0615: 'usurerCodex',
   item_0239: 'stoneGolem',
+  item_0314: 'emperorCrown',
+  item_0315: 'kingBackpack',
 };
 
 /** Ancestral item → its base item: an ancestor carries the base's passive with its own numbers. */

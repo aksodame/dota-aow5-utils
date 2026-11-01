@@ -84,6 +84,8 @@ export interface DpsBuild {
   /** `crit_damage_pct`, already including the game's 180 %. */
   critDamagePct: number;
   physicalDamageAddPct: number;
+  /** `bonus_armor`: 0460 scales its shield hit by it. */
+  totalArmor: number;
   /** The product of every `outgoing_damage_pct*` source, as a multiplier. */
   outgoingMultiplier: number;
   spellAmplifyPct: number;
@@ -149,7 +151,11 @@ export type DpsSourceId =
   | 'mjollnir'
   | 'galeStrike'
   | 'evernight'
-  | 'havocHammer';
+  | 'havocHammer'
+  | 'soulBlade'
+  | 'shatterProc'
+  | 'defenderHammer'
+  | 'lionheartHammer';
 
 export interface DpsSource {
   id: DpsSourceId;
@@ -258,6 +264,10 @@ const BEAST_BOOTS = ['item_0350'] as const;
 const BEAST_PENDANT = ['item_0349'] as const;
 const LIONHEART = ['item_0329', 'item_0714'] as const;
 const VANGUARD = ['item_0225', 'item_0703'] as const;
+const INERTIA = ['item_0211'] as const;
+const FEARLESS = ['item_0461'] as const;
+const BLOOD_RITE = ['item_0332'] as const;
+const LEGION_SHIELD = ['item_0255'] as const;
 
 function findItem(build: DpsBuild, ids: readonly string[]): DpsItemStats | undefined {
   return build.items.find((item) => ids.includes(item.id));
@@ -340,7 +350,7 @@ interface Constants {
   chaos: DpsItemStats | undefined;
   /** 0382's roll per debuff status, as a fraction. */
   chaosChance: number;
-  flatProcs: ReadonlyArray<{ source: 'dartProc' | 'crystalProc' | 'valorSword'; chance: number; raw: number }>;
+  flatProcs: ReadonlyArray<{ source: 'dartProc' | 'crystalProc' | 'valorSword' | 'shatterProc'; chance: number; raw: number; armor?: number; duration?: number }>;
   feather: DpsItemStats | undefined;
   featherPct: number;
   featherDuration: number;
@@ -349,13 +359,16 @@ interface Constants {
   /** Flat armour reduction from 0124 / 0234 / 0300, positive amount. */
   armorDebuffPerHit: number;
   armorProcs: ReadonlyArray<{ source: 'corrosiveSpike' | 'feast'; raw: number; armor: number }>;
-  cooldownProcs: ReadonlyArray<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer' | 'havocHammer'; raw: number; cooldown: number }>;
+  cooldownProcs: ReadonlyArray<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer' | 'havocHammer' | 'defenderHammer' | 'lionheartHammer'; raw: number; cooldown: number }>;
   vortexChance: number;
   vortexRaw: number;
   vortexDotRaw: number;
   gazePct: number;
   gazeCooldown: number;
   poisonProcs: ReadonlyArray<{ id: string; cooldown: number }>;
+  /** 0165's per-attack magic hit; the script hardcodes 20, the text says 60. */
+  soulBlade: DpsItemStats | undefined;
+  soulBladeRaw: number;
   maelstromChance: number;
   maelstromPct: number;
   moonShardChance: number;
@@ -426,7 +439,7 @@ function constants(build: DpsBuild): Constants {
   }
   const armorDebuffPerHit =
     (brokenArmor ? 2 : 0) + armorProcs.reduce((sum, proc) => sum + proc.armor, 0);
-  const cooldownProcs: Array<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer' | 'havocHammer'; raw: number; cooldown: number }> = [];
+  const cooldownProcs: Array<{ source: 'sharpAxe' | 'skullcrusher' | 'ruinHammer' | 'havocHammer' | 'defenderHammer' | 'lionheartHammer'; raw: number; cooldown: number }> = [];
   const sharpAxe = findItem(build, ['item_0121']);
   if (sharpAxe) {
     cooldownProcs.push({
@@ -478,7 +491,32 @@ function constants(build: DpsBuild): Constants {
       cooldown: effCd(havoc, 2),
     });
   }
-  const flatProcs: Array<{ source: 'dartProc' | 'crystalProc' | 'valorSword'; chance: number; raw: number }> =
+  const defender = findItem(build, ['item_0331']);
+  if (defender) {
+    cooldownProcs.push({
+      source: 'defenderHammer',
+      raw: Math.max(0, build.energyShield * value(defender, 'ability_current_shield_damage_pct') / 100),
+      cooldown: effCd(defender, 0.5),
+    });
+  }
+  const lionhammer = findItem(build, ['item_0460']);
+  if (lionhammer) {
+    const armorPct = Math.min(
+      Math.max(0, value(lionhammer, 'ability_value_armor_damage_pct_per_point_max')),
+      Math.max(0, build.totalArmor) * Math.max(0, value(lionhammer, 'ability_armor_damage_pct_per_point')),
+    );
+    cooldownProcs.push({
+      source: 'lionheartHammer',
+      raw: Math.max(
+        0,
+        build.energyShield *
+          value(lionhammer, 'ability_value_current_shield_damage_pct') / 100 *
+          (1 + armorPct / 100),
+      ),
+      cooldown: effCd(lionhammer, 0.6),
+    });
+  }
+  const flatProcs: Array<{ source: 'dartProc' | 'crystalProc' | 'valorSword' | 'shatterProc'; chance: number; raw: number; armor?: number; duration?: number }> =
     build.items
       .filter((item) => FLAT_PROC.includes(item.id))
       .map((item) => ({
@@ -495,6 +533,18 @@ function constants(build: DpsBuild): Constants {
       raw: Math.max(0, value(valor, 'ability_ps_damage')),
     });
   }
+  const shatter = findItem(build, ['item_0206']);
+  if (shatter) {
+    flatProcs.push({
+      source: 'shatterProc',
+      chance: Math.max(0, value(shatter, 'ability_ps_chance')) / 100,
+      raw: Math.max(0, value(shatter, 'ability_ps_damage')),
+      armor: Math.max(0, value(shatter, 'ability_armor_reduce')),
+      duration: Math.max(0, value(shatter, 'ability_duration')),
+    });
+  }
+  const soulBlade = findItem(build, ['item_0165']);
+  const pollen = findItem(build, ['item_0270']);
   return {
     aps: (1 + attackSpeed / 100) / bat,
     attackSpeed,
@@ -532,7 +582,8 @@ function constants(build: DpsBuild): Constants {
     gloomChance: Math.max(0, value(gloom, 'ability_value_poison_chance_pct')),
     poisonPerAuto:
       (cobra ? Math.max(0, value(cobra, 'ability_value_poison_trigger_chance_pct')) / 100 : 0) +
-      (gloom ? Math.max(0, value(gloom, 'ability_value_poison_chance_pct')) / 100 : 0),
+      (gloom ? Math.max(0, value(gloom, 'ability_value_poison_chance_pct')) / 100 : 0) +
+      (pollen ? 0.4 : 0),
     poisonTick: Math.max(
       0.03,
       0.25 / clamp(1 + build.poisonFasterPct / 100, 0.05, 10),
@@ -557,10 +608,11 @@ function constants(build: DpsBuild): Constants {
         ? Math.max(0.1, (feather.cooldown ?? 0) * (1 - Math.min(80, Math.max(0, build.cooldownReductionPct)) / 100))
         : 0,
     poisonSettleChance:
-      pendant && (cobra || gloom)
+      pendant && (cobra || gloom || pollen)
         ? 1 -
           (1 - (cobra ? Math.max(0, value(cobra, 'ability_value_poison_trigger_chance_pct')) / 100 : 0)) *
-            (1 - (gloom ? Math.max(0, value(gloom, 'ability_value_poison_chance_pct')) / 100 : 0))
+            (1 - (gloom ? Math.max(0, value(gloom, 'ability_value_poison_chance_pct')) / 100 : 0)) *
+            (1 - (pollen ? 0.4 : 0))
         : 0,
     armorDebuffPerHit,
     armorProcs,
@@ -571,6 +623,8 @@ function constants(build: DpsBuild): Constants {
     gazePct: Math.max(0, value(gaze, 'ability_damage')),
     gazeCooldown: effCd(gaze, 4),
     poisonProcs,
+    soulBlade,
+    soulBladeRaw: 20,
     maelstromChance: maelstrom ? Math.max(0, value(maelstrom, 'ability_trigger_chance_pct')) / 100 : 0,
     maelstromPct: Math.max(0, value(maelstrom, 'ability_damage')),
     moonShardChance: moonShard ? Math.max(0, value(moonShard, 'ability_trigger_chance_pct')) / 100 : 0,
@@ -734,6 +788,10 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const beastPendant = findItem(build, BEAST_PENDANT);
   const lionheart = findItem(build, LIONHEART);
   const vanguard = findItem(build, VANGUARD);
+  const inertia = findItem(build, INERTIA);
+  const fearless = findItem(build, FEARLESS);
+  const bloodRite = findItem(build, BLOOD_RITE);
+  const legionShield = findItem(build, LEGION_SHIELD);
   const cdr = 1 - Math.min(80, Math.max(0, build.cooldownReductionPct)) / 100;
   const duty = (item: DpsItemStats | undefined, durationKey: string): number => {
     if (!item || active?.has(item.id) !== true) return 0;
@@ -750,6 +808,8 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const shatteredDuty = duty(shattered, 'ability_duration');
   const hornDuty = duty(horn, 'ability_duration');
   const vanguardDuty = duty(vanguard, 'ability_duration');
+  const bloodRiteDuty = duty(bloodRite, 'ability_value_duration');
+  const legionDuty = duty(legionShield, 'ability_duration');
 
   // Percent movement buffs and penalties first, then the flat grants. The
   // exact order only matters a little, but it keeps 0152 + 0305 sensible.
@@ -760,6 +820,8 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   if (madness) averageMovespeed += Math.max(0, value(madness, 'ability_bonus_move_speed')) * madnessDuty;
   if (shadow) averageMovespeed += Math.max(0, value(shadow, 'ability_bonus_move_speed')) * shadowDuty;
   if (beastBoots) averageMovespeed += Math.max(0, value(beastBoots, 'ability_bonus_movespeed'));
+  if (bloodRite) averageMovespeed += Math.max(0, value(bloodRite, 'ability_value_bonus_move_speed')) * bloodRiteDuty;
+  if (legionShield) averageMovespeed -= Math.max(0, value(legionShield, 'ability_self_movespeed')) * legionDuty;
 
   const hunt = findItem(build, MOVE_HUNT);
   const huntThreshold = Math.max(0, value(hunt, 'ability_value_c_movespeed_threshold'));
@@ -794,6 +856,27 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
           Math.max(0, value(tolerance, 'ability_bonus_pct_per_step')),
       )
     : 0;
+  const inertiaAs = inertia
+    ? Math.floor(
+        Math.max(0, averageMovespeed - Math.max(0, value(inertia, 'ability_movespeed_threshold'))) /
+          Math.max(1, value(inertia, 'ability_movespeed_per_attack_speed')),
+      ) * Math.max(0, value(inertia, 'ability_bonus_attack_speed_per_step'))
+    : 0;
+  const fearlessBonus = fearless
+    ? Math.min(
+        Math.max(0, value(fearless, 'ability_value_bonus_pct_max')),
+        Math.floor(
+          Math.max(
+            0,
+            Math.max(0, value(fearless, 'ability_value_movespeed_threshold')) - averageMovespeed,
+          ) / Math.max(1, value(fearless, 'ability_movespeed_step')),
+        ) * Math.max(0, value(fearless, 'ability_bonus_pct_per_step')),
+      )
+    : 0;
+  const bloodRiteAs = Math.max(0, value(bloodRite, 'ability_value_bonus_attack_speed')) * bloodRiteDuty;
+  const legionShieldAmount = legionShield
+    ? activeMaxHealth * Math.max(0, value(legionShield, 'ability_value_shield_amount')) / 100 * legionDuty
+    : 0;
 
   return {
     ...build,
@@ -803,14 +886,18 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
       effectiveDynamicAgility * build.attackDamagePerAgi +
       shatteredAd +
       hornStrength * build.attackDamagePerStr,
-    attackSpeed: build.attackSpeed + agilityAsDelta + madnessAs + shadowAs + pendantAs,
+    attackSpeed: build.attackSpeed + agilityAsDelta + madnessAs + shadowAs + pendantAs + inertiaAs + bloodRiteAs,
     totalAgility: agility,
     totalAttributes: build.totalAttributes + effectiveDynamicAgility + hornStrength,
     energyShield:
       build.energyShield +
       vanguardShield +
+      legionShieldAmount +
       (lionheart !== undefined ? hornStrength * Math.max(0, value(lionheart, 'ability_shield_per_strength')) : 0),
-    outgoingMultiplier: build.outgoingMultiplier * (1 + toleranceBonus / 100),
+    outgoingMultiplier: build.outgoingMultiplier * (1 + (toleranceBonus + fearlessBonus) / 100),
+    cooldownReductionPct:
+      build.cooldownReductionPct +
+      Math.max(0, value(bloodRite, 'ability_cooldown_reduction_pct')) * bloodRiteDuty,
     noCrit: build.noCrit || tolerance !== undefined || unyielding !== undefined,
   };
 }
@@ -844,6 +931,10 @@ function sourceRecord(): Record<DpsSourceId, number> {
     galeStrike: 0,
     evernight: 0,
     havocHammer: 0,
+    soulBlade: 0,
+    shatterProc: 0,
+    defenderHammer: 0,
+    lionheartHammer: 0,
   };
 }
 
@@ -876,6 +967,10 @@ function hitRecord(): Record<DpsSourceId, number> {
     galeStrike: 0,
     evernight: 0,
     havocHammer: 0,
+    soulBlade: 0,
+    shatterProc: 0,
+    defenderHammer: 0,
+    lionheartHammer: 0,
   };
 }
 
@@ -908,10 +1003,15 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   let armorStacks = 0;
   let armorDebuff = 0;
   let lastArmorDebuff = Number.NEGATIVE_INFINITY;
+  /** 0206's own −5 armour debuff, expected by its proc chance. */
+  let shatterArmor = 0;
+  let shatterUntil = 0;
   let sharpAxeReady = 0;
   let skullReady = 0;
   let ruinReady = 0;
   let havocReady = 0;
+  let defenderReady = 0;
+  let lionhammerReady = 0;
   let mjollnirReady = 0;
   let gazeAt = c.gazePct > 0 ? c.gazeCooldown : Number.POSITIVE_INFINITY;
   const poisonReady = c.poisonProcs.map(() => 0);
@@ -948,7 +1048,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     vulnStacks,
     markStacks,
     burning,
-    armorDebuff,
+    armorDebuff: armorDebuff + (time < shatterUntil ? shatterArmor : 0),
   });
 
   const add = (id: DpsSourceId, amount: number, count = 0): void => {
@@ -1022,6 +1122,22 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     }
   };
 
+  // 0165: every landed attack (including 0351/0406 sub-attacks) adds a magic
+  // hit. The script hardcodes 20; its text still says 60.
+  const soulBladeHit = (): void => {
+    if (!c.soulBlade || c.soulBladeRaw <= 0) return;
+    const hit = magicalDamage(b, enemy, c, c.soulBladeRaw, {
+      dot: false,
+      poisonSource: false,
+      corrosionStacks: poisonStacks,
+      vulnStacks,
+      burning: burnUntil > time,
+      markStacks,
+      doomStacks,
+    });
+    add('soulBlade', hit, 1);
+  };
+
   const onAttack = (): void => {
     attacks += 1;
     chaosEvents = 0;
@@ -1034,6 +1150,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     const auto = directDamage(b, enemy, c, autoRaw, ctx(burning, true));
     add('auto', auto, 1);
     physicalTriggers(auto, c.autoCrit);
+    soulBladeHit();
     // On-hit items check the target is still alive; a killing auto-attack does
     // not also get its talons strike or start a bleed.
     if (!dummy && hp <= 0) {
@@ -1048,6 +1165,14 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
         add(proc.source, hit * proc.chance, proc.chance);
         physicalTriggers(hit, c.abilityCrit);
+        if (proc.source === 'shatterProc' && proc.armor !== undefined && proc.duration !== undefined) {
+          // The debuff is applied on the proc, not on every hit. Its expected
+          // uptime is the chance of at least one proc in the last duration.
+          const rolls = Math.max(0, c.aps * proc.duration);
+          const uptime = proc.chance >= 1 ? 1 : 1 - Math.pow(1 - proc.chance, rolls);
+          shatterArmor = proc.armor * uptime;
+          shatterUntil = time + proc.duration;
+        }
       }
     }
 
@@ -1093,11 +1218,13 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       const hit = directDamage(b, enemy, c, autoRaw * c.galeStrike.multiplier, ctx(burnUntil > time, true));
       add('galeStrike', hit, 1);
       physicalTriggers(hit, c.autoCrit, false);
+      soulBladeHit();
     }
     if (c.evernight && attacks > c.evernight.every && (attacks - 1) % c.evernight.every === 0) {
       const hit = directDamage(b, enemy, c, autoRaw * c.evernight.multiplier, ctx(burnUntil > time));
       add('evernight', hit, 1);
       physicalTriggers(hit, c.abilityCrit);
+      soulBladeHit();
     }
 
     // 0121 / 0210 / 0340 / 0377: one hit when their own cooldown is ready.
@@ -1109,7 +1236,11 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
             ? skullReady
             : proc.source === 'ruinHammer'
               ? ruinReady
-              : havocReady;
+              : proc.source === 'havocHammer'
+                ? havocReady
+                : proc.source === 'defenderHammer'
+                  ? defenderReady
+                  : lionhammerReady;
       if (time + EPS < ready) continue;
       const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
       add(proc.source, hit, 1);
@@ -1117,7 +1248,9 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       if (proc.source === 'sharpAxe') sharpAxeReady = time + proc.cooldown;
       else if (proc.source === 'skullcrusher') skullReady = time + proc.cooldown;
       else if (proc.source === 'ruinHammer') ruinReady = time + proc.cooldown;
-      else havocReady = time + proc.cooldown;
+      else if (proc.source === 'havocHammer') havocReady = time + proc.cooldown;
+      else if (proc.source === 'defenderHammer') defenderReady = time + proc.cooldown;
+      else lionhammerReady = time + proc.cooldown;
     }
 
     // 0234 / 0300: agility-scaled physical damage on every attack, then their

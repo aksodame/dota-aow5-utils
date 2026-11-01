@@ -266,3 +266,16 @@ test('Infinity turns both crit chances into crit damage', () => {
   });
   assert.equal(effectOf('item_0779'), 'infinity');
 });
+
+test('the crown and king backpack auras reach their owner', () => {
+  const got = applyEffects(
+    [
+      { id: 'item_0314', stats: { ability_aura_all_stats: 10 } },
+      { id: 'item_0315', stats: { ability_value_aura_all_stats: 15 } },
+    ],
+    derive,
+  );
+  assert.equal(got.extra.bonus_all_stats, 25);
+  assert.equal(effectOf('item_0314'), 'emperorCrown');
+  assert.equal(effectOf('item_0315'), 'kingBackpack');
+});

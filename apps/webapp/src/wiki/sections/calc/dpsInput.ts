@@ -55,6 +55,7 @@ export function buildDpsInput(
     omniCritChancePct: panel('omni_crit_chance_pct'),
     critDamagePct: critDamageTotal(panel('crit_damage_pct')),
     physicalDamageAddPct: panel('physical_damage_add_pct'),
+    totalArmor: panel('bonus_armor'),
     outgoingMultiplier,
     spellAmplifyPct: panel('spell_amplify_pct'),
     normalAttackAmpPct: extra('normal_attack_damage_amp_pct'),

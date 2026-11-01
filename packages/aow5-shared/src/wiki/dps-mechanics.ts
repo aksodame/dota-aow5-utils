@@ -19,6 +19,15 @@ export type DpsRole =
   | 'witch'
   | 'pendant'
   | 'chaosPoison'
+  | 'inertia'
+  | 'fearless'
+  | 'pollen'
+  | 'soulBlade'
+  | 'shatter'
+  | 'defenderHammer'
+  | 'lionheartHammer'
+  | 'bloodRite'
+  | 'legionShield'
   | 'feather'
   | 'armorPen'
   | 'brokenArmor'
@@ -76,7 +85,7 @@ export interface PanelFamily {
 export type MechanicFamily = DpsFamily | PanelFamily;
 
 /**
- * The DPS mechanics: 50 families, base + ancestor = 80 item ids. Sorrow is
+ * The DPS mechanics: 59 families, base + ancestor = 89 item ids. Sorrow is
  * included because its armour penetration is read in `dpsInput.ts`, not
  * because it has a proc.
  */
@@ -94,6 +103,15 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'witch', base: 'item_0209', ancestor: 'item_0831', sources: ['witchBlade'] },
   { kind: 'dps', role: 'pendant', base: 'item_0402', ancestor: 'item_0836', sources: ['poison'] },
   { kind: 'dps', role: 'chaosPoison', base: 'item_0382', ancestor: 'item_0780', sources: ['poison'] },
+  { kind: 'dps', role: 'inertia', base: 'item_0211', sources: [] },
+  { kind: 'dps', role: 'fearless', base: 'item_0461', sources: [] },
+  { kind: 'dps', role: 'pollen', base: 'item_0270', sources: ['poison'] },
+  { kind: 'dps', role: 'soulBlade', base: 'item_0165', sources: ['soulBlade'] },
+  { kind: 'dps', role: 'shatter', base: 'item_0206', sources: ['shatterProc'] },
+  { kind: 'dps', role: 'defenderHammer', base: 'item_0331', sources: ['defenderHammer'] },
+  { kind: 'dps', role: 'lionheartHammer', base: 'item_0460', sources: ['lionheartHammer'] },
+  { kind: 'dps', role: 'bloodRite', base: 'item_0332', sources: [] },
+  { kind: 'dps', role: 'legionShield', base: 'item_0255', sources: [] },
   { kind: 'dps', role: 'feather', base: 'item_0646', ancestor: 'item_0827', sources: ['feather'] },
   { kind: 'dps', role: 'armorPen', base: 'item_0444', ancestor: 'item_0723', sources: [] },
   { kind: 'dps', role: 'brokenArmor', base: 'item_0124', sources: [] },
@@ -135,7 +153,7 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
 
 /**
  * Passives that move the panel itself and therefore every DPS figure built
- * from it: 9 families, 16 item ids.
+ * from it: 11 families, 18 item ids.
  */
 export const PANEL_FAMILIES: readonly PanelFamily[] = [
   { kind: 'panel', key: 'prism', base: 'item_0541', ancestor: 'item_0876' },
@@ -147,6 +165,8 @@ export const PANEL_FAMILIES: readonly PanelFamily[] = [
   { kind: 'panel', key: 'overcrit', base: 'item_0610', ancestor: 'item_0820' },
   { kind: 'panel', key: 'infinity', base: 'item_0368', ancestor: 'item_0779' },
   { kind: 'panel', key: 'usurerCodex', base: 'item_0615' },
+  { kind: 'panel', key: 'emperorCrown', base: 'item_0314' },
+  { kind: 'panel', key: 'kingBackpack', base: 'item_0315' },
 ];
 
 const ids = (f: MechanicFamily): string[] => (f.ancestor === undefined ? [f.base] : [f.base, f.ancestor]);
@@ -170,6 +190,8 @@ export const ACTIVE_ITEM_IDS: ReadonlySet<string> = new Set([
   ...dpsItemIds('shatteredAxe'),
   ...dpsItemIds('viciousHorn'),
   ...dpsItemIds('vanguard'),
+  ...dpsItemIds('bloodRite'),
+  ...dpsItemIds('legionShield'),
 ]);
 export const PANEL_ITEM_IDS: ReadonlySet<string> = new Set(PANEL_FAMILIES.flatMap(ids));
 export const MODELED_ITEM_IDS: ReadonlySet<string> = new Set([...DPS_ITEM_IDS, ...PANEL_ITEM_IDS]);

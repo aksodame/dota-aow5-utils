@@ -34,6 +34,7 @@ const build = (over: Partial<DpsBuild> = {}): DpsBuild => ({
   omniCritChancePct: 0,
   critDamagePct: 180,
   physicalDamageAddPct: 0,
+  totalArmor: 0,
   outgoingMultiplier: 1,
   spellAmplifyPct: 0,
   normalAttackAmpPct: 0,
@@ -677,12 +678,181 @@ test('level-3 self-buffs use their cooldowns and scale attack damage', () => {
   assert.ok(horn.damage > baseBuild.damage);
 });
 
+test('0165 pays its hardcoded 20 magic on every landed attack', () => {
+  const r = simulateDps(
+    build({
+      items: [item('item_0165', { ability_damage: 60 })],
+    }),
+    enemy({ kind: 'boss', magicResistancePct: 0 }),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  // The script hardcodes 20 even though the item text says 60.
+  near(source(r, 'soulBlade'), 20);
+});
+
+test('0206 procs 250 physical and lowers armour by 5', () => {
+  const r = simulateDps(
+    build({
+      items: [
+        item('item_0206', {
+          ability_ps_chance: 25,
+          ability_ps_damage: 250,
+          ability_armor_reduce: 5,
+          ability_duration: 3,
+        }),
+      ],
+    }),
+    enemy({ kind: 'boss' }),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(source(r, 'shatterProc'), 62.5);
+});
+
+test('0270 adds a 40 % poison stack per attack', () => {
+  const r = simulateDps(
+    build({
+      attackDamage: 0,
+      totalAttributes: 1000,
+      items: [item('item_0270', {})],
+    }),
+    enemy({ kind: 'boss', magicResistancePct: 0 }),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(r.poisonStacks, 0.4);
+  assert.ok(source(r, 'poison') > 0);
+});
+
+test('0211 turns movement above 250 into attack speed', () => {
+  const r = simulateDps(
+    build({
+      attackSpeed: 100,
+      baseMoveSpeed: 350,
+      items: [
+        item('item_0211', {
+          ability_movespeed_threshold: 250,
+          ability_movespeed_per_attack_speed: 3,
+          ability_bonus_attack_speed_per_step: 1,
+        }),
+      ],
+    }),
+    enemy(),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(r.attackSpeed, 133);
+});
+
+test('0461 turns movement lost below 380 into outgoing damage', () => {
+  const r = simulateDps(
+    build({
+      baseMoveSpeed: 300,
+      items: [
+        item('item_0461', {
+          ability_value_movespeed_threshold: 380,
+          ability_movespeed_step: 4,
+          ability_bonus_pct_per_step: 1,
+          ability_value_bonus_pct_max: 30,
+        }),
+      ],
+    }),
+    enemy(),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(r.damage, 1200);
+});
+
+test('0331 pays 50 % of the shield on its 0.5 s cooldown', () => {
+  const r = simulateDps(
+    build({
+      energyShield: 1000,
+      items: [
+        item('item_0331', { ability_current_shield_damage_pct: 50 }, 0.5),
+      ],
+    }),
+    enemy(),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(source(r, 'defenderHammer'), 500);
+});
+
+test('0460 pays the shield and scales it by armour up to 80 %', () => {
+  const r = simulateDps(
+    build({
+      energyShield: 1000,
+      totalArmor: 50,
+      items: [
+        item(
+          'item_0460',
+          {
+            ability_value_current_shield_damage_pct: 100,
+            ability_armor_damage_pct_per_point: 1,
+            ability_value_armor_damage_pct_per_point_max: 80,
+          },
+          0.6,
+        ),
+      ],
+    }),
+    enemy(),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(source(r, 'lionheartHammer'), 1500);
+});
+
+test('0332 active adds attack speed and movement on its duty cycle', () => {
+  const r = simulateDps(
+    build({
+      attackSpeed: 100,
+      baseMoveSpeed: 300,
+      items: [
+        item(
+          'item_0332',
+          { ability_value_duration: 6, ability_value_bonus_attack_speed: 100, ability_value_bonus_move_speed: 50 },
+          100,
+        ),
+      ],
+    }),
+    enemy(),
+    { duration: 60, mode: 'dummy', active: new Set(['item_0332']) },
+  );
+  // 6 s of a 60 s window: 10 % uptime, so +10 attack speed.
+  near(r.attackSpeed, 110);
+});
+
+test('0255 active shield feeds 0331', () => {
+  const without = simulateDps(
+    build({
+      attackDamage: 0,
+      maxHealth: 10000,
+      items: [item('item_0331', { ability_current_shield_damage_pct: 50 }, 0.5)],
+    }),
+    enemy(),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  const withShield = simulateDps(
+    build({
+      attackDamage: 0,
+      maxHealth: 10000,
+      items: [
+        item('item_0331', { ability_current_shield_damage_pct: 50 }, 0.5),
+        item(
+          'item_0255',
+          { ability_duration: 10, ability_value_shield_amount: 30, ability_self_movespeed: 80 },
+          100,
+        ),
+      ],
+    }),
+    enemy(),
+    { duration: 60, mode: 'dummy', active: new Set(['item_0255']) },
+  );
+  assert.equal(source(without, 'defenderHammer'), 0);
+  assert.ok(source(withShield, 'defenderHammer') > 0);
+});
+
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 50);
-  assert.equal(DPS_ITEM_COUNT, 80);
-  assert.equal(PANEL_FAMILY_COUNT, 9);
-  assert.equal(PANEL_ITEM_COUNT, 16);
-  assert.equal(MODELED_ITEM_COUNT, 96);
+  assert.equal(DPS_FAMILY_COUNT, 59);
+  assert.equal(DPS_ITEM_COUNT, 89);
+  assert.equal(PANEL_FAMILY_COUNT, 11);
+  assert.equal(PANEL_ITEM_COUNT, 18);
+  assert.equal(MODELED_ITEM_COUNT, 107);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');

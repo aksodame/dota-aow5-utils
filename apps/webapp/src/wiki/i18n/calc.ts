@@ -208,6 +208,10 @@ export interface DpsStrings {
     shatteredAxeMeta: (cooldown: string, duration: string) => string;
     viciousHornMeta: (cooldown: string, duration: string) => string;
     vanguardMeta: (cooldown: string, duration: string, shield: string, pct: string, move: string) => string;
+    bloodRite: string;
+    bloodRiteMeta: (cooldown: string, duration: string) => string;
+    legionShield: string;
+    legionShieldMeta: (cooldown: string, duration: string, shield: string, move: string) => string;
   };
   /** Per-second window and the kill's event log. */
   timeline: {
@@ -466,6 +470,10 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         galeStrike: 'Удар бури — серия',
         evernight: 'Меч вечной ночи — серия',
         havocHammer: '★Молот разрушения — щит',
+        soulBlade: 'Клинок очищения душ — магия',
+        shatterProc: 'Дезолятор — прок',
+        defenderHammer: 'Молот защитника — щит',
+        lionheartHammer: 'Молот Львиного сердца — щит',
       },
     },
     active: {
@@ -487,6 +495,10 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       shatteredAxeMeta: (cd, duration) => `КД ${cd} с · ${duration} с: +30 % к урону от атак, +20 % к здоровью, −25 % к скорости бега`,
       viciousHornMeta: (cd, duration) => `КД ${cd} с · ${duration} с: +35 силы`,
       vanguardMeta: (cd, duration, shield, pct, move) => `КД ${cd} с · ${duration} с: щит ${shield} + ${pct} % макс. HP, −${move} % скорости бега`,
+      bloodRite: 'Кровь жертвоприношения',
+      bloodRiteMeta: (cd, duration) => `КД ${cd} с · ${duration} с: +100 к скорости атаки, +50 к скорости бега, +15 % КДР; цена 30 % HP`,
+      legionShield: 'Боевой щит легиона пепла',
+      legionShieldMeta: (cd, duration, shield, move) => `КД ${cd} с · ${duration} с: щит ${shield} % макс. HP, −${move} к скорости бега`,
     },
     timeline: {
       title: 'Таймлайн',
@@ -512,8 +524,8 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         'Эхо 0504 — обычный физический удар: на него работают крит, физ. усилители и броня, поэтому при высоком крите оно даёт основную долю урона.',
         'Горение сумки — 0,75 % макс. HP босса за тик, но не больше 10× суммы характеристик; метка даёт +4,6 % за слой, до 10.',
         'Броня: 1 − броня/(26,66 + |броня|); пробитие режет только положительную броню; раскол 0853 — до 31 % брони.',
-        'Маг. сопротивление считается для яда, 0209, 0307 и 0161; физические источники его не читают.',
-        'Из предметов учтены перечисленные проки, активные баффы и пассивные статы; способности героя, ауры и сеты не входят.',
+        'Маг. сопротивление считается для яда, 0165, 0209, 0307 и 0161; физические источники его не читают.',
+        'Из предметов учтены перечисленные проки, активные баффы, пассивные статы и ауры 0314/0315; способности героя и сеты не входят.',
         'Когти дракона: лёгкий удар срабатывает на каждую автоатаку, тяжёлый — с шансом 1 %; в расчёте тяжёлый показан матожиданием 1 %, а не отдельным проком.',
         'Яд: тики каждые 0,25 с, каждые 3 с сгорает 20 % слоёв; если слои остались, тик всё равно бьёт уже с меньшим числом слоёв, а на нуле модификатор снимается. Урон считает сумму статов, магическое сопротивление, коррозию 0365 (до +30 % магического урона), «Урон ядом» и «Периодический урон». Шанс слоя и размер всплеска 0365 берутся из прокрутки предмета; 0238 даёт свой слой со своим шансом. 0382/0780 при наложении любого дебаффа с шансом 50/65 % добавляют ещё 1 слой яда — в расчёт входят яды, кровотечения 0467/0398, уязвимость 0217, горение сумки и 0209. Защитный яд 0238 на атакующего в расчёт не входит: манекен не бьёт.',
         '0209: шанс тика из прокрутки (80 % статов), повторный прок сразу наносит тик; шанс «рока» — до 5 слоёв, каждый снижает маг. сопротивление (здесь 6 % за слой, до 30). 0402: каждый новый слой яда сразу вызывает дополнительный тик, не более одного на атаку.',
@@ -524,6 +536,10 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         '0166/0303 добавляют по слою яда, когда их КД 1 с готов; 0402 вызывает дополнительный тик. 0124 не наносит урона — только броня.',
         'Физические прок-удары (0158/0406/0377/0457/0234/0300/0121/0210/0340 и т. п.) участвуют в 0467/0398/0217 так же, как автоатака: 0467 — шанс от любого физ. удара, 0398/0217 — от физ. крита. 0351 входит в тот же удар, что и автоатака.',
         '3 уровень: 0117/0428 — молния от урона атаки (по одной цели), 0158 — физ. прок, 0351/0406 — бонус на следующую атаку после серии, 0377 — удар от запаса щита, 0319 — слой яда; 0317/0305/0289 — активы, 0225 — активный щит (учитывается в 0377); 0349/0350 — ауры; 0392/0240 отключают криты, 0392 даёт урон от потерянной скорости.',
+        '4 уровень: 0165 — 20 маг. урона с атаки (в скрипте хардкод 20, в описании 60); 0206 — 25 % × 250 физ. + броня −5 на 3 с; 0270 — 40 % яд с атаки.',
+        '0211 — +1 AS за 3 MS сверх 250; 0461 — +1 % урона за 4 MS ниже 380 (до 30 %); 0314/0315 — аура +10/+15 ко всем статам, включая владельца.',
+        '0331 — 50 % текущего щита по КД 0,5 с; 0460 — 100 % щита с бонусом за броню до 80 %; 0332 — актив +100 AS/+50 MS на 6 с, КД 100, цена 30 % HP, +15 % КДР идёт средним за окно; 0255 — активный щит 30 % макс. HP на 10 с.',
+        '0446 (стеки за потерю HP от своих эффектов), 0212/0459/0339 (стеки за каст), 0273 (горение атакующего) и активная пыльца 0270 (промахи) в DPS не входят.',
         '0296 и MT006 срабатывают после получения урона/каста, а 0406 и 0296 в тёмных/холодных комнатах — вне окна автоатак; эти условия не считаются.',
       ],
     },
@@ -603,6 +619,10 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         galeStrike: 'Gale Strike — combo',
         evernight: 'Evernight Sword — combo',
         havocHammer: '★Havoc Hammer — shield hit',
+        soulBlade: 'Soul-cleansing Blade — magic',
+        shatterProc: 'Desolator — proc',
+        defenderHammer: 'Guardian Hammer — shield hit',
+        lionheartHammer: 'Lionheart Hammer — shield hit',
       },
     },
     active: {
@@ -624,6 +644,10 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       shatteredAxeMeta: (cd, duration) => `CD ${cd} s · ${duration} s: +30 % attack damage, +20 % health, −25 % movement`,
       viciousHornMeta: (cd, duration) => `CD ${cd} s · ${duration} s: +35 strength`,
       vanguardMeta: (cd, duration, shield, pct, move) => `CD ${cd} s · ${duration} s: ${shield} shield + ${pct} % max HP, −${move} % movement`,
+      bloodRite: 'Blood of Sacrifice',
+      bloodRiteMeta: (cd, duration) => `CD ${cd} s · ${duration} s: +100 attack speed, +50 movement, +15 % CDR; costs 30 % HP`,
+      legionShield: 'Ember Legion Battle Shield',
+      legionShieldMeta: (cd, duration, shield, move) => `CD ${cd} s · ${duration} s: ${shield} % max HP shield, −${move} movement`,
     },
     timeline: {
       title: 'Timeline',
@@ -649,10 +673,14 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         '0504\'s echo is an ordinary physical hit: crit, physical amplifiers and armor all apply to it, so with a high crit chance it carries the bulk of the damage.',
         'The bag\'s burn is 0.75 % of the boss\'s maximum HP per tick, capped at 10× the attribute total; its mark adds 4.6 % per stack, up to 10.',
         'Armor: 1 − armor/(26.66 + |armor|); penetration cuts positive armor only; 0853\'s break removes up to 31 %.',
-        'Magic resistance applies to poison, 0209, 0307 and 0161; physical sources do not read it.',
-        'Item procs, active buffs and passives are in; hero abilities, auras and sets are not.',
+        'Magic resistance applies to poison, 0165, 0209, 0307 and 0161; physical sources do not read it.',
+        'Item procs, active buffs, passives and the 0314/0315 auras are in; hero abilities and sets are not.',
         'Dragon talons: the light strike fires on every auto-attack, the heavy one has a 1 % chance; the figure uses its 1 % expected value, not a separate proc roll.',
         'Poison: ticks every 0.25 s; 20 % of the stacks decay every 3 s, the tick still lands with the reduced count while any stack remains, and the modifier is removed at zero. Damage reads the attribute total, magic resistance, 0365 corrosion (up to +30 % magic damage), poison and DoT outgoing. 0365\'s stack chance and burst size come from the item roll; 0238 adds its own stack at its own chance. 0382/0780 rolls once per debuff status and adds one more poison stack at 50/65 % — poisons, 0467/0398 bleeds, 0217 vulnerable, the bag\'s burn and 0209 are counted. 0238\'s defensive poison on attackers is not in the DPS run: the dummy does not attack.',
+        'Level 4: 0165 — 20 magic per landed attack (the script hardcodes 20, the text says 60); 0206 — 25 % × 250 physical + armour −5 for 3 s; 0270 — 40 % poison stack per attack.',
+        '0211 — +1 AS per 3 movement above 250; 0461 — +1 % damage per 4 movement below 380 (up to 30 %); 0314/0315 — an aura of +10/+15 to all stats that reaches the owner.',
+        '0331 — 50 % of the current shield on a 0.5 s cooldown; 0460 — 100 % of the shield with the armour bonus up to 80 %; 0332 — active +100 AS/+50 movement for 6 s, CD 100, costs 30 % HP, its +15 % CDR is averaged over the window; 0255 — active 30 % max HP shield for 10 s.',
+        '0446 (health-cost stacks), 0212/0459/0339 (per-cast stacks), 0273 (burn on attackers) and 0270\'s active pollen (miss chance) are not in the DPS run.',
       ],
     },
   },
@@ -731,6 +759,10 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         galeStrike: '狂风之击——连击',
         evernight: '永夜剑——连击',
         havocHammer: '★浩劫重锤——护盾打击',
+        soulBlade: '净魂之刃——魔法',
+        shatterProc: '★暗灭——触发',
+        defenderHammer: '守护之锤——护盾打击',
+        lionheartHammer: '狮心王锤——护盾打击',
       },
     },
     active: {
@@ -752,6 +784,10 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       shatteredAxeMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒：攻击伤害 +30%，生命 +20%，移动速度 −25%`,
       viciousHornMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒：力量 +35`,
       vanguardMeta: (cd, duration, shield, pct, move) => `冷却 ${cd} 秒 · ${duration} 秒：护盾 ${shield} + 最大生命 ${pct}%，移动速度 −${move}%`,
+      bloodRite: '献祭之血',
+      bloodRiteMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒：攻击速度 +100、移动速度 +50、冷却缩减 +15%；消耗 30% 生命值`,
+      legionShield: '余烬军团战盾',
+      legionShieldMeta: (cd, duration, shield, move) => `冷却 ${cd} 秒 · ${duration} 秒：最大生命 ${shield}% 护盾，移动速度 −${move}`,
     },
     timeline: {
       title: '时间线',
@@ -777,8 +813,8 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         '0504 的回响是普通物理伤害：暴击、物理增幅与护甲都会作用于它，因此高暴击时会成为主要伤害来源。',
         '背包灼烧每次跳伤为 Boss 最大生命的 0.75%，不超过属性总和的 10 倍；焚印每层 +4.6%，最多 10 层。',
         '护甲：1 − 护甲/(26.66 + |护甲|)；穿透只削减正护甲；0853 的破甲最多 31%。',
-        '魔法抗性作用于毒、0209、0307 与 0161；物理来源不读取。',
-        '物品计入上述触发、主动增益与被动属性；英雄技能、光环与套装未计入。',
+        '魔法抗性作用于毒、0165、0209、0307 与 0161；物理来源不读取。',
+        '物品计入上述触发、主动增益、被动属性与 0314/0315 光环；英雄技能与套装未计入。',
         '龙爪：轻击每次普通攻击都会触发，重击有 1% 几率；计算中重击按 1% 期望值显示，而不是单独掷骰。',
         '毒：每 0.25 秒跳伤；每 3 秒衰减 20% 层数，只要还有层数，该次跳伤仍按减少后的层数结算，减到零时移除。伤害读取属性总和、魔法抗性、0365 的腐蚀（最多 +30% 魔法伤害）、毒与持续伤害增幅。0365 的加层几率与爆发比例取自物品随机值；0238 按自身几率加 1 层。0382/0780 每施加一次负面状态时按 50/65% 几率再加 1 层毒——计入毒、0467/0398 流血、0217 易伤、背包灼烧与 0209。0238 对攻击者的防御性施毒不计入 DPS：木桩不会攻击。',
         '0209：跳伤几率取自随机值（80% 属性），再次触发会立即结算一次；厄运最多 5 层，每层降低魔法抗性（此处每层 6%，最多 30）。0402：每次新增毒层立即额外结算一次跳伤，每次攻击最多一次。',
@@ -789,6 +825,10 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         '0166/0303 在 1 秒冷却就绪时增加 1 层毒；0402 额外结算一次跳伤。0124 不造成伤害，只破甲。',
         '物理物品命中（0158/0406/0377/0457/0234/0300/0121/0210/0340 等）与普攻一样参与 0467/0398/0217：0467 对任何物理命中判定，0398/0217 对物理暴击判定。0351 属于同一次普攻命中。',
         '3 级：0117/0428 为基于攻击伤害的闪电（单体），0158 为物理触发，0351/0406 在连击后强化下一击，0377 按护盾造成伤害，0319 加毒层；0317/0305/0289 为主动，0225 为主动护盾（计入 0377）；0349/0350 为光环；0392/0240 禁用暴击，0392 按损失移速增伤。',
+        '4 级：0165——每次命中附加 20 点魔法伤害（脚本写死 20，描述写 60）；0206——25% 几率造成 250 物理伤害并使护甲 −5，持续 3 秒；0270——每次攻击 40% 几率加 1 层毒。',
+        '0211——移速高于 250 时每 3 点提供 +1 攻速；0461——移速低于 380 时每 4 点提供 +1% 伤害（最多 30%）；0314/0315——全属性 +10/+15 的光环，对持有者也生效。',
+        '0331——每 0.5 秒按当前护盾的 50% 造成物理伤害；0460——按护盾 100% 并受护甲加成（最多 80%）；0332——主动：6 秒内 +100 攻速、+50 移速，冷却 100 秒，消耗 30% 生命，+15% 冷却缩减按窗口平均计入；0255——主动：10 秒内获得最大生命 30% 的护盾。',
+        '0446（生命消耗叠层）、0212/0459/0339（施法叠层）、0273（攻击者灼烧）以及 0270 的主动花粉（致盲）不计入 DPS。',
         '0296 与 MT006 在受伤/施法后触发，0406 与 0296 在黑暗/寒冷房间的效果不在普攻窗口内；这些条件未计入。',
       ],
     },
@@ -800,7 +840,7 @@ export const CALC: Localised<CalcStrings> = {
     title: 'Статы персонажа',
     wipTitle: 'Вкладка в работе (WIP)',
     wip:
-      'База героя считается сама — для выбранного героя на 30 уровне, со своей веткой профессии и всеми общими деревьями (взятыми целиком), но её можно править руками. Ещё считает предметы в 6 слотах, нейтральном, у питомца, в сумке и у души, 3 руны, прокрутку статов как в карточке предмета (у предков настраивается и наложенная грань: своя прокрутка и «фикс»). Пока не учитываются: ванильные таланты героя, сеты и способности; боевые эффекты предметов считает подвкладка DPS; руны статов не добавляют — они правят параметры способностей героя.\n\nВ подвкладке DPS считаются все предметы до 3-го уровня включительно и их предки — статы, прок-эффекты, яды, активы и ауры; отдельно учтён Скипетр огненного яда (0382) и его предок 0780.',
+      'База героя считается сама — для выбранного героя на 30 уровне, со своей веткой профессии и всеми общими деревьями (взятыми целиком), но её можно править руками. Ещё считает предметы в 6 слотах, нейтральном, у питомца, в сумке и у души, 3 руны, прокрутку статов как в карточке предмета (у предков настраивается и наложенная грань: своя прокрутка и «фикс»). Пока не учитываются: ванильные таланты героя, сеты и способности; боевые эффекты предметов считает подвкладка DPS; руны статов не добавляют — они правят параметры способностей героя.\n\nВ подвкладке DPS считаются статы всех предметов до 4-го уровня включительно и их предков; из боевых эффектов — перечисленные в примечаниях проки, яды, активы и ауры. Скипетр огненного яда (0382) и его предок 0780 учтены отдельно.',
     hero: 'Герой:',
     note: {
       computed: (level) => `${level} уровень · посчитано из игры`,
@@ -905,6 +945,8 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.amp)}% маг. урона, пока не исчерпан «долг» (он растёт за применения заклинаний)`;
           case 'stoneGolem':
             return `Скрипт: −${n(f.attackSpeed)}% скорости атаки и −${n(f.moveSpeed)}% передвижения; в описании — только −${n(f.tooltipPct)}% передвижения`;
+          case 'allStatsAura':
+            return `аура: +${n(f.stats)} ко всем статам (действует и на владельца)`;
         }
       },
     },
@@ -1030,7 +1072,7 @@ export const CALC: Localised<CalcStrings> = {
     title: 'Character stats',
     wipTitle: 'Work in progress',
     wip:
-      "The hero's base is computed for you — the chosen hero at level 30, with their own profession tree and every common tree taken in full — and you can still edit it by hand. Items in the 6 slots, the neutral slot, the pet, the bag and the soul are counted, plus 3 runes, with stats rolled exactly as on the item card (an ancestral item's fate stone has its own roll and fixed stat too). Not counted yet: the hero's stock talents, sets and abilities; item combat effects are the DPS sub-tab's job; runes add no stats — they change the hero's abilities.\n\nThe DPS sub-tab counts every item up to level 3 inclusive and their ancestors — stats, procs, poisons, actives and auras; the Fire Venom Scepter (0382) and its ancestor 0780 are modelled separately.",
+      "The hero's base is computed for you — the chosen hero at level 30, with their own profession tree and every common tree taken in full — and you can still edit it by hand. Items in the 6 slots, the neutral slot, the pet, the bag and the soul are counted, plus 3 runes, with stats rolled exactly as on the item card (an ancestral item's fate stone has its own roll and fixed stat too). Not counted yet: the hero's stock talents, sets and abilities; item combat effects are the DPS sub-tab's job; runes add no stats — they change the hero's abilities.\n\nThe DPS sub-tab counts the stats of every item up to level 4 inclusive and their ancestors; of the combat effects, the procs, poisons, actives and auras listed in the notes are modelled. The Fire Venom Scepter (0382) and its ancestor 0780 are modelled separately.",
     hero: 'Hero:',
     note: {
       computed: (level) => `level ${level} · computed from the game`,
@@ -1135,6 +1177,8 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.amp)}% magical damage until the "debt" runs out (it grows with every spell cast)`;
           case 'stoneGolem':
             return `Script: −${n(f.attackSpeed)}% attack speed and −${n(f.moveSpeed)}% movement; the tooltip says only −${n(f.tooltipPct)}% movement`;
+          case 'allStatsAura':
+            return `aura: +${n(f.stats)} to all stats (it reaches the owner too)`;
         }
       },
     },
@@ -1252,7 +1296,7 @@ export const CALC: Localised<CalcStrings> = {
     title: '角色属性',
     wipTitle: '施工中',
     wip:
-      '英雄的基础属性自动计算：所选英雄 30 级，含本职业天赋树与全部通用天赋树（全部点满），也可以手动修改。另计 6 个物品栏、中立物品栏、宠物、背包与命魂中的物品以及 3 个符印，属性随机值与物品卡片一致（先祖物品还可调节其命石：独立随机值与「固定」）。暂未计入：英雄原版天赋、套装与技能；物品战斗效果由 DPS 子标签计算；符印不加属性——它们修改英雄技能的参数。\n\nDPS 子标签计算到 3 级为止的所有物品及其先祖——属性、触发效果、毒、主动与光环；火毒权杖（0382）及其先祖 0780 单独计入。',
+      '英雄的基础属性自动计算：所选英雄 30 级，含本职业天赋树与全部通用天赋树（全部点满），也可以手动修改。另计 6 个物品栏、中立物品栏、宠物、背包与命魂中的物品以及 3 个符印，属性随机值与物品卡片一致（先祖物品还可调节其命石：独立随机值与「固定」）。暂未计入：英雄原版天赋、套装与技能；物品战斗效果由 DPS 子标签计算；符印不加属性——它们修改英雄技能的参数。\n\nDPS 子标签计算到 4 级为止所有物品及其先祖的属性；战斗效果只计入说明中列出的触发、毒、主动与光环。火毒权杖（0382）及其先祖 0780 单独计入。',
     hero: '英雄：',
     note: {
       computed: (level) => `${level} 级 · 按游戏数据计算`,
@@ -1355,6 +1399,8 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.amp)}% 魔法伤害，直到「债务」耗尽（每次施法都会增加债务）`;
           case 'stoneGolem':
             return `脚本：攻击速度 −${n(f.attackSpeed)}%、移动速度 −${n(f.moveSpeed)}%；描述只写移动速度 −${n(f.tooltipPct)}%`;
+          case 'allStatsAura':
+            return `光环：全属性 +${n(f.stats)}（对持有者也生效）`;
         }
       },
     },
