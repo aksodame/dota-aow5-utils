@@ -943,16 +943,39 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     }
   };
 
-  // One expected proc chance per auto-attack. Both bleed items are separate,
-  // and 0398 requires a crit while 0467 does not.
-  const autoProcChance = (): number =>
-    (c.bleedProc ? c.bleedProcChance / 100 : 0) + (c.critBleed ? (c.autoCrit / 100) * (c.critBleedChance / 100) : 0);
-
   const applyBleed = (pool: number): void => {
     if (!(pool > 0)) return;
     bleedPool += pool;
     bleedLeft = BLEED_TICKS;
     if (bleedAt === null) bleedAt = time + c.bleedInterval;
+  };
+
+  // Every physical damage instance can feed the on-damage passives: 0467
+  // bleeds from any physical hit, 0398 only from physical crits, and 0217
+  // rolls its vulnerable/armour break from physical crits. They are evaluated
+  // as expected values, so the source bars do not need per-hit crit labels.
+  // `mkb` is false for 0351, whose bonus belongs to the same auto-attack event
+  // as the auto itself.
+  const physicalTriggers = (hit: number, critChancePct: number, mkb = true): void => {
+    if (!(hit > 0)) return;
+    if (c.bleedProc && c.bleedProcChance > 0) {
+      applyBleed(hit * (c.bleedProcChance / 100) * (BLEED_POOL_PCT / 100));
+    }
+    if (c.critBleed && critChancePct > 0 && c.critBleedChance > 0) {
+      const critFactor = 1 + (critChancePct / 100) * (c.critMultiplier - 1);
+      const critHit = (hit / critFactor) * c.critMultiplier;
+      applyBleed(critHit * (critChancePct / 100) * (c.critBleedChance / 100) * (BLEED_POOL_PCT / 100));
+    }
+    if (mkb && c.mkb && c.mkbChance > 0 && critChancePct > 0 && time + EPS >= mkbReady) {
+      const proc = (critChancePct / 100) * (c.mkbChance / 100);
+      if (proc > 0) {
+        vulnStacks = Math.min(5, vulnStacks + proc);
+        armorStacks = Math.min(c.mkbMaxStacks, armorStacks + proc);
+        lastVuln = time;
+        lastArmor = time;
+        mkbReady = time + c.mkbCooldown;
+      }
+    }
   };
 
   const addPoisonStacks = (count: number): void => {
@@ -973,22 +996,12 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     const autoRaw = Math.max(0, b.attackDamage) * (1 + b.allAttackDamagePct / 100);
     const auto = directDamage(b, enemy, c, autoRaw, ctx(burning, true));
     add('auto', auto, 1);
+    physicalTriggers(auto, c.autoCrit);
     // On-hit items check the target is still alive; a killing auto-attack does
     // not also get its talons strike or start a bleed.
     if (!dummy && hp <= 0) {
       if (c.aps > 0) attackAt += 1 / c.aps;
       return;
-    }
-
-    if (c.mkb && auto > 0 && c.autoCrit > 0 && time + EPS >= mkbReady) {
-      const proc = (c.autoCrit / 100) * (c.mkbChance / 100);
-      if (proc > 0) {
-        vulnStacks = Math.min(5, vulnStacks + proc);
-        armorStacks = Math.min(c.mkbMaxStacks, armorStacks + proc);
-        lastVuln = time;
-        lastArmor = time;
-        mkbReady = time + c.mkbCooldown;
-      }
     }
 
     // Flat on-attack procs (0129 Dart, 0131 Crystal Sword). The DPS tab
@@ -997,6 +1010,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       if (proc.chance > 0 && proc.raw > 0) {
         const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
         add(proc.source, hit * proc.chance, proc.chance);
+        physicalTriggers(hit, c.abilityCrit);
       }
     }
 
@@ -1019,6 +1033,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       const raw = autoRaw * c.moonShardPct / 100;
       const hit = directDamage(b, enemy, c, raw, ctx(burnUntil > time));
       add('moonShard', hit * c.moonShardChance, c.moonShardChance);
+      physicalTriggers(hit, c.abilityCrit);
     }
     if (c.mjollnirChance > 0 && c.mjollnirPct > 0 && time + EPS >= mjollnirReady) {
       const raw = autoRaw * c.mjollnirPct / 100;
@@ -1040,10 +1055,12 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     if (c.galeStrike && attacks > c.galeStrike.every && (attacks - 1) % c.galeStrike.every === 0) {
       const hit = directDamage(b, enemy, c, autoRaw * c.galeStrike.multiplier, ctx(burnUntil > time, true));
       add('galeStrike', hit, 1);
+      physicalTriggers(hit, c.autoCrit, false);
     }
     if (c.evernight && attacks > c.evernight.every && (attacks - 1) % c.evernight.every === 0) {
       const hit = directDamage(b, enemy, c, autoRaw * c.evernight.multiplier, ctx(burnUntil > time));
       add('evernight', hit, 1);
+      physicalTriggers(hit, c.abilityCrit);
     }
 
     // 0121 / 0210 / 0340 / 0377: one hit when their own cooldown is ready.
@@ -1059,6 +1076,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       if (time + EPS < ready) continue;
       const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
       add(proc.source, hit, 1);
+      physicalTriggers(hit, c.abilityCrit);
       if (proc.source === 'sharpAxe') sharpAxeReady = time + proc.cooldown;
       else if (proc.source === 'skullcrusher') skullReady = time + proc.cooldown;
       else if (proc.source === 'ruinHammer') ruinReady = time + proc.cooldown;
@@ -1071,6 +1089,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       if (!(proc.raw > 0)) continue;
       const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
       add(proc.source, hit, 1);
+      physicalTriggers(hit, c.abilityCrit);
     }
     // 0124 / 0234 / 0300 stack one broken-armour modifier; it is refreshed by
     // every attack and expires after 5 s without one. The first hit of the
@@ -1106,9 +1125,6 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         add('vortexDot', dot * c.vortexChance, c.vortexChance);
       }
     }
-
-    const procChance = autoProcChance();
-    if (procChance > 0 && auto > 0) applyBleed(auto * (BLEED_POOL_PCT / 100) * procChance);
 
     if (c.talons) {
       const scaled = maxHp * (enemy.kind === 'boss' ? c.talonsBossPct / 100 : 1);

@@ -414,6 +414,42 @@ test('Maelstrom, Moon Shard and Mjollnir scale their hits from attack damage', (
   assert.ok(source(simulateDps(baseBuild, enemy(), { duration: 10, mode: 'dummy' }), 'auto') > 0);
 });
 
+test('physical item hits feed 0467/0398 bleed and 0217 MKB', () => {
+  const evernight = item('item_0406', {
+    ability_value_c_required_attack_count: 4,
+    ability_value_damage_multiplier: 250,
+  });
+  const bleedProc = item('item_0467', {
+    ability_value_min_trigger_chance_pct: 100,
+    ability_value_max_trigger_chance_pct: 100,
+  });
+  const bleedCrit = item('item_0398', { ability_value_trigger_chance_pct: 100 });
+  const mkb = item('item_0217', {
+    ability_value_trigger_chance_pct: 100,
+    ability_value_armor_max_stacks: 30,
+    ability_armor_duration: 3,
+    ability_vulnerable_duration: 5,
+  });
+
+  const procOnly = simulateDps(build({ items: [evernight, bleedProc] }), enemy(), {
+    duration: 10,
+    mode: 'dummy',
+  });
+  const critOnly = simulateDps(
+    build({ physicalCritChancePct: 100, items: [evernight, bleedCrit] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  const withMkb = simulateDps(
+    build({ physicalCritChancePct: 100, items: [evernight, mkb] }),
+    enemy({ armor: 100 }),
+    { duration: 10, mode: 'dummy' },
+  );
+  assert.ok(source(procOnly, 'bleed') > 0);
+  assert.ok(source(critOnly, 'bleed') > 0);
+  assert.ok(withMkb.armorAfterBreak < 100);
+});
+
 test('0351 and 0406 pay their attack-combo bonus on the following attack', () => {
   const gale = simulateDps(
     build({ items: [item('item_0351', { ability_required_attack_count: 5, ability_damage_multiplier: 200 })] }),
