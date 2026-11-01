@@ -34,6 +34,7 @@ const build = (over: Partial<DpsBuild> = {}): DpsBuild => ({
   omniCritChancePct: 0,
   critDamagePct: 180,
   physicalDamageAddPct: 0,
+  totalArmor: 0,
   outgoingMultiplier: 1,
   spellAmplifyPct: 0,
   normalAttackAmpPct: 0,
@@ -52,6 +53,7 @@ const build = (over: Partial<DpsBuild> = {}): DpsBuild => ({
   attackDamagePerAgi: 0,
   attackDamagePerStr: 0,
   energyShield: 0,
+  anyLifestealPct: 0,
   noCrit: false,
   agilityAttackSpeedCap: 240,
   agilityAttackSpeedDecay: 500,
@@ -243,6 +245,74 @@ test('Witch Blade pays a spellblade tick and its doom stacks', () => {
   const r = simulateDps(witch, enemy({ kind: 'boss', magicResistancePct: 50 }), { duration: 1.6, mode: 'dummy' });
   assert.ok(source(r, 'witchBlade') > 0);
   assert.equal(r.doomStacks, 1);
+});
+
+test('a decay tick still hits while any poison stacks remain', () => {
+  const poisonBuild = build({
+    attackDamage: 0,
+    totalAttributes: 1000,
+    items: [
+      item('item_0365', {
+        ability_value_poison_trigger_chance_pct: 100,
+        ability_value_all_stats_damage_pct: 0,
+      }),
+    ],
+  });
+  // The first stack lands at 1 s, so the modifier decays at 4 s; the tick at
+  // that boundary must still deal damage with the reduced stack count.
+  const r = simulateDps(poisonBuild, enemy({ kind: 'boss', magicResistancePct: 0 }), {
+    duration: 4.2,
+    mode: 'dummy',
+  });
+  const tick = r.events.find((e) => e.source === 'poison' && Math.abs(e.time - 4) < 1e-6);
+  assert.ok(tick !== undefined, 'the decay tick is missing');
+  assert.ok((tick?.damage ?? 0) > 0);
+});
+
+test('0382 adds one poison stack per debuff application and does not chain', () => {
+  const base = build({
+    attackDamage: 0,
+    totalAttributes: 1000,
+    items: [
+      item('item_0365', {
+        ability_value_poison_trigger_chance_pct: 100,
+        ability_value_all_stats_damage_pct: 0,
+      }),
+    ],
+  });
+  const half = build({
+    ...base,
+    items: [...base.items, item('item_0382', { ability_value_trigger_chance_pct: 50 })],
+  });
+  const always = build({
+    ...base,
+    items: [...base.items, item('item_0382', { ability_value_trigger_chance_pct: 100 })],
+  });
+  const plain = simulateDps(base, enemy({ kind: 'boss', magicResistancePct: 0 }), { duration: 1.6, mode: 'dummy' });
+  const halfRoll = simulateDps(half, enemy({ kind: 'boss', magicResistancePct: 0 }), { duration: 1.6, mode: 'dummy' });
+  const alwaysRoll = simulateDps(always, enemy({ kind: 'boss', magicResistancePct: 0 }), { duration: 1.6, mode: 'dummy' });
+  near(plain.poisonStacks, 1);
+  near(halfRoll.poisonStacks, 1.5);
+  // The extra stack is guarded in the script: it does not roll again.
+  near(alwaysRoll.poisonStacks, 2);
+});
+
+test('0382 turns a non-poison debuff into poison and a pendant tick', () => {
+  const r = simulateDps(
+    build({
+      totalAttributes: 1000,
+      critChancePct: 100,
+      items: [
+        item('item_0217', { ability_value_trigger_chance_pct: 100 }),
+        item('item_0382', { ability_value_trigger_chance_pct: 100 }),
+        item('item_0402', {}),
+      ],
+    }),
+    enemy({ kind: 'boss', magicResistancePct: 0 }),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(r.poisonStacks, 1);
+  assert.ok(source(r, 'poison') > 0);
 });
 
 test('the poison pendant settles an extra tick on a poison application', () => {
@@ -609,15 +679,236 @@ test('level-3 self-buffs use their cooldowns and scale attack damage', () => {
   assert.ok(horn.damage > baseBuild.damage);
 });
 
+test('0165 pays its hardcoded 20 magic on every landed attack', () => {
+  const r = simulateDps(
+    build({
+      items: [item('item_0165', { ability_damage: 60 })],
+    }),
+    enemy({ kind: 'boss', magicResistancePct: 0 }),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  // The script hardcodes 20 even though the item text says 60.
+  near(source(r, 'soulBlade'), 20);
+});
+
+test('0206 procs 250 physical and lowers armour by 5', () => {
+  const r = simulateDps(
+    build({
+      items: [
+        item('item_0206', {
+          ability_ps_chance: 25,
+          ability_ps_damage: 250,
+          ability_armor_reduce: 5,
+          ability_duration: 3,
+        }),
+      ],
+    }),
+    enemy({ kind: 'boss' }),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(source(r, 'shatterProc'), 62.5);
+});
+
+test('0270 adds a 40 % poison stack per attack', () => {
+  const r = simulateDps(
+    build({
+      attackDamage: 0,
+      totalAttributes: 1000,
+      items: [item('item_0270', {})],
+    }),
+    enemy({ kind: 'boss', magicResistancePct: 0 }),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(r.poisonStacks, 0.4);
+  assert.ok(source(r, 'poison') > 0);
+});
+
+test('0211 turns movement above 250 into attack speed', () => {
+  const r = simulateDps(
+    build({
+      attackSpeed: 100,
+      baseMoveSpeed: 350,
+      items: [
+        item('item_0211', {
+          ability_movespeed_threshold: 250,
+          ability_movespeed_per_attack_speed: 3,
+          ability_bonus_attack_speed_per_step: 1,
+        }),
+      ],
+    }),
+    enemy(),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(r.attackSpeed, 133);
+});
+
+test('0461 turns movement lost below 380 into outgoing damage', () => {
+  const r = simulateDps(
+    build({
+      baseMoveSpeed: 300,
+      items: [
+        item('item_0461', {
+          ability_value_movespeed_threshold: 380,
+          ability_movespeed_step: 4,
+          ability_bonus_pct_per_step: 1,
+          ability_value_bonus_pct_max: 30,
+        }),
+      ],
+    }),
+    enemy(),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(r.damage, 1200);
+});
+
+test('0331 pays 50 % of the shield on its 0.5 s cooldown', () => {
+  const r = simulateDps(
+    build({
+      energyShield: 1000,
+      items: [
+        item('item_0331', { ability_current_shield_damage_pct: 50 }, 0.5),
+      ],
+    }),
+    enemy(),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(source(r, 'defenderHammer'), 500);
+});
+
+test('0460 pays the shield and scales it by armour up to 80 %', () => {
+  const r = simulateDps(
+    build({
+      energyShield: 1000,
+      totalArmor: 50,
+      items: [
+        item(
+          'item_0460',
+          {
+            ability_value_current_shield_damage_pct: 100,
+            ability_armor_damage_pct_per_point: 1,
+            ability_value_armor_damage_pct_per_point_max: 80,
+          },
+          0.6,
+        ),
+      ],
+    }),
+    enemy(),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(source(r, 'lionheartHammer'), 1500);
+});
+
+test('0332 active adds attack speed and movement on its duty cycle', () => {
+  const r = simulateDps(
+    build({
+      attackSpeed: 100,
+      baseMoveSpeed: 300,
+      items: [
+        item(
+          'item_0332',
+          { ability_value_duration: 6, ability_value_bonus_attack_speed: 100, ability_value_bonus_move_speed: 50 },
+          100,
+        ),
+      ],
+    }),
+    enemy(),
+    { duration: 60, mode: 'dummy', active: new Set(['item_0332']) },
+  );
+  // 6 s of a 60 s window: 10 % uptime, so +10 attack speed.
+  near(r.attackSpeed, 110);
+});
+
+test('0362 pays 350 % of all attributes as pure damage on its cooldown', () => {
+  const r = simulateDps(
+    build({
+      totalAttributes: 1000,
+      items: [
+        item(
+          'item_0362',
+          {
+            ability_value_damage_pct: 350,
+            ability_lifesteal_damage_bonus_pct: 0.5,
+            ability_value_lifesteal_damage_bonus_max_pct: 50,
+          },
+          4.5,
+        ),
+      ],
+    }),
+    enemy({ kind: 'boss', armor: 188, magicResistancePct: 91 }),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(source(r, 'reaperSlash'), 3500);
+});
+
+test('0362 scales its slash with every lifesteal type', () => {
+  const r = simulateDps(
+    build({
+      totalAttributes: 1000,
+      anyLifestealPct: 20,
+      items: [
+        item(
+          'item_0362',
+          {
+            ability_value_damage_pct: 350,
+            ability_lifesteal_damage_bonus_pct: 0.5,
+            ability_value_lifesteal_damage_bonus_max_pct: 50,
+          },
+          4.5,
+        ),
+      ],
+    }),
+    enemy({ kind: 'boss' }),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  near(source(r, 'reaperSlash'), 3850);
+});
+
+test('0255 active shield feeds 0331', () => {
+  const without = simulateDps(
+    build({
+      attackDamage: 0,
+      maxHealth: 10000,
+      items: [item('item_0331', { ability_current_shield_damage_pct: 50 }, 0.5)],
+    }),
+    enemy(),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  const withShield = simulateDps(
+    build({
+      attackDamage: 0,
+      maxHealth: 10000,
+      items: [
+        item('item_0331', { ability_current_shield_damage_pct: 50 }, 0.5),
+        item(
+          'item_0255',
+          { ability_duration: 10, ability_value_shield_amount: 30, ability_self_movespeed: 80 },
+          100,
+        ),
+      ],
+    }),
+    enemy(),
+    { duration: 60, mode: 'dummy', active: new Set(['item_0255']) },
+  );
+  assert.equal(source(without, 'defenderHammer'), 0);
+  assert.ok(source(withShield, 'defenderHammer') > 0);
+});
+
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 49);
-  assert.equal(DPS_ITEM_COUNT, 78);
-  assert.equal(PANEL_FAMILY_COUNT, 9);
-  assert.equal(PANEL_ITEM_COUNT, 16);
-  assert.equal(MODELED_ITEM_COUNT, 94);
+  assert.equal(DPS_FAMILY_COUNT, 60);
+  assert.equal(DPS_ITEM_COUNT, 96);
+  assert.equal(PANEL_FAMILY_COUNT, 11);
+  assert.equal(PANEL_ITEM_COUNT, 18);
+  assert.equal(MODELED_ITEM_COUNT, 114);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
+  assert.equal(mechanicFamilyOf('item_0780')?.base, 'item_0382');
+  assert.equal(mechanicFamilyOf('item_0708')?.base, 'item_0270');
+  assert.equal(mechanicFamilyOf('item_0715')?.base, 'item_0332');
+  assert.equal(mechanicFamilyOf('item_0707')?.base, 'item_0255');
+  assert.equal(mechanicFamilyOf('item_0726')?.base, 'item_0460');
+  assert.equal(mechanicFamilyOf('item_0727')?.base, 'item_0461');
+  assert.equal(mechanicFamilyOf('item_0778')?.base, 'item_0362');
   assert.equal(mechanicFamilyOf('item_0827')?.base, 'item_0646');
   assert.equal(mechanicFamilyOf('item_0730')?.base, 'item_0300');
   assert.equal(mechanicFamilyOf('item_0728')?.base, 'item_0340');

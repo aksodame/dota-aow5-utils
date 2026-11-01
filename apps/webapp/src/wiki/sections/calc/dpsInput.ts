@@ -55,6 +55,7 @@ export function buildDpsInput(
     omniCritChancePct: panel('omni_crit_chance_pct'),
     critDamagePct: critDamageTotal(panel('crit_damage_pct')),
     physicalDamageAddPct: panel('physical_damage_add_pct'),
+    totalArmor: panel('bonus_armor'),
     outgoingMultiplier,
     spellAmplifyPct: panel('spell_amplify_pct'),
     normalAttackAmpPct: extra('normal_attack_damage_amp_pct'),
@@ -91,6 +92,12 @@ export function buildDpsInput(
       extra('base_energy_shield') +
       panel('bonus_strength') *
         (items.find((item) => item.id === 'item_0329' || item.id === 'item_0714')?.stats.ability_shield_per_strength ?? 0),
+    anyLifestealPct:
+      extra('attack_lifesteal_pct') +
+      extra('spell_lifesteal_pct') +
+      extra('physical_lifesteal_pct') +
+      extra('magical_lifesteal_pct') +
+      extra('omni_lifesteal_pct'),
     noCrit: false,
     agilityAttackSpeedCap: input.file.attrBonus.agility_attack_speed_cap,
     agilityAttackSpeedDecay: input.file.attrBonus.agility_attack_speed_decay,
