@@ -48,7 +48,13 @@ export type DpsRole =
   | 'galeStrike'
   | 'evernight'
   | 'havocHammer'
-  | 'carnageSpike';
+  | 'carnageSpike'
+  | 'vanguard'
+  | 'frostFang'
+  | 'hunterChain'
+  | 'gleamEdge'
+  | 'shadowCloak'
+  | 'frostPendant';
 
 export interface DpsFamily {
   kind: 'dps';
@@ -69,7 +75,7 @@ export interface PanelFamily {
 export type MechanicFamily = DpsFamily | PanelFamily;
 
 /**
- * The DPS mechanics: 43 families, base + ancestor = 60 item ids. Sorrow is
+ * The DPS mechanics: 49 families, base + ancestor = 78 item ids. Sorrow is
  * included because its armour penetration is read in `dpsInput.ts`, not
  * because it has a proc.
  */
@@ -103,20 +109,26 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'ruinHammer', base: 'item_0340', ancestor: 'item_0728', sources: ['ruinHammer'] },
   { kind: 'dps', role: 'moveHunt', base: 'item_0360', ancestor: 'item_0718', sources: [] },
   { kind: 'dps', role: 'tolerance', base: 'item_0392', sources: [] },
-  { kind: 'dps', role: 'unyielding', base: 'item_0240', sources: [] },
+  { kind: 'dps', role: 'unyielding', base: 'item_0240', ancestor: 'item_0705', sources: [] },
   { kind: 'dps', role: 'beastBoots', base: 'item_0350', sources: [] },
   { kind: 'dps', role: 'beastPendant', base: 'item_0349', sources: [] },
-  { kind: 'dps', role: 'lionheart', base: 'item_0329', sources: [] },
+  { kind: 'dps', role: 'lionheart', base: 'item_0329', ancestor: 'item_0714', sources: [] },
   { kind: 'dps', role: 'shadowMask', base: 'item_0317', sources: [] },
-  { kind: 'dps', role: 'shatteredAxe', base: 'item_0305', sources: [] },
-  { kind: 'dps', role: 'viciousHorn', base: 'item_0289', sources: [] },
+  { kind: 'dps', role: 'shatteredAxe', base: 'item_0305', ancestor: 'item_0425', sources: [] },
+  { kind: 'dps', role: 'viciousHorn', base: 'item_0289', ancestor: 'item_0711', sources: [] },
   { kind: 'dps', role: 'maelstrom', base: 'item_0117', sources: ['maelstrom'] },
   { kind: 'dps', role: 'moonShard', base: 'item_0158', sources: ['moonShard'] },
-  { kind: 'dps', role: 'mjollnir', base: 'item_0428', sources: ['mjollnir'] },
+  { kind: 'dps', role: 'mjollnir', base: 'item_0428', ancestor: 'item_0722', sources: ['mjollnir'] },
   { kind: 'dps', role: 'galeStrike', base: 'item_0351', sources: ['galeStrike'] },
-  { kind: 'dps', role: 'evernight', base: 'item_0406', sources: ['evernight'] },
+  { kind: 'dps', role: 'evernight', base: 'item_0406', ancestor: 'item_0721', sources: ['evernight'] },
   { kind: 'dps', role: 'havocHammer', base: 'item_0377', sources: ['havocHammer'] },
   { kind: 'dps', role: 'carnageSpike', base: 'item_0319', sources: ['poison'] },
+  { kind: 'dps', role: 'vanguard', base: 'item_0225', ancestor: 'item_0703', sources: [] },
+  { kind: 'dps', role: 'frostFang', base: 'item_0296', ancestor: 'item_0712', sources: [] },
+  { kind: 'dps', role: 'hunterChain', base: 'item_0654', ancestor: 'item_0881', sources: [] },
+  { kind: 'dps', role: 'gleamEdge', base: 'item_MT006', ancestor: 'item_0887', sources: [] },
+  { kind: 'dps', role: 'shadowCloak', base: 'item_0168', ancestor: 'item_0701', sources: [] },
+  { kind: 'dps', role: 'frostPendant', base: 'item_0175', ancestor: 'item_0702', sources: [] },
 ];
 
 /**
@@ -155,6 +167,7 @@ export const ACTIVE_ITEM_IDS: ReadonlySet<string> = new Set([
   ...dpsItemIds('shadowMask'),
   ...dpsItemIds('shatteredAxe'),
   ...dpsItemIds('viciousHorn'),
+  ...dpsItemIds('vanguard'),
 ]);
 export const PANEL_ITEM_IDS: ReadonlySet<string> = new Set(PANEL_FAMILIES.flatMap(ids));
 export const MODELED_ITEM_IDS: ReadonlySet<string> = new Set([...DPS_ITEM_IDS, ...PANEL_ITEM_IDS]);

@@ -90,7 +90,7 @@ export function buildDpsInput(
     energyShield:
       extra('base_energy_shield') +
       panel('bonus_strength') *
-        (items.find((item) => item.id === 'item_0329')?.stats.ability_shield_per_strength ?? 0),
+        (items.find((item) => item.id === 'item_0329' || item.id === 'item_0714')?.stats.ability_shield_per_strength ?? 0),
     noCrit: false,
     agilityAttackSpeedCap: input.file.attrBonus.agility_attack_speed_cap,
     agilityAttackSpeedDecay: input.file.attrBonus.agility_attack_speed_decay,

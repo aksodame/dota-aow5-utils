@@ -430,6 +430,39 @@ test('0351 and 0406 pay their attack-combo bonus on the following attack', () =>
   near(source(evernight, 'evernight'), 2 * 1000 * 2.5);
 });
 
+test('0225 Vanguard feeds its active shield into 0377 on cooldown', () => {
+  const items = [
+    item('item_0225', {
+      ability_duration: 6,
+      ability_value_shield_amount: 300,
+      ability_value_max_health_pct: 25,
+      ability_self_movespeed_pct: 15,
+    }, 60),
+    item('item_0377', { ability_current_shield_damage_pct: 80 }, 2),
+  ];
+  const inactive = simulateDps(build({ maxHealth: 1000, items }), enemy(), { duration: 10, mode: 'dummy' });
+  const active = simulateDps(build({ maxHealth: 1000, items }), enemy(), {
+    duration: 10,
+    mode: 'dummy',
+    active: new Set(['item_0225']),
+  });
+  assert.ok(source(active, 'havocHammer') > source(inactive, 'havocHammer'));
+});
+
+test('the level-3 ancestors use their own values', () => {
+  const base = simulateDps(
+    build({ energyShield: 1000, items: [item('item_0428', { ability_trigger_chance_pct: 50, ability_value_damage: 250 }, 1)] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  const ancestor = simulateDps(
+    build({ energyShield: 1000, items: [item('item_0722', { ability_trigger_chance_pct: 50, ability_value_damage: 500 }, 1)] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  assert.ok(source(ancestor, 'mjollnir') > source(base, 'mjollnir'));
+});
+
 test('0319 Carnage Spike adds a poison stack on its 0.5 s cooldown', () => {
   const r = simulateDps(
     build({
@@ -541,11 +574,11 @@ test('level-3 self-buffs use their cooldowns and scale attack damage', () => {
 });
 
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 43);
-  assert.equal(DPS_ITEM_COUNT, 60);
+  assert.equal(DPS_FAMILY_COUNT, 49);
+  assert.equal(DPS_ITEM_COUNT, 78);
   assert.equal(PANEL_FAMILY_COUNT, 9);
   assert.equal(PANEL_ITEM_COUNT, 16);
-  assert.equal(MODELED_ITEM_COUNT, 76);
+  assert.equal(MODELED_ITEM_COUNT, 94);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
@@ -553,6 +586,10 @@ test('the mechanics registry counts and resolves both sides of every pair', () =
   assert.equal(mechanicFamilyOf('item_0730')?.base, 'item_0300');
   assert.equal(mechanicFamilyOf('item_0728')?.base, 'item_0340');
   assert.equal(mechanicFamilyOf('item_0718')?.base, 'item_0360');
+  assert.equal(mechanicFamilyOf('item_0722')?.base, 'item_0428');
+  assert.equal(mechanicFamilyOf('item_0703')?.base, 'item_0225');
+  assert.equal(mechanicFamilyOf('item_0721')?.base, 'item_0406');
+  assert.equal(mechanicFamilyOf('item_0711')?.base, 'item_0289');
   assert.equal(mechanicFamilyOf('item_9999'), undefined);
 });
 

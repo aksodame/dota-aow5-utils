@@ -40,7 +40,7 @@ export function DpsPanel({
   );
   const isActive = (id: string): boolean =>
     state.dps.active[id] ??
-    (id === 'item_0152' || id === 'item_0155' || id === 'item_0317' || id === 'item_0305' || id === 'item_0289');
+    (id === 'item_0152' || id === 'item_0155' || id === 'item_0317' || id === 'item_0305' || id === 'item_0289' || id === 'item_0225' || id === 'item_0703');
   const activeIds = useMemo(
     () => new Set(activeItems.filter((item) => isActive(item.id)).map((item) => item.id)),
     [activeItems, state.dps.active],
@@ -153,9 +153,13 @@ export function DpsPanel({
                               ? t.active.shatteredAxe
                               : item.id === 'item_0289'
                                 ? t.active.viciousHorn
-                                : item.id === 'item_0827'
-                                  ? t.active.featherAncestor
-                                  : t.active.feather}
+                                : item.id === 'item_0225'
+                                  ? t.active.vanguard
+                                  : item.id === 'item_0703'
+                                    ? t.active.vanguardAncestor
+                                    : item.id === 'item_0827'
+                                      ? t.active.featherAncestor
+                                      : t.active.feather}
                     </b>
                     <small>
                       {item.id === 'item_0152'
@@ -168,7 +172,15 @@ export function DpsPanel({
                               ? t.active.shatteredAxeMeta(num(item.cooldown, lang, 0), num(item.stats.ability_duration, lang, 0))
                               : item.id === 'item_0289'
                                 ? t.active.viciousHornMeta(num(item.cooldown, lang, 0), num(item.stats.ability_duration, lang, 0))
-                                : t.active.meta(
+                                : item.id === 'item_0225' || item.id === 'item_0703'
+                                  ? t.active.vanguardMeta(
+                                      num(item.cooldown, lang, 0),
+                                      num(item.stats.ability_duration, lang, 0),
+                                      num(item.stats.ability_value_shield_amount, lang, 0),
+                                      num(item.stats.ability_value_max_health_pct, lang, 0),
+                                      num(item.stats.ability_self_movespeed_pct, lang, 0),
+                                    )
+                                  : t.active.meta(
                                     num(item.cooldown, lang, 0),
                                     num(item.stats.ability_duration, lang, 0),
                                     num(item.stats.ability_interval, lang, 0),

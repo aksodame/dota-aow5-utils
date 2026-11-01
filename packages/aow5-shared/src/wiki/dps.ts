@@ -246,13 +246,14 @@ const MOVE_HUNT = ['item_0360', 'item_0718'] as const;
 const PHASE_BOOTS = ['item_0152'] as const;
 const MADNESS = ['item_0155'] as const;
 const SHADOW_MASK = ['item_0317'] as const;
-const SHATTERED_AXE = ['item_0305'] as const;
-const VICIOUS_HORN = ['item_0289'] as const;
+const SHATTERED_AXE = ['item_0305', 'item_0425'] as const;
+const VICIOUS_HORN = ['item_0289', 'item_0711'] as const;
 const TOLERANCE = ['item_0392'] as const;
-const UNYIELDING = ['item_0240'] as const;
+const UNYIELDING = ['item_0240', 'item_0705'] as const;
 const BEAST_BOOTS = ['item_0350'] as const;
 const BEAST_PENDANT = ['item_0349'] as const;
-const LIONHEART = ['item_0329'] as const;
+const LIONHEART = ['item_0329', 'item_0714'] as const;
+const VANGUARD = ['item_0225', 'item_0703'] as const;
 
 function findItem(build: DpsBuild, ids: readonly string[]): DpsItemStats | undefined {
   return build.items.find((item) => ids.includes(item.id));
@@ -450,9 +451,9 @@ function constants(build: DpsBuild): Constants {
   }
   const maelstrom = findItem(build, ['item_0117']);
   const moonShard = findItem(build, ['item_0158']);
-  const mjollnir = findItem(build, ['item_0428']);
+  const mjollnir = findItem(build, ['item_0428', 'item_0722']);
   const gale = findItem(build, ['item_0351']);
-  const evernight = findItem(build, ['item_0406']);
+  const evernight = findItem(build, ['item_0406', 'item_0721']);
   const havoc = findItem(build, ['item_0377']);
   if (havoc) {
     cooldownProcs.push({
@@ -714,6 +715,7 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const beastBoots = findItem(build, BEAST_BOOTS);
   const beastPendant = findItem(build, BEAST_PENDANT);
   const lionheart = findItem(build, LIONHEART);
+  const vanguard = findItem(build, VANGUARD);
   const cdr = 1 - Math.min(80, Math.max(0, build.cooldownReductionPct)) / 100;
   const duty = (item: DpsItemStats | undefined, durationKey: string): number => {
     if (!item || active?.has(item.id) !== true) return 0;
@@ -729,12 +731,14 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const shadowDuty = duty(shadow, 'ability_duration');
   const shatteredDuty = duty(shattered, 'ability_duration');
   const hornDuty = duty(horn, 'ability_duration');
+  const vanguardDuty = duty(vanguard, 'ability_duration');
 
   // Percent movement buffs and penalties first, then the flat grants. The
   // exact order only matters a little, but it keeps 0152 + 0305 sensible.
   let averageMovespeed = build.baseMoveSpeed;
   if (phase) averageMovespeed *= 1 + (Math.max(0, value(phase, 'ability_phase_ms_pct')) * phaseDuty) / 100;
   if (shattered) averageMovespeed *= 1 - (Math.max(0, value(shattered, 'ability_self_movespeed_pct')) * shatteredDuty) / 100;
+  if (vanguard) averageMovespeed *= 1 - (Math.max(0, value(vanguard, 'ability_self_movespeed_pct')) * vanguardDuty) / 100;
   if (madness) averageMovespeed += Math.max(0, value(madness, 'ability_bonus_move_speed')) * madnessDuty;
   if (shadow) averageMovespeed += Math.max(0, value(shadow, 'ability_bonus_move_speed')) * shadowDuty;
   if (beastBoots) averageMovespeed += Math.max(0, value(beastBoots, 'ability_bonus_movespeed'));
@@ -759,6 +763,12 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const hornStrength = Math.max(0, value(horn, 'ability_bonus_strength')) * hornDuty;
   const shatteredAd = shattered !== undefined ? build.attackDamage * Math.max(0, value(shattered, 'ability_value_all_attack_damage_percent')) / 100 * shatteredDuty : 0;
   const shatteredHp = shattered !== undefined ? build.maxHealth * Math.max(0, value(shattered, 'ability_value_base_health_pct')) / 100 * shatteredDuty : 0;
+  const activeMaxHealth = build.maxHealth + shatteredHp + hornStrength * 6;
+  const vanguardShield = vanguard
+    ? (Math.max(0, value(vanguard, 'ability_value_shield_amount')) +
+        activeMaxHealth * Math.max(0, value(vanguard, 'ability_value_max_health_pct')) / 100) *
+      vanguardDuty
+    : 0;
   const toleranceBonus = tolerance !== undefined
     ? Math.min(
         Math.max(0, value(tolerance, 'ability_bonus_pct_max')),
@@ -769,7 +779,7 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
 
   return {
     ...build,
-    maxHealth: build.maxHealth + shatteredHp + hornStrength * 6,
+    maxHealth: activeMaxHealth,
     attackDamage:
       build.attackDamage +
       effectiveDynamicAgility * build.attackDamagePerAgi +
@@ -780,6 +790,7 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
     totalAttributes: build.totalAttributes + effectiveDynamicAgility + hornStrength,
     energyShield:
       build.energyShield +
+      vanguardShield +
       (lionheart !== undefined ? hornStrength * Math.max(0, value(lionheart, 'ability_shield_per_strength')) : 0),
     outgoingMultiplier: build.outgoingMultiplier * (1 + toleranceBonus / 100),
     noCrit: build.noCrit || tolerance !== undefined || unyielding !== undefined,
