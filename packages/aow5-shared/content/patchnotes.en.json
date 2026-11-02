@@ -1,6 +1,25 @@
 {
  "notes": [
   {
+   "version": "v1.520",
+   "date": "02.11.2026",
+   "game": [
+    "New s3 cosmetics: 90 wearables for Axe, Lina, Phantom Assassin, Drow Ranger and Void Spirit — 18 each, quality 2–6. Every cosmetic grants a small stat bonus.",
+    "Cosmetics are awarded on profession tiers 2–5 (one per hero per tier) and drop from the Collector's and Divine pools T103–T106 and T203–T206 (70 items); 30 of them are also listed in the fragment shop, which is currently disabled.",
+    "Room M025: the training dummy is replaced by the boss \"Rathalos\" — 3,000,000 health, 3600 damage, 306 armor, 96% magic resistance, 13% crit and 12% of the target's max health as bonus attack damage. Five abilities; he drops 7–10 items.",
+    "M025 monsters buffed: armor up to 300 (was 180–240), magic resistance to 92–96% (was 80–90%), some elites gained health and attack speed.",
+    "\"Flesh Bond\" reworked: bonded monsters take 70% less damage and 30% is transferred to the Devourer Warlord. The chain breaks when the transferred damage reaches his maximum health.",
+    "The M025 version of Rathalos deals 20% more damage than the three lair dragons and cannot leave the room's arena.",
+    "The mark detonation of Phantom Assassin's \"Boomerang\" now counts as a full attack for the \"Sword of Eternal Night\" (item_0406)."
+   ],
+   "wiki": [
+    "Data rebuilt from v1.520: M025 monster stats and the new boss card for Rathalos.",
+    "The 90 new cosmetics appear in the treasure pools and on the profession ladder (their names are still Chinese — the game has not translated them).",
+    "Profession tiers 2–5 show the new cosmetic rewards.",
+    "FAQ \"Season s3\": M025 monsters now show their current health, armor and magic resistance; the dummy is replaced by the boss Rathalos, and the names match the game (\"Redthorn Beetle\", \"Obsidian Armored Beast\")."
+   ]
+  },
+  {
    "version": "v1.519",
    "date": "31.10.2026",
    "game": [
