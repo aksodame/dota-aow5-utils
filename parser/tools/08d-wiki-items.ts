@@ -625,7 +625,7 @@ const wearables: Record<string, Wearable> = {};
     if (num(row['is_in_treasure_pool'] ?? 0, `${id} is_in_treasure_pool`) === 1) w.inTreasurePool = true;
     wearables[id] = w;
   }
-  checkSoft(Object.keys(wearables).length, 454, 'wearables');
+  checkSoft(Object.keys(wearables).length, 634, 'wearables');
 }
 
 // --- every pooled item resolves ------------------------------------------------

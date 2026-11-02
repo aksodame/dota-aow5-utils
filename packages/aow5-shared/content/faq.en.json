@@ -3484,7 +3484,7 @@
        "rows": [
         [
          "Locations",
-         "M025 \"Molten Abyss Fortress\": 8 new monsters (the dummy boss included) and magma mushroom gathering points; M026 is the room the dragon teleports you to."
+         "M025 \"Molten Abyss Fortress\": 8 new monsters (the boss Rathalos included) and magma mushroom gathering points; M026 is the room the dragon teleports you to."
         ],
         [
          "Heroes",
@@ -3541,7 +3541,7 @@
      "blocks": [
       {
        "type": "text",
-       "text": "**M025 \"Molten Abyss Fortress\"** is the season room with a new bestiary: eight monsters, the dummy boss included. Gathering points on the floor yield [[item:item_M556|Magma Mushroom]]."
+       "text": "**M025 \"Molten Abyss Fortress\"** is the season room with a new bestiary: eight monsters, the boss Rathalos included. Gathering points on the floor yield [[item:item_M556|Magma Mushroom]]."
       },
       {
        "type": "table",
@@ -3555,50 +3555,50 @@
         [
          "Red Sand Warrior",
          "Elite",
-         "150000",
-         "180 / 80"
+         "306000",
+         "300 / 92"
         ],
         [
-         "Kaktos",
+         "Redthorn Beetle",
          "Elite",
-         "200000",
+         "306000",
          "300 / 92"
         ],
         [
          "Imperial Wingguard",
          "Elite",
-         "600000",
-         "240 / 88"
+         "672000",
+         "300 / 92"
         ],
         [
          "Foxshade Assassin",
          "Normal",
-         "30000",
-         "160 / 85"
+         "48000",
+         "264 / 92"
         ],
         [
-         "Obsidian Thunderhide",
+         "Obsidian Armored Beast",
          "Elite",
-         "350000",
-         "240 / 88"
+         "384000",
+         "300 / 92"
         ],
         [
          "Searwing Warden",
          "Mini-boss",
          "850000",
-         "240 / 90"
+         "264 / 96"
         ],
         [
          "Pyrebone Archer",
          "Normal",
-         "36000",
-         "120 / 85"
+         "48000",
+         "264 / 92"
         ],
         [
-         "Molten Abyss Dummy",
+         "Rathalos",
          "Boss",
-         "5000000",
-         "255 / 95"
+         "3000000",
+         "306 / 96"
         ]
        ]
       },
