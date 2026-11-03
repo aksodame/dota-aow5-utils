@@ -43,8 +43,20 @@ export function buildDpsInput(
     0,
   );
 
+  // 0205: dynamic agility from movespeed, shown in panel stats (like crown/overcrit).
+  // Computed from base movespeed; the DPS engine adds the excess from active bonuses.
+  const baseMoveSpeedVal = panel('bonus_movespeed');
+  const hunt205Item = items.find((item) => item.id === 'item_0205');
+  const dynamicAgility0205 = hunt205Item !== undefined ? Math.floor(Math.max(0, baseMoveSpeedVal - 250) / 5) : 0;
+  const attackDamagePerAgiVal =
+    input.primary === 'agi'
+      ? input.file.attrBonus.primary_attr_attack_damage
+      : input.primary === 'uni'
+        ? input.file.attrBonus.universal_attr_attack_damage
+        : 0;
+
   return {
-    attackDamage: panel('bonus_attack_damage'),
+    attackDamage: panel('bonus_attack_damage') + dynamicAgility0205 * attackDamagePerAgiVal,
     allAttackDamagePct: panel('all_attack_damage_percent'),
     attackSpeed: panel('attack_speed'),
     attackSpeedPct: panel('attack_speed_pct'),
@@ -69,19 +81,14 @@ export function buildDpsInput(
       boss: extra('extra_damage_pct_3'),
     },
     seasonDamagePct: (panel('season_contribution') + panel('season_world')) * 2,
-    totalAttributes: panel('bonus_strength') + panel('bonus_agility') + panel('bonus_intelligence'),
+    totalAttributes: panel('bonus_strength') + panel('bonus_agility') + panel('bonus_intelligence') + dynamicAgility0205,
     maxHealth: panel('bonus_health'),
-    totalAgility: panel('bonus_agility'),
+    totalAgility: panel('bonus_agility') + dynamicAgility0205,
     agilityPct: extra('all_agility_pct') + extra('all_all_stats_pct'),
     totalIntelligence: panel('bonus_intelligence'),
     baseMoveSpeed: panel('bonus_movespeed'),
     primaryAttr: input.primary,
-    attackDamagePerAgi:
-      input.primary === 'agi'
-        ? input.file.attrBonus.primary_attr_attack_damage
-        : input.primary === 'uni'
-          ? input.file.attrBonus.universal_attr_attack_damage
-          : 0,
+    attackDamagePerAgi: attackDamagePerAgiVal,
     attackDamagePerStr:
       input.primary === 'str'
         ? input.file.attrBonus.primary_attr_attack_damage

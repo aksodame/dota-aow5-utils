@@ -587,7 +587,7 @@ function constants(build: DpsBuild): Constants {
     mkbVulnDuration: Math.max(0, value(mkb, 'ability_vulnerable_duration') || 5),
     mkbArmorDuration: Math.max(0, value(mkb, 'ability_armor_duration') || 3),
     bleedProc,
-    bleedProcChance: Math.max(0, value(bleedProc, 'ability_value_min_trigger_chance_pct')),
+    bleedProcChance: Math.max(0, value(bleedProc, 'ability_value_min_trigger_chance_pct') || value(bleedProc, 'ability_trigger_chance_pct')),
     critBleed,
     critBleedChance: Math.max(0, value(critBleed, 'ability_value_trigger_chance_pct')),
     bloodEcho,
@@ -864,9 +864,13 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const huntPer = Math.max(1, value(hunt, 'ability_value_c_movespeed_per_attack_damage') || 1);
   const huntStep = Math.max(0, value(hunt, 'ability_bonus_attack_damage_per_step'));
   let dynamicAgility = hunt !== undefined ? Math.floor(Math.max(0, averageMovespeed - huntThreshold) / huntPer) * huntStep : 0;
-  // 0205: bonus agility = floor(max(0, movespeed − 250) / 5); values hardcoded in its script
+  // 0205: bonus agility = floor(max(0, movespeed − 250) / 5); values hardcoded in its script.
+  // The part already reflected in build.totalAgility (via buildDpsInput from base movespeed) is
+  // subtracted to avoid double counting; only the excess from active movespeed bonuses is added.
   if (hunt205 !== undefined) {
-    dynamicAgility += Math.floor(Math.max(0, averageMovespeed - 250) / 5);
+    const alreadyInBuild = Math.floor(Math.max(0, build.baseMoveSpeed - 250) / 5);
+    const fromAverage = Math.floor(Math.max(0, averageMovespeed - 250) / 5);
+    dynamicAgility += Math.max(0, fromAverage - alreadyInBuild);
   }
   const effectiveDynamicAgility = dynamicAgility * (1 + build.agilityPct / 100);
 
@@ -1139,7 +1143,9 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   const physicalTriggers = (hit: number, critChancePct: number, mkb = true): void => {
     if (!(hit > 0)) return;
     if (c.bleedProc && c.bleedProcChance > 0) {
-      applyBleed(hit * (c.bleedProcChance / 100) * (BLEED_POOL_PCT / 100));
+      // 0467: 70 % of hit becomes bleed pool; 0243: 100 % of hit (script passes full final damage)
+      const poolPct = c.bleedProc?.id === 'item_0243' ? 1 : BLEED_POOL_PCT / 100;
+      applyBleed(hit * (c.bleedProcChance / 100) * poolPct);
       chaosEvent(c.bleedProcChance / 100);
     }
     if (c.critBleed && critChancePct > 0 && c.critBleedChance > 0) {

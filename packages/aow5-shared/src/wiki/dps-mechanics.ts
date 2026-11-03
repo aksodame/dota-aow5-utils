@@ -98,6 +98,7 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'bloodEcho', base: 'item_0504', ancestor: 'item_0868', sources: ['bloodEcho'] },
   { kind: 'dps', role: 'bleedCrit', base: 'item_0398', ancestor: 'item_0810', sources: ['bleed'] },
   { kind: 'dps', role: 'bleedProc', base: 'item_0467', ancestor: 'item_0841', sources: ['bleed'] },
+  { kind: 'dps', role: 'bleedProc', base: 'item_0243', sources: ['bleed'] },
   { kind: 'dps', role: 'flatProc', base: 'item_0129', sources: ['dartProc'] },
   { kind: 'dps', role: 'flatProc', base: 'item_0131', sources: ['crystalProc'] },
   { kind: 'dps', role: 'mkb', base: 'item_0217', ancestor: 'item_0853', sources: [] },
@@ -210,4 +211,4 @@ export const PANEL_FAMILY_COUNT = PANEL_FAMILIES.length;
 export const PANEL_ITEM_COUNT = PANEL_ITEM_IDS.size;
 export const MODELED_ITEM_COUNT = MODELED_ITEM_IDS.size;
 
-// 64 families / 100 item ids / 118 modelled (after level-5 additions: 0205, 0447, 0379, 0372)
+// 65 families / 101 item ids / 119 modelled (after level-5 additions: 0205, 0447, 0379, 0372, 0243)

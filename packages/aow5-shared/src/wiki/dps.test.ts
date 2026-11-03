@@ -894,11 +894,11 @@ test('0255 active shield feeds 0331', () => {
 });
 
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 64);
-  assert.equal(DPS_ITEM_COUNT, 100);
+  assert.equal(DPS_FAMILY_COUNT, 65);
+  assert.equal(DPS_ITEM_COUNT, 101);
   assert.equal(PANEL_FAMILY_COUNT, 11);
   assert.equal(PANEL_ITEM_COUNT, 18);
-  assert.equal(MODELED_ITEM_COUNT, 118);
+  assert.equal(MODELED_ITEM_COUNT, 119);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
@@ -1094,4 +1094,17 @@ test('0372 omniStrike pays a flat magical proc on every attack', () => {
   assert.ok(hits > 0);
   // Each hit: 1000 × 50 % = 500 magical damage, no crit, no armour.
   near(source(r, 'omniStrike'), hits * 500);
+});
+
+test('0243 bleeds for 100 % of final damage on any physical hit', () => {
+  const r = simulateDps(
+    build({
+      items: [item('item_0243', { ability_trigger_chance_pct: 100 })],
+    }),
+    enemy(),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  // One attack at 1 s, one tick at 1.5 s; pool is 100 % of 1000 = 1000, tick is 100.
+  near(source(r, 'auto'), 1000);
+  near(source(r, 'bleed'), 100);
 });
