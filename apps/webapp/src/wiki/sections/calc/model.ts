@@ -39,6 +39,9 @@ export interface RowDef {
 const plain = (key: string, dec?: number): RowDef => ({ key, ...(dec !== undefined ? { dec } : {}), kind: { type: 'plain' } });
 const derived = (key: DerivedKey, dec: number): RowDef => ({ key, dec, kind: { type: 'derived', key } });
 
+/** The row 0205 / 0360 / 0718 read: total movement speed, the hero's base included. */
+export const MOVESPEED_ROW: RowDef = plain('bonus_movespeed');
+
 export const GROUPS: ReadonlyArray<{ id: GroupId; rows: RowDef[] }> = [
   {
     id: 'attrs',
@@ -61,7 +64,7 @@ export const GROUPS: ReadonlyArray<{ id: GroupId; rows: RowDef[] }> = [
       plain('all_attack_damage_percent'),
       derived('attack_speed', 1),
       plain('attack_speed_pct'),
-      plain('bonus_movespeed'),
+      MOVESPEED_ROW,
     ],
   },
   {

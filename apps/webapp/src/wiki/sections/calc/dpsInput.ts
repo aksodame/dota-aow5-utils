@@ -43,6 +43,17 @@ export function buildDpsInput(
     0,
   );
 
+  // 0205 / 0360 / 0718 need no special case here: their agility is already in
+  // the panel's agility row (buildPool adds it from moveHuntAgility), so
+  // `panel('bonus_agility')` and the derived attack damage and attack speed
+  // carry it the same way the game's attribute panel does.
+  const attackDamagePerAgiVal =
+    input.primary === 'agi'
+      ? input.file.attrBonus.primary_attr_attack_damage
+      : input.primary === 'uni'
+        ? input.file.attrBonus.universal_attr_attack_damage
+        : 0;
+
   return {
     attackDamage: panel('bonus_attack_damage'),
     allAttackDamagePct: panel('all_attack_damage_percent'),
@@ -76,12 +87,7 @@ export function buildDpsInput(
     totalIntelligence: panel('bonus_intelligence'),
     baseMoveSpeed: panel('bonus_movespeed'),
     primaryAttr: input.primary,
-    attackDamagePerAgi:
-      input.primary === 'agi'
-        ? input.file.attrBonus.primary_attr_attack_damage
-        : input.primary === 'uni'
-          ? input.file.attrBonus.universal_attr_attack_damage
-          : 0,
+    attackDamagePerAgi: attackDamagePerAgiVal,
     attackDamagePerStr:
       input.primary === 'str'
         ? input.file.attrBonus.primary_attr_attack_damage
@@ -98,6 +104,11 @@ export function buildDpsInput(
       extra('physical_lifesteal_pct') +
       extra('magical_lifesteal_pct') +
       extra('omni_lifesteal_pct'),
+    // 0241 listens to the game's attack/spell heal events; omni heals both.
+    attackHealPct:
+      extra('attack_lifesteal_pct') + extra('physical_lifesteal_pct') + extra('omni_lifesteal_pct'),
+    spellHealPct:
+      extra('spell_lifesteal_pct') + extra('magical_lifesteal_pct') + extra('omni_lifesteal_pct'),
     noCrit: false,
     agilityAttackSpeedCap: input.file.attrBonus.agility_attack_speed_cap,
     agilityAttackSpeedDecay: input.file.attrBonus.agility_attack_speed_decay,

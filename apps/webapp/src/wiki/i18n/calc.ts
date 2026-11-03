@@ -459,6 +459,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         crystalProc: 'Хрустальный меч — прок',
         valorSword: 'Меч отваги — прок',
         corrosiveSpike: 'Шип разложения — удар',
+        curseRibbon: 'Лента проклятий — бонус к магическому урону',
         feast: 'Пиршество — удар',
         sharpAxe: 'Острая секира — удар по здоровью',
         skullcrusher: 'Череполом — удар по здоровью',
@@ -469,11 +470,14 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         maelstrom: 'Вихрь — молния',
         moonShard: 'Осколок луны — прок',
         mjollnir: 'Мьёльнир — молния',
+        omniStrike: 'Всесторонний удар — магический прок',
+        assassinCreed: 'Кредо ассасина — физ. прок от ловкости',
+        frostChain: 'Ледяная цепь — магический удар',
         galeStrike: 'Удар бури — серия',
         evernight: 'Меч вечной ночи — серия',
         havocHammer: '★Молот разрушения — щит',
         soulBlade: 'Клинок очищения душ — магия',
-        shatterProc: 'Дезолятор — прок',
+        shatterProc: 'Раскол брони — физ. прок',
         defenderHammer: 'Молот защитника — щит',
         lionheartHammer: 'Молот Львиного сердца — щит',
         reaperSlash: 'Коса смерти — удар',
@@ -537,7 +541,8 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         'Актив 0646/0827 считается только при включённой галочке: 10 тиков по 50 % статов чистым уроном, КД 30 с уменьшается на cooldown_reduction_pct (кап 80 %).',
         '0129/0131: физ. прок 25 % × 50; у 0129 числа захардкожены в скрипте, у 0131 берутся из прокрутки. AoE 0131 считается по одной цели; вторичные прок-эффекты от этого удара не разворачиваются.',
         'Проки 2 уровня: 0124/0234/0300 снижают броню (2/5/6, 5 с); 0121/0210/0340 бьют по макс. HP на своём КД; 0457 — 30 % × 80; 0307 — магия (лов+инт)×120 % и вихрь 3 с; 0161 — удар каждые 4 с.',
-        '0152 и 0155 используются по КД (12/60 и 6/60 с, CDR): учитываются средние +35 % скорости бега, +100 скорости атаки и +25 бега. 0360/0718 дают ловкость за каждые 5 скорости сверх 250 (1/2 за шаг), и она идёт в урон и скорость атаки.',
+        '0152 и 0155 используются по КД (12/60 и 6/60 с, CDR): учитываются средние +35 % скорости бега, +100 скорости атаки и +25 бега. 0205/0360/0718 дают ловкость за каждые 5 скорости сверх 250 (шаг 1 у 0205 и 0360, 2 у 0718); она стоит в строке «Ловкость» и идёт в урон атаки, скорость атаки и броню.',
+        '0205: скрипт даёт ловкость (GetAttributeBonus), хотя описание обещает «+1 к урону атаки» за 5 скорости сверх 250; считаем по скрипту — на силовике это скорость атаки и броня, а не урон.',
         '0166/0303 добавляют по слою яда, когда их КД 1 с готов; 0402 вызывает дополнительный тик. 0124 не наносит урона — только броня.',
         'Физические прок-удары (0158/0406/0377/0457/0234/0300/0121/0210/0340 и т. п.) участвуют в 0467/0398/0217 так же, как автоатака: 0467 — шанс от любого физ. удара, 0398/0217 — от физ. крита. 0351 входит в тот же удар, что и автоатака.',
         '3 уровень: 0117/0428 — молния от урона атаки (по одной цели), 0158 — физ. прок, 0351/0406 — бонус на следующую атаку после серии, 0377 — удар от запаса щита, 0319 — слой яда; 0317/0305/0289 — активы, 0225 — активный щит (учитывается в 0377); 0349/0350 — ауры; 0392/0240 отключают криты, 0392 даёт урон от потерянной скорости.',
@@ -612,6 +617,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         crystalProc: 'Crystal Sword — proc',
         valorSword: 'Sword of Courage — proc',
         corrosiveSpike: 'Corrosive Spine — hit',
+        curseRibbon: 'Curse Ribbon — magical damage bonus',
         feast: 'Night Banquet — hit',
         sharpAxe: 'Keen Greataxe — max-health hit',
         skullcrusher: 'Skull Basher — max-health hit',
@@ -622,11 +628,14 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         maelstrom: 'Maelstrom — lightning',
         moonShard: 'Moon Shard — proc',
         mjollnir: 'Mjollnir — lightning',
+        omniStrike: 'All-around Strike — magical proc',
+        assassinCreed: "Assassin's Creed — agility physical proc",
+        frostChain: 'Frost Chain — magical hit',
         galeStrike: 'Gale Strike — combo',
         evernight: 'Evernight Sword — combo',
         havocHammer: '★Havoc Hammer — shield hit',
         soulBlade: 'Soul-cleansing Blade — magic',
-        shatterProc: 'Desolator — proc',
+        shatterProc: 'Armour shatter — physical proc',
         defenderHammer: 'Guardian Hammer — shield hit',
         lionheartHammer: 'Lionheart Hammer — shield hit',
         reaperSlash: 'Reaper\'s Scythe — slash',
@@ -688,6 +697,8 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         'Poison: ticks every 0.25 s; 20 % of the stacks decay every 3 s, the tick still lands with the reduced count while any stack remains, and the modifier is removed at zero. Damage reads the attribute total, magic resistance, 0365 corrosion (up to +30 % magic damage), poison and DoT outgoing. 0365\'s stack chance and burst size come from the item roll; 0238 adds its own stack at its own chance. 0382/0780 rolls once per debuff status and adds one more poison stack at 50/65 % — poisons, 0467/0398 bleeds, 0217 vulnerable, the bag\'s burn and 0209 are counted. 0238\'s defensive poison on attackers is not in the DPS run: the dummy does not attack.',
         'Level 4: 0165 — 20 magic per landed attack (the script hardcodes 20, the text says 60); 0206 — 25 % × 250 physical + armour −5 for 3 s; 0270 — 40 % poison stack per attack.',
         '0211 — +1 AS per 3 movement above 250; 0461 — +1 % damage per 4 movement below 380 (up to 30 %); 0314/0315 — an aura of +10/+15 to all stats that reaches the owner.',
+        '0152 and 0155 run on cooldown (12/60 and 6/60 s, CDR): +35 % movement, +100 attack speed and +25 movement are averaged. 0205/0360/0718 grant agility per 5 movement above 250 (step 1 for 0205 and 0360, 2 for 0718); it shows on the Agility row and feeds attack damage, attack speed and armour.',
+        '0205: the script grants agility (GetAttributeBonus) while the item text promises +1 attack damage per 5 movement above 250; the model follows the script — on a strength hero that is attack speed and armour, not damage.',
         '0331 — 50 % of the current shield on a 0.5 s cooldown; 0460 — 100 % of the shield with the armour bonus up to 80 %; 0332 — active +100 AS/+50 movement for 6 s, CD 100, costs 30 % HP, its +15 % CDR is averaged over the window; 0255 — active 30 % max HP shield for 10 s.',
         '0362/0778: every 4.5 s the next base attack calls down 350 % of the attribute total as pure damage to the target and its area; +0.5 % per 1 % of any lifesteal, up to +50 %.',
         '0446 (health-cost stacks), 0212/0459/0339 (per-cast stacks), 0273 (burn on attackers) and 0270\'s active pollen (miss chance) are not in the DPS run.',
@@ -756,6 +767,7 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         crystalProc: '水晶剑——触发',
         valorSword: '勇气剑——触发',
         corrosiveSpike: '侵蚀之刺——攻击',
+        curseRibbon: '诅咒丝带——魔法伤害加成',
         feast: '夜宴——攻击',
         sharpAxe: '锐利巨斧——最大生命伤害',
         skullcrusher: '碎颅锤——最大生命伤害',
@@ -766,11 +778,14 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         maelstrom: '漩涡——闪电',
         moonShard: '银月之晶——触发',
         mjollnir: '雷神之锤——闪电',
+        omniStrike: '全方位打击——魔法触发',
+        assassinCreed: '刺客信条——敏捷物理触发',
+        frostChain: '冰霜链——魔法伤害',
         galeStrike: '狂风之击——连击',
         evernight: '永夜剑——连击',
         havocHammer: '★浩劫重锤——护盾打击',
         soulBlade: '净魂之刃——魔法',
-        shatterProc: '★暗灭——触发',
+        shatterProc: '破甲——物理触发',
         defenderHammer: '守护之锤——护盾打击',
         lionheartHammer: '狮心王锤——护盾打击',
         reaperSlash: '死神之镰——斩击',
@@ -834,7 +849,8 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         '0646/0827 的主动仅在勾选时计入：10 次跳伤，每次为 50% 属性的纯粹伤害；30 秒冷却受 cooldown_reduction_pct 缩减（上限 80%）。',
         '0129/0131：25% × 50 的物理触发；0129 的数值写死在脚本中，0131 读取随机值。0131 的 AoE 只按单体计算；该次命中的二次触发效果不展开。',
         '2 级触发：0124/0234/0300 破甲（2/5/6，持续 5 秒）；0121/0210/0340 按自身冷却造成最大生命伤害；0457 为 30% × 80；0307 造成（敏捷+智力）×120% 魔法伤害并附加 3 秒涡流；0161 每 4 秒攻击一次。',
-        '0152 和 0155 按冷却使用（12/60 与 6/60 秒，受 CDR）：计入平均 +35% 移速、+100 攻速与 +25 移速。0360/0718 每超出 250 的 5 点移速提供敏捷（每步 1/2），并转化为伤害与攻速。',
+        '0152 和 0155 按冷却使用（12/60 与 6/60 秒，受 CDR）：计入平均 +35% 移速、+100 攻速与 +25 移速。0205/0360/0718 每超出 250 的 5 点移速提供敏捷（0205 与 0360 每步 1，0718 每步 2）；它显示在“敏捷”行，并转化为攻击力、攻速与护甲。',
+        '0205：脚本实际提供敏捷（GetAttributeBonus），而物品描述写的是每 5 点移速 +1 攻击力；本计算按脚本结算——对力量英雄而言是攻速与护甲，而不是攻击力。',
         '0166/0303 在 1 秒冷却就绪时增加 1 层毒；0402 额外结算一次跳伤。0124 不造成伤害，只破甲。',
         '物理物品命中（0158/0406/0377/0457/0234/0300/0121/0210/0340 等）与普攻一样参与 0467/0398/0217：0467 对任何物理命中判定，0398/0217 对物理暴击判定。0351 属于同一次普攻命中。',
         '3 级：0117/0428 为基于攻击伤害的闪电（单体），0158 为物理触发，0351/0406 在连击后强化下一击，0377 按护盾造成伤害，0319 加毒层；0317/0305/0289 为主动，0225 为主动护盾（计入 0377）；0349/0350 为光环；0392/0240 禁用暴击，0392 按损失移速增伤。',
@@ -947,6 +963,10 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.pct)}% маг. урона от маны: ${n(f.extra)} сверх ${n(f.threshold)}, шаг ${n(f.per)} маны = +${n(f.step)}% (потолок ${n(f.cap)}%)`;
           case 'arcaneCloak':
             return `+${n(f.hp)} здоровья — ровно столько, сколько маны (потолок маны)`;
+          case 'sageCloak':
+            return `+${n(f.hp)} здоровья — ${n(f.pct)} % от максимальной маны (${n(f.mana)})`;
+          case 'primalBlade':
+            return `+${n(f.ad)} урона атаки — ${n(f.pct)} % от ловкости (${n(f.agi)})`;
           case 'nullifier':
             return `+${n(f.pct)}% маг. урона: вампиризм ${n(f.lifesteal)}% → шаг ${n(f.step)}% = +${n(f.per)}% (потолок ${n(f.cap)}%)`;
           case 'primalCrystal':
@@ -1179,6 +1199,10 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.pct)}% magical damage from mana: ${n(f.extra)} above ${n(f.threshold)}, every ${n(f.per)} mana = +${n(f.step)}% (cap ${n(f.cap)}%)`;
           case 'arcaneCloak':
             return `+${n(f.hp)} health — exactly as much as your mana (max mana)`;
+          case 'sageCloak':
+            return `+${n(f.hp)} health — ${n(f.pct)} % of the mana pool (${n(f.mana)})`;
+          case 'primalBlade':
+            return `+${n(f.ad)} attack damage — ${n(f.pct)} % of agility (${n(f.agi)})`;
           case 'nullifier':
             return `+${n(f.pct)}% magical damage: lifesteal ${n(f.lifesteal)}% → every ${n(f.step)}% = +${n(f.per)}% (cap ${n(f.cap)}%)`;
           case 'primalCrystal':
@@ -1401,6 +1425,10 @@ export const CALC: Localised<CalcStrings> = {
             return `魔法值带来 +${n(f.pct)}% 魔法伤害：超出 ${n(f.threshold)} 的 ${n(f.extra)}，每 ${n(f.per)} 点魔法值 = +${n(f.step)}%（上限 ${n(f.cap)}%）`;
           case 'arcaneCloak':
             return `+${n(f.hp)} 生命值——与魔法值（最大魔法值）相等`;
+          case 'sageCloak':
+            return `+${n(f.hp)} 生命值——最大魔法值的 ${n(f.pct)}%（${n(f.mana)}）`;
+          case 'primalBlade':
+            return `+${n(f.ad)} 攻击力——敏捷的 ${n(f.pct)}%（${n(f.agi)}）`;
           case 'nullifier':
             return `+${n(f.pct)}% 魔法伤害：吸血 ${n(f.lifesteal)}% → 每 ${n(f.step)}% = +${n(f.per)}%（上限 ${n(f.cap)}%）`;
           case 'primalCrystal':

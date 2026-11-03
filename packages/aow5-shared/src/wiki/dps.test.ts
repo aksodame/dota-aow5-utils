@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { simulateDps, type DpsBuild, type DpsEnemy, type DpsItemStats } from './dps.ts';
+import { moveHuntAgility, simulateDps, type DpsBuild, type DpsEnemy, type DpsItemStats } from './dps.ts';
 import {
   DPS_FAMILY_COUNT,
   DPS_ITEM_COUNT,
@@ -54,6 +54,8 @@ const build = (over: Partial<DpsBuild> = {}): DpsBuild => ({
   attackDamagePerStr: 0,
   energyShield: 0,
   anyLifestealPct: 0,
+  attackHealPct: 0,
+  spellHealPct: 0,
   noCrit: false,
   agilityAttackSpeedCap: 240,
   agilityAttackSpeedDecay: 500,
@@ -624,6 +626,120 @@ test('0392 and 0240 turn crits off; 0392 adds damage from lost movement', () => 
   assert.ok(tolerance.damage > plain.damage);
 });
 
+test('0229 Battle Axe runs the shatter script with its own numbers', () => {
+  const r = simulateDps(
+    build({
+      items: [item('item_0229', {
+        ability_ps_chance: 25,
+        ability_ps_damage: 350,
+        ability_armor_reduce: 5,
+        ability_duration: 3,
+      })],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  assert.ok(source(r, 'shatterProc') > 0);
+});
+
+test("0361 / 0453 assassin's creed scales by TOTAL attack speed; 0453 wins the mutex", () => {
+  const creed = (id: string, stats: Record<string, number>) =>
+    build({ attackSpeed: 100, totalAgility: 200, items: [item(id, stats)] });
+  const r361 = simulateDps(
+    creed('item_0361', {
+      ability_value_trigger_chance_pct: 10,
+      ability_value_agility_damage_pct: 80,
+      ability_damage_pct_per_attack_speed: 1,
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  assert.ok(source(r361, 'assassinCreed') > 0);
+  const stats453 = {
+    ability_value_trigger_chance_pct: 23,
+    ability_value_agility_damage_pct: 180,
+    ability_damage_pct_per_attack_speed: 1,
+    ability_target_damage_pct: 50,
+    ability_internal_cooldown: 0.1,
+  };
+  const only453 = simulateDps(creed('item_0453', stats453), enemy(), { duration: 10, mode: 'dummy' });
+  const both = simulateDps(
+    build({
+      attackSpeed: 100,
+      totalAgility: 200,
+      items: [item('item_0361', { ability_value_trigger_chance_pct: 10 }), item('item_0453', stats453)],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  near(both.damage, only453.damage);
+});
+
+test('0342 Frost Chain procs on attack on its 0.5 s cooldown', () => {
+  const r = simulateDps(
+    build({ attackDamage: 1000, attackSpeed: 0, items: [item('item_0342', { ability_value_attack_damage_pct: 180 }, 0.5)] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // aps = 1, so every attack; 180 % of 1000 as magic, ten attacks.
+  near(source(r, 'frostChain'), 18000);
+});
+
+test('0241 stores lifesteal as attack damage, capped and decaying', () => {
+  const plain = simulateDps(build({ attackDamage: 1000, attackSpeed: 100 }), enemy(), { duration: 20, mode: 'dummy' });
+  const heart = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 100,
+      attackHealPct: 20,
+      items: [item('item_0241', {
+        ability_attack_per_lifesteal_pct: 25,
+        ability_max_bonus_attack: 250,
+        ability_decay_pct_per_second: 15,
+        ability_decay_min_per_second: 10,
+      })],
+    }),
+    enemy(),
+    { duration: 20, mode: 'dummy' },
+  );
+  assert.ok(heart.damage > plain.damage);
+  // At the 250 cap the last hits are 25 % stronger.
+  const last = heart.timeline.at(-1)?.damage ?? 0;
+  const lastPlain = plain.timeline.at(-1)?.damage ?? 0;
+  assert.ok(last > lastPlain * 1.2, `${last} vs ${lastPlain}`);
+});
+
+test('0196 and 0363 hang the generic vulnerability without MKB', () => {
+  const plain = simulateDps(build({ attackSpeed: 100 }), enemy(), { duration: 60, mode: 'dummy' });
+  const cursed = simulateDps(
+    build({
+      attackSpeed: 100,
+      items: [item('item_0363', { ability_value_trigger_chance_pct: 50, ability_vulnerable_duration: 5 })],
+    }),
+    enemy(),
+    { duration: 60, mode: 'dummy' },
+  );
+  // Stacks cap at 5 → ×1.25; at 2 attacks/s the ramp costs a few seconds of a 60 s window.
+  const ratio = cursed.damage / plain.damage;
+  assert.ok(ratio > 1.2 && ratio < 1.26, `ratio ${ratio}`);
+  const orchid = simulateDps(
+    build({
+      attackSpeed: 100,
+      items: [item('item_0196', { ability_trigger_chance_pct: 25, ability_vulnerable_duration: 5 }, 1)],
+    }),
+    enemy(),
+    { duration: 60, mode: 'dummy' },
+  );
+  assert.ok(orchid.damage > plain.damage);
+});
+
+test('0447 and 0448 share the 0240 script: they turn crits off with no bonus', () => {
+  for (const id of ['item_0447', 'item_0448']) {
+    const r = simulateDps(build({ critChancePct: 50, items: [item(id, {})] }), enemy(), { duration: 10, mode: 'dummy' });
+    assert.equal(r.critChancePct, 0);
+  }
+});
+
 test('0349 gives its owner twice the aura attack speed', () => {
   const plain = simulateDps(build({ attackSpeed: 100 }), enemy(), { duration: 10, mode: 'dummy' });
   const pendant = simulateDps(
@@ -894,11 +1010,11 @@ test('0255 active shield feeds 0331', () => {
 });
 
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 60);
-  assert.equal(DPS_ITEM_COUNT, 96);
+  assert.equal(DPS_FAMILY_COUNT, 70);
+  assert.equal(DPS_ITEM_COUNT, 106);
   assert.equal(PANEL_FAMILY_COUNT, 11);
   assert.equal(PANEL_ITEM_COUNT, 18);
-  assert.equal(MODELED_ITEM_COUNT, 114);
+  assert.equal(MODELED_ITEM_COUNT, 124);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
@@ -1031,10 +1147,100 @@ test('Phase Boots and Mask of Madness average their uptime; 0360 reads the movem
   });
   const off = simulateDps(base, enemy(), { duration: 10, mode: 'dummy' });
   const on = simulateDps(base, enemy(), { duration: 10, mode: 'dummy', active: new Set(['item_0152', 'item_0155']) });
-  assert.ok(on.attackSpeed > off.attackSpeed);
-  assert.ok(on.damage > off.damage);
+  // No active: the average is the build's own speed, whose grant the panel
+  // already carries — the engine must add nothing on top of it.
+  near(off.attackSpeed, 100);
   // A 10 s window is covered by Phase's 12 s buff for its whole length;
-  // Madness covers 6 of the 10 seconds. That is 420 average movement,
-  // 34 agility above the 250 threshold.
-  assert.ok(on.attackSpeed >= 100);
+  // Madness covers 6 of the 10 seconds. That is 420 average movement: 34
+  // agility at the threshold, of which the panel already has 10 (at 300).
+  const surplus = 34 - 10;
+  // Mask of Madness adds its 100 attack speed for 6 of the 10 seconds too.
+  const expected = 240 * ((100 + surplus) / (100 + surplus + 500) - 100 / 600) + 100 + 100 * 0.6;
+  near(on.attackSpeed, expected);
+  assert.ok(on.damage > off.damage);
+});
+
+test('moveHuntAgility follows each script: 0205 hardcodes its step, 0360/0718 read theirs', () => {
+  const hunt = (step: number) => ({
+    ability_value_c_movespeed_threshold: 250,
+    ability_value_c_movespeed_per_attack_damage: 5,
+    ability_bonus_attack_damage_per_step: step,
+  });
+  assert.equal(moveHuntAgility([item('item_0205', {})], 249), 0);
+  assert.equal(moveHuntAgility([item('item_0205', {})], 300), 10);
+  assert.equal(moveHuntAgility([item('item_0360', hunt(1))], 350), 20);
+  assert.equal(moveHuntAgility([item('item_0718', hunt(2))], 350), 40);
+  // Every equipped item counts, and items outside the family contribute nothing.
+  assert.equal(moveHuntAgility([item('item_0360', hunt(1)), item('item_0718', hunt(2))], 300), 30);
+  assert.equal(moveHuntAgility([item('item_0205', {}), item('item_0317', {})], 400), 30);
+});
+
+test('0379 curseRibbon multiplies magical damage from the second attack onward', () => {
+  const noRibbon = simulateDps(
+    build({
+      attackDamage: 0,
+      totalAttributes: 1000,
+      attackSpeed: 100,
+      items: [
+        item('item_0209', {
+          ability_value_dot_trigger_chance_pct: 100,
+          ability_all_stats_damage_pct: 100,
+          ability_value_trigger_chance_pct: 100,
+        }),
+      ],
+    }),
+    enemy({ kind: 'boss', magicResistancePct: 0 }),
+    { duration: 3, mode: 'dummy' },
+  );
+  const withRibbon = simulateDps(
+    build({
+      attackDamage: 0,
+      totalAttributes: 1000,
+      attackSpeed: 100,
+      items: [
+        item('item_0379', { ability_magical_damage_add_pct: 100 }),
+        item('item_0209', {
+          ability_value_dot_trigger_chance_pct: 100,
+          ability_all_stats_damage_pct: 100,
+          ability_value_trigger_chance_pct: 100,
+        }),
+      ],
+    }),
+    enemy({ kind: 'boss', magicResistancePct: 0 }),
+    { duration: 3, mode: 'dummy' },
+  );
+  // curseRibbon's debuff applies on magical damage dealt, so from the second
+  // attack onward all magical damage is multiplied (1 + 100 % = 2×).
+  assert.ok(withRibbon.damage > noRibbon.damage);
+  assert.ok(source(withRibbon, 'witchBlade') > source(noRibbon, 'witchBlade'));
+});
+
+test('0372 omniStrike pays a flat magical proc on every attack', () => {
+  const r = simulateDps(
+    build({
+      attackDamage: 0,
+      totalAttributes: 1000,
+      attackSpeed: 100,
+      items: [item('item_0372', { ability_all_stats_damage_pct: 50 })],
+    }),
+    enemy({ kind: 'boss', magicResistancePct: 0 }),
+    { duration: 3, mode: 'dummy' },
+  );
+  const hits = r.sources.find((s) => s.id === 'omniStrike')?.hits ?? 0;
+  assert.ok(hits > 0);
+  // Each hit: 1000 × 50 % = 500 magical damage, no crit, no armour.
+  near(source(r, 'omniStrike'), hits * 500);
+});
+
+test('0243 bleeds for 100 % of final damage on any physical hit', () => {
+  const r = simulateDps(
+    build({
+      items: [item('item_0243', { ability_trigger_chance_pct: 100 })],
+    }),
+    enemy(),
+    { duration: 1.6, mode: 'dummy' },
+  );
+  // One attack at 1 s, one tick at 1.5 s; pool is 100 % of 1000 = 1000, tick is 100.
+  near(source(r, 'auto'), 1000);
+  near(source(r, 'bleed'), 100);
 });
