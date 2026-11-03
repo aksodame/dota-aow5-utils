@@ -65,7 +65,9 @@ export type DpsRole =
   | 'hunterChain'
   | 'gleamEdge'
   | 'shadowCloak'
-  | 'frostPendant';
+  | 'frostPendant'
+  | 'curseRibbon'
+  | 'omniStrike';
 
 export interface DpsFamily {
   kind: 'dps';
@@ -130,8 +132,12 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'vortex', base: 'item_0307', ancestor: 'item_0731', sources: ['vortex', 'vortexDot'] },
   { kind: 'dps', role: 'ruinHammer', base: 'item_0340', ancestor: 'item_0728', sources: ['ruinHammer'] },
   { kind: 'dps', role: 'moveHunt', base: 'item_0360', ancestor: 'item_0718', sources: [] },
+  { kind: 'dps', role: 'moveHunt', base: 'item_0205', sources: [] },
   { kind: 'dps', role: 'tolerance', base: 'item_0392', sources: [] },
   { kind: 'dps', role: 'unyielding', base: 'item_0240', ancestor: 'item_0705', sources: [] },
+  { kind: 'dps', role: 'unyielding', base: 'item_0447', sources: [] },
+  { kind: 'dps', role: 'curseRibbon', base: 'item_0379', sources: ['curseRibbon'] },
+  { kind: 'dps', role: 'omniStrike', base: 'item_0372', sources: ['omniStrike'] },
   { kind: 'dps', role: 'beastBoots', base: 'item_0350', sources: [] },
   { kind: 'dps', role: 'beastPendant', base: 'item_0349', sources: [] },
   { kind: 'dps', role: 'lionheart', base: 'item_0329', ancestor: 'item_0714', sources: [] },
@@ -203,3 +209,5 @@ export const DPS_ITEM_COUNT = DPS_ITEM_IDS.size;
 export const PANEL_FAMILY_COUNT = PANEL_FAMILIES.length;
 export const PANEL_ITEM_COUNT = PANEL_ITEM_IDS.size;
 export const MODELED_ITEM_COUNT = MODELED_ITEM_IDS.size;
+
+// 64 families / 100 item ids / 118 modelled (after level-5 additions: 0205, 0447, 0379, 0372)

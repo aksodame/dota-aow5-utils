@@ -894,11 +894,11 @@ test('0255 active shield feeds 0331', () => {
 });
 
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 60);
-  assert.equal(DPS_ITEM_COUNT, 96);
+  assert.equal(DPS_FAMILY_COUNT, 64);
+  assert.equal(DPS_ITEM_COUNT, 100);
   assert.equal(PANEL_FAMILY_COUNT, 11);
   assert.equal(PANEL_ITEM_COUNT, 18);
-  assert.equal(MODELED_ITEM_COUNT, 114);
+  assert.equal(MODELED_ITEM_COUNT, 118);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
@@ -1037,4 +1037,61 @@ test('Phase Boots and Mask of Madness average their uptime; 0360 reads the movem
   // Madness covers 6 of the 10 seconds. That is 420 average movement,
   // 34 agility above the 250 threshold.
   assert.ok(on.attackSpeed >= 100);
+});
+
+test('0379 curseRibbon multiplies magical damage from the second attack onward', () => {
+  const noRibbon = simulateDps(
+    build({
+      attackDamage: 0,
+      totalAttributes: 1000,
+      attackSpeed: 100,
+      items: [
+        item('item_0209', {
+          ability_value_dot_trigger_chance_pct: 100,
+          ability_all_stats_damage_pct: 100,
+          ability_value_trigger_chance_pct: 100,
+        }),
+      ],
+    }),
+    enemy({ kind: 'boss', magicResistancePct: 0 }),
+    { duration: 3, mode: 'dummy' },
+  );
+  const withRibbon = simulateDps(
+    build({
+      attackDamage: 0,
+      totalAttributes: 1000,
+      attackSpeed: 100,
+      items: [
+        item('item_0379', { ability_magical_damage_add_pct: 100 }),
+        item('item_0209', {
+          ability_value_dot_trigger_chance_pct: 100,
+          ability_all_stats_damage_pct: 100,
+          ability_value_trigger_chance_pct: 100,
+        }),
+      ],
+    }),
+    enemy({ kind: 'boss', magicResistancePct: 0 }),
+    { duration: 3, mode: 'dummy' },
+  );
+  // curseRibbon's debuff applies on magical damage dealt, so from the second
+  // attack onward all magical damage is multiplied (1 + 100 % = 2×).
+  assert.ok(withRibbon.damage > noRibbon.damage);
+  assert.ok(source(withRibbon, 'witchBlade') > source(noRibbon, 'witchBlade'));
+});
+
+test('0372 omniStrike pays a flat magical proc on every attack', () => {
+  const r = simulateDps(
+    build({
+      attackDamage: 0,
+      totalAttributes: 1000,
+      attackSpeed: 100,
+      items: [item('item_0372', { ability_all_stats_damage_pct: 50 })],
+    }),
+    enemy({ kind: 'boss', magicResistancePct: 0 }),
+    { duration: 3, mode: 'dummy' },
+  );
+  const hits = r.sources.find((s) => s.id === 'omniStrike')?.hits ?? 0;
+  assert.ok(hits > 0);
+  // Each hit: 1000 × 50 % = 500 magical damage, no crit, no armour.
+  near(source(r, 'omniStrike'), hits * 500);
 });

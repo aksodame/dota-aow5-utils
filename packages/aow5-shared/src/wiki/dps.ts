@@ -158,7 +158,9 @@ export type DpsSourceId =
   | 'shatterProc'
   | 'defenderHammer'
   | 'lionheartHammer'
-  | 'reaperSlash';
+  | 'reaperSlash'
+  | 'curseRibbon'
+  | 'omniStrike';
 
 export interface DpsSource {
   id: DpsSourceId;
@@ -262,7 +264,7 @@ const SHADOW_MASK = ['item_0317'] as const;
 const SHATTERED_AXE = ['item_0305', 'item_0425'] as const;
 const VICIOUS_HORN = ['item_0289', 'item_0711'] as const;
 const TOLERANCE = ['item_0392'] as const;
-const UNYIELDING = ['item_0240', 'item_0705'] as const;
+const UNYIELDING = ['item_0240', 'item_0705', 'item_0447'] as const;
 const BEAST_BOOTS = ['item_0350'] as const;
 const BEAST_PENDANT = ['item_0349'] as const;
 const LIONHEART = ['item_0329', 'item_0714'] as const;
@@ -381,6 +383,10 @@ interface Constants {
   mjollnirCooldown: number;
   galeStrike: { every: number; multiplier: number } | undefined;
   evernight: { every: number; multiplier: number } | undefined;
+  curseRibbon: DpsItemStats | undefined;
+  curseRibbonPct: number;
+  omniStrike: DpsItemStats | undefined;
+  omniStrikePct: number;
 }
 
 function constants(build: DpsBuild): Constants {
@@ -487,6 +493,8 @@ function constants(build: DpsBuild): Constants {
   const gale = findItem(build, ['item_0351']);
   const evernight = findItem(build, ['item_0406', 'item_0721']);
   const havoc = findItem(build, ['item_0377']);
+  const curseRibbon = findItem(build, ['item_0379']);
+  const omniStrike = findItem(build, ['item_0372']);
   if (havoc) {
     cooldownProcs.push({
       source: 'havocHammer',
@@ -664,6 +672,10 @@ function constants(build: DpsBuild): Constants {
           multiplier: Math.max(0, value(evernight, 'ability_value_damage_multiplier')) / 100,
         }
       : undefined,
+    curseRibbon,
+    curseRibbonPct: Math.max(0, value(curseRibbon, 'ability_magical_damage_add_pct')),
+    omniStrike,
+    omniStrikePct: Math.max(0, value(omniStrike, 'ability_all_stats_damage_pct')),
   };
 }
 
@@ -715,6 +727,7 @@ function magicalDamage(
     burning: boolean;
     markStacks: number;
     doomStacks: number;
+    curseRibbonActive: boolean;
   },
 ): number {
   if (!(raw > 0)) return 0;
@@ -737,6 +750,7 @@ function magicalDamage(
   const vulnerable = c.mkb && opts.vulnStacks > 0 ? 1 + Math.min(25, 15 + 2 * opts.vulnStacks) / 100 : 1;
   const mark = c.bag && opts.burning ? 1 + Math.min(c.markMax, opts.markStacks) * c.markPerStack / 100 : 1;
   const season = 1 + build.seasonDamagePct / 100;
+  const curseRibbon = opts.curseRibbonActive && c.curseRibbonPct > 0 ? 1 + c.curseRibbonPct / 100 : 1;
   return (
     raw *
     crit *
@@ -752,7 +766,8 @@ function magicalDamage(
     poison *
     vulnerable *
     mark *
-    season
+    season *
+    curseRibbon
   );
 }
 
@@ -844,11 +859,15 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   if (legionShield) averageMovespeed -= Math.max(0, value(legionShield, 'ability_self_movespeed')) * legionDuty;
 
   const hunt = findItem(build, MOVE_HUNT);
+  const hunt205 = findItem(build, ['item_0205']);
   const huntThreshold = Math.max(0, value(hunt, 'ability_value_c_movespeed_threshold'));
   const huntPer = Math.max(1, value(hunt, 'ability_value_c_movespeed_per_attack_damage') || 1);
   const huntStep = Math.max(0, value(hunt, 'ability_bonus_attack_damage_per_step'));
-  const dynamicAgility =
-    hunt !== undefined ? Math.floor(Math.max(0, averageMovespeed - huntThreshold) / huntPer) * huntStep : 0;
+  let dynamicAgility = hunt !== undefined ? Math.floor(Math.max(0, averageMovespeed - huntThreshold) / huntPer) * huntStep : 0;
+  // 0205: bonus agility = floor(max(0, movespeed − 250) / 5); values hardcoded in its script
+  if (hunt205 !== undefined) {
+    dynamicAgility += Math.floor(Math.max(0, averageMovespeed - 250) / 5);
+  }
   const effectiveDynamicAgility = dynamicAgility * (1 + build.agilityPct / 100);
 
   const baseAgility = Math.max(0, build.totalAgility);
@@ -956,6 +975,8 @@ function sourceRecord(): Record<DpsSourceId, number> {
     defenderHammer: 0,
     lionheartHammer: 0,
     reaperSlash: 0,
+    curseRibbon: 0,
+    omniStrike: 0,
   };
 }
 
@@ -993,6 +1014,8 @@ function hitRecord(): Record<DpsSourceId, number> {
     defenderHammer: 0,
     lionheartHammer: 0,
     reaperSlash: 0,
+    curseRibbon: 0,
+    omniStrike: 0,
   };
 }
 
@@ -1050,6 +1073,8 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   let chaosProcMiss = 1;
   let doomStacks = 0;
   let doomAt: number | null = null;
+  /** 0379 curse ribbon: once any magical damage has been dealt, the target takes increased magical damage. */
+  let curseRibbonActive = false;
   const featherOn =
     c.feather !== undefined &&
     options.active?.has(c.feather.id) === true &&
@@ -1157,6 +1182,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       burning: burnUntil > time,
       markStacks,
       doomStacks,
+      curseRibbonActive,
     });
     add('soulBlade', hit, 1);
   };
@@ -1211,6 +1237,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         burning: burnUntil > time,
         markStacks,
         doomStacks,
+        curseRibbonActive,
       });
       add('maelstrom', hit * c.maelstromChance, c.maelstromChance);
     }
@@ -1230,6 +1257,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         burning: burnUntil > time,
         markStacks,
         doomStacks,
+        curseRibbonActive,
       });
       add('mjollnir', hit * c.mjollnirChance, c.mjollnirChance);
       mjollnirReady = time + c.mjollnirCooldown;
@@ -1317,6 +1345,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         burning: burnUntil > time,
         markStacks,
         doomStacks,
+        curseRibbonActive,
       });
       add('vortex', vortex * c.vortexChance, c.vortexChance);
       if (c.vortexDotRaw > 0) {
@@ -1328,6 +1357,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
           burning: burnUntil > time,
           markStacks,
           doomStacks,
+          curseRibbonActive,
         });
         add('vortexDot', dot * c.vortexChance, c.vortexChance);
       }
@@ -1379,8 +1409,25 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         burning: burnUntil > time,
         markStacks,
         doomStacks,
+        curseRibbonActive,
       });
       add('witchBlade', witch, c.witchChance);
+    }
+
+    // 0372: flat magical proc on every attack = totalAttributes × omniStrikePct/100.
+    // Always triggers (no chance roll in the script).
+    if (c.omniStrikePct > 0) {
+      const hit = magicalDamage(b, enemy, c, b.totalAttributes * (c.omniStrikePct / 100), {
+        dot: false,
+        poisonSource: false,
+        corrosionStacks: poisonStacks,
+        vulnStacks,
+        burning: burnUntil > time,
+        markStacks,
+        doomStacks,
+        curseRibbonActive,
+      });
+      add('omniStrike', hit, 1);
     }
 
     // Poison is applied after the hit. The Cobra burst sees the stacks that
@@ -1398,6 +1445,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
           burning: burnUntil > time,
           markStacks,
           doomStacks,
+          curseRibbonActive,
         });
         add('poisonBurst', burst, c.cobraChance);
       }
@@ -1426,6 +1474,10 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     if (c.pendant && settleChance > 0) applyPoisonTick(false, settleChance);
 
     if (c.aps > 0) attackAt += 1 / c.aps;
+
+    // curseRibbon's debuff applies on magical damage dealt; once active it
+    // refreshes on every subsequent magical hit.
+    if (c.curseRibbonPct > 0) curseRibbonActive = true;
   };
 
   const onBleedTick = (): void => {
@@ -1492,6 +1544,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       burning: burnUntil > time,
       markStacks,
       doomStacks,
+      curseRibbonActive,
     });
     add('poison', damage * expected, expected);
     if (advance) poisonAt = poisonAt === null ? time + c.poisonTick : poisonAt + c.poisonTick;
@@ -1541,6 +1594,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
           burning: burnUntil > time,
           markStacks,
           doomStacks,
+          curseRibbonActive,
         });
         add('gaze', hit, 1);
       }
