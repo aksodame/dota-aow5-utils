@@ -5,6 +5,7 @@ import {
   applyEffects,
   copyStats,
   heroStatsAtLevel,
+  moveHuntAgility,
   permanentBuffPool,
   permanentBuffRows,
   seasonalPatch,
@@ -36,6 +37,7 @@ import { ItemStatsEditor } from './calc/ItemStatsEditor';
 import { ancestralBase, itemCooldown, itemValues, linksOf, plainText, useItemsExtra } from './calc/itemData';
 import {
   GROUPS,
+  MOVESPEED_ROW,
   autoBase,
   derivePools,
   digitsFor,
@@ -318,6 +320,13 @@ function buildPool(
   };
   const fx = applyEffects(list, (P) => derivePools(input, withBuffs(P)), (id) => ancestralBase(full, id));
   for (const [k, v] of Object.entries(fx.extra)) sums[k] = (sums[k] ?? 0) + v;
+  // 0205 / 0360 / 0718 grant agility from total movement speed through
+  // `GetAttributeBonus`: it is a real attribute, so it belongs on the agility
+  // row — that row is what feeds attack damage, attack speed and armour. The
+  // movement speed itself is already complete here (items, effects and buffs),
+  // and agility cannot feed back into it.
+  const huntAgility = moveHuntAgility(list, rowTotal(input, MOVESPEED_ROW, sums, buffs).sum);
+  if (huntAgility !== 0) sums['bonus_agility'] = (sums['bonus_agility'] ?? 0) + huntAgility;
   return { sums, fx, buffs, list };
 }
 

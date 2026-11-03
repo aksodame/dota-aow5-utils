@@ -257,7 +257,8 @@ const GLOOM = dpsItemIds('gloom');
 const WITCH = dpsItemIds('witch');
 const PENDANT = dpsItemIds('pendant');
 const CHAOS = dpsItemIds('chaosPoison');
-const MOVE_HUNT = ['item_0360', 'item_0718'] as const;
+/** Items whose script grants agility from movement speed through `GetAttributeBonus`. */
+export const MOVE_HUNT_IDS = ['item_0205', 'item_0360', 'item_0718'] as const;
 const PHASE_BOOTS = ['item_0152'] as const;
 const MADNESS = ['item_0155'] as const;
 const SHADOW_MASK = ['item_0317'] as const;
@@ -279,6 +280,32 @@ function findItem(build: DpsBuild, ids: readonly string[]): DpsItemStats | undef
 }
 
 const value = (item: DpsItemStats | undefined, key: string): number => num(item?.stats[key]);
+
+/**
+ * The agility 0205 / 0360 / 0718 grant at `movespeed`.
+ *
+ * All three run `floor(max(0, total_movespeed − threshold) / per) × step` and
+ * return the result from `GetAttributeBonus`, so it is a real agility bonus:
+ * the panel's agility row — and everything derived from it, attack damage and
+ * attack speed included — must see the same number the DPS window does.
+ * 0205 hardcodes 250 / 5 / 1 in its script; 0360 and 0718 read them from the
+ * ability values (0718's step is 2). Every such item equipped counts.
+ */
+export function moveHuntAgility(items: readonly DpsItemStats[], movespeed: number): number {
+  let agility = 0;
+  for (const item of items) {
+    if (!(MOVE_HUNT_IDS as readonly string[]).includes(item.id)) continue;
+    const stat = (key: string, fallback: number): number => {
+      const v = item.stats[key];
+      return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+    };
+    const threshold = Math.max(0, stat('ability_value_c_movespeed_threshold', 250));
+    const per = Math.max(1, stat('ability_value_c_movespeed_per_attack_damage', 5));
+    const step = Math.max(0, stat('ability_bonus_attack_damage_per_step', item.id === 'item_0205' ? 1 : 0));
+    agility += Math.floor(Math.max(0, movespeed - threshold) / per) * step;
+  }
+  return agility;
+}
 
 function enemyExtraPct(build: DpsBuild, kind: EnemyKind): number {
   return num(build.extraDamagePct[kind]);
@@ -805,11 +832,12 @@ function armorAfterBreakAt(armor: number, stacks: number): number {
 }
 
 /**
- * Applies the two movement-speed actives on their cooldowns and, with 0360 /
- * 0718 equipped, turns the resulting average movement speed into agility. The
- * active is used at t = 0 and again whenever its cooldown is ready, so a
- * 10-second window sees a 12-second Phase buff for its whole length while a
- * 60-second window gets its 12/60 duty cycle.
+ * Applies the two movement-speed actives on their cooldowns and, with 0205 /
+ * 0360 / 0718 equipped, turns the movement they add over the static build into
+ * agility. The static grant is already on the panel; only this surplus is the
+ * engine's to add. The active is used at t = 0 and again whenever its cooldown
+ * is ready, so a 10-second window sees a 12-second Phase buff for its whole
+ * length while a 60-second window gets its 12/60 duty cycle.
  */
 function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, duration: number): DpsBuild {
   const phase = findItem(build, PHASE_BOOTS);
@@ -858,20 +886,14 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   if (bloodRite) averageMovespeed += Math.max(0, value(bloodRite, 'ability_value_bonus_move_speed')) * bloodRiteDuty;
   if (legionShield) averageMovespeed -= Math.max(0, value(legionShield, 'ability_self_movespeed')) * legionDuty;
 
-  const hunt = findItem(build, MOVE_HUNT);
-  const hunt205 = findItem(build, ['item_0205']);
-  const huntThreshold = Math.max(0, value(hunt, 'ability_value_c_movespeed_threshold'));
-  const huntPer = Math.max(1, value(hunt, 'ability_value_c_movespeed_per_attack_damage') || 1);
-  const huntStep = Math.max(0, value(hunt, 'ability_bonus_attack_damage_per_step'));
-  let dynamicAgility = hunt !== undefined ? Math.floor(Math.max(0, averageMovespeed - huntThreshold) / huntPer) * huntStep : 0;
-  // 0205: bonus agility = floor(max(0, movespeed − 250) / 5); values hardcoded in its script.
-  // The part already reflected in build.totalAgility (via buildDpsInput from base movespeed) is
-  // subtracted to avoid double counting; only the excess from active movespeed bonuses is added.
-  if (hunt205 !== undefined) {
-    const alreadyInBuild = Math.floor(Math.max(0, build.baseMoveSpeed - 250) / 5);
-    const fromAverage = Math.floor(Math.max(0, averageMovespeed - 250) / 5);
-    dynamicAgility += Math.max(0, fromAverage - alreadyInBuild);
-  }
+  // The panel already carries the agility these items grant at the build's
+  // own movement speed (`buildDpsInput` folds it into the agility row), so the
+  // engine adds only the movement the actives push on top of it. The
+  // subtraction happens in agility, not in movement-speed steps, so a step
+  // worth 2 (0718) is counted as 2.
+  const staticHuntAgility = moveHuntAgility(build.items, build.baseMoveSpeed);
+  const averageHuntAgility = moveHuntAgility(build.items, averageMovespeed);
+  const dynamicAgility = averageHuntAgility - staticHuntAgility;
   const effectiveDynamicAgility = dynamicAgility * (1 + build.agilityPct / 100);
 
   const baseAgility = Math.max(0, build.totalAgility);

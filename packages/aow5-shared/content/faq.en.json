@@ -2673,6 +2673,10 @@
       },
       {
        "type": "text",
+       "text": "**The tooltip promises the wrong stat.** [[item:item_0205|Mage Slayer]]: the tooltip says «each 5 extra movement speed grants 1 attack damage», but the modifier's `GetAttributeBonus` returns `bonus_agility` — it is agility. On an agility hero that is almost the same thing (+0.8 damage per point); on a strength or intelligence hero it gives attack speed and armour but no damage. It has been this way in every build; the calculator follows the code."
+      },
+      {
+       "type": "text",
        "text": "**Harsher than the tooltip.** [[item:item_0239|★Stonebreaker]]: the tooltip says «−5 % movement speed only», but the code's modifier returns `attack_speed_pct = −10` and `bonus_movespeed_pct = −10`; the script never reads `ability_sdjd = 5`. In practice the item also cuts attack speed by 10 %."
       },
       {

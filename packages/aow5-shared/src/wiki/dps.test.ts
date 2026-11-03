@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { simulateDps, type DpsBuild, type DpsEnemy, type DpsItemStats } from './dps.ts';
+import { moveHuntAgility, simulateDps, type DpsBuild, type DpsEnemy, type DpsItemStats } from './dps.ts';
 import {
   DPS_FAMILY_COUNT,
   DPS_ITEM_COUNT,
@@ -1031,12 +1031,32 @@ test('Phase Boots and Mask of Madness average their uptime; 0360 reads the movem
   });
   const off = simulateDps(base, enemy(), { duration: 10, mode: 'dummy' });
   const on = simulateDps(base, enemy(), { duration: 10, mode: 'dummy', active: new Set(['item_0152', 'item_0155']) });
-  assert.ok(on.attackSpeed > off.attackSpeed);
-  assert.ok(on.damage > off.damage);
+  // No active: the average is the build's own speed, whose grant the panel
+  // already carries — the engine must add nothing on top of it.
+  near(off.attackSpeed, 100);
   // A 10 s window is covered by Phase's 12 s buff for its whole length;
-  // Madness covers 6 of the 10 seconds. That is 420 average movement,
-  // 34 agility above the 250 threshold.
-  assert.ok(on.attackSpeed >= 100);
+  // Madness covers 6 of the 10 seconds. That is 420 average movement: 34
+  // agility at the threshold, of which the panel already has 10 (at 300).
+  const surplus = 34 - 10;
+  // Mask of Madness adds its 100 attack speed for 6 of the 10 seconds too.
+  const expected = 240 * ((100 + surplus) / (100 + surplus + 500) - 100 / 600) + 100 + 100 * 0.6;
+  near(on.attackSpeed, expected);
+  assert.ok(on.damage > off.damage);
+});
+
+test('moveHuntAgility follows each script: 0205 hardcodes its step, 0360/0718 read theirs', () => {
+  const hunt = (step: number) => ({
+    ability_value_c_movespeed_threshold: 250,
+    ability_value_c_movespeed_per_attack_damage: 5,
+    ability_bonus_attack_damage_per_step: step,
+  });
+  assert.equal(moveHuntAgility([item('item_0205', {})], 249), 0);
+  assert.equal(moveHuntAgility([item('item_0205', {})], 300), 10);
+  assert.equal(moveHuntAgility([item('item_0360', hunt(1))], 350), 20);
+  assert.equal(moveHuntAgility([item('item_0718', hunt(2))], 350), 40);
+  // Every equipped item counts, and items outside the family contribute nothing.
+  assert.equal(moveHuntAgility([item('item_0360', hunt(1)), item('item_0718', hunt(2))], 300), 30);
+  assert.equal(moveHuntAgility([item('item_0205', {}), item('item_0317', {})], 400), 30);
 });
 
 test('0379 curseRibbon multiplies magical damage from the second attack onward', () => {

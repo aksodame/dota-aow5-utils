@@ -43,13 +43,10 @@ export function buildDpsInput(
     0,
   );
 
-  // 0205: dynamic agility from movespeed, added to DPS input (not shown in panel stats).
-  // Lua скрипт даёт bonus_agility = floor(max(0, MS − 250) / 5) как динамический модификатор;
-  // панель статов не отображает его (только плоские статы предметов), но для DPS считаем.
-  // Ловкость конвертируется в урон атаки через attackDamagePerAgi (зависит от основного атрибута героя).
-  const baseMoveSpeedVal = panel('bonus_movespeed');
-  const hunt205Item = items.find((item) => item.id === 'item_0205');
-  const dynamicAgility0205 = hunt205Item !== undefined ? Math.floor(Math.max(0, baseMoveSpeedVal - 250) / 5) : 0;
+  // 0205 / 0360 / 0718 need no special case here: their agility is already in
+  // the panel's agility row (buildPool adds it from moveHuntAgility), so
+  // `panel('bonus_agility')` and the derived attack damage and attack speed
+  // carry it the same way the game's attribute panel does.
   const attackDamagePerAgiVal =
     input.primary === 'agi'
       ? input.file.attrBonus.primary_attr_attack_damage
@@ -58,7 +55,7 @@ export function buildDpsInput(
         : 0;
 
   return {
-    attackDamage: panel('bonus_attack_damage') + dynamicAgility0205 * attackDamagePerAgiVal,
+    attackDamage: panel('bonus_attack_damage'),
     allAttackDamagePct: panel('all_attack_damage_percent'),
     attackSpeed: panel('attack_speed'),
     attackSpeedPct: panel('attack_speed_pct'),
@@ -83,9 +80,9 @@ export function buildDpsInput(
       boss: extra('extra_damage_pct_3'),
     },
     seasonDamagePct: (panel('season_contribution') + panel('season_world')) * 2,
-    totalAttributes: panel('bonus_strength') + panel('bonus_agility') + panel('bonus_intelligence') + dynamicAgility0205,
+    totalAttributes: panel('bonus_strength') + panel('bonus_agility') + panel('bonus_intelligence'),
     maxHealth: panel('bonus_health'),
-    totalAgility: panel('bonus_agility') + dynamicAgility0205,
+    totalAgility: panel('bonus_agility'),
     agilityPct: extra('all_agility_pct') + extra('all_all_stats_pct'),
     totalIntelligence: panel('bonus_intelligence'),
     baseMoveSpeed: panel('bonus_movespeed'),
