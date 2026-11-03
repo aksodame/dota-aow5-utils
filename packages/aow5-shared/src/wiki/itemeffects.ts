@@ -36,6 +36,8 @@ export type EffectId =
   | 'crown'
   | 'sageBoots'
   | 'arcaneCloak'
+  | 'sageCloak'
+  | 'primalBlade'
   | 'nullifier'
   | 'primalCrystal'
   | 'overcrit'
@@ -59,6 +61,8 @@ export type EffectFacts =
     }
   | { kind: 'sageBoots'; pct: number; extra: number; threshold: number; per: number; step: number; cap: number }
   | { kind: 'arcaneCloak'; hp: number }
+  | { kind: 'sageCloak'; hp: number; pct: number; mana: number }
+  | { kind: 'primalBlade'; ad: number; pct: number; agi: number }
   | { kind: 'nullifier'; pct: number; lifesteal: number; step: number; per: number; cap: number }
   | { kind: 'primalCrystal'; total: number; moved: number; gained: number; convert: number; agi: number; stepAgi: number; perPct: number; cap: number }
   | { kind: 'overcrit'; total: number; cap: number; overflow: number; step: number; perStep: number; amp: number }
@@ -166,6 +170,32 @@ const REG: Record<EffectId, EffectDef> = {
       if (hp <= 0) return null;
       add(P, 'bonus_health', hp);
       return { kind: 'arcaneCloak', hp };
+    },
+  },
+
+  // Sage's Cloak (0442): health from the mana pool at its own percentage.
+  // bonus_health = floor(max_mana × ability_value_max_mana_to_health_pct / 100).
+  sageCloak: {
+    apply(P, D) {
+      const mana = Math.max(0, D.mana || 0);
+      const pct = Math.max(0, param(P, 'ability_value_max_mana_to_health_pct', 120));
+      const hp = Math.floor((mana * pct) / 100);
+      if (hp <= 0) return null;
+      add(P, 'bonus_health', hp);
+      return { kind: 'sageCloak', hp, pct, mana };
+    },
+  },
+
+  // Primal Blade (0655) and its ancestor (0882): total agility becomes extra
+  // attack damage through GetAttributeBonus — bonus_attack_damage = agility × pct/100.
+  primalBlade: {
+    apply(P, D) {
+      const agi = Math.max(0, D.agi || 0);
+      const pct = Math.max(0, param(P, 'ability_value_agility_to_damage_pct', 100));
+      const ad = (agi * pct) / 100;
+      if (ad <= 0) return null;
+      add(P, 'bonus_attack_damage', ad);
+      return { kind: 'primalBlade', ad, pct, agi };
     },
   },
 
@@ -283,6 +313,9 @@ export const EFFECT_ITEMS: Readonly<Record<string, EffectId>> = {
   item_0608: 'crown',
   item_0336: 'sageBoots',
   item_0335: 'arcaneCloak',
+  item_0442: 'sageCloak',
+  item_0655: 'primalBlade',
+  item_0882: 'primalBlade',
   item_0208: 'nullifier',
   item_0658: 'primalCrystal',
   item_0610: 'overcrit',

@@ -279,3 +279,34 @@ test('the crown and king backpack auras reach their owner', () => {
   assert.equal(effectOf('item_0314'), 'emperorCrown');
   assert.equal(effectOf('item_0315'), 'kingBackpack');
 });
+
+test('0442 Sage Cloak turns 120 % of the mana pool into health', () => {
+  const got = applyEffects(
+    [{ id: 'item_0442', stats: { ability_value_max_mana_to_health_pct: 120, bonus_mana: 32, bonus_intelligence: 50 } }],
+    derive,
+  );
+  // mana = 260 + 32 + (80 + 50) × 0.85 = 402.5 → floor(402.5 × 1.2) = 483
+  assert.equal(got.extra.bonus_health, 483);
+  assert.deepEqual(got.notes.find((n) => n.itemId === 'item_0442')?.facts, {
+    kind: 'sageCloak',
+    hp: 483,
+    pct: 120,
+    mana: 402.5,
+  });
+});
+
+test('0655 / 0882 Primal Blade adds agility-scaled attack damage', () => {
+  const base = applyEffects(
+    [{ id: 'item_0655', stats: { ability_value_agility_to_damage_pct: 100, bonus_agility: 42 } }],
+    derive,
+  );
+  // 90 + 42 = 132 agility → 132 attack damage.
+  assert.ok(Math.abs(base.extra.bonus_attack_damage! - 132) < 1e-9);
+  const ancestor = applyEffects(
+    [{ id: 'item_0882', stats: { ability_value_agility_to_damage_pct: 65, bonus_agility: 111 } }],
+    derive,
+  );
+  // s3: 65 % of (90 + 111) = 130.65.
+  assert.ok(Math.abs(ancestor.extra.bonus_attack_damage! - 130.65) < 1e-9);
+  assert.equal(effectOf('item_0882'), 'primalBlade');
+});

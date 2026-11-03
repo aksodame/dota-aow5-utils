@@ -104,6 +104,11 @@ export function buildDpsInput(
       extra('physical_lifesteal_pct') +
       extra('magical_lifesteal_pct') +
       extra('omni_lifesteal_pct'),
+    // 0241 listens to the game's attack/spell heal events; omni heals both.
+    attackHealPct:
+      extra('attack_lifesteal_pct') + extra('physical_lifesteal_pct') + extra('omni_lifesteal_pct'),
+    spellHealPct:
+      extra('spell_lifesteal_pct') + extra('magical_lifesteal_pct') + extra('omni_lifesteal_pct'),
     noCrit: false,
     agilityAttackSpeedCap: input.file.attrBonus.agility_attack_speed_cap,
     agilityAttackSpeedDecay: input.file.attrBonus.agility_attack_speed_decay,

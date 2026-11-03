@@ -67,7 +67,9 @@ export type DpsRole =
   | 'shadowCloak'
   | 'frostPendant'
   | 'curseRibbon'
-  | 'omniStrike';
+  | 'omniStrike'
+  | 'assassinCreed'
+  | 'frostChain';
 
 export interface DpsFamily {
   kind: 'dps';
@@ -137,8 +139,13 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'tolerance', base: 'item_0392', sources: [] },
   { kind: 'dps', role: 'unyielding', base: 'item_0240', ancestor: 'item_0705', sources: [] },
   { kind: 'dps', role: 'unyielding', base: 'item_0447', sources: [] },
+  { kind: 'dps', role: 'unyielding', base: 'item_0448', sources: [] },
   { kind: 'dps', role: 'curseRibbon', base: 'item_0379', sources: ['curseRibbon'] },
   { kind: 'dps', role: 'omniStrike', base: 'item_0372', sources: ['omniStrike'] },
+  { kind: 'dps', role: 'shatter', base: 'item_0229', sources: ['shatterProc'] },
+  { kind: 'dps', role: 'assassinCreed', base: 'item_0361', sources: ['assassinCreed'] },
+  { kind: 'dps', role: 'assassinCreed', base: 'item_0453', sources: ['assassinCreed'] },
+  { kind: 'dps', role: 'frostChain', base: 'item_0342', sources: ['frostChain'] },
   { kind: 'dps', role: 'beastBoots', base: 'item_0350', sources: [] },
   { kind: 'dps', role: 'beastPendant', base: 'item_0349', sources: [] },
   { kind: 'dps', role: 'lionheart', base: 'item_0329', ancestor: 'item_0714', sources: [] },
@@ -211,4 +218,5 @@ export const PANEL_FAMILY_COUNT = PANEL_FAMILIES.length;
 export const PANEL_ITEM_COUNT = PANEL_ITEM_IDS.size;
 export const MODELED_ITEM_COUNT = MODELED_ITEM_IDS.size;
 
-// 65 families / 101 item ids / 119 modelled (after level-5 additions: 0205, 0447, 0379, 0372, 0243)
+// 70 families / 106 item ids / 124 modelled (level-5 additions: 0205, 0229, 0243,
+// 0342, 0361, 0372, 0379, 0447, 0448, 0453)

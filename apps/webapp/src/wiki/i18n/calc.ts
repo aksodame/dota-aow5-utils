@@ -471,11 +471,13 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         moonShard: 'Осколок луны — прок',
         mjollnir: 'Мьёльнир — молния',
         omniStrike: 'Всесторонний удар — магический прок',
+        assassinCreed: 'Кредо ассасина — физ. прок от ловкости',
+        frostChain: 'Ледяная цепь — магический удар',
         galeStrike: 'Удар бури — серия',
         evernight: 'Меч вечной ночи — серия',
         havocHammer: '★Молот разрушения — щит',
         soulBlade: 'Клинок очищения душ — магия',
-        shatterProc: 'Дезолятор — прок',
+        shatterProc: 'Раскол брони — физ. прок',
         defenderHammer: 'Молот защитника — щит',
         lionheartHammer: 'Молот Львиного сердца — щит',
         reaperSlash: 'Коса смерти — удар',
@@ -627,11 +629,13 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         moonShard: 'Moon Shard — proc',
         mjollnir: 'Mjollnir — lightning',
         omniStrike: 'All-around Strike — magical proc',
+        assassinCreed: "Assassin's Creed — agility physical proc",
+        frostChain: 'Frost Chain — magical hit',
         galeStrike: 'Gale Strike — combo',
         evernight: 'Evernight Sword — combo',
         havocHammer: '★Havoc Hammer — shield hit',
         soulBlade: 'Soul-cleansing Blade — magic',
-        shatterProc: 'Desolator — proc',
+        shatterProc: 'Armour shatter — physical proc',
         defenderHammer: 'Guardian Hammer — shield hit',
         lionheartHammer: 'Lionheart Hammer — shield hit',
         reaperSlash: 'Reaper\'s Scythe — slash',
@@ -775,11 +779,13 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         moonShard: '银月之晶——触发',
         mjollnir: '雷神之锤——闪电',
         omniStrike: '全方位打击——魔法触发',
+        assassinCreed: '刺客信条——敏捷物理触发',
+        frostChain: '冰霜链——魔法伤害',
         galeStrike: '狂风之击——连击',
         evernight: '永夜剑——连击',
         havocHammer: '★浩劫重锤——护盾打击',
         soulBlade: '净魂之刃——魔法',
-        shatterProc: '★暗灭——触发',
+        shatterProc: '破甲——物理触发',
         defenderHammer: '守护之锤——护盾打击',
         lionheartHammer: '狮心王锤——护盾打击',
         reaperSlash: '死神之镰——斩击',
@@ -957,6 +963,10 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.pct)}% маг. урона от маны: ${n(f.extra)} сверх ${n(f.threshold)}, шаг ${n(f.per)} маны = +${n(f.step)}% (потолок ${n(f.cap)}%)`;
           case 'arcaneCloak':
             return `+${n(f.hp)} здоровья — ровно столько, сколько маны (потолок маны)`;
+          case 'sageCloak':
+            return `+${n(f.hp)} здоровья — ${n(f.pct)} % от максимальной маны (${n(f.mana)})`;
+          case 'primalBlade':
+            return `+${n(f.ad)} урона атаки — ${n(f.pct)} % от ловкости (${n(f.agi)})`;
           case 'nullifier':
             return `+${n(f.pct)}% маг. урона: вампиризм ${n(f.lifesteal)}% → шаг ${n(f.step)}% = +${n(f.per)}% (потолок ${n(f.cap)}%)`;
           case 'primalCrystal':
@@ -1189,6 +1199,10 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.pct)}% magical damage from mana: ${n(f.extra)} above ${n(f.threshold)}, every ${n(f.per)} mana = +${n(f.step)}% (cap ${n(f.cap)}%)`;
           case 'arcaneCloak':
             return `+${n(f.hp)} health — exactly as much as your mana (max mana)`;
+          case 'sageCloak':
+            return `+${n(f.hp)} health — ${n(f.pct)} % of the mana pool (${n(f.mana)})`;
+          case 'primalBlade':
+            return `+${n(f.ad)} attack damage — ${n(f.pct)} % of agility (${n(f.agi)})`;
           case 'nullifier':
             return `+${n(f.pct)}% magical damage: lifesteal ${n(f.lifesteal)}% → every ${n(f.step)}% = +${n(f.per)}% (cap ${n(f.cap)}%)`;
           case 'primalCrystal':
@@ -1411,6 +1425,10 @@ export const CALC: Localised<CalcStrings> = {
             return `魔法值带来 +${n(f.pct)}% 魔法伤害：超出 ${n(f.threshold)} 的 ${n(f.extra)}，每 ${n(f.per)} 点魔法值 = +${n(f.step)}%（上限 ${n(f.cap)}%）`;
           case 'arcaneCloak':
             return `+${n(f.hp)} 生命值——与魔法值（最大魔法值）相等`;
+          case 'sageCloak':
+            return `+${n(f.hp)} 生命值——最大魔法值的 ${n(f.pct)}%（${n(f.mana)}）`;
+          case 'primalBlade':
+            return `+${n(f.ad)} 攻击力——敏捷的 ${n(f.pct)}%（${n(f.agi)}）`;
           case 'nullifier':
             return `+${n(f.pct)}% 魔法伤害：吸血 ${n(f.lifesteal)}% → 每 ${n(f.step)}% = +${n(f.per)}%（上限 ${n(f.cap)}%）`;
           case 'primalCrystal':

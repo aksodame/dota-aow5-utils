@@ -112,6 +112,13 @@ export interface DpsBuild {
   energyShield: number;
   /** Every lifesteal type summed; 0362's slash scales with it. */
   anyLifestealPct: number;
+  /**
+   * 0241 reads only the `attack_lifesteal` and `spell_lifesteal` heal events.
+   * The engine maps the pak's five stats onto them as attack = attack +
+   * physical + omni, spell = spell + magical + omni (omni heals both).
+   */
+  attackHealPct: number;
+  spellHealPct: number;
   /** 0392 / 0240 turn critical strikes off for their owner. */
   noCrit: boolean;
   agilityAttackSpeedCap: number;
@@ -160,7 +167,9 @@ export type DpsSourceId =
   | 'lionheartHammer'
   | 'reaperSlash'
   | 'curseRibbon'
-  | 'omniStrike';
+  | 'omniStrike'
+  | 'assassinCreed'
+  | 'frostChain';
 
 export interface DpsSource {
   id: DpsSourceId;
@@ -265,7 +274,10 @@ const SHADOW_MASK = ['item_0317'] as const;
 const SHATTERED_AXE = ['item_0305', 'item_0425'] as const;
 const VICIOUS_HORN = ['item_0289', 'item_0711'] as const;
 const TOLERANCE = ['item_0392'] as const;
-const UNYIELDING = ['item_0240', 'item_0705', 'item_0447'] as const;
+// 0447 (Shiva's Guard) and 0448 (Magic Wand) point at the 0240 script in the
+// pak without its ability values: they force no crits and add no bonus. The
+// engine models the script, which is what the game runs.
+const UNYIELDING = ['item_0240', 'item_0705', 'item_0447', 'item_0448'] as const;
 const BEAST_BOOTS = ['item_0350'] as const;
 const BEAST_PENDANT = ['item_0349'] as const;
 const LIONHEART = ['item_0329', 'item_0714'] as const;
@@ -280,6 +292,29 @@ function findItem(build: DpsBuild, ids: readonly string[]): DpsItemStats | undef
 }
 
 const value = (item: DpsItemStats | undefined, key: string): number => num(item?.stats[key]);
+
+/**
+ * Damage sources that are spell-type rather than attack-type, for 0241's two
+ * heal channels. Everything else counts as attack (physical item hits and
+ * attack modifiers); pure damage does not lifesteal at all.
+ */
+const SPELL_SOURCES: ReadonlySet<DpsSourceId> = new Set<DpsSourceId>([
+  'witchBlade',
+  'poison',
+  'poisonBurst',
+  'burn',
+  'gaze',
+  'maelstrom',
+  'moonShard',
+  'mjollnir',
+  'frostChain',
+  'omniStrike',
+  'soulBlade',
+  'curseRibbon',
+  'vortex',
+  'vortexDot',
+]);
+const NO_HEAL_SOURCES: ReadonlySet<DpsSourceId> = new Set<DpsSourceId>(['feather', 'reaperSlash']);
 
 /**
  * The agility 0205 / 0360 / 0718 grant at `movespeed`.
@@ -346,6 +381,24 @@ interface Constants {
   mkbMaxStacks: number;
   mkbVulnDuration: number;
   mkbArmorDuration: number;
+  /**
+   * Attack-triggered vulnerability besides 0217: 0196 (25 %, 1 s cooldown)
+   * and 0363 (50 %, no cooldown), both 5 s. They share the generic
+   * `modifier_generic_vulnerable` with MKB, so the stacks pool together.
+   */
+  vulnSources: ReadonlyArray<{ chance: number; cooldown: number }>;
+  vulnDuration: number;
+  /**
+   * 0361 / 0453 "assassin's creed": a chance-based physical hit scaled by
+   * agility and by the TOTAL attack speed (the tooltip says "additional").
+   * The scripts share the `assassin_creed` mutex; 0453 has the higher
+   * priority, so only it is read when both are equipped.
+   */
+  creed: { chance: number; agilityPct: number; perAsPct: number; targetPct: number; cooldown: number } | undefined;
+  /** 0342 Frost Chain: on attack, 180 % of attack damage as magic on a 0.5 s cooldown. */
+  frostChain: { pct: number; cooldown: number } | undefined;
+  /** 0241 Bloodthirsty Heart: heal → stored attack damage, capped and decaying. */
+  heart: { perPct: number; maxAd: number; decayPct: number; decayMin: number } | undefined;
   bleedProc: DpsItemStats | undefined;
   bleedProcChance: number;
   critBleed: DpsItemStats | undefined;
@@ -424,6 +477,53 @@ function constants(build: DpsBuild): Constants {
   );
   const bat = build.baseAttackTime > 0 ? build.baseAttackTime : 1.7;
   const mkb = findItem(build, MKB);
+  // 0196 and 0363 hang the same generic vulnerability as 0217 from an attack.
+  // 0196's passive has a 1 s item cooldown; 0363 has none.
+  const vulnSources = [findItem(build, ['item_0196']), findItem(build, ['item_0363'])]
+    .map((item) => {
+      if (item === undefined) return null;
+      const chance = Math.max(
+        0,
+        value(item, 'ability_trigger_chance_pct') || value(item, 'ability_value_trigger_chance_pct'),
+      ) / 100;
+      if (!(chance > 0)) return null;
+      return { chance, cooldown: Math.max(0, item.cooldown ?? 0), duration: Math.max(0, value(item, 'ability_vulnerable_duration') || 5) };
+    })
+    .filter((x): x is { chance: number; cooldown: number; duration: number } => x !== null);
+  const vulnDuration = Math.max(
+    mkb !== undefined ? Math.max(0, value(mkb, 'ability_vulnerable_duration') || 5) : 0,
+    ...vulnSources.map((s) => s.duration),
+  );
+  // 0453 (mutex priority 200) wins over 0361 (100) when both are equipped.
+  const creedItem = findItem(build, ['item_0453']) ?? findItem(build, ['item_0361']);
+  const creed = creedItem === undefined
+    ? undefined
+    : {
+        chance: Math.max(0, value(creedItem, 'ability_value_trigger_chance_pct')) / 100,
+        agilityPct: Math.max(0, value(creedItem, 'ability_value_agility_damage_pct')),
+        perAsPct: Math.max(0, value(creedItem, 'ability_damage_pct_per_attack_speed')),
+        // 0453 splits the hit: the target takes target_damage_pct of the base,
+        // the area around it takes area_damage_pct. Only the target is counted.
+        targetPct: creedItem.id === 'item_0453' ? Math.max(0, value(creedItem, 'ability_target_damage_pct')) : 100,
+        // 0361 hardcodes a 0.2 s internal cooldown; 0453 reads its value.
+        cooldown: Math.max(0, creedItem.id === 'item_0453' ? value(creedItem, 'ability_internal_cooldown') : 0.2),
+      };
+  const chainItem = findItem(build, ['item_0342']);
+  const frostChain = chainItem === undefined
+    ? undefined
+    : {
+        pct: Math.max(0, value(chainItem, 'ability_value_attack_damage_pct')),
+        cooldown: Math.max(0, chainItem.cooldown ?? 0.5),
+      };
+  const heartItem = findItem(build, ['item_0241']);
+  const heart = heartItem === undefined
+    ? undefined
+    : {
+        perPct: Math.max(0, value(heartItem, 'ability_attack_per_lifesteal_pct')),
+        maxAd: Math.max(0, value(heartItem, 'ability_max_bonus_attack')),
+        decayPct: Math.max(0, value(heartItem, 'ability_decay_pct_per_second')),
+        decayMin: Math.max(0, value(heartItem, 'ability_decay_min_per_second')),
+      };
   const bleedProc = findItem(build, BLEED_PROC);
   const critBleed = findItem(build, CRIT_BLEED);
   const bloodEcho = findItem(build, BLOOD_ECHO);
@@ -588,15 +688,19 @@ function constants(build: DpsBuild): Constants {
       raw: Math.max(0, value(valor, 'ability_ps_damage')),
     });
   }
-  const shatter = findItem(build, ['item_0206']);
-  if (shatter) {
-    flatProcs.push({
-      source: 'shatterProc',
-      chance: Math.max(0, value(shatter, 'ability_ps_chance')) / 100,
-      raw: Math.max(0, value(shatter, 'ability_ps_damage')),
-      armor: Math.max(0, value(shatter, 'ability_armor_reduce')),
-      duration: Math.max(0, value(shatter, 'ability_duration')),
-    });
+  // 0206 and 0229 run the same shatter script (different numbers); both can
+  // be equipped, and each rolls its own proc and armour debuff.
+  for (const id of ['item_0206', 'item_0229']) {
+    const shatter = findItem(build, [id]);
+    if (shatter) {
+      flatProcs.push({
+        source: 'shatterProc',
+        chance: Math.max(0, value(shatter, 'ability_ps_chance')) / 100,
+        raw: Math.max(0, value(shatter, 'ability_ps_damage')),
+        armor: Math.max(0, value(shatter, 'ability_armor_reduce')),
+        duration: Math.max(0, value(shatter, 'ability_duration')),
+      });
+    }
   }
   const soulBlade = findItem(build, ['item_0165']);
   const pollen = findItem(build, ['item_0270']);
@@ -613,6 +717,11 @@ function constants(build: DpsBuild): Constants {
     mkbMaxStacks: Math.max(1, Math.floor(value(mkb, 'ability_value_armor_max_stacks') || 1)),
     mkbVulnDuration: Math.max(0, value(mkb, 'ability_vulnerable_duration') || 5),
     mkbArmorDuration: Math.max(0, value(mkb, 'ability_armor_duration') || 3),
+    vulnSources,
+    vulnDuration,
+    creed,
+    frostChain,
+    heart,
     bleedProc,
     bleedProcChance: Math.max(0, value(bleedProc, 'ability_value_min_trigger_chance_pct') || value(bleedProc, 'ability_trigger_chance_pct')),
     critBleed,
@@ -722,7 +831,7 @@ function directDamage(
   const reduction = Math.max(0.001, 1 - (enemy.damageReductionPct - enemy.physicalDamageIncreasePct) / 100);
   const resistance = 1 / (1 + Math.max(0, enemy.damageResistancePct) / 100);
   const armor = armorMultiplier(armorAfterPenAt(armorAfterBreakAt(enemy.armor - ctx.armorDebuff, ctx.armorStacks), build.armorPenetrationPct));
-  const vulnerable = c.mkb && ctx.vulnStacks > 0 ? 1 + Math.min(25, 15 + 2 * ctx.vulnStacks) / 100 : 1;
+  const vulnerable = ctx.vulnStacks > 0 ? 1 + Math.min(25, 15 + 2 * ctx.vulnStacks) / 100 : 1;
   const mark = c.bag && ctx.burning ? 1 + Math.min(c.markMax, ctx.markStacks) * c.markPerStack / 100 : 1;
   const season = 1 + build.seasonDamagePct / 100;
   return (
@@ -774,7 +883,7 @@ function magicalDamage(
     : 1;
   const dot = opts.dot ? 1 + build.dotOutgoingPct / 100 : 1;
   const poison = opts.poisonSource ? 1 + build.poisonOutgoingPct / 100 : 1;
-  const vulnerable = c.mkb && opts.vulnStacks > 0 ? 1 + Math.min(25, 15 + 2 * opts.vulnStacks) / 100 : 1;
+  const vulnerable = opts.vulnStacks > 0 ? 1 + Math.min(25, 15 + 2 * opts.vulnStacks) / 100 : 1;
   const mark = c.bag && opts.burning ? 1 + Math.min(c.markMax, opts.markStacks) * c.markPerStack / 100 : 1;
   const season = 1 + build.seasonDamagePct / 100;
   const curseRibbon = opts.curseRibbonActive && c.curseRibbonPct > 0 ? 1 + c.curseRibbonPct / 100 : 1;
@@ -809,7 +918,7 @@ function pureDamage(
   const extra = 1 + enemyExtraPct(build, enemy.kind) / 100;
   const reduction = Math.max(0.001, 1 - enemy.damageReductionPct / 100);
   const resistance = 1 / (1 + Math.max(0, enemy.damageResistancePct) / 100);
-  const vulnerable = c.mkb && opts.vulnStacks > 0 ? 1 + Math.min(25, 15 + 2 * opts.vulnStacks) / 100 : 1;
+  const vulnerable = opts.vulnStacks > 0 ? 1 + Math.min(25, 15 + 2 * opts.vulnStacks) / 100 : 1;
   const mark = c.bag && opts.burning ? 1 + Math.min(c.markMax, opts.markStacks) * c.markPerStack / 100 : 1;
   const season = 1 + build.seasonDamagePct / 100;
   // Type 4: no crit, no armour, no magic resistance, no corrosion or poison
@@ -1003,6 +1112,8 @@ function sourceRecord(): Record<DpsSourceId, number> {
     reaperSlash: 0,
     curseRibbon: 0,
     omniStrike: 0,
+    assassinCreed: 0,
+    frostChain: 0,
   };
 }
 
@@ -1042,6 +1153,8 @@ function hitRecord(): Record<DpsSourceId, number> {
     reaperSlash: 0,
     curseRibbon: 0,
     omniStrike: 0,
+    assassinCreed: 0,
+    frostChain: 0,
   };
 }
 
@@ -1113,6 +1226,9 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   let featherTickAt: number | null = null;
   let attacks = 0;
   let ttk: number | null = null;
+  /** 0241: stored attack damage from lifesteal heals, floored like its stack count. */
+  let heartStacks = 0;
+  let heartDecayAt = c.heart !== undefined ? 1 : Number.POSITIVE_INFINITY;
   const damage = sourceRecord();
   const hits = hitRecord();
 
@@ -1129,6 +1245,14 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     if (!(amount > 0)) return;
     damage[id] = (damage[id] ?? 0) + amount;
     hits[id] = (hits[id] ?? 0) + count;
+    if (c.heart !== undefined && !NO_HEAL_SOURCES.has(id)) {
+      // 0241: 25 % of the attack/spell lifesteal heal becomes stored attack
+      // damage, capped; the heal is the damage dealt times that channel's %.
+      const healPct = SPELL_SOURCES.has(id) ? build.spellHealPct : build.attackHealPct;
+      if (healPct > 0) {
+        heartStacks = Math.min(c.heart.maxAd, heartStacks + (amount * healPct / 100) * (c.heart.perPct / 100));
+      }
+    }
     if (!dummy) hp = Math.max(0, hp - amount);
     // Whole-second buckets: an event exactly on the boundary belongs to the
     // second it closes, so the first attack at 1/aps lands in second 1.
@@ -1219,14 +1343,28 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     attacks += 1;
     chaosEvents = 0;
     chaosProcMiss = 1;
-    if (c.mkb && time - lastVuln > c.mkbVulnDuration) vulnStacks = 0;
+    if (vulnStacks > 0 && c.vulnDuration > 0 && time - lastVuln > c.vulnDuration) vulnStacks = 0;
     if (c.mkb && time - lastArmor > c.mkbArmorDuration) armorStacks = 0;
     if (time - lastArmorDebuff > 5) armorDebuff = 0;
     const burning = burnUntil > time;
-    const autoRaw = Math.max(0, b.attackDamage) * (1 + b.allAttackDamagePct / 100);
+    const autoRaw = Math.max(0, b.attackDamage + Math.floor(heartStacks)) * (1 + b.allAttackDamagePct / 100);
     const auto = directDamage(b, enemy, c, autoRaw, ctx(burning, true));
     add('auto', auto, 1);
     physicalTriggers(auto, c.autoCrit);
+    // 0196 / 0363: attack-triggered vulnerability, as expected stacks per hit.
+    // 0196's 1 s item cooldown caps its share at one proc per cooldown; 0363
+    // has no cooldown. Both feed the same generic modifier as 0217, so the
+    // stacks are capped together at 5.
+    for (const src of c.vulnSources) {
+      const perAttack = src.cooldown > 0 && c.aps > 0
+        ? Math.min(src.chance, 1 / (src.cooldown * c.aps))
+        : src.chance;
+      if (perAttack > 0) {
+        vulnStacks = Math.min(5, vulnStacks + perAttack);
+        lastVuln = time;
+        chaosEvent(perAttack);
+      }
+    }
     soulBladeHit();
     // On-hit items check the target is still alive; a killing auto-attack does
     // not also get its talons strike or start a bleed.
@@ -1237,6 +1375,8 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
 
     // Flat on-attack procs (0129 Dart, 0131 Crystal Sword). The DPS tab
     // deliberately counts one target only; 0131's radius is not multiplied.
+    let shatterThisAttack = 0;
+    let shatterApplied = false;
     for (const proc of c.flatProcs) {
       if (proc.chance > 0 && proc.raw > 0) {
         const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
@@ -1245,11 +1385,58 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         if (proc.source === 'shatterProc' && proc.armor !== undefined && proc.duration !== undefined) {
           // The debuff is applied on the proc, not on every hit. Its expected
           // uptime is the chance of at least one proc in the last duration.
+          // Two shatter items (0206 / 0229) stack their expected armour.
           const rolls = Math.max(0, c.aps * proc.duration);
           const uptime = proc.chance >= 1 ? 1 : 1 - Math.pow(1 - proc.chance, rolls);
-          shatterArmor = proc.armor * uptime;
+          shatterThisAttack += proc.armor * uptime;
           shatterUntil = time + proc.duration;
+          shatterApplied = true;
         }
+      }
+    }
+    if (shatterApplied) shatterArmor = shatterThisAttack;
+
+    // 0361 / 0453 assassin's creed: physical, agility-scaled, multiplied by
+    // the total attack speed. The script's internal cooldown caps the rate.
+    if (c.creed !== undefined && c.creed.chance > 0 && c.creed.agilityPct > 0) {
+      const perAttack = c.creed.cooldown > 0 && c.aps > 0
+        ? Math.min(c.creed.chance, 1 / (c.creed.cooldown * c.aps))
+        : c.creed.chance;
+      if (perAttack > 0) {
+        const raw =
+          b.totalAgility *
+          (c.creed.agilityPct / 100) *
+          (1 + (c.attackSpeed * c.creed.perAsPct) / 100) *
+          (c.creed.targetPct / 100);
+        const hit = directDamage(b, enemy, c, raw, ctx(burnUntil > time));
+        add('assassinCreed', hit * perAttack, perAttack);
+        physicalTriggers(hit * perAttack, c.abilityCrit);
+      }
+    }
+
+    // 0342 Frost Chain: on attack, 180 % of attack damage as magic, 0.5 s
+    // internal cooldown. Its on-cast half (240 % of intelligence) needs a cast
+    // cadence the DPS window does not model.
+    if (c.frostChain !== undefined && c.frostChain.pct > 0) {
+      const perAttack = c.frostChain.cooldown > 0 && c.aps > 0
+        ? Math.min(1, 1 / (c.frostChain.cooldown * c.aps))
+        : 1;
+      if (perAttack > 0) {
+        const raw =
+          Math.max(0, b.attackDamage + Math.floor(heartStacks)) *
+          (1 + b.allAttackDamagePct / 100) *
+          (c.frostChain.pct / 100);
+        const hit = magicalDamage(b, enemy, c, raw, {
+          dot: false,
+          poisonSource: false,
+          corrosionStacks: poisonStacks,
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks: markStacks,
+          doomStacks,
+          curseRibbonActive,
+        });
+        add('frostChain', hit * perAttack, perAttack);
       }
     }
 
@@ -1593,6 +1780,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       gazeAt,
       featherActivateAt,
       featherTickAt ?? Number.POSITIVE_INFINITY,
+      heartDecayAt,
     );
     if (!Number.isFinite(next) || next > duration + EPS) break;
     const step = Math.max(0, next - time);
@@ -1611,6 +1799,13 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       doomAt = doomStacks <= 0 ? null : nextDoom + c.doomDecay;
     }
     if (poisonAt !== null && Math.abs(time - poisonAt) <= EPS) onPoisonTick();
+    if (c.heart !== undefined && Math.abs(time - heartDecayAt) <= EPS) {
+      // The script decays every 0.1 s; a one-second step is the same total:
+      // max(10, 15 % of the stored amount) per second.
+      const decay = Math.max(c.heart.decayMin, (heartStacks * c.heart.decayPct) / 100);
+      heartStacks = Math.max(0, heartStacks - decay);
+      heartDecayAt = time + 1;
+    }
     if (Math.abs(time - gazeAt) <= EPS) {
       const raw = b.totalAttributes * c.gazePct / 100;
       if (raw > 0) {
