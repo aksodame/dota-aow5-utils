@@ -44,7 +44,8 @@ export function buildDpsInput(
   );
 
   // 0205: dynamic agility from movespeed, shown in panel stats (like crown/overcrit).
-  // Computed from base movespeed; the DPS engine adds the excess from active bonuses.
+  // Lua скрипт даёт bonus_agility = floor(max(0, MS − 250) / 5); ловкость конвертируется
+  // в урон атаки через attackDamagePerAgi (зависит от основного атрибута героя).
   const baseMoveSpeedVal = panel('bonus_movespeed');
   const hunt205Item = items.find((item) => item.id === 'item_0205');
   const dynamicAgility0205 = hunt205Item !== undefined ? Math.floor(Math.max(0, baseMoveSpeedVal - 250) / 5) : 0;
