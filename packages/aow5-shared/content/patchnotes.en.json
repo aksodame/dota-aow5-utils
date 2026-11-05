@@ -1,6 +1,21 @@
 {
  "notes": [
   {
+   "version": "v1.522",
+   "date": "05.11.2026",
+   "game": [
+    "Endless run: floor monsters can now carry affixes — Berserk, Deadly, Assault, Bloodthirst, Shield, Revive, Hardened, Scorching Footprints, Dominion Aura and Damage Sharing. Their effects are on the wiki, under Sky → Affixes.",
+    "Loadout presets: the second and third preset pages can be bought from the preset page — 480 C Tickets, at most two purchases. The page entitlement is shared by every profession of the S3 character; each profession keeps its own presets.",
+    "Dragon Fang (0670): every D-slot ability — the dashes and mobility skills of all professions, including Dragon Knight’s Dash and pa_004 — no longer grants stacks of bonus final damage; previously only ak_hero_dash was excluded.",
+    "Texts: status names are now consistent (Poison, Freeze, Burn, Bleed), 224 item descriptions and Dragon Knight tooltips were updated. Rune pouches are named after heroes (Axe, Void Spirit, Drow Ranger, Phantom Assassin, Lina, Dragon Knight), and P326–P328 became “Cave Rune Chests”."
+   ],
+   "wiki": [
+    "New “Sky → Affixes” sub-tab: all ten endless affixes with their numbers, groups, monster limits and exclusions.",
+    "Data rebuilt from v1.522: the shop gained item #37 (a preset slot); Russian and English texts were updated — 224 item descriptions, ability tooltips and the P636–P643 rune pool names.",
+    "FAQ “Season s3”: paragraphs about buying preset pages and the Dragon Fang fix."
+   ]
+  },
+  {
    "version": "v1.520",
    "date": "02.11.2026",
    "game": [

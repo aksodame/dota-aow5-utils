@@ -4,6 +4,7 @@ import {
   PARTNER_CHEST_REWARD,
   PARTNER_DEEP,
   PARTNER_NORMAL_COIN_AMOUNT,
+  SKY_AFFIXES,
   SKY_SUBTABS,
   eliteComboRange,
   endlessBossWaves,
@@ -64,7 +65,7 @@ import styles from './SkyPage.module.css';
 /**
  * The Skyfall Realm — the addon's Greed Cave, room `G001`.
  *
- * One page per sub-tab, `/wiki/sky/<tier1|tier2|tier3|endless|spawns|combos|scaling>`;
+ * One page per sub-tab, `/wiki/sky/<tier1|tier2|tier3|endless|affixes|spawns|combos|scaling>`;
  * the bare section shows the first tier. The partner's tabs were buttons that
  * left the address alone, so a page could not be linked; here each is a link
  * and has its own card.
@@ -150,7 +151,7 @@ export default function SkyPage({ path }: SectionProps) {
 
   const tabs = SKY_SUBTABS.map((k) => {
     const tier = skySubtabTier(k);
-    const label = tier !== null ? t.tab.tier(tier) : t.tab[k as 'endless' | 'spawns' | 'combos' | 'scaling'];
+    const label = tier !== null ? t.tab.tier(tier) : t.tab[k as 'endless' | 'affixes' | 'spawns' | 'combos' | 'scaling'];
     return { key: k, label, href: wikiPath('sky', k) };
   });
 
@@ -179,6 +180,7 @@ function SubPage({ ctx, tab }: { ctx: Ctx; tab: SkySubtab }) {
   const tier = skySubtabTier(tab);
   if (tier !== null) return <TierPage ctx={ctx} tier={tier} />;
   if (tab === 'endless') return <EndlessPage ctx={ctx} />;
+  if (tab === 'affixes') return <AffixesPage ctx={ctx} />;
   if (tab === 'spawns') return <SpawnsPage ctx={ctx} />;
   if (tab === 'combos') return <CombosPage ctx={ctx} />;
   return <ScalingPage ctx={ctx} />;
@@ -478,6 +480,66 @@ function EndlessPage({ ctx }: { ctx: Ctx }) {
         <Note>{t.endlessNoteTeam}</Note>
       </div>
       <PartnerFootnote t={t} />
+    </>
+  );
+}
+
+// --- endless affixes ------------------------------------------------------------
+
+type AffixDef = (typeof SKY_AFFIXES)[number];
+
+const AFFIX_CATEGORIES = ['offense', 'defense', 'mechanic'] as const;
+
+/**
+ * The endless run's floor affixes (v1.522). The ids, the kinds they can sit on
+ * and the mutual exclusions come from the client bundle's own fallback table,
+ * the effects from the game's modifier tooltips; the roll itself — chance,
+ * first floor, count per floor — is encrypted server code (see `SKY_AFFIXES`).
+ */
+function AffixesPage({ ctx }: { ctx: Ctx }) {
+  const { t } = ctx;
+  const nameOf = (affix: AffixDef) => t.affix.entries[affix.id].name;
+  const exclusiveSibling = (affix: AffixDef): AffixDef | undefined =>
+    affix.exclusiveGroup === undefined
+      ? undefined
+      : SKY_AFFIXES.find((x) => x.id !== affix.id && x.exclusiveGroup === affix.exclusiveGroup);
+
+  return (
+    <>
+      <Panel>
+        <Head title={t.affix.title} code={t.affix.code} />
+        <div className={styles.prose}>
+          <p className={styles.text}>{t.affix.intro}</p>
+          <Note>{t.affix.serverNote}</Note>
+        </div>
+      </Panel>
+      {AFFIX_CATEGORIES.map((category) => {
+        const list = SKY_AFFIXES.filter((a) => a.category === category);
+        return (
+          <Panel key={category} title={`${t.affix.categories[category]} (${list.length})`}>
+            <div className={styles.affixGrid}>
+              {list.map((affix) => {
+                const sibling = exclusiveSibling(affix);
+                return (
+                  <div key={affix.id} className={styles.affixCard}>
+                    <div className={styles.affixHead}>
+                      <span className={styles.cardName}>{nameOf(affix)}</span>
+                      <span className={styles.affixTag}>{t.affix.target(affix.minKind)}</span>
+                    </div>
+                    <p className={styles.affixDesc}>{t.affix.entries[affix.id].desc}</p>
+                    {(affix.bossFloorOnly === true || sibling !== undefined) && (
+                      <div className={styles.affixNotes}>
+                        {affix.bossFloorOnly === true && <span className={styles.affixNote}>{t.affix.bossFloorsOnly}</span>}
+                        {sibling !== undefined && <span className={styles.affixNote}>{t.affix.exclusive(nameOf(sibling))}</span>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Panel>
+        );
+      })}
     </>
   );
 }
