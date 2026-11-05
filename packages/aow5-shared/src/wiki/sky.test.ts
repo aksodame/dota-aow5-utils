@@ -11,6 +11,7 @@ import {
   skyPageFacts,
   skyPageItems,
   tierMonsters,
+  SKY_AFFIXES,
   SKY_SUBTABS,
   eliteComboRange,
   endlessBossSpans,
@@ -188,6 +189,18 @@ test('every sub-tab has facts in every language, and nothing else does', () => {
   }
   assert.ok(isSkySubtab('scaling'));
   assert.equal(isSkySubtab('nope'), false);
+});
+
+test('the endless affixes: ten, unique, with the two exclusion pairs', () => {
+  assert.equal(SKY_AFFIXES.length, 10);
+  assert.equal(new Set(SKY_AFFIXES.map((a) => a.id)).size, SKY_AFFIXES.length);
+  for (const a of SKY_AFFIXES) {
+    assert.ok(['offense', 'defense', 'mechanic'].includes(a.category), a.id);
+    assert.ok(['normal', 'elite', 'boss'].includes(a.minKind), a.id);
+  }
+  const grouped = SKY_AFFIXES.filter((a) => 'exclusiveGroup' in a).map((a) => a.id);
+  assert.deepEqual(grouped.sort(), ['revive', 'shield']);
+  assert.deepEqual(SKY_AFFIXES.filter((a) => 'bossFloorOnly' in a).map((a) => a.id), ['share']);
 });
 
 test('a tier card shows its chest pool, heaviest first', () => {

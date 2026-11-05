@@ -4163,6 +4163,10 @@
       {
        "type": "text",
        "text": "**Mushrooms and scales.** [[item:item_M556|Magma Mushroom]], [[item:item_M557|Dragon's Reverse Scale]], [[item:item_M558|Venom Mushroom]] and [[item:item_M559|Ice Mushroom]] are season materials (the magma mushroom is gathered in M025). Each dragon item has its own fate stone s_0659–s_0670."
+      },
+      {
+       "type": "text",
+       "text": "**Loadout presets.** Since v1.522 the second and third preset pages can be bought from the preset page itself: 480 C Tickets, at most two purchases. The page entitlement is shared by every profession of the S3 character, while each profession keeps its own presets. In the shop the purchase is item #37 (“职业预设槽位”)."
       }
      ]
     },
@@ -4641,6 +4645,10 @@
       {
        "type": "note",
        "text": "Stat keys are left as they are in the game data — that is what `items-extra.json` is keyed by. The new dragon and lava items are not here: they have no override, they were simply added in S3."
+      },
+      {
+       "type": "text",
+       "text": "**[[item:item_0670|Dragon Fang]] (0670) in v1.522.** Every D-slot ability — the professions’ dashes and mobility skills (`axe_004`, `cm_005`, `void_spirit_004`, `drow_004`, `lina_004`, `pa_004`, `marci_004`, `dragon_knight_008`) — is now excluded from its stacking, not just `ak_hero_dash`. The item’s text (“except Dash”) did not change; the game simply started matching it."
       }
      ]
     },

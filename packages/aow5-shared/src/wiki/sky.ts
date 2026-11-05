@@ -12,7 +12,10 @@
  *   - `scripts/vscripts/abilities/items/item_greed_cave_chests.lua` (plain
  *     Lua): which drop pool each shop chest opens and how many draws it makes;
  *   - the talent table (`ak_talent`, S2 ruleset): which talent nodes touch
- *     the realm.
+ *     the realm;
+ *   - the client HUD's fallback affix table (`SKY_AFFIXES`) and the game's
+ *     modifier tooltips: the endless run's floor affixes. The roll itself —
+ *     chance, first floor, count per floor — is encrypted server code.
  *
  * What the server decides in encrypted code is not in the JSON. The handful
  * of numbers the partner wiki states for those — the end-of-run chest, the
@@ -262,6 +265,57 @@ export const PARTNER_NORMAL_COIN_AMOUNT = 1;
  * far the partner tabulated the curve.
  */
 export const PARTNER_DEEP = { deepFrom: 50, deepDmg: 30, deepResist: 20, stunBase: 92, tableFloors: 50 } as const;
+
+// --- endless floor affixes --------------------------------------------------
+
+export type SkyAffixCategory = 'offense' | 'defense' | 'mechanic';
+export type SkyAffixMinKind = 'normal' | 'elite' | 'boss';
+
+export type SkyAffixId =
+  | 'berserk'
+  | 'crit'
+  | 'attack'
+  | 'lifesteal'
+  | 'shield'
+  | 'revive'
+  | 'hard'
+  | 'footprint'
+  | 'aura'
+  | 'share';
+
+export interface SkyAffix {
+  id: SkyAffixId;
+  category: SkyAffixCategory;
+  /** The weakest kind of monster that can carry it: a `normal` affix can be on anything. */
+  minKind: SkyAffixMinKind;
+  /** Rolls only on boss floors (Damage Sharing). */
+  bossFloorOnly?: boolean;
+  /** Affixes in one group never roll on the same monster (Shield / Revive). */
+  exclusiveGroup?: string;
+}
+
+/**
+ * The endless run's floor affixes (v1.522).
+ *
+ * The server that rolls them is encrypted, so the pak has no table of them:
+ * the ids, categories and kind limits below come from the client's own
+ * fallback table in the HUD bundle (`GreedCaveAffixStrip`); the effects and
+ * numbers are the game's modifier tooltips, which live in the pak's locale
+ * files. The roll itself — the chance, the first floor, how many per floor —
+ * is not in any file this wiki reads.
+ */
+export const SKY_AFFIXES: readonly SkyAffix[] = [
+  { id: 'berserk', category: 'offense', minKind: 'normal' },
+  { id: 'crit', category: 'offense', minKind: 'normal' },
+  { id: 'attack', category: 'offense', minKind: 'normal' },
+  { id: 'lifesteal', category: 'offense', minKind: 'normal' },
+  { id: 'shield', category: 'defense', minKind: 'normal', exclusiveGroup: 'extra_life' },
+  { id: 'revive', category: 'defense', minKind: 'normal', exclusiveGroup: 'extra_life' },
+  { id: 'hard', category: 'defense', minKind: 'normal' },
+  { id: 'footprint', category: 'mechanic', minKind: 'elite' },
+  { id: 'aura', category: 'mechanic', minKind: 'elite' },
+  { id: 'share', category: 'mechanic', minKind: 'boss', bossFloorOnly: true },
+];
 
 // --- logic ------------------------------------------------------------------
 
@@ -636,7 +690,7 @@ export function endlessDrops(sky: SkyFile): EndlessDrop[] {
 }
 
 /** The realm's pages, `/wiki/sky/<key>`. The bare section shows `tier1`. */
-export const SKY_SUBTABS = ['tier1', 'tier2', 'tier3', 'endless', 'spawns', 'combos', 'scaling'] as const;
+export const SKY_SUBTABS = ['tier1', 'tier2', 'tier3', 'endless', 'affixes', 'spawns', 'combos', 'scaling'] as const;
 export type SkySubtab = (typeof SKY_SUBTABS)[number];
 
 export function isSkySubtab(key: string | undefined): key is SkySubtab {
@@ -685,6 +739,7 @@ interface SkyFactsStrings {
   tierTitle: (tier: number) => string;
   spawns: string;
   combos: string;
+  affixes: string;
   scaling: string;
   floors: (n: number) => string;
   rewardPool: (n: number) => string;
@@ -703,6 +758,9 @@ interface SkyFactsStrings {
   endlessDesc: (title: string, waves: string) => string;
   spawnsDesc: (realm: string, n: number) => string;
   combosDesc: (realm: string, n: number) => string;
+  affixCount: (n: number) => string;
+  affixesOnlyEndless: string;
+  affixesDesc: (realm: string, n: number) => string;
   scalingDesc: (realm: string, growth: string) => string;
 }
 
@@ -713,6 +771,7 @@ const SKY_FACTS: Record<Lang, SkyFactsStrings> = {
     tierTitle: (tier) => `Tier ${tier} Skyfall Realm`,
     spawns: 'Spawn pools',
     combos: 'Waves',
+    affixes: 'Floor affixes',
     scaling: 'Monster scaling',
     floors: (n) => `${n} floors`,
     rewardPool: (n) => `reward chest of ${n} items`,
@@ -732,6 +791,9 @@ const SKY_FACTS: Record<Lang, SkyFactsStrings> = {
     endlessDesc: (title, waves) => `${title}: what each boss drops — equipment and fate stones with their chances, by wave (${waves}).`,
     spawnsDesc: (realm, n) => `The ${n} spawn pools of the ${realm}: which monsters each floor draws from, and their shares.`,
     combosDesc: (realm, n) => `The ${n} pre-arranged elite and boss waves of the ${realm}: members, roles and positions.`,
+    affixCount: (n) => `${n} affixes`,
+    affixesOnlyEndless: 'endless only',
+    affixesDesc: (realm, n) => `The ${n} floor affixes of the ${realm}'s endless run: effects, who can carry them and their limits.`,
     scalingDesc: (realm, growth) =>
       `How monsters in the ${realm} grow with the floor: ×${growth} per floor in the tiers, and the endless curve floor by floor.`,
   },
@@ -741,6 +803,7 @@ const SKY_FACTS: Record<Lang, SkyFactsStrings> = {
     tierTitle: (tier) => `Небо ${tier}`,
     spawns: 'Пулы спавна',
     combos: 'Волны',
+    affixes: 'Аффиксы этажа',
     scaling: 'Скейл монстров',
     floors: (n) => `${n} ${ruPlural(n, 'этаж', 'этажа', 'этажей')}`,
     rewardPool: (n) => `сундук-награда: ${n} ${ruPlural(n, 'предмет', 'предмета', 'предметов')}`,
@@ -760,6 +823,9 @@ const SKY_FACTS: Record<Lang, SkyFactsStrings> = {
     endlessDesc: (title, waves) => `${title}: что падает с каждого босса — снаряжение и грани с шансами, по волнам (${waves}).`,
     spawnsDesc: (realm, n) => `${n} ${ruPlural(n, 'пул', 'пула', 'пулов')} спавна (${realm}): из каких монстров набираются этажи и с какими долями.`,
     combosDesc: (realm, n) => `${n} готовых элитных и боссовых волн (${realm}): состав, роли и расстановка.`,
+    affixCount: (n) => `${n} ${ruPlural(n, 'аффикс', 'аффикса', 'аффиксов')}`,
+    affixesOnlyEndless: 'только в бесконечке',
+    affixesDesc: (realm, n) => `${n} аффиксов этажа бесконечки (${realm}): эффекты, на кого действуют и ограничения.`,
     scalingDesc: (realm, growth) => `Как растут монстры (${realm}) от этажа: ×${growth} за этаж в тирах и кривая бесконечки по этажам.`,
   },
   zh: {
@@ -768,6 +834,7 @@ const SKY_FACTS: Record<Lang, SkyFactsStrings> = {
     tierTitle: (tier) => `${tier}阶倾天秘境`,
     spawns: '刷怪池',
     combos: '波次',
+    affixes: '本层词缀',
     scaling: '怪物成长',
     floors: (n) => `${n}层`,
     rewardPool: (n) => `结算宝箱 ${n} 件物品`,
@@ -787,6 +854,9 @@ const SKY_FACTS: Record<Lang, SkyFactsStrings> = {
     endlessDesc: (title, waves) => `${title}：每个首领掉落什么——装备与命石及其概率，按波次（${waves}）。`,
     spawnsDesc: (realm, n) => `${realm}的 ${n} 个刷怪池：每层从哪些怪物中抽取，以及各自占比。`,
     combosDesc: (realm, n) => `${realm}的 ${n} 个预设精英与首领波次：成员、定位与站位。`,
+    affixCount: (n) => `${n} 个词缀`,
+    affixesOnlyEndless: '仅无尽模式',
+    affixesDesc: (realm, n) => `${realm}无尽模式的 ${n} 个本层词缀：效果、可出现的怪物与限制。`,
     scalingDesc: (realm, growth) => `${realm}怪物随层数的成长：各阶每层 ×${growth}，以及无尽模式逐层曲线。`,
   },
 };
@@ -848,6 +918,13 @@ export function skyPageFacts(
       name: `${s.combos} — ${realm}`,
       facts: [s.comboCount(sky.combos.length), s.elite(elite), s.boss(sky.combos.length - elite)].join(' · '),
       description: s.combosDesc(realm, sky.combos.length),
+    };
+  }
+  if (key === 'affixes') {
+    return {
+      name: `${s.affixes} — ${realm}`,
+      facts: [s.affixCount(SKY_AFFIXES.length), s.affixesOnlyEndless].join(' · '),
+      description: s.affixesDesc(realm, SKY_AFFIXES.length),
     };
   }
   const growth = n(sky.scaling.tierScale.growth);

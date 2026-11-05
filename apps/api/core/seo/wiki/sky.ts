@@ -1,6 +1,6 @@
 /**
  * The Skyfall Realm's pages for the prerenderer: one per sub-tab,
- * `/wiki/sky/<tier1|tier2|tier3|endless|spawns|combos|scaling>`.
+ * `/wiki/sky/<tier1|tier2|tier3|endless|affixes|spawns|combos|scaling>`.
  *
  * Imported, like `names.ts` imports its tables: `sky.json` and `pools.json`
  * are a few hundred kilobytes together, every page of the section reads both,

@@ -1,3 +1,4 @@
+import type { SkyAffixId } from 'aow5-shared/wiki';
 import type { Localised } from './index';
 
 /**
@@ -12,7 +13,7 @@ export interface SkyStrings {
   title: string;
   lead: string;
   tabsLabel: string;
-  tab: { tier: (tier: number) => string; endless: string; spawns: string; combos: string; scaling: string };
+  tab: { tier: (tier: number) => string; endless: string; affixes: string; spawns: string; combos: string; scaling: string };
 
   /** The marker after a number the pak does not carry, and what it means. */
   partnerMark: string;
@@ -82,6 +83,19 @@ export interface SkyStrings {
   endlessNoteDeep: (waves: string, last: number, poolId: string, level: number) => string;
   endlessNoteTeam: string;
 
+  // --- endless floor affixes
+  affix: {
+    title: string;
+    code: string;
+    intro: string;
+    serverNote: string;
+    categories: Record<'offense' | 'defense' | 'mechanic', string>;
+    target: (kind: 'normal' | 'elite' | 'boss') => string;
+    bossFloorsOnly: string;
+    exclusive: (other: string) => string;
+    entries: Record<SkyAffixId, { name: string; desc: string }>;
+  };
+
   // --- spawn pools
   spawnsTitle: string;
   poolsCount: (n: number) => string;
@@ -138,7 +152,7 @@ export const SKY: Localised<SkyStrings> = {
     title: 'Sky',
     lead: 'The Skyfall Realm: tiers, the endless run, spawn pools, waves and monster scaling',
     tabsLabel: 'Skyfall Realm pages',
-    tab: { tier: (tier) => `Sky ${tier}`, endless: 'Endless', spawns: 'Spawn pools', combos: 'Waves', scaling: 'Monster scaling' },
+    tab: { tier: (tier) => `Sky ${tier}`, endless: 'Endless', affixes: 'Affixes', spawns: 'Spawn pools', combos: 'Waves', scaling: 'Monster scaling' },
     partnerMark: '*',
     partnerNote:
       '* A number stated by the partner wiki (v1.507). The game keeps it in encrypted code, so it is not in any file this wiki reads.',
@@ -210,6 +224,52 @@ export const SKY: Localised<SkyStrings> = {
     endlessNoteTeam:
       'Since v1.506 endless runs are formed as a team: a queue with a leader, the roster can be locked, and the run can start on a chosen floor (“Starting at Floor N”). Skipped floors earn no season contribution points (which affects season progression).',
 
+    affix: {
+      title: 'Floor affixes',
+      code: 'GCE_AFFIX · 10 affixes',
+      intro:
+        'In the endless run a floor’s monsters can roll an affix — a buff shown in the “Floor Affixes” strip above the fighters and as badges on the monsters. Affixes are offensive, defensive or mechanic: some are limited to elites or bosses, and Damage Sharing appears only on boss floors.',
+      serverNote:
+        'Effects and numbers are the game’s own modifier tooltips (v1.522). How the game rolls affixes — the chance, the first floor, how many per floor — lives in encrypted server code and is not in the pak.',
+      categories: { offense: 'Offensive', defense: 'Defensive', mechanic: 'Mechanic' },
+      target: (kind) => (kind === 'normal' ? 'All monsters' : kind === 'elite' ? 'Elites and above' : 'Bosses only'),
+      bossFloorsOnly: 'boss floors only',
+      exclusive: (other) => `never rolls together with “${other}”`,
+      entries: {
+        berserk: { name: 'Berserk', desc: 'Damage +25%, attack speed +40.' },
+        crit: { name: 'Deadly', desc: 'Basic attacks: crit chance +30%, crit damage +100%.' },
+        attack: { name: 'Assault', desc: 'Attack damage +40%.' },
+        lifesteal: {
+          name: 'Bloodthirst',
+          desc: 'When its basic attack hits a hero, restores 1.5% of its max health.',
+        },
+        shield: {
+          name: 'Shield',
+          desc: 'Gains a shield equal to its max health (pure damage passes through). The shield never regenerates, and the affix disappears when it breaks. The number on the icon is the remaining shield, in %.',
+        },
+        revive: {
+          name: 'Revive',
+          desc: 'The first time it takes lethal damage, it feigns death for 2.6 s (invulnerable), then revives at full health. Once only.',
+        },
+        hard: {
+          name: 'Hardened',
+          desc: 'Damage taken −33%. Multiplies with the floor’s damage resistance and does not weaken on deeper floors.',
+        },
+        footprint: {
+          name: 'Scorching Footprints',
+          desc: 'While moving, leaves a fire patch every 0.5 s (radius 120, lasts 3 s). Heroes in it lose 4% of max health every 0.5 s (trap damage); patches do not stack. Up to 6 patches per monster.',
+        },
+        aura: {
+          name: 'Dominion Aura',
+          desc: 'Monsters within 700 radius (including the carrier) deal +30% damage. Multiple auras do not stack.',
+        },
+        share: {
+          name: 'Damage Sharing',
+          desc: '30% of damage taken is borne by linked Surrogates. Of the rest, the boss takes half and the other half is split evenly among other bosses with this affix (except invulnerable ones). A Surrogate takes 30% of the boss’s damage (split with other Surrogates); the link breaks when the absorbed damage reaches its max health or either one dies.',
+        },
+      },
+    },
+
     spawnsTitle: 'Spawn pools',
     poolsCount: (n) => `${n} pools`,
     tierGroup: (tier, n) => `Tier ${tier} — ${n} pools`,
@@ -270,7 +330,7 @@ export const SKY: Localised<SkyStrings> = {
     title: 'Небо',
     lead: 'Пещера жадности: тиры, бесконечка, пулы спавна, волны и скейл монстров',
     tabsLabel: 'Страницы Неба',
-    tab: { tier: (tier) => `Небо ${tier}`, endless: 'Бесконечка', spawns: 'Пулы спавна', combos: 'Волны', scaling: 'Скейл монстров' },
+    tab: { tier: (tier) => `Небо ${tier}`, endless: 'Бесконечка', affixes: 'Аффиксы', spawns: 'Пулы спавна', combos: 'Волны', scaling: 'Скейл монстров' },
     partnerMark: '*',
     partnerNote:
       '* Число из партнёрской вики (v1.507). Игра хранит его в зашифрованном коде, поэтому в файлах, которые читает эта вики, его нет.',
@@ -342,6 +402,52 @@ export const SKY: Localised<SkyStrings> = {
     endlessNoteTeam:
       'С v1.506 бесконечка собирается командой: очередь с лидером, состав можно залочить, а старт — с выбранного этажа («Starting at Floor N»). За пропущенные этажи очки вклада сезона не начисляются (это влияет на «Развитие сезона»).',
 
+    affix: {
+      title: 'Аффиксы этажа',
+      code: 'GCE_AFFIX · аффиксов 10',
+      intro:
+        'В бесконечке монстрам этажа может выпасть аффикс — усиление, которое видно в полосе «Аффиксы уровня» над бойцами и в бейджах у монстров. Аффиксы бывают атакующие, защитные и механические; часть доступна только элите или боссам, а «Разделение урона» — только на боссовых этажах.',
+      serverNote:
+        'Эффекты и числа — из внутриигровых описаний модификаторов v1.522. Как игра выбирает аффиксы — шанс, с какого этажа, сколько на этаж — хранится в зашифрованном серверном коде, в данных пака этого нет.',
+      categories: { offense: 'Атакующие', defense: 'Защитные', mechanic: 'Механика' },
+      target: (kind) => (kind === 'normal' ? 'Все монстры' : kind === 'elite' ? 'Элита и выше' : 'Только боссы'),
+      bossFloorsOnly: 'только на боссовых этажах',
+      exclusive: (other) => `не выпадает вместе с аффиксом «${other}»`,
+      entries: {
+        berserk: { name: 'Берсерк', desc: 'Урон +25%, скорость атаки +40.' },
+        crit: { name: 'Смертоносность', desc: 'Обычные атаки: шанс крита +30%, крит. урон +100%.' },
+        attack: { name: 'Натиск', desc: 'Урон от атаки +40%.' },
+        lifesteal: {
+          name: 'Кровожадность',
+          desc: 'Когда обычная атака попадает по герою, восстанавливает 1,5% своего максимального здоровья.',
+        },
+        shield: {
+          name: 'Щит',
+          desc: 'Получает щит, равный максимальному здоровью (чистый урон проходит сквозь него). Щит не восстанавливается; после разрушения аффикс исчезает. Число на значке — остаток щита в %.',
+        },
+        revive: {
+          name: 'Воскрешение',
+          desc: 'При первом получении смертельного урона притворяется мёртвым на 2,6 сек. (неуязвим), затем воскресает с полным здоровьем. Один раз.',
+        },
+        hard: {
+          name: 'Твёрдость',
+          desc: 'Получаемый урон −33%. Умножается с сопротивлением урону этажа и не ослабевает на глубоких этажах.',
+        },
+        footprint: {
+          name: 'Раскалённые следы',
+          desc: 'При движении каждые 0,5 сек. оставляет огненную зону (радиус 120, длится 3 сек.). Герои в ней теряют 4% максимального здоровья каждые 0,5 сек. (урон ловушки); зоны не суммируются. Не больше 6 зон у одного монстра.',
+        },
+        aura: {
+          name: 'Аура господства',
+          desc: 'Монстры в радиусе 700 (включая носителя) наносят на 30% больше урона. Несколько аур не суммируются.',
+        },
+        share: {
+          name: 'Разделение урона',
+          desc: '30% получаемого урона берут на себя связанные «Заступники». Из остального половину получает босс, а другая делится поровну между другими боссами с этим аффиксом (кроме неуязвимых). «Заступник» принимает 30% урона босса (поровну с другими заступниками); связь рвётся, когда принятый урон достигает его максимального здоровья или один из них умирает.',
+        },
+      },
+    },
+
     spawnsTitle: 'Пулы спавна',
     poolsCount: (n) => `пулов ${n}`,
     tierGroup: (tier, n) => `Тир ${tier} — пулов ${n}`,
@@ -402,7 +508,7 @@ export const SKY: Localised<SkyStrings> = {
     title: '天空',
     lead: '倾天秘境：各阶、无尽、刷怪池、波次与怪物成长',
     tabsLabel: '倾天秘境页面',
-    tab: { tier: (tier) => `${tier}阶秘境`, endless: '无尽', spawns: '刷怪池', combos: '波次', scaling: '怪物成长' },
+    tab: { tier: (tier) => `${tier}阶秘境`, endless: '无尽', affixes: '词缀', spawns: '刷怪池', combos: '波次', scaling: '怪物成长' },
     partnerMark: '*',
     partnerNote: '* 该数值来自合作百科（v1.507）。游戏把它放在加密代码中，本百科读取的文件里没有它。',
     kind: { normal: '小怪', elite: '精英', boss: '首领' },
@@ -471,6 +577,40 @@ export const SKY: Localised<SkyStrings> = {
       `奖励池只在第 ${waves} 波更换——这些波开启新的池，该池随后在下一档之前的每个首领波次上掉落（第 24 波开启的池即第 24、27 波）。到最后一档便固定下来：从第 ${last} 波起，无论多深（第 54、第 100 波都一样）掉落的都是与第 ${last} 波相同的池（${poolId}，Level ${level}），品质也已到顶——第 18 波起首领总是掉落 6 品质物品。更深处只有怪物变强（第 50 层起为「超深层」：每层 +30% 伤害、+20% 伤害抗性，见「怪物成长」）——掉落不会再变好。`,
     endlessNoteTeam:
       '自 v1.506 起无尽以组队方式进行：由队长组队排队，可锁定阵容，并可从指定层开始（「Starting at Floor N」）。跳过的层不计入赛季贡献点（影响赛季成长）。',
+
+    affix: {
+      title: '本层词缀',
+      code: 'GCE_AFFIX · 共 10 个',
+      intro:
+        '无尽模式中，本层怪物可能带有词缀——显示在战斗上方的「本层词缀」条和怪物徽章上。词缀分为进攻、防御和机制三类；部分只出现在精英或首领身上，而「伤害分摊」只在首领层出现。',
+      serverNote:
+        '效果与数值来自游戏内的词缀提示（v1.522）。游戏如何抽取词缀——概率、从第几层开始、每层几个——在加密的服务器代码中，资源包的数据里没有。',
+      categories: { offense: '进攻', defense: '防御', mechanic: '机制' },
+      target: (kind) => (kind === 'normal' ? '所有怪物' : kind === 'elite' ? '精英及以上' : '仅首领'),
+      bossFloorsOnly: '仅首领层',
+      exclusive: (other) => `不会与「${other}」同时出现`,
+      entries: {
+        berserk: { name: '狂暴', desc: '伤害提高 25%，攻击速度 +40。' },
+        crit: { name: '致命', desc: '普通攻击暴击率 +30%，暴击伤害 +100%。' },
+        attack: { name: '强攻', desc: '攻击力提高 40%。' },
+        lifesteal: { name: '嗜血', desc: '普通攻击命中英雄时，回复自身最大生命的 1.5%。' },
+        shield: {
+          name: '护盾',
+          desc: '获得等同于最大生命的护盾（纯粹伤害可穿透）。护盾不会恢复，破碎后词缀消失。图标数字为剩余护盾 %。',
+        },
+        revive: { name: '复活', desc: '首次受到致命伤害时假死 2.6 秒（无敌），随后满血复活，仅一次。' },
+        hard: { name: '坚硬', desc: '受到的伤害降低 33%，与层数自带的伤害抗性相乘，不随层数变弱。' },
+        footprint: {
+          name: '灼热足迹',
+          desc: '移动时每 0.5 秒留下一块火地（半径 120，持续 3 秒）。英雄踩上每 0.5 秒流失 4% 最大生命（陷阱伤害），多块不叠加；每只怪最多同时 6 块。',
+        },
+        aura: { name: '统御光环', desc: '半径 700 内的怪物（含自身）伤害提高 30%，多个光环不叠加。' },
+        share: {
+          name: '伤害分摊',
+          desc: '所受伤害的 30% 由连着的替身分担；剩余部分首领承受一半，另一半平分给其它带此词缀的首领（无敌中的除外）。替身为连着首领分担所受伤害的 30%（与其它替身平摊）；累计承受达到自身最大生命，或任一方死亡时断开。',
+        },
+      },
+    },
 
     spawnsTitle: '刷怪池',
     poolsCount: (n) => `${n} 个池`,
