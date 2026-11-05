@@ -1456,7 +1456,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   };
   /** Sources whose damage carries the game's DOT tag; 0581 duplicates these. */
   const isDotSource = (id: DpsSourceId): boolean =>
-    id === 'bleed' || id === 'burn' || id === 'poison' || id === 'ignite' || id === 'vortexDot' || id === 'witchBlade';
+    id === 'bleed' || id === 'burn' || id === 'poison' || id === 'ignite' || id === 'witchBlade';
 
   const ctx = (burning: boolean, baseAttack = false): HitContext => ({
     baseAttack,
@@ -1469,10 +1469,10 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
 
   const add = (id: DpsSourceId, amount: number, count = 0): void => {
     if (!(amount > 0)) return;
-    const beforeAmp = amount;
-    // 0567/0586's mark and 0581's Judgment multiply every hit from the wearer;
-    // 0581's own follow-up hit (verdict) must not feed on itself.
-    amount *= huntMarkAmp() * (id === 'verdict' ? 1 : judgmentAmp());
+    // 0567/0586's mark and 0581's Judgment skip HP_LOSS damage (bleed, burn,
+    // ignite). 0581's own verdict hit skips Judgment but still takes the mark.
+    const hpLoss = id === 'bleed' || id === 'burn' || id === 'ignite';
+    amount *= id === 'verdict' ? huntMarkAmp() : hpLoss ? 1 : huntMarkAmp() * judgmentAmp();
     damage[id] = (damage[id] ?? 0) + amount;
     hits[id] = (hits[id] ?? 0) + count;
     if (c.heart !== undefined && !NO_HEAL_SOURCES.has(id)) {
@@ -1495,10 +1495,12 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       }
     }
     // 0581: DOT damage additionally hits for its own share of the Judgment
-    // bonus as pure damage (the script's NO_PROC follow-up).
+    // bonus as pure damage (the script's NO_PROC follow-up). The share is
+    // taken from the DOT's final damage, so the amplified poison tick feeds
+    // a larger follow-up, while HP_LOSS DOTs stay unamplified.
     if (c.judgment !== undefined && id !== 'verdict' && isDotSource(id)) {
       const share = judgmentAmp() - 1;
-      if (share > 0) add('verdict', beforeAmp * share);
+      if (share > 0) add('verdict', amount * share);
     }
     if (!dummy) hp = Math.max(0, hp - amount);
     // Whole-second buckets: an event exactly on the boundary belongs to the
