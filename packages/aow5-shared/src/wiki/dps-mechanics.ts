@@ -69,7 +69,22 @@ export type DpsRole =
   | 'curseRibbon'
   | 'omniStrike'
   | 'assassinCreed'
-  | 'frostChain';
+  | 'frostChain'
+  | 'radiance'
+  | 'soulScatter'
+  | 'glaive'
+  | 'vulnerable'
+  | 'skyrend'
+  | 'hunterMark'
+  | 'thousandBlades'
+  | 'emberRing'
+  | 'flameFury'
+  | 'ashCodex'
+  | 'ignite'
+  | 'judgment'
+  | 'manaSpring'
+  | 'bloodDominion'
+  | 'arcaneForge';
 
 export interface DpsFamily {
   kind: 'dps';
@@ -165,6 +180,24 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'gleamEdge', base: 'item_MT006', ancestor: 'item_0887', sources: [] },
   { kind: 'dps', role: 'shadowCloak', base: 'item_0168', ancestor: 'item_0701', sources: [] },
   { kind: 'dps', role: 'frostPendant', base: 'item_0175', ancestor: 'item_0702', sources: [] },
+  // Level 6 (v1.522): mechanics read from the items' own scripts.
+  { kind: 'dps', role: 'radiance', base: 'item_0216', ancestor: 'item_0864', sources: ['radiance', 'burn'] },
+  { kind: 'dps', role: 'soulScatter', base: 'item_0219', ancestor: 'item_0865', sources: ['soulScatter'] },
+  { kind: 'dps', role: 'glaive', base: 'item_0309', sources: ['bleed'] },
+  { kind: 'dps', role: 'vulnerable', base: 'item_0311', sources: [] },
+  { kind: 'dps', role: 'emberRing', base: 'item_0407', sources: ['burn'] },
+  { kind: 'dps', role: 'ashCodex', base: 'item_0408', ancestor: 'item_0866', sources: ['ashCodex'] },
+  { kind: 'dps', role: 'bloodDominion', base: 'item_0515', ancestor: 'item_0760', sources: [] },
+  { kind: 'dps', role: 'skyrend', base: 'item_0517', sources: ['skyrend'] },
+  { kind: 'dps', role: 'arcaneForge', base: 'item_0525', sources: [] },
+  { kind: 'dps', role: 'thousandBlades', base: 'item_0528', ancestor: 'item_0767', sources: ['vulnDetonate'] },
+  { kind: 'dps', role: 'ignite', base: 'item_0534', ancestor: 'item_0768', sources: ['ignite'] },
+  { kind: 'dps', role: 'ignite', base: 'item_0582', sources: ['ignite'] },
+  { kind: 'dps', role: 'flameFury', base: 'item_0550', ancestor: 'item_0770', sources: ['burn'] },
+  { kind: 'dps', role: 'manaSpring', base: 'item_0551', ancestor: 'item_0771', sources: ['manaSpring'] },
+  { kind: 'dps', role: 'hunterMark', base: 'item_0567', ancestor: 'item_0773', sources: [] },
+  { kind: 'dps', role: 'hunterMark', base: 'item_0586', sources: [] },
+  { kind: 'dps', role: 'judgment', base: 'item_0581', ancestor: 'item_0869', sources: ['verdict'] },
 ];
 
 /**
@@ -183,6 +216,12 @@ export const PANEL_FAMILIES: readonly PanelFamily[] = [
   { kind: 'panel', key: 'usurerCodex', base: 'item_0615' },
   { kind: 'panel', key: 'emperorCrown', base: 'item_0314' },
   { kind: 'panel', key: 'kingBackpack', base: 'item_0315' },
+  // Level 6 (v1.522): set counts and attack-speed-driven stats.
+  { kind: 'panel', key: 'demonGloves', base: 'item_0516', ancestor: 'item_0761' },
+  { kind: 'panel', key: 'bloodSoulBlade', base: 'item_0520', ancestor: 'item_0763' },
+  { kind: 'panel', key: 'sageSign', base: 'item_0526', ancestor: 'item_0765' },
+  { kind: 'panel', key: 'lionheartCrown', base: 'item_0527', ancestor: 'item_0766' },
+  { kind: 'panel', key: 'shadowPendant', base: 'item_0651', ancestor: 'item_0879' },
 ];
 
 const ids = (f: MechanicFamily): string[] => (f.ancestor === undefined ? [f.base] : [f.base, f.ancestor]);

@@ -2664,6 +2664,11 @@
          "[[item:item_0662|Spirit Dragon Cuirass]] / [[item:item_0667|Flame Dragon Longblade]]",
          "\"Extra attacks such as Multishot or Cleave…\" — do not trigger it / do not add stacks",
          "in s3 Multishot arrows (bow 0322/0323) count as basic attacks (`is_sub_attack = false`): 0662 heals 4% max health per arrow, 0667 stacks (up to +400%), 0679 applies corrosion"
+        ],
+        [
+         "[[item:item_0216|Radiance]] / [[item:item_0864|Ancestral: Radiance]]",
+         "\"20% of max shield as pure damage per second\"",
+         "the direct hit is ×0.8 → 16%; the generic Burn is applied on top (15% current HP/s to normal enemies, 1.5% to bosses)"
         ]
        ]
       },
@@ -2685,7 +2690,23 @@
       },
       {
        "type": "text",
-       "text": "**A hidden “no crits”.** [[item:item_0392|Boots of Tolerance]]: the tooltip promises only damage from lost movement speed, but the code sets `force_no_crit = true` in `OnDamageCritQuery` for every hit the owner makes. Critical strikes do not trigger with these boots; the calculator models that."
+       "text": "**A hidden “no crits”.** [[item:item_0392|Boots of Tolerance]]: the tooltip promises only damage from lost movement speed, but the code sets `force_no_crit = true` in `OnDamageCritQuery` for every hit the owner makes. The same check is on [[item:item_0448|Mana Wand]] and [[item:item_0447|Shiva's Guard]]: both point at the `item_0240` script, which sets `force_no_crit = true`; Mana Wand does not mention it at all, while Shiva's Guard describes “Assault”, which that script does not implement. Critical strikes do not trigger with these items; the calculator models that."
+      },
+      {
+       "type": "text",
+       "text": "**A mechanic that is not there.** [[item:item_0454|Iridescent Blade]] points at the [[item:item_0361|Phantom Spike]] script, but its AbilityValues have neither `ability_trigger_chance_pct` nor `ability_agility_damage_pct` — the proc never fires; the item is stats only. [[item:item_0514|Void Shadow Scepter]] and [[item:item_0522|Omni Boots]] have `ScriptFile = items.lua`, but no class with their ids exists there — they work as a base item, stats only."
+      },
+      {
+       "type": "text",
+       "text": "**Sets count ids, not names.** [[item:item_0527|Lionheart Crown]] and [[item:item_0651|Swift Shadow Pendant]] promise “an item whose name contains …”, while [[item:item_0516|Demon God Gloves]] and [[item:item_0526|Sage's Proof]] say “a set item”. All four use an exact id whitelist (`shared/*_set.lua`), not the name: an Ancestral version counts only because its id is in the list: [[item:item_0761|Ancestral: Demon God Gloves]], [[item:item_0765|Ancestral: Sage's Proof]], [[item:item_0766|Ancestral: Lionheart Crown]] and [[item:item_0879|Ancestral: Swift Shadow Pendant]] are in the same lists."
+      },
+      {
+       "type": "text",
+       "text": "**Data with no effect.** [[item:item_0309|Tempest Pike]] still carries `ability_push_distance` and `push_duration` in its data, but the script never reads them: there is no knockback in the tooltip either — the item only applies Bleed."
+      },
+      {
+       "type": "text",
+       "text": "**How 0581 counts debuffs.** [[item:item_0581|Eye of Judgment]] / [[item:item_0869|Ancestral: Eye of Judgment]] — the data has no `ability_count_debuff_kinds` in its data, so it counts modifiers, not debuff kinds: stacks of one poison are one modifier, different debuffs are separate. The +8% per debuff multiplier skips damage flagged `HP_LOSS` (bleed, burn, ignite), but those still produce a separate pure hit of `8% × debuff count × tick damage`."
       },
       {
        "type": "text",

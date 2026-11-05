@@ -110,6 +110,8 @@ export interface DpsBuild {
   attackDamagePerStr: number;
   /** Total energy shield before the fight; 0377 turns it into physical damage. */
   energyShield: number;
+  /** Total mana; 0219 spends it, 0408 and 0551 scale damage from it. */
+  maxMana: number;
   /** Every lifesteal type summed; 0362's slash scales with it. */
   anyLifestealPct: number;
   /**
@@ -169,7 +171,15 @@ export type DpsSourceId =
   | 'curseRibbon'
   | 'omniStrike'
   | 'assassinCreed'
-  | 'frostChain';
+  | 'frostChain'
+  | 'radiance'
+  | 'soulScatter'
+  | 'skyrend'
+  | 'vulnDetonate'
+  | 'ignite'
+  | 'verdict'
+  | 'ashCodex'
+  | 'manaSpring';
 
 export interface DpsSource {
   id: DpsSourceId;
@@ -313,8 +323,17 @@ const SPELL_SOURCES: ReadonlySet<DpsSourceId> = new Set<DpsSourceId>([
   'curseRibbon',
   'vortex',
   'vortexDot',
+  'soulScatter',
+  'ashCodex',
 ]);
-const NO_HEAL_SOURCES: ReadonlySet<DpsSourceId> = new Set<DpsSourceId>(['feather', 'reaperSlash']);
+const NO_HEAL_SOURCES: ReadonlySet<DpsSourceId> = new Set<DpsSourceId>([
+  'feather',
+  'reaperSlash',
+  'radiance',
+  'ignite',
+  'verdict',
+  'manaSpring',
+]);
 
 /**
  * The agility 0205 / 0360 / 0718 grant at `movespeed`.
@@ -467,6 +486,36 @@ interface Constants {
   curseRibbonPct: number;
   omniStrike: DpsItemStats | undefined;
   omniStrikePct: number;
+  /** 0216 Radiance: a toggle aura of max-shield pure damage plus burn. */
+  radiance: { pct: number; interval: number; burn: number } | undefined;
+  /** 0219 Soul Scatter: mana spent per attack becomes magic damage. */
+  soulScatter:
+    | { costThresholdPct: number; costPct: number; multiplier: number; restoreThresholdPct: number; restore: number }
+    | undefined;
+  /** 0309 Hurricane Glaive: physical non-DOT damage can start a bleed. */
+  glaiveChance: number;
+  /** 0517 Skyrend: chance for a physical hit scaled by all attributes. */
+  skyrend: { chance: number; pct: number } | undefined;
+  /** 0567 / 0586: a stacking damage mark applied by real attacks. */
+  huntMark: { chance: number; perStack: number; maxStacks: number; duration: number; doubleAtMax: boolean } | undefined;
+  /** 0528 Thousand Blades: extra vulnerable stacks and a detonation at the cap. */
+  thousandBlades: { extraChance: number; detonatePct: number } | undefined;
+  /** 0407 Ember Ring: burn a target that is not burning yet. */
+  emberRing: { duration: number; cooldown: number } | undefined;
+  /** 0550 Flaming Fury: attacks can burn. */
+  flameFury: { chance: number; duration: number; cooldown: number } | undefined;
+  /** 0408 Ash Codex: a burning target explodes for a share of max mana. */
+  ashCodex: { pct: number; cooldown: number } | undefined;
+  /** 0534 / 0582: burn applications add Ignite stacks. */
+  ignite: { chance: number; pctPerStack: number; maxStacks: number; duration: number } | undefined;
+  /** 0581 Eye of Judgment: damage per debuff on the target. */
+  judgment: { perDebuff: number } | undefined;
+  /** 0551 Magic Spring: a passive aura that burns mana as pure damage. */
+  manaSpring: { pct: number } | undefined;
+  /** 0515 Blood Dominion: lifesteal heals turn into attack damage. */
+  bloodDominion: { perPct: number; maxAd: number; decayPct: number; decayMin: number } | undefined;
+  /** 0525 Arcane Forge: non-base physical damage becomes magic. */
+  arcaneForge: boolean;
 }
 
 function constants(build: DpsBuild): Constants {
@@ -479,7 +528,7 @@ function constants(build: DpsBuild): Constants {
   const mkb = findItem(build, MKB);
   // 0196 and 0363 hang the same generic vulnerability as 0217 from an attack.
   // 0196's passive has a 1 s item cooldown; 0363 has none.
-  const vulnSources = [findItem(build, ['item_0196']), findItem(build, ['item_0363'])]
+  const vulnSources = [findItem(build, ['item_0196']), findItem(build, ['item_0363']), findItem(build, ['item_0311'])]
     .map((item) => {
       if (item === undefined) return null;
       const chance = Math.max(
@@ -704,6 +753,98 @@ function constants(build: DpsBuild): Constants {
   }
   const soulBlade = findItem(build, ['item_0165']);
   const pollen = findItem(build, ['item_0270']);
+
+  const radianceItem = findItem(build, ['item_0216', 'item_0864']);
+  const radiance = radianceItem
+    ? {
+        pct: Math.max(0, value(radianceItem, 'ability_value_shield_damage_pct')),
+        interval: Math.max(0.1, value(radianceItem, 'ability_damage_interval') || 1),
+        burn: Math.max(0, value(radianceItem, 'ability_burn_duration')),
+      }
+    : undefined;
+  const soulScatterItem = findItem(build, ['item_0219', 'item_0865']);
+  const soulScatter = soulScatterItem
+    ? {
+        costThresholdPct: Math.max(0, value(soulScatterItem, 'ability_mana_cost_threshold_pct')),
+        costPct: Math.max(0, value(soulScatterItem, 'ability_mana_cost_current_pct')),
+        multiplier: Math.max(0, value(soulScatterItem, 'ability_value_bonus_damage_multiplier')),
+        restoreThresholdPct: Math.max(0, value(soulScatterItem, 'ability_mana_restore_threshold_pct')),
+        restore: Math.max(0, value(soulScatterItem, 'ability_value_mana_restore')),
+      }
+    : undefined;
+  const glaive = findItem(build, ['item_0309']);
+  const skyrendItem = findItem(build, ['item_0517']);
+  const skyrend = skyrendItem
+    ? {
+        chance: Math.min(100, Math.max(0, value(skyrendItem, 'ability_trigger_chance_pct'))) / 100,
+        pct: Math.max(0, value(skyrendItem, 'ability_aoe_damage_pct')),
+      }
+    : undefined;
+  // 0567 and 0586 share the same mark mutex; 0567 wins when both are worn.
+  const huntMarkItem = findItem(build, ['item_0567', 'item_0773']) ?? findItem(build, ['item_0586']);
+  const huntMark = huntMarkItem
+    ? {
+        chance: huntMarkItem.id === 'item_0586'
+          ? 1
+          : Math.min(100, Math.max(0, value(huntMarkItem, 'ability_value_trigger_chance_pct'))) / 100,
+        perStack: Math.max(0, value(huntMarkItem, 'ability_dmg_pct_per_stack')),
+        maxStacks: Math.max(1, Math.floor(value(huntMarkItem, huntMarkItem.id === 'item_0586' ? 'ability_max_stacks' : 'ability_value_max_stacks'))),
+        duration: Math.max(0, value(huntMarkItem, 'ability_mark_duration')),
+        doubleAtMax: huntMarkItem.id === 'item_0567',
+      }
+    : undefined;
+  const thousandBladesItem = findItem(build, ['item_0528', 'item_0767']);
+  const thousandBlades = thousandBladesItem
+    ? {
+        extraChance: Math.min(100, Math.max(0, value(thousandBladesItem, 'ability_value_extra_stack_chance_pct'))) / 100,
+        detonatePct: Math.max(0, value(thousandBladesItem, 'ability_value_detonate_damage_pct')),
+      }
+    : undefined;
+  const emberRingItem = findItem(build, ['item_0407']);
+  const emberRing = emberRingItem
+    ? { duration: Math.max(0, value(emberRingItem, 'ability_burn_duration')), cooldown: effCd(emberRingItem, 1.5) }
+    : undefined;
+  const flameFuryItem = findItem(build, ['item_0550', 'item_0770']);
+  const flameFury = flameFuryItem
+    ? {
+        chance: Math.min(100, Math.max(0, value(flameFuryItem, 'ability_value_burn_trigger_chance_pct'))) / 100,
+        duration: Math.max(0, value(flameFuryItem, 'ability_burn_duration')),
+        cooldown: effCd(flameFuryItem, 0.5),
+      }
+    : undefined;
+  const ashCodexItem = findItem(build, ['item_0408', 'item_0866']);
+  const ashCodex = ashCodexItem
+    ? { pct: Math.max(0, value(ashCodexItem, 'ability_value_explode_mana_pct')), cooldown: effCd(ashCodexItem, 3) }
+    : undefined;
+  // 0534 and 0582 share the same mutex; 0534 has the higher priority.
+  const igniteItem = findItem(build, ['item_0534', 'item_0768']) ?? findItem(build, ['item_0582']);
+  const ignite = igniteItem
+    ? {
+        chance: Math.min(100, Math.max(0, value(igniteItem, 'ability_value_ignite_trigger_chance_pct'))) / 100,
+        pctPerStack: Math.max(0, value(igniteItem, 'ability_value_ignite_pct_per_stack')),
+        maxStacks: Math.max(1, Math.floor(value(igniteItem, 'ability_ignite_max_stacks'))),
+        duration: Math.max(0.1, value(igniteItem, 'ability_ignite_duration')),
+      }
+    : undefined;
+  const judgmentItem = findItem(build, ['item_0581', 'item_0869']);
+  const judgment = judgmentItem
+    ? { perDebuff: Math.max(0, value(judgmentItem, 'ability_value_dmg_per_debuff')) }
+    : undefined;
+  const manaSpringItem = findItem(build, ['item_0551', 'item_0771']);
+  // The aura's damage is hardcoded to 100 % of max mana per second; the
+  // ability value only sets the mana restored to allies.
+  const manaSpring = manaSpringItem ? { pct: 100 } : undefined;
+  const bloodDominionItem = findItem(build, ['item_0515', 'item_0760']);
+  const bloodDominion = bloodDominionItem
+    ? {
+        perPct: Math.max(0, value(bloodDominionItem, 'ability_value_attack_per_lifesteal_pct')),
+        maxAd: Math.max(0, value(bloodDominionItem, 'ability_value_max_bonus_attack')),
+        decayPct: Math.max(0, value(bloodDominionItem, 'ability_decay_pct_per_second')),
+        decayMin: Math.max(0, value(bloodDominionItem, 'ability_decay_min_per_second')),
+      }
+    : undefined;
+  const arcaneForge = findItem(build, ['item_0525']) !== undefined;
+
   return {
     aps: (1 + attackSpeed / 100) / bat,
     attackSpeed,
@@ -812,6 +953,20 @@ function constants(build: DpsBuild): Constants {
     curseRibbonPct: Math.max(0, value(curseRibbon, 'ability_magical_damage_add_pct')),
     omniStrike,
     omniStrikePct: Math.max(0, value(omniStrike, 'ability_all_stats_damage_pct')),
+    radiance,
+    soulScatter,
+    glaiveChance: Math.min(100, Math.max(0, value(glaive, 'ability_trigger_chance_pct'))) / 100,
+    skyrend,
+    huntMark,
+    thousandBlades,
+    emberRing,
+    flameFury,
+    ashCodex,
+    ignite,
+    judgment,
+    manaSpring,
+    bloodDominion,
+    arcaneForge,
   };
 }
 
@@ -964,6 +1119,7 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const fearless = findItem(build, FEARLESS);
   const bloodRite = findItem(build, BLOOD_RITE);
   const legionShield = findItem(build, LEGION_SHIELD);
+  const frenzy = findItem(build, ['item_0533']);
   const cdr = 1 - Math.min(80, Math.max(0, build.cooldownReductionPct)) / 100;
   const duty = (item: DpsItemStats | undefined, durationKey: string): number => {
     if (!item || active?.has(item.id) !== true) return 0;
@@ -982,6 +1138,7 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const vanguardDuty = duty(vanguard, 'ability_duration');
   const bloodRiteDuty = duty(bloodRite, 'ability_value_duration');
   const legionDuty = duty(legionShield, 'ability_duration');
+  const frenzyDuty = duty(frenzy, 'ability_value_duration');
 
   // Percent movement buffs and penalties first, then the flat grants. The
   // exact order only matters a little, but it keeps 0152 + 0305 sensible.
@@ -1072,6 +1229,10 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
     cooldownReductionPct:
       build.cooldownReductionPct +
       Math.max(0, value(bloodRite, 'ability_cooldown_reduction_pct')) * bloodRiteDuty,
+    // 0533 Unholy Frenzy doubles magic and physical lifesteal while active.
+    anyLifestealPct: build.anyLifestealPct * (1 + frenzyDuty),
+    attackHealPct: build.attackHealPct * (1 + frenzyDuty),
+    spellHealPct: build.spellHealPct * (1 + frenzyDuty),
     noCrit: build.noCrit || tolerance !== undefined || unyielding !== undefined,
   };
 }
@@ -1114,6 +1275,14 @@ function sourceRecord(): Record<DpsSourceId, number> {
     omniStrike: 0,
     assassinCreed: 0,
     frostChain: 0,
+    radiance: 0,
+    soulScatter: 0,
+    skyrend: 0,
+    vulnDetonate: 0,
+    ignite: 0,
+    verdict: 0,
+    ashCodex: 0,
+    manaSpring: 0,
   };
 }
 
@@ -1155,6 +1324,14 @@ function hitRecord(): Record<DpsSourceId, number> {
     omniStrike: 0,
     assassinCreed: 0,
     frostChain: 0,
+    radiance: 0,
+    soulScatter: 0,
+    skyrend: 0,
+    vulnDetonate: 0,
+    ignite: 0,
+    verdict: 0,
+    ashCodex: 0,
+    manaSpring: 0,
   };
 }
 
@@ -1182,6 +1359,8 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   let burnUntil = 0;
   let burnAt: number | null = null;
   let burnReady = 0;
+  /** Expected burn uptime when a chance-based source is the only one applying it. */
+  let burnWeight = 0;
   let markStacks = 0;
   let vulnStacks = 0;
   let armorStacks = 0;
@@ -1229,8 +1408,55 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   /** 0241: stored attack damage from lifesteal heals, floored like its stack count. */
   let heartStacks = 0;
   let heartDecayAt = c.heart !== undefined ? 1 : Number.POSITIVE_INFINITY;
+  /** 0515: a second lifesteal→attack accumulator with its own cap and decay. */
+  let dominionStacks = 0;
+  let dominionDecayAt = c.bloodDominion !== undefined ? 1 : Number.POSITIVE_INFINITY;
+  /** 0567 / 0586: expected mark stacks on the target and the last application. */
+  let huntMarkStacks = 0;
+  let lastHuntMark = Number.NEGATIVE_INFINITY;
+  /** 0534 / 0582: expected Ignite stacks and their expiry. */
+  let igniteStacks = 0;
+  let igniteUntil = 0;
+  let igniteTickAt: number | null = null;
+  // A toggle in the game; the DPS tab treats it as switched on when equipped.
+  const radianceOn = c.radiance !== undefined;
+  let radianceAt = radianceOn ? c.radiance!.interval : Number.POSITIVE_INFINITY;
+  let manaSpringAt = c.manaSpring !== undefined ? 1 : Number.POSITIVE_INFINITY;
+  let emberReady = 0;
+  let flameReady = 0;
+  let ashReady = 0;
+  /** 0219: current mana, starting full. */
+  let mana = Math.max(0, b.maxMana);
   const damage = sourceRecord();
   const hits = hitRecord();
+
+  /** The number of distinct debuff modifiers on the target, for 0581. */
+  const debuffCount = (): number => {
+    let n = 0;
+    if (bleedPool > 0 || bleedLeft > 0) n += 1;
+    if (burnUntil > time) n += 1;
+    if (poisonStacks > 0) n += 1;
+    if (vulnStacks > 0) n += 1;
+    if (doomStacks > 0) n += 1;
+    if (c.bag && markStacks > 0) n += 1;
+    if (huntMarkStacks > 0) n += 1;
+    if (igniteStacks > 0) n += 1;
+    if (armorDebuff > 0) n += 1;
+    return n;
+  };
+  /** 0581: the outgoing multiplier from the target's debuffs. */
+  const judgmentAmp = (): number =>
+    c.judgment !== undefined ? 1 + (debuffCount() * c.judgment.perDebuff) / 100 : 1;
+  /** 0567 / 0586: the mark multiplier; 0567 doubles it at the cap. */
+  const huntMarkAmp = (): number => {
+    if (c.huntMark === undefined || huntMarkStacks <= 0) return 1;
+    const stacks = Math.min(c.huntMark.maxStacks, huntMarkStacks);
+    const doubled = c.huntMark.doubleAtMax && stacks >= c.huntMark.maxStacks ? 2 : 1;
+    return 1 + (stacks * c.huntMark.perStack * doubled) / 100;
+  };
+  /** Sources whose damage carries the game's DOT tag; 0581 duplicates these. */
+  const isDotSource = (id: DpsSourceId): boolean =>
+    id === 'bleed' || id === 'burn' || id === 'poison' || id === 'ignite' || id === 'witchBlade';
 
   const ctx = (burning: boolean, baseAttack = false): HitContext => ({
     baseAttack,
@@ -1243,6 +1469,10 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
 
   const add = (id: DpsSourceId, amount: number, count = 0): void => {
     if (!(amount > 0)) return;
+    // 0567/0586's mark and 0581's Judgment skip HP_LOSS damage (bleed, burn,
+    // ignite). 0581's own verdict hit skips Judgment but still takes the mark.
+    const hpLoss = id === 'bleed' || id === 'burn' || id === 'ignite';
+    amount *= id === 'verdict' ? huntMarkAmp() : hpLoss ? 1 : huntMarkAmp() * judgmentAmp();
     damage[id] = (damage[id] ?? 0) + amount;
     hits[id] = (hits[id] ?? 0) + count;
     if (c.heart !== undefined && !NO_HEAL_SOURCES.has(id)) {
@@ -1252,6 +1482,25 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       if (healPct > 0) {
         heartStacks = Math.min(c.heart.maxAd, heartStacks + (amount * healPct / 100) * (c.heart.perPct / 100));
       }
+    }
+    if (c.bloodDominion !== undefined && !NO_HEAL_SOURCES.has(id)) {
+      // 0515: the same heal events, but 35 % of the heal becomes attack damage
+      // with its own cap and decay.
+      const healPct = SPELL_SOURCES.has(id) ? build.spellHealPct : build.attackHealPct;
+      if (healPct > 0) {
+        dominionStacks = Math.min(
+          c.bloodDominion.maxAd,
+          dominionStacks + (amount * healPct / 100) * (c.bloodDominion.perPct / 100),
+        );
+      }
+    }
+    // 0581: DOT damage additionally hits for its own share of the Judgment
+    // bonus as pure damage (the script's NO_PROC follow-up). The share is
+    // taken from the DOT's final damage, so the amplified poison tick feeds
+    // a larger follow-up, while HP_LOSS DOTs stay unamplified.
+    if (c.judgment !== undefined && id !== 'verdict' && isDotSource(id)) {
+      const share = judgmentAmp() - 1;
+      if (share > 0) add('verdict', amount * share);
     }
     if (!dummy) hp = Math.max(0, hp - amount);
     // Whole-second buckets: an event exactly on the boundary belongs to the
@@ -1268,6 +1517,71 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     bleedPool += pool;
     bleedLeft = BLEED_TICKS;
     if (bleedAt === null) bleedAt = time + c.bleedInterval;
+  };
+
+  /** The game's total attack damage, the base for 0528's detonation. */
+  const totalAttackDamage = (): number =>
+    Math.max(0, b.attackDamage + Math.floor(heartStacks) + Math.floor(dominionStacks)) *
+    (1 + b.allAttackDamagePct / 100);
+
+  /** A non-base physical hit, re-typed as magic by 0525 Arcane Forge. */
+  const procDamage = (raw: number): number =>
+    c.arcaneForge
+      ? magicalDamage(b, enemy, c, raw, {
+          dot: false,
+          poisonSource: false,
+          corrosionStacks: poisonStacks,
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks,
+          doomStacks,
+          curseRibbonActive,
+        })
+      : directDamage(b, enemy, c, raw, ctx(burnUntil > time));
+
+  /** 0534 / 0582: add expected Ignite stacks; the duration does not refresh. */
+  const addIgnite = (stacks: number): void => {
+    if (c.ignite === undefined || !(stacks > 0)) return;
+    if (igniteStacks <= 0 || time >= igniteUntil) {
+      igniteStacks = 0;
+      igniteUntil = time + c.ignite.duration;
+    }
+    igniteStacks = Math.min(c.ignite.maxStacks, igniteStacks + stacks);
+    if (igniteTickAt === null) igniteTickAt = time + 0.5;
+  };
+
+  /**
+   * Starts the generic burn; every burn application rolls 0534/0582's Ignite.
+   * `weight` is the expected uptime a chance-based source contributes (1 for
+   * the guaranteed ones: the bag, 0407).
+   */
+  const startBurn = (duration: number, weight = 1): void => {
+    if (!(duration > 0) || !(weight > 0)) return;
+    burnWeight = burnUntil <= time ? weight : Math.max(burnWeight, weight);
+    burnUntil = time + duration;
+    if (burnAt === null) burnAt = time + BURN_TICK;
+    if (c.ignite !== undefined) addIgnite(c.ignite.chance * weight);
+  };
+
+  /**
+   * The generic vulnerable modifier (15 % + 2 %/stack, cap 5). 0528 adds an
+   * expected extra stack on every application and detonates the target when
+   * the cap is reached, removing the stacks.
+   */
+  const addVulnerable = (amount: number): void => {
+    if (!(amount > 0)) return;
+    const before = vulnStacks;
+    const gain = amount * (c.thousandBlades !== undefined ? 1 + c.thousandBlades.extraChance : 1);
+    vulnStacks = Math.min(5, vulnStacks + gain);
+    lastVuln = time;
+    if (c.thousandBlades !== undefined && before < 5 && vulnStacks >= 5) {
+      const raw = totalAttackDamage() * (c.thousandBlades.detonatePct / 100);
+      if (raw > 0) {
+        const hit = procDamage(raw);
+        add('vulnDetonate', hit, 1);
+      }
+      vulnStacks = 0;
+    }
   };
 
   // 0382 (`乱毒`): each debuff status the hero applies to an enemy rolls once
@@ -1288,6 +1602,12 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   // as the auto itself.
   const physicalTriggers = (hit: number, critChancePct: number, mkb = true): void => {
     if (!(hit > 0)) return;
+    // 0309 Hurricane Glaive: any physical non-DOT damage can start a bleed
+    // with the full hit as its pool.
+    if (c.glaiveChance > 0) {
+      applyBleed(hit * c.glaiveChance);
+      chaosEvent(c.glaiveChance);
+    }
     if (c.bleedProc && c.bleedProcChance > 0) {
       // 0467: 70 % of hit becomes bleed pool; 0243: 100 % of hit (script passes full final damage)
       const poolPct = c.bleedProc?.id === 'item_0243' ? 1 : BLEED_POOL_PCT / 100;
@@ -1303,9 +1623,8 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     if (mkb && c.mkb && c.mkbChance > 0 && critChancePct > 0 && time + EPS >= mkbReady) {
       const proc = (critChancePct / 100) * (c.mkbChance / 100);
       if (proc > 0) {
-        vulnStacks = Math.min(5, vulnStacks + proc);
+        addVulnerable(proc);
         armorStacks = Math.min(c.mkbMaxStacks, armorStacks + proc);
-        lastVuln = time;
         lastArmor = time;
         mkbReady = time + c.mkbCooldown;
         chaosEvent(proc);
@@ -1347,7 +1666,9 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     if (c.mkb && time - lastArmor > c.mkbArmorDuration) armorStacks = 0;
     if (time - lastArmorDebuff > 5) armorDebuff = 0;
     const burning = burnUntil > time;
-    const autoRaw = Math.max(0, b.attackDamage + Math.floor(heartStacks)) * (1 + b.allAttackDamagePct / 100);
+    const autoRaw =
+      Math.max(0, b.attackDamage + Math.floor(heartStacks) + Math.floor(dominionStacks)) *
+      (1 + b.allAttackDamagePct / 100);
     const auto = directDamage(b, enemy, c, autoRaw, ctx(burning, true));
     add('auto', auto, 1);
     physicalTriggers(auto, c.autoCrit);
@@ -1360,8 +1681,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         ? Math.min(src.chance, 1 / (src.cooldown * c.aps))
         : src.chance;
       if (perAttack > 0) {
-        vulnStacks = Math.min(5, vulnStacks + perAttack);
-        lastVuln = time;
+        addVulnerable(perAttack);
         chaosEvent(perAttack);
       }
     }
@@ -1373,13 +1693,86 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       return;
     }
 
+    // 0219 Soul Scatter: while above the mana threshold every attack spends a
+    // share of the current mana for magic damage; below the restore threshold
+    // each attack gives a flat amount back.
+    if (c.soulScatter !== undefined && b.maxMana > 0) {
+      const manaPct = (mana / b.maxMana) * 100;
+      if (manaPct > c.soulScatter.costThresholdPct) {
+        const spend = mana * (c.soulScatter.costPct / 100);
+        if (spend > 0) {
+          mana = Math.max(0, mana - spend);
+          const raw = spend * c.soulScatter.multiplier;
+          if (raw > 0) {
+            const hit = magicalDamage(b, enemy, c, raw, {
+              dot: false,
+              poisonSource: false,
+              corrosionStacks: poisonStacks,
+              vulnStacks,
+              burning: burnUntil > time,
+              markStacks,
+              doomStacks,
+              curseRibbonActive,
+            });
+            add('soulScatter', hit, 1);
+          }
+        }
+      } else if (manaPct < c.soulScatter.restoreThresholdPct && c.soulScatter.restore > 0) {
+        mana = Math.min(b.maxMana, mana + c.soulScatter.restore);
+      }
+    }
+
+    // 0567 / 0586: real attacks add expected mark stacks; the mark multiplies
+    // every hit from the wearer and decays once its duration runs out.
+    if (c.huntMark !== undefined && c.huntMark.chance > 0 && c.huntMark.duration > 0) {
+      huntMarkStacks = Math.min(c.huntMark.maxStacks, huntMarkStacks + c.huntMark.chance);
+      lastHuntMark = time;
+    }
+
+    // 0407 Ember Ring: a target that is not burning catches fire on the next
+    // non-DOT damage, on the item's cooldown.
+    if (c.emberRing !== undefined && burnUntil <= time && time + EPS >= emberReady) {
+      startBurn(c.emberRing.duration);
+      emberReady = time + c.emberRing.cooldown;
+      chaosEvent(1);
+    }
+    // 0550 Flaming Fury: attacks can burn; a 0.5 s cooldown caps the rate.
+    // Its uptime is modelled from the proc rate rather than assuming a hit
+    // every time the cooldown is ready.
+    if (c.flameFury !== undefined && c.flameFury.chance > 0 && time + EPS >= flameReady) {
+      const attemptsPerSecond = Math.min(c.aps, 1 / Math.max(0.1, c.flameFury.cooldown));
+      const uptime = 1 - Math.exp(-attemptsPerSecond * c.flameFury.chance * c.flameFury.duration);
+      startBurn(c.flameFury.duration, uptime);
+      flameReady = time + c.flameFury.cooldown;
+      chaosEvent(c.flameFury.chance);
+    }
+    // 0408 Ash Codex: non-DOT damage to a burning target explodes for a share
+    // of max mana, on the item's cooldown.
+    if (c.ashCodex !== undefined && burnUntil > time && b.maxMana > 0 && time + EPS >= ashReady) {
+      const raw = b.maxMana * (c.ashCodex.pct / 100);
+      if (raw > 0) {
+        const hit = magicalDamage(b, enemy, c, raw, {
+          dot: false,
+          poisonSource: false,
+          corrosionStacks: poisonStacks,
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks,
+          doomStacks,
+          curseRibbonActive,
+        });
+        add('ashCodex', hit, 1);
+      }
+      ashReady = time + c.ashCodex.cooldown;
+    }
+
     // Flat on-attack procs (0129 Dart, 0131 Crystal Sword). The DPS tab
     // deliberately counts one target only; 0131's radius is not multiplied.
     let shatterThisAttack = 0;
     let shatterApplied = false;
     for (const proc of c.flatProcs) {
       if (proc.chance > 0 && proc.raw > 0) {
-        const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
+        const hit = procDamage(proc.raw);
         add(proc.source, hit * proc.chance, proc.chance);
         physicalTriggers(hit, c.abilityCrit);
         if (proc.source === 'shatterProc' && proc.armor !== undefined && proc.duration !== undefined) {
@@ -1408,9 +1801,19 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
           (c.creed.agilityPct / 100) *
           (1 + (c.attackSpeed * c.creed.perAsPct) / 100) *
           (c.creed.targetPct / 100);
-        const hit = directDamage(b, enemy, c, raw, ctx(burnUntil > time));
+        const hit = procDamage(raw);
         add('assassinCreed', hit * perAttack, perAttack);
         physicalTriggers(hit * perAttack, c.abilityCrit);
+      }
+    }
+
+    // 0517 Skyrend: a chance-based physical hit scaled by all attributes.
+    if (c.skyrend !== undefined && c.skyrend.chance > 0 && c.skyrend.pct > 0) {
+      const raw = b.totalAttributes * (c.skyrend.pct / 100);
+      if (raw > 0) {
+        const hit = procDamage(raw);
+        add('skyrend', hit * c.skyrend.chance, c.skyrend.chance);
+        physicalTriggers(hit * c.skyrend.chance, c.abilityCrit);
       }
     }
 
@@ -1423,7 +1826,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         : 1;
       if (perAttack > 0) {
         const raw =
-          Math.max(0, b.attackDamage + Math.floor(heartStacks)) *
+          Math.max(0, b.attackDamage + Math.floor(heartStacks) + Math.floor(dominionStacks)) *
           (1 + b.allAttackDamagePct / 100) *
           (c.frostChain.pct / 100);
         const hit = magicalDamage(b, enemy, c, raw, {
@@ -1458,7 +1861,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     }
     if (c.moonShardChance > 0 && c.moonShardPct > 0) {
       const raw = autoRaw * c.moonShardPct / 100;
-      const hit = directDamage(b, enemy, c, raw, ctx(burnUntil > time));
+      const hit = procDamage(raw);
       add('moonShard', hit * c.moonShardChance, c.moonShardChance);
       physicalTriggers(hit, c.abilityCrit);
     }
@@ -1520,7 +1923,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
         });
         add(proc.source, hit, 1);
       } else {
-        const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
+        const hit = procDamage(proc.raw);
         add(proc.source, hit, 1);
         physicalTriggers(hit, c.abilityCrit);
       }
@@ -1537,7 +1940,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     // broken-armour debuff. Each source has its own bar.
     for (const proc of c.armorProcs) {
       if (!(proc.raw > 0)) continue;
-      const hit = directDamage(b, enemy, c, proc.raw, ctx(burnUntil > time));
+      const hit = procDamage(proc.raw);
       add(proc.source, hit, 1);
       physicalTriggers(hit, c.abilityCrit);
     }
@@ -1580,20 +1983,19 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
 
     if (c.talons) {
       const scaled = maxHp * (enemy.kind === 'boss' ? c.talonsBossPct / 100 : 1);
-      const light = directDamage(b, enemy, c, (scaled * c.talonsLightPct) / 100, ctx(burnUntil > time));
+      const light = procDamage((scaled * c.talonsLightPct) / 100);
       add('talonsLight', light, 1);
       const heavyChance = c.talonsHeavyChance / 100;
       if (heavyChance > 0) {
-        const heavy = directDamage(b, enemy, c, (scaled * c.talonsHeavyPct) / 100, ctx(burnUntil > time));
+        const heavy = procDamage((scaled * c.talonsHeavyPct) / 100);
         add('talonsHeavy', heavy * heavyChance, heavyChance);
       }
     }
 
     if (c.bag && c.burnDuration > 0 && time + EPS >= burnReady) {
-      burnUntil = time + c.burnDuration;
+      startBurn(c.burnDuration);
       burnReady = time + c.burnInterval;
       markStacks = Math.min(c.markMax, markStacks + 1);
-      if (burnAt === null) burnAt = time + BURN_TICK;
       chaosEvent(1);
     }
 
@@ -1706,7 +2108,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     bleedPool = Math.max(0, bleedPool - base);
     bleedLeft -= 1;
     if (c.bloodEcho && tick > 0 && c.bloodEchoPct > 0 && (dummy || hp > 0)) {
-      const echo = directDamage(b, enemy, c, tick * (c.bloodEchoPct / 100), ctx(burnUntil > time));
+      const echo = procDamage(tick * (c.bloodEchoPct / 100));
       add('bloodEcho', echo, 1);
     }
     if (bleedLeft <= 0 || bleedPool <= 0 || bleedAt === null) {
@@ -1720,11 +2122,12 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   const onBurnTick = (): void => {
     if (burnUntil <= time || burnAt === null) {
       burnAt = null;
+      burnWeight = 0;
       return;
     }
     const hpForBurn = dummy ? maxHp : Math.max(0, hp);
-    const pct = hpForBurn * (BURN_HP_PCT / 100) * BURN_TICK * burnFactor(enemy.kind);
-    const cap = 10 * attrs;
+    const pct = hpForBurn * (BURN_HP_PCT / 100) * BURN_TICK * burnFactor(enemy.kind) * burnWeight;
+    const cap = 10 * attrs * burnWeight;
     add('burn', Math.min(pct, cap), 1);
     burnAt += BURN_TICK;
   };
@@ -1781,6 +2184,10 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       featherActivateAt,
       featherTickAt ?? Number.POSITIVE_INFINITY,
       heartDecayAt,
+      dominionDecayAt,
+      radianceAt,
+      manaSpringAt,
+      igniteTickAt ?? Number.POSITIVE_INFINITY,
     );
     if (!Number.isFinite(next) || next > duration + EPS) break;
     const step = Math.max(0, next - time);
@@ -1805,6 +2212,45 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       const decay = Math.max(c.heart.decayMin, (heartStacks * c.heart.decayPct) / 100);
       heartStacks = Math.max(0, heartStacks - decay);
       heartDecayAt = time + 1;
+    }
+    if (c.bloodDominion !== undefined && Math.abs(time - dominionDecayAt) <= EPS) {
+      const decay = Math.max(
+        c.bloodDominion.decayMin,
+        (dominionStacks * c.bloodDominion.decayPct) / 100,
+      );
+      dominionStacks = Math.max(0, dominionStacks - decay);
+      dominionDecayAt = time + 1;
+    }
+    // 0216 Radiance: a toggle; every interval it burns max-shield pure damage
+    // into the area and refreshes the generic burn.
+    if (radianceOn && Math.abs(time - radianceAt) <= EPS) {
+      const raw = Math.max(0, b.energyShield) * (c.radiance!.pct / 100) * 0.8;
+      if (raw > 0) add('radiance', raw, 1);
+      startBurn(c.radiance!.burn);
+      radianceAt += c.radiance!.interval;
+    }
+    // 0551 Magic Spring: a passive aura, 100 % of max mana as pure damage per
+    // second to every enemy in range (one target in the DPS tab).
+    if (Math.abs(time - manaSpringAt) <= EPS) {
+      const raw = Math.max(0, b.maxMana) * (c.manaSpring!.pct / 100);
+      if (raw > 0) add('manaSpring', raw, 1);
+      manaSpringAt += 1;
+    }
+    // 0534 / 0582: Ignite ticks every 0.5 s for attributes × %/stack × stacks.
+    if (igniteTickAt !== null && Math.abs(time - igniteTickAt) <= EPS) {
+      if (c.ignite !== undefined && igniteStacks > 0 && time < igniteUntil - EPS) {
+        const raw =
+          b.totalAttributes *
+          (c.ignite.pctPerStack / 100) *
+          igniteStacks *
+          0.5 *
+          (1 + b.dotOutgoingPct / 100);
+        if (raw > 0) add('ignite', raw, 1);
+        igniteTickAt = (igniteTickAt as number) + 0.5;
+      } else {
+        igniteStacks = 0;
+        igniteTickAt = null;
+      }
     }
     if (Math.abs(time - gazeAt) <= EPS) {
       const raw = b.totalAttributes * c.gazePct / 100;
@@ -1845,6 +2291,13 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     }
 
     if (c.bag && burnUntil > 0 && time - burnUntil > c.burnDuration) markStacks = 0;
+    if (
+      c.huntMark !== undefined &&
+      huntMarkStacks > 0 &&
+      time - lastHuntMark > c.huntMark.duration
+    ) {
+      huntMarkStacks = 0;
+    }
 
     if (!dummy && hp <= 0) {
       hp = 0;

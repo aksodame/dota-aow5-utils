@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { ItemFull, RollTables } from 'aow5-shared/types';
 import {
   CURRENT_RULESET,
+  SET_ITEMS,
   applyEffects,
   copyStats,
   heroStatsAtLevel,
@@ -325,8 +326,75 @@ function buildPool(
   // row — that row is what feeds attack damage, attack speed and armour. The
   // movement speed itself is already complete here (items, effects and buffs),
   // and agility cannot feed back into it.
+  // Level-6 set passives (0516, 0526, 0527, 0651) count only the six main
+  // slots, as the scripts do. The item's own rolled values feed the grant.
+  const mainIds = state.slots.flatMap((e) => (e === null ? [] : [e.id]));
+  const countSet = (ids: readonly string[]): number =>
+    ids.reduce((n, id) => n + (mainIds.includes(id) ? 1 : 0), 0);
+  const itemStat = (ids: readonly string[], key: string): number =>
+    list.find((e) => ids.includes(e.id))?.stats[key] ?? 0;
+  const rowOf = new Map<string, RowDef>();
+  for (const group of GROUPS) for (const row of group.rows) rowOf.set(row.key, row);
+  const bleedCount = Math.min(3, countSet(SET_ITEMS.bleed));
+  if (bleedCount > 0) {
+    sums['all_attack_damage_percent'] =
+      (sums['all_attack_damage_percent'] ?? 0) +
+      bleedCount * itemStat(['item_0516', 'item_0761'], 'ability_value_demon_attack_pct');
+    sums['physical_lifesteal_pct'] =
+      (sums['physical_lifesteal_pct'] ?? 0) +
+      bleedCount * itemStat(['item_0516', 'item_0761'], 'ability_value_demon_lifesteal_pct');
+  }
+  const sageCount = Math.min(3, countSet(SET_ITEMS.sage));
+  if (sageCount > 0) {
+    // The script grants `all_mana_pct`, which the panel model does not carry;
+    // it is folded into flat mana from the panel's current max mana.
+    const manaPct = sageCount * itemStat(['item_0526', 'item_0765'], 'ability_value_mana_pct_per_sage');
+    const manaRow = rowOf.get('bonus_mana');
+    if (manaPct > 0 && manaRow !== undefined) {
+      sums['bonus_mana'] =
+        (sums['bonus_mana'] ?? 0) + (rowTotal(input, manaRow, sums, buffs).sum * manaPct) / 100;
+    }
+    sums['spell_amplify_pct'] =
+      (sums['spell_amplify_pct'] ?? 0) +
+      sageCount * itemStat(['item_0526', 'item_0765'], 'ability_value_spell_amp_per_sage');
+  }
+  const lionCount = Math.min(3, countSet(SET_ITEMS.lionheart));
+  if (lionCount > 0) {
+    const cap = itemStat(['item_0527', 'item_0766'], 'ability_value_armor_bonus_max');
+    const armor = lionCount * itemStat(['item_0527', 'item_0766'], 'ability_value_armor_per_lionheart');
+    sums['bonus_armor'] = (sums['bonus_armor'] ?? 0) + (cap > 0 ? Math.min(armor, cap) : armor);
+  }
+  const shadowCount = Math.min(3, countSet(SET_ITEMS.shadow));
+  if (shadowCount > 0) {
+    sums['attack_speed_pct'] =
+      (sums['attack_speed_pct'] ?? 0) +
+      shadowCount * itemStat(['item_0651', 'item_0879'], 'ability_value_set_attack_speed_pct');
+    sums['bonus_movespeed_pct'] =
+      (sums['bonus_movespeed_pct'] ?? 0) +
+      shadowCount * itemStat(['item_0651', 'item_0879'], 'ability_value_set_movespeed_pct');
+  }
+
   const huntAgility = moveHuntAgility(list, rowTotal(input, MOVESPEED_ROW, sums, buffs).sum);
   if (huntAgility !== 0) sums['bonus_agility'] = (sums['bonus_agility'] ?? 0) + huntAgility;
+
+  // 0520: attack speed above the threshold adds physical crit chance.
+  if (list.some((e) => e.id === 'item_0520' || e.id === 'item_0763')) {
+    const threshold = itemStat(['item_0520', 'item_0763'], 'ability_value_c_attackspeed_threshold');
+    const step = Math.max(1, itemStat(['item_0520', 'item_0763'], 'ability_value_c_attackspeed_per_step') || 18);
+    const per = itemStat(['item_0520', 'item_0763'], 'ability_omnicrit_pct_per_step');
+    const cap = itemStat(['item_0520', 'item_0763'], 'ability_omnicrit_pct_max');
+    const asRow = rowOf.get('attack_speed');
+    const asPctRow = rowOf.get('attack_speed_pct');
+    if (asRow !== undefined && asPctRow !== undefined) {
+      const as = rowTotal(input, asRow, sums, buffs);
+      const pct = rowTotal(input, asPctRow, sums, buffs).sum;
+      // The AS row already folds the percent in the WIP model (it reports
+      // `pct`); without that model the two rows are separate.
+      const totalAs = as.pct !== undefined ? as.sum : as.sum * (1 + pct / 100);
+      const bonus = Math.min(cap, Math.floor(Math.max(0, totalAs - threshold) / step) * per);
+      if (bonus > 0) sums['physical_crit_chance_pct'] = (sums['physical_crit_chance_pct'] ?? 0) + bonus;
+    }
+  }
   return { sums, fx, buffs, list };
 }
 
