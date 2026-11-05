@@ -4,10 +4,7 @@
    "version": "v1.522",
    "date": "05.11.2026",
    "game": [
-    "Endless run: floor monsters can now carry affixes — ten buffs in three groups. Offensive: Berserk (+25% damage, +40 attack speed), Deadly (+30% crit chance, +100% crit damage), Assault (+40% attack damage) and Bloodthirst (restores 1.5% max health when a basic attack hits a hero).",
-    "Defensive: Shield (a shield equal to max health; pure damage passes through), Revive (2.6 s of feigned death, then full health — once only) and Hardened (−33% damage taken). Shield and Revive never roll on the same monster.",
-    "Mechanic: Scorching Footprints (a fire patch under a moving monster; heroes lose 4% max health every 0.5 s), Dominion Aura (+30% damage to monsters within 700) and Damage Sharing (30% of a boss’s damage is taken by Surrogates).",
-    "Scorching Footprints and Dominion Aura are limited to elites and above; Damage Sharing is for bosses only and only on boss floors.",
+    "Endless run: floor monsters can now carry affixes — Berserk, Deadly, Assault, Bloodthirst, Shield, Revive, Hardened, Scorching Footprints, Dominion Aura and Damage Sharing. Their effects are on the wiki, under Sky → Affixes.",
     "Loadout presets: the second and third preset pages can be bought from the preset page — 480 C Tickets, at most two purchases. The page entitlement is shared by every profession of the S3 character; each profession keeps its own presets.",
     "Dragon Fang (0670): every D-slot ability — the dashes and mobility skills of all professions, including Dragon Knight’s Dash and pa_004 — no longer grants stacks of bonus final damage; previously only ak_hero_dash was excluded.",
     "Texts: status names are now consistent (Poison, Freeze, Burn, Bleed), 224 item descriptions and Dragon Knight tooltips were updated. Rune pouches are named after heroes (Axe, Void Spirit, Drow Ranger, Phantom Assassin, Lina, Dragon Knight), and P326–P328 became “Cave Rune Chests”."
