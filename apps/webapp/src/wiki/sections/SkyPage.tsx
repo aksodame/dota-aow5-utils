@@ -518,18 +518,19 @@ function AffixesPage({ ctx }: { ctx: Ctx }) {
     <>
       <Panel>
         <Head title={t.affix.title} code={t.affix.code} />
-        <div className={styles.prose}>
-          <p className={styles.text}>{t.affix.intro}</p>
-        </div>
-      </Panel>
-      <Panel title={t.affix.tiersTitle}>
-        <div className={styles.affixTiers}>
-          <DataTable
-            compact
-            head={[t.affix.tierFloor, t.affix.tierNormal, t.affix.tierElite, t.affix.tierBoss]}
-            rows={tiers}
-          />
-          <Note>{t.affix.tiersNote}</Note>
+        <div className={styles.affixTop}>
+          <div className={styles.prose}>
+            <p className={cx(styles.text, styles.affixIntro)}>{t.affix.intro}</p>
+            <Note>{t.affix.tiersNote}</Note>
+          </div>
+          <div className={styles.affixTiers}>
+            <h3 className={styles.affixTiersTitle}>{t.affix.tiersTitle}</h3>
+            <DataTable
+              compact
+              head={[t.affix.tierFloor, t.affix.tierNormal, t.affix.tierElite, t.affix.tierBoss]}
+              rows={tiers}
+            />
+          </div>
         </div>
       </Panel>
       {AFFIX_CATEGORIES.map((category) => {
