@@ -114,6 +114,8 @@ export interface DpsBuild {
   maxMana: number;
   /** Every lifesteal type summed; 0362's slash scales with it. */
   anyLifestealPct: number;
+  /** `lifesteal_amp_pct` in percent: 0543/0625 reduce every lifesteal heal. */
+  lifestealAmpPct: number;
   /**
    * 0241 reads only the `attack_lifesteal` and `spell_lifesteal` heal events.
    * The engine maps the pak's five stats onto them as attack = attack +
@@ -179,7 +181,11 @@ export type DpsSourceId =
   | 'ignite'
   | 'verdict'
   | 'ashCodex'
-  | 'manaSpring';
+  | 'manaSpring'
+  // Level 7 (v1.522)
+  | 'critChain'
+  | 'bloodMoon'
+  | 'frostbite';
 
 export interface DpsSource {
   id: DpsSourceId;
@@ -325,6 +331,8 @@ const SPELL_SOURCES: ReadonlySet<DpsSourceId> = new Set<DpsSourceId>([
   'vortexDot',
   'soulScatter',
   'ashCodex',
+  'bloodMoon',
+  'frostbite',
 ]);
 const NO_HEAL_SOURCES: ReadonlySet<DpsSourceId> = new Set<DpsSourceId>([
   'feather',
@@ -333,6 +341,7 @@ const NO_HEAL_SOURCES: ReadonlySet<DpsSourceId> = new Set<DpsSourceId>([
   'ignite',
   'verdict',
   'manaSpring',
+  'critChain',
 ]);
 
 /**
@@ -391,6 +400,8 @@ interface Constants {
   attackSpeed: number;
   autoCrit: number;
   abilityCrit: number;
+  magicCrit: number;
+  omniCrit: number;
   critMultiplier: number;
   bleedInterval: number;
   mkb: DpsItemStats | undefined;
@@ -516,6 +527,20 @@ interface Constants {
   bloodDominion: { perPct: number; maxAd: number; decayPct: number; decayMin: number } | undefined;
   /** 0525 Arcane Forge: non-base physical damage becomes magic. */
   arcaneForge: boolean;
+  /** 0218 / 0232 / 0648: a crit can add one more hit of the same size. */
+  critChain: { magic: boolean; chance: number; noCrit: boolean } | undefined;
+  /** 0348 Buddha's Strike: damage grows as the target loses health. */
+  buddha: { stepPct: number; perStep: number; cap: number; duration: number } | undefined;
+  /** 0420 / 0638 Blood Thorn: the active wave and its Blood Moon mark. */
+  bloodMoon: { pct: number; cooldown: number; markDuration: number; vulnChance: number; vulnDuration: number } | undefined;
+  /** 0593 Charged Strike: own DOT ticks add crit chance and crit damage. */
+  erosion: { perStack: number; critPerStack: number; max: number; decayPct: number } | undefined;
+  /** 0620 Destroyer Blade: ten freeze stacks burst into a magic DOT. */
+  frostbite: { threshold: number; duration: number; pct: number; interval: number } | undefined;
+  /** 0622 Star Crusher Axe: a physical crit can add vulnerable stacks. */
+  starShatter: { chance: number; duration: number; cooldown: number } | undefined;
+  /** 0619 Solar Furnace: non-base physical damage becomes magic at 120 %. */
+  solarForge: { factor: number } | undefined;
 }
 
 function constants(build: DpsBuild): Constants {
@@ -601,6 +626,10 @@ function constants(build: DpsBuild): Constants {
   const abilityCrit = build.noCrit
     ? 0
     : critChancePct(build.abilityCritChancePct, build.physicalCritChancePct, build.omniCritChancePct);
+  const magicCrit = build.noCrit
+    ? 0
+    : critChancePct(build.abilityCritChancePct, build.magicalCritChancePct, build.omniCritChancePct);
+  const omniCrit = build.noCrit ? 0 : clamp(build.omniCritChancePct, 0, 100);
   const cdr = 1 - Math.min(80, Math.max(0, build.cooldownReductionPct)) / 100;
   const effCd = (item: DpsItemStats | undefined, fallback: number): number =>
     Math.max(0.1, (item?.cooldown ?? fallback) * cdr);
@@ -844,12 +873,80 @@ function constants(build: DpsBuild): Constants {
       }
     : undefined;
   const arcaneForge = findItem(build, ['item_0525']) !== undefined;
+  // 0218 and 0648 share priority 200; 0232 is the lower-priority epic copy.
+  const critChainItem = findItem(build, ['item_0218', 'item_0774', 'item_0648', 'item_0874', 'item_0232']);
+  const critChain = critChainItem
+    ? {
+        magic: critChainItem.id === 'item_0648',
+        chance: clamp(
+          Math.max(
+            0,
+            value(critChainItem, 'ability_value_chain_chance_pct') || value(critChainItem, 'ability_chain_chance_pct'),
+          ),
+          0,
+          100,
+        ) / 100,
+        // s3 adds this key to 0218/0232/0648; it makes the extra hit unable to crit.
+        noCrit: Math.max(0, value(critChainItem, 'ability_chain_no_crit')) > 0,
+      }
+    : undefined;
+  const buddhaItem = findItem(build, ['item_0348', 'item_0777']);
+  const buddha = buddhaItem
+    ? {
+        stepPct: Math.max(1, value(buddhaItem, 'ability_loss_health_step_pct')),
+        perStep: Math.max(0, value(buddhaItem, 'ability_damage_bonus_per_step_pct')),
+        cap: Math.max(0, value(buddhaItem, 'ability_value_damage_bonus_limit_pct')),
+        duration: Math.max(0, value(buddhaItem, 'ability_mark_duration')),
+      }
+    : undefined;
+  const bloodMoonItem = findItem(build, ['item_0420', 'item_0784']) ?? findItem(build, ['item_0638']);
+  const bloodMoon = bloodMoonItem
+    ? {
+        pct: Math.max(0, value(bloodMoonItem, 'ability_attack_damage_pct')),
+        cooldown: effCd(bloodMoonItem, 45),
+        markDuration: Math.max(0, value(bloodMoonItem, 'ability_bloodmoon_duration')),
+        vulnChance: Math.min(100, Math.max(0, value(bloodMoonItem, 'ability_value_vulnerable_chance_pct') || value(bloodMoonItem, 'ability_vulnerable_chance_pct'))) / 100,
+        vulnDuration: Math.max(0, value(bloodMoonItem, 'ability_vulnerable_duration')),
+      }
+    : undefined;
+  const erosionItem = findItem(build, ['item_0593', 'item_0795']);
+  const erosion = erosionItem
+    ? {
+        perStack: Math.max(0, value(erosionItem, 'ability_crit_per_stack')),
+        critPerStack: Math.max(0, value(erosionItem, 'ability_critdmg_per_stack')),
+        max: Math.max(1, Math.floor(value(erosionItem, 'ability_value_max_stacks'))),
+        decayPct: Math.max(0, value(erosionItem, 'ability_erode_decay_pct')),
+      }
+    : undefined;
+  const frostbiteItem = findItem(build, ['item_0620', 'item_0800']);
+  const frostbite = frostbiteItem
+    ? {
+        threshold: Math.max(1, Math.floor(value(frostbiteItem, 'ability_freeze_stack_threshold'))),
+        duration: Math.max(0, value(frostbiteItem, 'ability_frostbite_duration')),
+        pct: Math.max(0, value(frostbiteItem, 'ability_value_damage_all_stats_pct') || value(frostbiteItem, 'ability_damage_all_stats_pct')),
+        interval: 1,
+      }
+    : undefined;
+  const starShatterItem = findItem(build, ['item_0622']);
+  const starShatter = starShatterItem
+    ? {
+        chance: Math.min(100, Math.max(0, value(starShatterItem, 'ability_trigger_chance_pct'))) / 100,
+        duration: Math.max(0, value(starShatterItem, 'ability_vulnerable_duration')),
+        cooldown: Math.max(0.1, starShatterItem.cooldown ?? 0.25),
+      }
+    : undefined;
+  const solarForgeItem = findItem(build, ['item_0619', 'item_0799']);
+  const solarForge = solarForgeItem
+    ? { factor: Math.max(0, value(solarForgeItem, 'ability_value_magic_amp_pct') || 120) / 100 }
+    : undefined;
 
   return {
     aps: (1 + attackSpeed / 100) / bat,
     attackSpeed,
     autoCrit,
     abilityCrit,
+    magicCrit,
+    omniCrit,
     critMultiplier: Math.max(1, build.critDamagePct / 100),
     bleedInterval: Math.max(BLEED_TICK / speed, 0.03),
     mkb,
@@ -967,6 +1064,13 @@ function constants(build: DpsBuild): Constants {
     manaSpring,
     bloodDominion,
     arcaneForge,
+    critChain,
+    buddha,
+    bloodMoon,
+    erosion,
+    frostbite,
+    starShatter,
+    solarForge,
   };
 }
 
@@ -976,9 +1080,10 @@ function directDamage(
   c: Constants,
   raw: number,
   ctx: HitContext,
+  noCrit = false,
 ): number {
   if (!(raw > 0)) return 0;
-  const chance = ctx.baseAttack ? c.autoCrit : c.abilityCrit;
+  const chance = noCrit ? 0 : ctx.baseAttack ? c.autoCrit : c.abilityCrit;
   const crit = 1 + (chance / 100) * (c.critMultiplier - 1);
   const physical = 1 + build.physicalDamageAddPct / 100;
   const spell = ctx.baseAttack ? 1 + build.normalAttackAmpPct / 100 : 1 + build.spellAmplifyPct / 100;
@@ -1020,11 +1125,10 @@ function magicalDamage(
     doomStacks: number;
     curseRibbonActive: boolean;
   },
+  noCrit = false,
 ): number {
   if (!(raw > 0)) return 0;
-  const chance = opts.dot || build.noCrit
-    ? 0
-    : critChancePct(build.abilityCritChancePct, build.magicalCritChancePct, build.omniCritChancePct);
+  const chance = opts.dot || build.noCrit || noCrit ? 0 : c.magicCrit;
   const crit = 1 + (chance / 100) * (c.critMultiplier - 1);
   const magical = 1 + build.magicalDamageAddPct / 100;
   const spell = 1 + build.spellAmplifyPct / 100;
@@ -1070,16 +1174,22 @@ function pureDamage(
   opts: { vulnStacks: number; burning: boolean; markStacks: number },
 ): number {
   if (!(raw > 0)) return 0;
+  // Type 4 gets no physical/magical/ability crit chance, but the game adds
+  // `omni_crit_chance_pct` to every damage type. 0362's slash and 0646's
+  // feather ticks are pure and carry no DOT tag, so they can crit off omni.
+  const chance = c.omniCrit;
+  const crit = 1 + (chance / 100) * (c.critMultiplier - 1);
   const extra = 1 + enemyExtraPct(build, enemy.kind) / 100;
   const reduction = Math.max(0.001, 1 - enemy.damageReductionPct / 100);
   const resistance = 1 / (1 + Math.max(0, enemy.damageResistancePct) / 100);
   const vulnerable = opts.vulnStacks > 0 ? 1 + Math.min(25, 15 + 2 * opts.vulnStacks) / 100 : 1;
   const mark = c.bag && opts.burning ? 1 + Math.min(c.markMax, opts.markStacks) * c.markPerStack / 100 : 1;
   const season = 1 + build.seasonDamagePct / 100;
-  // Type 4: no crit, no armour, no magic resistance, no corrosion or poison
-  // outgoing; only the general multipliers and the on-apply debuffs.
+  // Type 4: no armour, no magic resistance, no corrosion or poison outgoing;
+  // only the general multipliers, omni crit and the on-apply debuffs.
   return (
     raw *
+    crit *
     build.outgoingMultiplier *
     (1 + build.spellAmplifyPct / 100) *
     extra *
@@ -1283,6 +1393,9 @@ function sourceRecord(): Record<DpsSourceId, number> {
     verdict: 0,
     ashCodex: 0,
     manaSpring: 0,
+    critChain: 0,
+    bloodMoon: 0,
+    frostbite: 0,
   };
 }
 
@@ -1332,6 +1445,9 @@ function hitRecord(): Record<DpsSourceId, number> {
     verdict: 0,
     ashCodex: 0,
     manaSpring: 0,
+    critChain: 0,
+    bloodMoon: 0,
+    frostbite: 0,
   };
 }
 
@@ -1427,10 +1543,44 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   let ashReady = 0;
   /** 0219: current mana, starting full. */
   let mana = Math.max(0, b.maxMana);
+  /** 0593: own DOT ticks add crit chance and crit damage. */
+  let erosionStacks = 0;
+  let erosionDecayAt = Number.POSITIVE_INFINITY;
+  const baseAutoCrit = c.autoCrit;
+  const baseAbilityCrit = c.abilityCrit;
+  const baseMagicCrit = c.magicCrit;
+  const baseOmniCrit = c.omniCrit;
+  const baseCritMultiplier = c.critMultiplier;
+  const syncErosion = (): void => {
+    if (c.erosion === undefined) return;
+    const bonus = erosionStacks * c.erosion.perStack;
+    c.autoCrit = build.noCrit ? 0 : clamp(baseAutoCrit + bonus, 0, 100);
+    c.abilityCrit = build.noCrit ? 0 : clamp(baseAbilityCrit + bonus, 0, 100);
+    c.magicCrit = build.noCrit ? 0 : clamp(baseMagicCrit + bonus, 0, 100);
+    c.omniCrit = build.noCrit ? 0 : clamp(baseOmniCrit + bonus, 0, 100);
+    c.critMultiplier = baseCritMultiplier + (erosionStacks * c.erosion.critPerStack) / 100;
+  };
+  /** 0348: the target's missing health amplifies the wearer's damage. */
+  let buddhaUntil = 0;
+  /** 0420 / 0638: the active wave and the Blood Moon mark it leaves. */
+  const bloodMoonItem = findItem(b, ['item_0420', 'item_0784']) ?? findItem(b, ['item_0638']);
+  const bloodMoonOn = c.bloodMoon !== undefined && bloodMoonItem !== undefined && options.active?.has(bloodMoonItem.id) === true;
+  let bloodMoonAt = bloodMoonOn ? 0 : Number.POSITIVE_INFINITY;
+  let bloodMoonMarkUntil = 0;
+  /** 0620: freeze stacks on the target and the Frostbite DOT they burst into. */
+  let freezeStacks = 0;
+  let freezeUntil = 0;
+  let frostbiteUntil = 0;
+  let frostbiteTickAt: number | null = null;
+  let frostbiteDamage = 0;
   const damage = sourceRecord();
   const hits = hitRecord();
 
-  /** The number of distinct debuff modifiers on the target, for 0581. */
+  /**
+   * The number of distinct debuff modifier names on the target, for 0581.
+   * s3 sets `ability_count_debuff_kinds = 1`, which makes the script dedup
+   * modifiers by name; the engine's per-source flags already do that.
+   */
   const debuffCount = (): number => {
     let n = 0;
     if (bleedPool > 0 || bleedLeft > 0) n += 1;
@@ -1442,6 +1592,11 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     if (huntMarkStacks > 0) n += 1;
     if (igniteStacks > 0) n += 1;
     if (armorDebuff > 0) n += 1;
+    // Level-7 debuffs: 0348's mark, 0420's Blood Moon, 0620's Freeze/Frostbite.
+    if (c.buddha !== undefined && buddhaUntil > time) n += 1;
+    if (c.bloodMoon !== undefined && bloodMoonMarkUntil > time) n += 1;
+    if (freezeStacks > 0) n += 1;
+    if (frostbiteUntil > time) n += 1;
     return n;
   };
   /** 0581: the outgoing multiplier from the target's debuffs. */
@@ -1454,9 +1609,21 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     const doubled = c.huntMark.doubleAtMax && stacks >= c.huntMark.maxStacks ? 2 : 1;
     return 1 + (stacks * c.huntMark.perStack * doubled) / 100;
   };
+  /** 0348: the target's missing health turns into extra damage. */
+  const buddhaAmp = (): number => {
+    if (c.buddha === undefined || buddhaUntil <= time) return 1;
+    const missingPct = dummy ? 0 : Math.max(0, ((maxHp - hp) * 100) / maxHp);
+    const steps = Math.floor(missingPct / c.buddha.stepPct);
+    return 1 + Math.min(c.buddha.cap, steps * c.buddha.perStep) / 100;
+  };
   /** Sources whose damage carries the game's DOT tag; 0581 duplicates these. */
   const isDotSource = (id: DpsSourceId): boolean =>
-    id === 'bleed' || id === 'burn' || id === 'poison' || id === 'ignite' || id === 'witchBlade';
+    id === 'bleed' ||
+    id === 'burn' ||
+    id === 'poison' ||
+    id === 'ignite' ||
+    id === 'witchBlade' ||
+    id === 'frostbite';
 
   const ctx = (burning: boolean, baseAttack = false): HitContext => ({
     baseAttack,
@@ -1469,28 +1636,45 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
 
   const add = (id: DpsSourceId, amount: number, count = 0): void => {
     if (!(amount > 0)) return;
-    // 0567/0586's mark and 0581's Judgment skip HP_LOSS damage (bleed, burn,
-    // ignite). 0581's own verdict hit skips Judgment but still takes the mark.
+    // 0567/0586's mark, 0581's Judgment and 0348's mark skip HP_LOSS damage
+    // (bleed, burn, ignite). 0581's own verdict hit skips Judgment but still
+    // takes the marks.
     const hpLoss = id === 'bleed' || id === 'burn' || id === 'ignite';
-    amount *= id === 'verdict' ? huntMarkAmp() : hpLoss ? 1 : huntMarkAmp() * judgmentAmp();
+    amount *= id === 'verdict'
+      ? huntMarkAmp() * buddhaAmp()
+      : hpLoss
+        ? 1
+        : huntMarkAmp() * judgmentAmp() * buddhaAmp();
     damage[id] = (damage[id] ?? 0) + amount;
     hits[id] = (hits[id] ?? 0) + count;
+    // 0593: every tick of the wearer's own DOT adds one Erosion stack.
+    if (c.erosion !== undefined && isDotSource(id)) {
+      const before = erosionStacks;
+      erosionStacks = Math.min(c.erosion.max, erosionStacks + (count > 0 ? count : 1));
+      if (before === 0) erosionDecayAt = time + 1;
+      syncErosion();
+    }
     if (c.heart !== undefined && !NO_HEAL_SOURCES.has(id)) {
       // 0241: 25 % of the attack/spell lifesteal heal becomes stored attack
       // damage, capped; the heal is the damage dealt times that channel's %.
       const healPct = SPELL_SOURCES.has(id) ? build.spellHealPct : build.attackHealPct;
+      const healAmp = Math.max(0, 1 + build.lifestealAmpPct / 100);
       if (healPct > 0) {
-        heartStacks = Math.min(c.heart.maxAd, heartStacks + (amount * healPct / 100) * (c.heart.perPct / 100));
+        heartStacks = Math.min(
+          c.heart.maxAd,
+          heartStacks + (amount * healPct * healAmp / 100) * (c.heart.perPct / 100),
+        );
       }
     }
     if (c.bloodDominion !== undefined && !NO_HEAL_SOURCES.has(id)) {
       // 0515: the same heal events, but 35 % of the heal becomes attack damage
       // with its own cap and decay.
       const healPct = SPELL_SOURCES.has(id) ? build.spellHealPct : build.attackHealPct;
+      const healAmp = Math.max(0, 1 + build.lifestealAmpPct / 100);
       if (healPct > 0) {
         dominionStacks = Math.min(
           c.bloodDominion.maxAd,
-          dominionStacks + (amount * healPct / 100) * (c.bloodDominion.perPct / 100),
+          dominionStacks + (amount * healPct * healAmp / 100) * (c.bloodDominion.perPct / 100),
         );
       }
     }
@@ -1525,19 +1709,29 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     (1 + b.allAttackDamagePct / 100);
 
   /** A non-base physical hit, re-typed as magic by 0525 Arcane Forge. */
-  const procDamage = (raw: number): number =>
-    c.arcaneForge
-      ? magicalDamage(b, enemy, c, raw, {
-          dot: false,
-          poisonSource: false,
-          corrosionStacks: poisonStacks,
-          vulnStacks,
-          burning: burnUntil > time,
-          markStacks,
-          doomStacks,
-          curseRibbonActive,
-        })
-      : directDamage(b, enemy, c, raw, ctx(burnUntil > time));
+  // 0525 Arcane Forge turns every non-base physical hit into magic; 0619
+  // Solar Furnace does the same at 120 % (the script multiplies the final
+  // damage by its conversion percentage).
+  const procDamage = (raw: number, noCrit = false): number =>
+    c.arcaneForge || c.solarForge !== undefined
+      ? magicalDamage(
+          b,
+          enemy,
+          c,
+          raw * (c.solarForge?.factor ?? 1),
+          {
+            dot: false,
+            poisonSource: false,
+            corrosionStacks: poisonStacks,
+            vulnStacks,
+            burning: burnUntil > time,
+            markStacks,
+            doomStacks,
+            curseRibbonActive,
+          },
+          noCrit,
+        )
+      : directDamage(b, enemy, c, raw, ctx(burnUntil > time), noCrit);
 
   /** 0534 / 0582: add expected Ignite stacks; the duration does not refresh. */
   const addIgnite = (stacks: number): void => {
@@ -1666,12 +1860,75 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     if (c.mkb && time - lastArmor > c.mkbArmorDuration) armorStacks = 0;
     if (time - lastArmorDebuff > 5) armorDebuff = 0;
     const burning = burnUntil > time;
+    // 0348: every real attack applies Slaughter; the mark then amplifies the
+    // wearer's damage by the target's missing health.
+    if (c.buddha !== undefined && c.buddha.duration > 0) buddhaUntil = time + c.buddha.duration;
     const autoRaw =
       Math.max(0, b.attackDamage + Math.floor(heartStacks) + Math.floor(dominionStacks)) *
       (1 + b.allAttackDamagePct / 100);
     const auto = directDamage(b, enemy, c, autoRaw, ctx(burning, true));
     add('auto', auto, 1);
     physicalTriggers(auto, c.autoCrit);
+    // 0218 / 0232 / 0648: a critical hit can add a second hit of the same
+    // size. The script takes the hit's base damage times the crit multiplier
+    // and forbids the extra hit from critting itself.
+    if (c.critChain !== undefined && c.critChain.chance > 0 && c.autoCrit > 0) {
+      const raw = autoRaw * c.critMultiplier;
+      const chance = (c.autoCrit / 100) * c.critChain.chance;
+      const hit = c.critChain.magic
+        ? magicalDamage(
+            b,
+            enemy,
+            c,
+            raw,
+            {
+              dot: false,
+              poisonSource: false,
+              corrosionStacks: poisonStacks,
+              vulnStacks,
+              burning: burnUntil > time,
+              markStacks,
+              doomStacks,
+              curseRibbonActive,
+            },
+            c.critChain.noCrit,
+          )
+        : procDamage(raw, c.critChain.noCrit);
+      add('critChain', hit * chance, chance);
+    }
+    // 0622: physical crits can add one vulnerable stack; its 0.25 s internal
+    // cooldown caps the expected rate.
+    if (c.starShatter !== undefined && c.starShatter.chance > 0 && c.autoCrit > 0) {
+      const perAttack = Math.min(
+        c.starShatter.chance,
+        c.aps > 0 ? 1 / (c.starShatter.cooldown * c.aps) : 1,
+      ) * (c.autoCrit / 100);
+      if (perAttack > 0) {
+        addVulnerable(perAttack);
+        chaosEvent(perAttack);
+      }
+    }
+    // 0420 / 0638: while the Blood Moon mark is up, attacks roll for one
+    // vulnerable stack.
+    if (c.bloodMoon !== undefined && time < bloodMoonMarkUntil && c.bloodMoon.vulnChance > 0) {
+      addVulnerable(c.bloodMoon.vulnChance);
+      chaosEvent(c.bloodMoon.vulnChance);
+    }
+    // 0620: direct attacks stack Freeze; at the threshold they burst into
+    // Frostbite, a magic DOT scaled by the wearer's attributes.
+    if (c.frostbite !== undefined && c.frostbite.duration > 0) {
+      if (time > freezeUntil) freezeStacks = 0;
+      freezeStacks += 1;
+      freezeUntil = time + 4;
+      if (freezeStacks >= c.frostbite.threshold) {
+        freezeStacks = 0;
+        freezeUntil = 0;
+        const burst = b.totalAttributes * (c.frostbite.pct / 100);
+        frostbiteDamage = Math.max(frostbiteDamage, burst);
+        frostbiteUntil = time + c.frostbite.duration;
+        if (frostbiteTickAt === null) frostbiteTickAt = time + c.frostbite.interval;
+      }
+    }
     // 0196 / 0363: attack-triggered vulnerability, as expected stacks per hit.
     // 0196's 1 s item cooldown caps its share at one proc per cooldown; 0363
     // has no cooldown. Both feed the same generic modifier as 0217, so the
@@ -1914,8 +2171,8 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
                     : lionhammerReady;
       if (time + EPS < ready) continue;
       if (proc.source === 'reaperSlash') {
-        // 0362: the slash is pure damage (type 4), so no armour, magic
-        // resistance, crit or physical on-hit triggers.
+        // 0362: the slash is pure damage (type 4): no armour, magic
+        // resistance or physical on-hit triggers; only omni crit applies.
         const hit = pureDamage(b, enemy, c, proc.raw, {
           vulnStacks,
           burning: burnUntil > time,
@@ -2188,6 +2445,9 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       radianceAt,
       manaSpringAt,
       igniteTickAt ?? Number.POSITIVE_INFINITY,
+      bloodMoonAt,
+      erosionDecayAt,
+      frostbiteTickAt ?? Number.POSITIVE_INFINITY,
     );
     if (!Number.isFinite(next) || next > duration + EPS) break;
     const step = Math.max(0, next - time);
@@ -2250,6 +2510,44 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       } else {
         igniteStacks = 0;
         igniteTickAt = null;
+      }
+    }
+    // 0420 / 0638: the active wave on its cooldown, then the Blood Moon mark
+    // that lets attacks add vulnerable stacks.
+    if (bloodMoonOn && Math.abs(time - bloodMoonAt) <= EPS) {
+      const raw = totalAttackDamage() * (c.bloodMoon!.pct / 100);
+      const hit = procDamage(raw);
+      add('bloodMoon', hit, 1);
+      if (hit > 0) applyBleed(hit * (BLEED_POOL_PCT / 100));
+      bloodMoonMarkUntil = time + c.bloodMoon!.markDuration;
+      bloodMoonAt += c.bloodMoon!.cooldown;
+    }
+    // 0593: Erosion loses max(1, 5 % of the stacks) every second.
+    if (c.erosion !== undefined && Math.abs(time - erosionDecayAt) <= EPS) {
+      const decay = Math.max(1, Math.floor((erosionStacks * c.erosion.decayPct) / 100));
+      erosionStacks = Math.max(0, erosionStacks - decay);
+      syncErosion();
+      erosionDecayAt = time + 1;
+    }
+    // 0620: Frostbite pays 200 % of all attributes as magic damage each
+    // second while it lasts.
+    if (frostbiteTickAt !== null && Math.abs(time - frostbiteTickAt) <= EPS) {
+      if (time <= frostbiteUntil + EPS && frostbiteDamage > 0) {
+        const hit = magicalDamage(b, enemy, c, frostbiteDamage, {
+          dot: true,
+          poisonSource: false,
+          corrosionStacks: poisonStacks,
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks,
+          doomStacks,
+          curseRibbonActive,
+        });
+        add('frostbite', hit, 1);
+        frostbiteTickAt = (frostbiteTickAt as number) + c.frostbite!.interval;
+      } else {
+        frostbiteTickAt = null;
+        frostbiteDamage = 0;
       }
     }
     if (Math.abs(time - gazeAt) <= EPS) {

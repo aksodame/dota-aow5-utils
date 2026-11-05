@@ -2710,6 +2710,10 @@
       },
       {
        "type": "text",
+       "text": "**What the level-7 tooltips leave out.** [[item:item_0279|Silkok's Idol]] revives after 3 s, but the tooltip omits its 300 s cooldown. [[item:item_0420|Blood Thorn]] also knocks the target back (80 units over 0.15 s) and its active has a 45 s cooldown; [[item:item_0638|Empty Book]] is the same wave at 300 % AD. [[item:item_0521|Void Blade]] costs 20 mana, has a 100 s cooldown and also disarms the target; [[item:item_0598|Soul Link]] costs 75 mana and has a 40 s cooldown. [[item:item_0622|Star Crusher Axe]] has a hidden 0.25 s internal cooldown. [[item:item_0555|Pearl of the Edge]] points at a missing `item_0553` — stats only. [[item:item_0569|Deferred Blood Pact]] actually heals HP and shield on every hit taken (recover), not defers damage; the deferred-damage branch belongs to [[item:item_0383|★Sacred Ring]]. [[item:item_0362|Reaper's Scythe]] deals pure damage: ordinary crit does not apply, but `omni_crit_chance_pct` (for example from [[item:item_0368|Infinity Blade]]) does."
+      },
+      {
+       "type": "text",
        "text": "**Minus into plus.** Several items turn a penalty or a lost resource into a bonus:"
       },
       {

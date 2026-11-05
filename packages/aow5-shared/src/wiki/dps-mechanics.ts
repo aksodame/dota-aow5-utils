@@ -84,7 +84,15 @@ export type DpsRole =
   | 'judgment'
   | 'manaSpring'
   | 'bloodDominion'
-  | 'arcaneForge';
+  | 'arcaneForge'
+  // Level 7 (v1.522)
+  | 'critChain'
+  | 'buddhaMark'
+  | 'bloodMoon'
+  | 'erosion'
+  | 'frostbite'
+  | 'starShatter'
+  | 'solarForge';
 
 export interface DpsFamily {
   kind: 'dps';
@@ -105,7 +113,7 @@ export interface PanelFamily {
 export type MechanicFamily = DpsFamily | PanelFamily;
 
 /**
- * The DPS mechanics: 60 families, base + ancestor = 96 item ids. Sorrow is
+ * The DPS mechanics: 98 families, base + ancestor = 151 item ids. Sorrow is
  * included because its armour penetration is read in `dpsInput.ts`, not
  * because it has a proc.
  */
@@ -124,6 +132,7 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'witch', base: 'item_0209', ancestor: 'item_0831', sources: ['witchBlade'] },
   { kind: 'dps', role: 'pendant', base: 'item_0402', ancestor: 'item_0836', sources: ['poison'] },
   { kind: 'dps', role: 'chaosPoison', base: 'item_0382', ancestor: 'item_0780', sources: ['poison'] },
+  { kind: 'dps', role: 'chaosPoison', base: 'item_0636', sources: ['poison'] },
   { kind: 'dps', role: 'inertia', base: 'item_0211', sources: [] },
   { kind: 'dps', role: 'fearless', base: 'item_0461', ancestor: 'item_0727', sources: [] },
   { kind: 'dps', role: 'pollen', base: 'item_0270', ancestor: 'item_0708', sources: ['poison'] },
@@ -198,11 +207,22 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'hunterMark', base: 'item_0567', ancestor: 'item_0773', sources: [] },
   { kind: 'dps', role: 'hunterMark', base: 'item_0586', sources: [] },
   { kind: 'dps', role: 'judgment', base: 'item_0581', ancestor: 'item_0869', sources: ['verdict'] },
+  // Level 7 (v1.522): mechanics read from the items' own scripts.
+  { kind: 'dps', role: 'critChain', base: 'item_0218', ancestor: 'item_0774', sources: ['critChain'] },
+  { kind: 'dps', role: 'critChain', base: 'item_0232', sources: ['critChain'] },
+  { kind: 'dps', role: 'critChain', base: 'item_0648', ancestor: 'item_0874', sources: ['critChain'] },
+  { kind: 'dps', role: 'buddhaMark', base: 'item_0348', ancestor: 'item_0777', sources: [] },
+  { kind: 'dps', role: 'bloodMoon', base: 'item_0420', ancestor: 'item_0784', sources: ['bloodMoon', 'bleed'] },
+  { kind: 'dps', role: 'bloodMoon', base: 'item_0638', sources: ['bloodMoon', 'bleed'] },
+  { kind: 'dps', role: 'erosion', base: 'item_0593', ancestor: 'item_0795', sources: [] },
+  { kind: 'dps', role: 'frostbite', base: 'item_0620', ancestor: 'item_0800', sources: ['frostbite'] },
+  { kind: 'dps', role: 'starShatter', base: 'item_0622', sources: [] },
+  { kind: 'dps', role: 'solarForge', base: 'item_0619', ancestor: 'item_0799', sources: [] },
 ];
 
 /**
  * Passives that move the panel itself and therefore every DPS figure built
- * from it: 11 families, 18 item ids.
+ * from it: 26 families, 45 item ids.
  */
 export const PANEL_FAMILIES: readonly PanelFamily[] = [
   { kind: 'panel', key: 'prism', base: 'item_0541', ancestor: 'item_0876' },
@@ -222,6 +242,17 @@ export const PANEL_FAMILIES: readonly PanelFamily[] = [
   { kind: 'panel', key: 'sageSign', base: 'item_0526', ancestor: 'item_0765' },
   { kind: 'panel', key: 'lionheartCrown', base: 'item_0527', ancestor: 'item_0766' },
   { kind: 'panel', key: 'shadowPendant', base: 'item_0651', ancestor: 'item_0879' },
+  // Level 7 (v1.522): panel conversions and percentage-point grants.
+  { kind: 'panel', key: 'critEvasion', base: 'item_0401', ancestor: 'item_0783' },
+  { kind: 'panel', key: 'critEvasion', base: 'item_0639' },
+  { kind: 'panel', key: 'armorToDamage', base: 'item_0536', ancestor: 'item_0787' },
+  { kind: 'panel', key: 'wizardMana', base: 'item_0537', ancestor: 'item_0788' },
+  { kind: 'panel', key: 'manaCritRing', base: 'item_0545', ancestor: 'item_0791' },
+  { kind: 'panel', key: 'magicEater', base: 'item_0543', ancestor: 'item_0790' },
+  { kind: 'panel', key: 'magicEater', base: 'item_0625' },
+  { kind: 'panel', key: 'evasionOverflow', base: 'item_0599', ancestor: 'item_0797' },
+  { kind: 'panel', key: 'evasionOverflow', base: 'item_0700' },
+  { kind: 'panel', key: 'cdrOverflow', base: 'item_0612', ancestor: 'item_0798' },
 ];
 
 const ids = (f: MechanicFamily): string[] => (f.ancestor === undefined ? [f.base] : [f.base, f.ancestor]);
@@ -247,6 +278,7 @@ export const ACTIVE_ITEM_IDS: ReadonlySet<string> = new Set([
   ...dpsItemIds('vanguard'),
   ...dpsItemIds('bloodRite'),
   ...dpsItemIds('legionShield'),
+  ...dpsItemIds('bloodMoon'),
 ]);
 export const PANEL_ITEM_IDS: ReadonlySet<string> = new Set(PANEL_FAMILIES.flatMap(ids));
 export const MODELED_ITEM_IDS: ReadonlySet<string> = new Set([...DPS_ITEM_IDS, ...PANEL_ITEM_IDS]);
@@ -257,5 +289,5 @@ export const PANEL_FAMILY_COUNT = PANEL_FAMILIES.length;
 export const PANEL_ITEM_COUNT = PANEL_ITEM_IDS.size;
 export const MODELED_ITEM_COUNT = MODELED_ITEM_IDS.size;
 
-// 70 families / 106 item ids / 124 modelled (level-5 additions: 0205, 0229, 0243,
-// 0342, 0361, 0372, 0379, 0447, 0448, 0453)
+// 98 families / 151 item ids / 196 modelled (level-7 additions: 0218, 0232,
+// 0348, 0420, 0593, 0619, 0620, 0622, 0636, 0638, 0648 and the panel effects)

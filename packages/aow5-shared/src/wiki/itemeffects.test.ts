@@ -310,3 +310,113 @@ test('0655 / 0882 Primal Blade adds agility-scaled attack damage', () => {
   assert.ok(Math.abs(ancestor.extra.bonus_attack_damage! - 130.65) < 1e-9);
   assert.equal(effectOf('item_0882'), 'primalBlade');
 });
+
+test('level-7 conversions read their own rolls and the panel totals', () => {
+  const crit = applyEffects(
+    [
+      {
+        id: 'item_0401',
+        stats: {
+          evasion_pct: 30,
+          ability_evasion_step_pct: 1,
+          ability_value_crit_damage_per_step_pct: 1,
+          ability_value_crit_damage_max_pct: 60,
+        },
+      },
+    ],
+    derive,
+  );
+  assert.equal(crit.extra.crit_damage_pct, 30);
+
+  const armour = applyEffects(
+    [
+      {
+        id: 'item_0536',
+        stats: {
+          bonus_armor: 60,
+          ability_value_c_armor_step: 10,
+          ability_outgoing_damage_pct_per_step: 1,
+          ability_value_outgoing_damage_max_pct: 50,
+        },
+      },
+    ],
+    derive,
+  );
+  assert.equal(armour.extra.outgoing_damage_pct_2, 6);
+
+  const mana = applyEffects(
+    [
+      {
+        id: 'item_0537',
+        stats: { bonus_intelligence: 50, ability_value_mana_per_int: 0.8 },
+      },
+    ],
+    derive,
+  );
+  // int = 80 + 50 = 130 → 104 mana.
+  assert.equal(mana.extra.bonus_mana, 104);
+
+  const ring = applyEffects(
+    [
+      {
+        id: 'item_0545',
+        stats: {
+          bonus_mana: 272,
+          ability_value_crit_pct_per_300_mana: 5,
+          ability_value_crit_cap_pct: 50,
+        },
+      },
+    ],
+    derive,
+  );
+  // mana = 260 + 272 + 80 × 0.85 = 600 → 10 % magic crit.
+  assert.equal(ring.extra.magical_crit_chance_pct, 10);
+
+  const eater = applyEffects(
+    [
+      {
+        id: 'item_0543',
+        stats: {
+          bonus_mana: 272,
+          ability_mana_step: 300,
+          ability_value_magical_lifesteal_per_mana_step: 10,
+          ability_value_magical_lifesteal_cap_pct: 50,
+          ability_value_c_lifesteal_reduce_pct: 60,
+        },
+      },
+    ],
+    derive,
+  );
+  assert.equal(eater.extra.magical_lifesteal_pct, 20);
+  assert.equal(eater.extra.lifesteal_amp_pct, -60);
+
+  const overflow = applyEffects(
+    [
+      {
+        id: 'item_0599',
+        stats: {
+          evasion_pct: 70,
+          ability_value_c_evasion_threshold_pct: 50,
+          ability_value_dmg_per_evasion_pct: 1.5,
+        },
+      },
+    ],
+    derive,
+  );
+  assert.equal(overflow.extra.outgoing_damage_pct, 30);
+
+  const cdr = applyEffects(
+    [
+      {
+        id: 'item_0612',
+        stats: {
+          cooldown_reduction_pct: 50,
+          ability_value_c_overflow_threshold_pct: 30,
+          ability_value_convert_per_pct: 2,
+        },
+      },
+    ],
+    derive,
+  );
+  assert.equal(cdr.extra.spell_amplify_pct, 40);
+});
