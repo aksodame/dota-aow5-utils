@@ -356,6 +356,10 @@
 
 /* --- endless floor affixes ------------------------------------------------- */
 
+.affixTiers {
+  max-width: 560px;
+}
+
 .affixGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

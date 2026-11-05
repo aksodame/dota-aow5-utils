@@ -5,6 +5,7 @@ import {
   PARTNER_DEEP,
   PARTNER_NORMAL_COIN_AMOUNT,
   SKY_AFFIXES,
+  SKY_AFFIX_TIERS,
   SKY_SUBTABS,
   eliteComboRange,
   endlessBossWaves,
@@ -491,10 +492,10 @@ type AffixDef = (typeof SKY_AFFIXES)[number];
 const AFFIX_CATEGORIES = ['offense', 'defense', 'mechanic'] as const;
 
 /**
- * The endless run's floor affixes (v1.522). The ids, the kinds they can sit on
- * and the mutual exclusions come from the client bundle's own fallback table,
- * the effects from the game's modifier tooltips; the roll itself — chance,
- * first floor, count per floor — is encrypted server code (see `SKY_AFFIXES`).
+ * The endless run's floor affixes (v1.522). The ids, the kinds they can sit on,
+ * the mutual exclusions and the per-floor count caps come from the client
+ * bundle's own fallback table; the effects come from the game's modifier
+ * tooltips.
  */
 function AffixesPage({ ctx }: { ctx: Ctx }) {
   const { t } = ctx;
@@ -503,6 +504,15 @@ function AffixesPage({ ctx }: { ctx: Ctx }) {
     affix.exclusiveGroup === undefined
       ? undefined
       : SKY_AFFIXES.find((x) => x.id !== affix.id && x.exclusiveGroup === affix.exclusiveGroup);
+  const tiers = SKY_AFFIX_TIERS.map((tier, i) => {
+    const next = SKY_AFFIX_TIERS[i + 1];
+    return [
+      next === undefined ? `${tier.from}+` : `${tier.from}–${next.from - 1}`,
+      String(tier.normal),
+      String(tier.elite),
+      String(tier.boss),
+    ];
+  });
 
   return (
     <>
@@ -510,7 +520,16 @@ function AffixesPage({ ctx }: { ctx: Ctx }) {
         <Head title={t.affix.title} code={t.affix.code} />
         <div className={styles.prose}>
           <p className={styles.text}>{t.affix.intro}</p>
-          <Note>{t.affix.serverNote}</Note>
+        </div>
+      </Panel>
+      <Panel title={t.affix.tiersTitle}>
+        <div className={styles.affixTiers}>
+          <DataTable
+            compact
+            head={[t.affix.tierFloor, t.affix.tierNormal, t.affix.tierElite, t.affix.tierBoss]}
+            rows={tiers}
+          />
+          <Note>{t.affix.tiersNote}</Note>
         </div>
       </Panel>
       {AFFIX_CATEGORIES.map((category) => {

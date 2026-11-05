@@ -88,7 +88,12 @@ export interface SkyStrings {
     title: string;
     code: string;
     intro: string;
-    serverNote: string;
+    tiersTitle: string;
+    tiersNote: string;
+    tierFloor: string;
+    tierNormal: string;
+    tierElite: string;
+    tierBoss: string;
     categories: Record<'offense' | 'defense' | 'mechanic', string>;
     target: (kind: 'normal' | 'elite' | 'boss') => string;
     bossFloorsOnly: string;
@@ -228,9 +233,14 @@ export const SKY: Localised<SkyStrings> = {
       title: 'Floor affixes',
       code: 'GCE_AFFIX · 10 affixes',
       intro:
-        'In the endless run a floor’s monsters can roll an affix — a buff shown in the “Floor Affixes” strip above the fighters and as badges on the monsters. Affixes are offensive, defensive or mechanic: some are limited to elites or bosses, and Damage Sharing appears only on boss floors.',
-      serverNote:
-        'Effects and numbers are the game’s own modifier tooltips (v1.522). How the game rolls affixes — the chance, the first floor, how many per floor — lives in encrypted server code and is not in the pak.',
+        'In the endless run, from floor 21 a floor’s monsters can roll an affix — a buff shown in the “Floor Affixes” strip above the fighters and as badges on the monsters. Affixes are offensive, defensive or mechanic: some are limited to elites or bosses, and Damage Sharing appears only on boss floors.',
+      tiersTitle: 'Affixes per floor',
+      tiersNote:
+        'The count is the maximum per monster kind. Normal floors show normal and elite affixes; every third (boss) floor shows elite and boss affixes.',
+      tierFloor: 'Floor',
+      tierNormal: 'Normal',
+      tierElite: 'Elite',
+      tierBoss: 'Boss',
       categories: { offense: 'Offensive', defense: 'Defensive', mechanic: 'Mechanic' },
       target: (kind) => (kind === 'normal' ? 'All monsters' : kind === 'elite' ? 'Elites and above' : 'Bosses only'),
       bossFloorsOnly: 'boss floors only',
@@ -406,9 +416,14 @@ export const SKY: Localised<SkyStrings> = {
       title: 'Аффиксы этажа',
       code: 'GCE_AFFIX · аффиксов 10',
       intro:
-        'В бесконечке монстрам этажа может выпасть аффикс — усиление, которое видно в полосе «Аффиксы уровня» над бойцами и в бейджах у монстров. Аффиксы бывают атакующие, защитные и механические; часть доступна только элите или боссам, а «Разделение урона» — только на боссовых этажах.',
-      serverNote:
-        'Эффекты и числа — из внутриигровых описаний модификаторов v1.522. Как игра выбирает аффиксы — шанс, с какого этажа, сколько на этаж — хранится в зашифрованном серверном коде, в данных пака этого нет.',
+        'В бесконечке с 21-го этажа монстрам может выпасть аффикс — усиление, которое видно в полосе «Аффиксы уровня» над бойцами и в бейджах у монстров. Аффиксы бывают атакующие, защитные и механические; часть доступна только элите или боссам, а «Разделение урона» — только на боссовых этажах.',
+      tiersTitle: 'Сколько аффиксов на этаже',
+      tiersNote:
+        'Число — максимум по каждому виду монстров. На обычных этажах в полосе обычные и элитные аффиксы, на каждом третьем (боссовом) — элитные и боссовые.',
+      tierFloor: 'Этаж',
+      tierNormal: 'Обычные',
+      tierElite: 'Элита',
+      tierBoss: 'Босс',
       categories: { offense: 'Атакующие', defense: 'Защитные', mechanic: 'Механика' },
       target: (kind) => (kind === 'normal' ? 'Все монстры' : kind === 'elite' ? 'Элита и выше' : 'Только боссы'),
       bossFloorsOnly: 'только на боссовых этажах',
@@ -582,9 +597,14 @@ export const SKY: Localised<SkyStrings> = {
       title: '本层词缀',
       code: 'GCE_AFFIX · 共 10 个',
       intro:
-        '无尽模式中，本层怪物可能带有词缀——显示在战斗上方的「本层词缀」条和怪物徽章上。词缀分为进攻、防御和机制三类；部分只出现在精英或首领身上，而「伤害分摊」只在首领层出现。',
-      serverNote:
-        '效果与数值来自游戏内的词缀提示（v1.522）。游戏如何抽取词缀——概率、从第几层开始、每层几个——在加密的服务器代码中，资源包的数据里没有。',
+        '无尽模式中，从第 21 层起，本层怪物可能获得词缀——一种强化，会显示在战斗者上方的「本层词缀」条和怪物徽章上。词缀分为进攻、防御和机制三类；部分只出现在精英或首领身上，而「伤害分摊」只在首领层出现。',
+      tiersTitle: '每层词缀数量',
+      tiersNote:
+        '数量为每种怪物类型最多可带的词缀数。普通楼层显示普通与精英词缀，每第三层（首领层）显示精英与首领词缀。',
+      tierFloor: '层',
+      tierNormal: '普通',
+      tierElite: '精英',
+      tierBoss: '首领',
       categories: { offense: '进攻', defense: '防御', mechanic: '机制' },
       target: (kind) => (kind === 'normal' ? '所有怪物' : kind === 'elite' ? '精英及以上' : '仅首领'),
       bossFloorsOnly: '仅首领层',

@@ -12,6 +12,7 @@ import {
   skyPageItems,
   tierMonsters,
   SKY_AFFIXES,
+  SKY_AFFIX_TIERS,
   SKY_SUBTABS,
   eliteComboRange,
   endlessBossSpans,
@@ -201,6 +202,18 @@ test('the endless affixes: ten, unique, with the two exclusion pairs', () => {
   const grouped = SKY_AFFIXES.filter((a) => 'exclusiveGroup' in a).map((a) => a.id);
   assert.deepEqual(grouped.sort(), ['revive', 'shield']);
   assert.deepEqual(SKY_AFFIXES.filter((a) => 'bossFloorOnly' in a).map((a) => a.id), ['share']);
+});
+
+test('the endless affix caps start on 21 and rise in three steps', () => {
+  assert.deepEqual(
+    SKY_AFFIX_TIERS.map((tier) => [tier.from, tier.normal, tier.elite, tier.boss]),
+    [
+      [1, 0, 0, 0],
+      [21, 1, 1, 1],
+      [41, 1, 1, 2],
+      [61, 1, 2, 3],
+    ],
+  );
 });
 
 test('a tier card shows its chest pool, heaviest first', () => {
