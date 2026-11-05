@@ -55,6 +55,7 @@ const build = (over: Partial<DpsBuild> = {}): DpsBuild => ({
   energyShield: 0,
   maxMana: 0,
   anyLifestealPct: 0,
+  lifestealAmpPct: 0,
   attackHealPct: 0,
   spellHealPct: 0,
   noCrit: false,
@@ -1011,15 +1012,18 @@ test('0255 active shield feeds 0331', () => {
 });
 
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 87);
-  assert.equal(DPS_ITEM_COUNT, 133);
-  assert.equal(PANEL_FAMILY_COUNT, 16);
-  assert.equal(PANEL_ITEM_COUNT, 28);
-  assert.equal(MODELED_ITEM_COUNT, 161);
+  assert.equal(DPS_FAMILY_COUNT, 98);
+  assert.equal(DPS_ITEM_COUNT, 151);
+  assert.equal(PANEL_FAMILY_COUNT, 26);
+  assert.equal(PANEL_ITEM_COUNT, 45);
+  assert.equal(MODELED_ITEM_COUNT, 196);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
   assert.equal(mechanicFamilyOf('item_0780')?.base, 'item_0382');
+  const epicChaos = mechanicFamilyOf('item_0636');
+  assert.equal(epicChaos?.kind, 'dps');
+  assert.equal(epicChaos?.kind === 'dps' ? epicChaos.role : undefined, 'chaosPoison');
   assert.equal(mechanicFamilyOf('item_0708')?.base, 'item_0270');
   assert.equal(mechanicFamilyOf('item_0715')?.base, 'item_0332');
   assert.equal(mechanicFamilyOf('item_0707')?.base, 'item_0255');
@@ -1406,7 +1410,7 @@ test('0581 duplicates DOT damage as pure damage', () => {
     build({
       items: [
         item('item_0467', { ability_value_min_trigger_chance_pct: 100 }),
-        item('item_0581', { ability_value_dmg_per_debuff: 8 }),
+        item('item_0581', { ability_value_dmg_per_debuff: 6 }),
       ],
     }),
     enemy(),
@@ -1433,4 +1437,213 @@ test('0515 turns lifesteal healing into attack damage', () => {
     { duration: 5, mode: 'dummy' },
   );
   assert.ok(source(dominion, 'auto') > source(plain, 'auto'));
+});
+
+test('0362 pure damage can crit only through omni crit chance', () => {
+  const slash = {
+    ability_value_damage_pct: 350,
+    ability_value_lifesteal_damage_bonus_max_pct: 0,
+    ability_lifesteal_damage_bonus_pct: 0,
+  };
+  const noOmni = simulateDps(
+    build({ attackDamage: 0, totalAttributes: 1000, items: [item('item_0362', slash)] }),
+    enemy(),
+    { duration: 5, mode: 'dummy' },
+  );
+  near(source(noOmni, 'reaperSlash'), 3500);
+
+  const withOmni = simulateDps(
+    build({
+      attackDamage: 0,
+      totalAttributes: 1000,
+      omniCritChancePct: 50,
+      critDamagePct: 280,
+      items: [item('item_0362', slash)],
+    }),
+    enemy(),
+    { duration: 5, mode: 'dummy' },
+  );
+  // 3500 × (1 + 0.5 × (2.8 − 1)) = 6650.
+  near(source(withOmni, 'reaperSlash'), 6650);
+});
+
+test('0218 adds a second physical hit after a crit, without critting itself', () => {
+  const r = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 0,
+      baseAttackTime: 1,
+      critChancePct: 100,
+      critDamagePct: 180,
+      items: [item('item_0218', { ability_value_chain_chance_pct: 100, ability_chain_no_crit: 1 })],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // Ten guaranteed crits; each adds 1000 × 1.8 as a separate physical hit.
+  near(source(r, 'auto'), 18_000);
+  near(source(r, 'critChain'), 18_000);
+});
+
+test('0648 chains a magic hit of the same size on a crit', () => {
+  const r = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 0,
+      baseAttackTime: 1,
+      critChancePct: 100,
+      critDamagePct: 180,
+      items: [item('item_0648', { ability_value_chain_chance_pct: 100, ability_chain_no_crit: 1 })],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  near(source(r, 'critChain'), 18_000);
+});
+
+test('0348 amplifies the wearer’s damage as the target loses health', () => {
+  const r = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 0,
+      baseAttackTime: 1,
+      items: [
+        item('item_0348', {
+          ability_loss_health_step_pct: 2,
+          ability_damage_bonus_per_step_pct: 1,
+          ability_value_damage_bonus_limit_pct: 40,
+          ability_mark_duration: 5,
+        }),
+      ],
+    }),
+    enemy({ maxHp: 10_000 }),
+    { duration: 3, mode: 'kill' },
+  );
+  const autos = r.events.filter((e) => e.source === 'auto');
+  near(autos[0]!.damage, 1000);
+  // 10 % missing → five 2 % steps → +5 %.
+  near(autos[1]!.damage, 1050);
+});
+
+test('0420 uses its active wave and leaves the Blood Moon mark', () => {
+  const r = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 0,
+      baseAttackTime: 1.7,
+      items: [
+        item(
+          'item_0420',
+          {
+            ability_attack_damage_pct: 500,
+            ability_bloodmoon_duration: 6,
+            ability_value_vulnerable_chance_pct: 73,
+            ability_vulnerable_duration: 5,
+          },
+          45,
+        ),
+      ],
+    }),
+    enemy(),
+    { duration: 1, mode: 'dummy', active: new Set(['item_0420']) },
+  );
+  near(source(r, 'bloodMoon'), 5000);
+  // The wave also starts a bleed pool: 70 % of 5000 over ten ticks.
+  assert.ok(source(r, 'bleed') > 0);
+});
+
+test('0593 turns own DOT ticks into crit chance and crit damage', () => {
+  const bleed = item('item_0467', {
+    ability_value_min_trigger_chance_pct: 100,
+    ability_value_max_trigger_chance_pct: 100,
+  });
+  const plain = simulateDps(
+    build({ attackDamage: 1000, attackSpeed: 0, baseAttackTime: 1, items: [bleed] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  const erosion = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 0,
+      baseAttackTime: 1,
+      items: [
+        bleed,
+        item('item_0593', {
+          ability_crit_per_stack: 1,
+          ability_critdmg_per_stack: 1,
+          ability_value_max_stacks: 35,
+          ability_erode_decay_pct: 5,
+        }),
+      ],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  assert.ok(erosion.critChancePct > 0);
+  assert.ok(source(erosion, 'auto') > source(plain, 'auto'));
+});
+
+test('0620 bursts ten freeze stacks into a Frostbite DOT', () => {
+  const r = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 800,
+      baseAttackTime: 1,
+      totalAttributes: 100,
+      items: [
+        item('item_0620', {
+          ability_freeze_stack_threshold: 10,
+          ability_frostbite_duration: 5,
+          ability_value_damage_all_stats_pct: 200,
+        }),
+      ],
+    }),
+    enemy(),
+    { duration: 2.2, mode: 'dummy' },
+  );
+  // 200 % of 100 attributes; the tenth attack is at 1.111 s and the first
+  // Frostbite tick lands one second later.
+  near(source(r, 'frostbite'), 200);
+});
+
+test('0619 retypes non-base physical damage as magic at 120 %', () => {
+  const dart = item('item_0129', {});
+  const plain = simulateDps(
+    build({ attackDamage: 1000, attackSpeed: 0, baseAttackTime: 1, items: [dart] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  const solar = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 0,
+      baseAttackTime: 1,
+      items: [dart, item('item_0619', { ability_value_magic_amp_pct: 120 })],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  near(source(plain, 'dartProc'), 125);
+  near(source(solar, 'dartProc'), 150);
+});
+
+test('0622 adds vulnerable stacks on physical crits', () => {
+  const plain = simulateDps(
+    build({ attackDamage: 1000, attackSpeed: 0, baseAttackTime: 1, critChancePct: 100 }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  const axe = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 0,
+      baseAttackTime: 1,
+      critChancePct: 100,
+      items: [item('item_0622', { ability_trigger_chance_pct: 30, ability_vulnerable_duration: 5 }, 0.25)],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  assert.ok(source(axe, 'auto') > source(plain, 'auto'));
 });

@@ -45,7 +45,14 @@ export type EffectId =
   | 'usurerCodex'
   | 'stoneGolem'
   | 'emperorCrown'
-  | 'kingBackpack';
+  | 'kingBackpack'
+  | 'critEvasion'
+  | 'armorToDamage'
+  | 'wizardMana'
+  | 'manaCritRing'
+  | 'magicEater'
+  | 'evasionOverflow'
+  | 'cdrOverflow';
 
 /** What one effect did on the last pass, for the page to put into words. */
 export type EffectFacts =
@@ -69,7 +76,14 @@ export type EffectFacts =
   | { kind: 'infinity'; physical: number; magical: number; convert: number; amp: number }
   | { kind: 'usurerCodex'; amp: number }
   | { kind: 'stoneGolem'; attackSpeed: number; moveSpeed: number; tooltipPct: number }
-  | { kind: 'allStatsAura'; stats: number };
+  | { kind: 'allStatsAura'; stats: number }
+  | { kind: 'critEvasion'; amp: number; evasion: number; step: number; per: number; cap: number }
+  | { kind: 'armorToDamage'; amp: number; armor: number; step: number; per: number; cap: number }
+  | { kind: 'wizardMana'; mana: number; int: number; per: number }
+  | { kind: 'manaCritRing'; amp: number; mana: number; per300: number; cap: number }
+  | { kind: 'magicEater'; amp: number; mana: number; step: number; per: number; cap: number; reduce: number }
+  | { kind: 'evasionOverflow'; amp: number; evasion: number; threshold: number; per: number }
+  | { kind: 'cdrOverflow'; amp: number; cdr: number; threshold: number; rate: number };
 
 export interface EffectNote {
   itemId: string;
@@ -305,6 +319,123 @@ const REG: Record<EffectId, EffectDef> = {
       return { kind: 'allStatsAura', stats };
     },
   },
+
+  // 0401 / 0639: every point of evasion becomes crit damage, capped.
+  critEvasion: {
+    apply(P) {
+      const step = Math.max(0.01, param(P, 'ability_evasion_step_pct', 1));
+      const per = Math.max(
+        0,
+        param(P, 'ability_value_crit_damage_per_step_pct', param(P, 'ability_crit_damage_per_step_pct', 1)),
+      );
+      const cap = Math.max(
+        0,
+        param(P, 'ability_value_crit_damage_max_pct', param(P, 'ability_crit_damage_max_pct', 60)),
+      );
+      const evasion = Math.max(0, P.evasion_pct ?? 0);
+      const amp = Math.min(cap, Math.floor(evasion / step) * per);
+      if (amp <= 0) return null;
+      add(P, 'crit_damage_pct', amp);
+      return { kind: 'critEvasion', amp, evasion, step, per, cap };
+    },
+  },
+
+  // 0536: armour turns into final damage while the wearer takes more damage.
+  armorToDamage: {
+    apply(P) {
+      const step = Math.max(1, param(P, 'ability_value_c_armor_step', 10));
+      const per = Math.max(0, param(P, 'ability_outgoing_damage_pct_per_step', 1));
+      const cap = Math.max(0, param(P, 'ability_value_outgoing_damage_max_pct', 50));
+      const armor = Math.max(0, P.bonus_armor ?? 0);
+      const amp = Math.min(cap, Math.floor(armor / step) * per);
+      if (amp <= 0) return null;
+      add(P, 'outgoing_damage_pct_2', amp);
+      return { kind: 'armorToDamage', amp, armor, step, per, cap };
+    },
+  },
+
+  // 0537: every point of intelligence adds a fraction of a point of mana.
+  wizardMana: {
+    apply(P, D) {
+      const per = Math.max(0, param(P, 'ability_value_mana_per_int', 0.8));
+      const int = Math.max(0, D.int || 0);
+      const mana = int * per;
+      if (mana <= 0) return null;
+      add(P, 'bonus_mana', mana);
+      return { kind: 'wizardMana', mana, int, per };
+    },
+  },
+
+  // 0545: mana above the step grants magical crit chance, capped.
+  manaCritRing: {
+    apply(P, D) {
+      const per300 = Math.max(0, param(P, 'ability_value_crit_pct_per_300_mana', 5));
+      const cap = Math.max(0, param(P, 'ability_value_crit_cap_pct', 50));
+      const mana = Math.max(0, D.mana || 0);
+      const amp = Math.min(cap, (mana / 300) * per300);
+      if (amp <= 0) return null;
+      add(P, 'magical_crit_chance_pct', amp);
+      return { kind: 'manaCritRing', amp, mana, per300, cap };
+    },
+  },
+
+  // 0543 / 0625: mana turns into magical lifesteal while all lifesteal heals
+  // are reduced by a flat percentage.
+  magicEater: {
+    apply(P, D) {
+      const step = Math.max(1, param(P, 'ability_mana_step', 300));
+      const per = Math.max(
+        0,
+        param(P, 'ability_value_magical_lifesteal_per_mana_step', param(P, 'ability_magical_lifesteal_per_mana_step', 10)),
+      );
+      const cap = Math.max(
+        0,
+        param(P, 'ability_value_magical_lifesteal_cap_pct', param(P, 'ability_magical_lifesteal_cap_pct', 50)),
+      );
+      const reduce = Math.max(
+        0,
+        param(P, 'ability_value_c_lifesteal_reduce_pct', param(P, 'ability_c_lifesteal_reduce_pct', 60)),
+      );
+      const mana = Math.max(0, D.mana || 0);
+      const amp = Math.min(cap, (mana / step) * per);
+      if (amp <= 0 && reduce <= 0) return null;
+      if (amp > 0) add(P, 'magical_lifesteal_pct', amp);
+      if (reduce > 0) add(P, 'lifesteal_amp_pct', -reduce);
+      return { kind: 'magicEater', amp, mana, step, per, cap, reduce };
+    },
+  },
+
+  // 0599 / 0700: evasion above a threshold becomes outgoing damage.
+  evasionOverflow: {
+    apply(P) {
+      const threshold = Math.max(
+        0,
+        param(P, 'ability_value_c_evasion_threshold_pct', param(P, 'ability_c_evasion_threshold_pct', 50)),
+      );
+      const per = Math.max(
+        0,
+        param(P, 'ability_value_dmg_per_evasion_pct', param(P, 'ability_dmg_per_evasion_pct', 1.5)),
+      );
+      const evasion = Math.max(0, P.evasion_pct ?? 0);
+      const amp = Math.max(0, evasion - threshold) * per;
+      if (amp <= 0) return null;
+      add(P, 'outgoing_damage_pct', amp);
+      return { kind: 'evasionOverflow', amp, evasion, threshold, per };
+    },
+  },
+
+  // 0612: cooldown reduction above a threshold becomes spell damage.
+  cdrOverflow: {
+    apply(P) {
+      const threshold = Math.max(0, param(P, 'ability_value_c_overflow_threshold_pct', 30));
+      const rate = Math.max(0, param(P, 'ability_value_convert_per_pct', 2));
+      const cdr = Math.max(0, P.cooldown_reduction_pct ?? 0);
+      const amp = Math.floor(Math.max(0, cdr - threshold) * rate);
+      if (amp <= 0) return null;
+      add(P, 'spell_amplify_pct', amp);
+      return { kind: 'cdrOverflow', amp, cdr, threshold, rate };
+    },
+  },
 };
 
 /**
@@ -372,6 +503,16 @@ export const EFFECT_ITEMS: Readonly<Record<string, EffectId>> = {
   item_0239: 'stoneGolem',
   item_0314: 'emperorCrown',
   item_0315: 'kingBackpack',
+  item_0401: 'critEvasion',
+  item_0639: 'critEvasion',
+  item_0536: 'armorToDamage',
+  item_0537: 'wizardMana',
+  item_0545: 'manaCritRing',
+  item_0543: 'magicEater',
+  item_0625: 'magicEater',
+  item_0599: 'evasionOverflow',
+  item_0700: 'evasionOverflow',
+  item_0612: 'cdrOverflow',
 };
 
 /** Ancestral item → its base item: an ancestor carries the base's passive with its own numbers. */
@@ -383,6 +524,13 @@ export const EFFECT_ALIASES: Readonly<Record<string, string>> = {
   item_0884: 'item_0658',
   item_0820: 'item_0610',
   item_0779: 'item_0368',
+  item_0783: 'item_0401',
+  item_0787: 'item_0536',
+  item_0788: 'item_0537',
+  item_0791: 'item_0545',
+  item_0790: 'item_0543',
+  item_0797: 'item_0599',
+  item_0798: 'item_0612',
 };
 
 /**

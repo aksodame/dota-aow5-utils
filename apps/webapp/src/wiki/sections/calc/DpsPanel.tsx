@@ -40,7 +40,7 @@ export function DpsPanel({
   );
   const isActive = (id: string): boolean =>
     state.dps.active[id] ??
-    (id === 'item_0152' || id === 'item_0155' || id === 'item_0317' || id === 'item_0305' || id === 'item_0289' || id === 'item_0225' || id === 'item_0703');
+    (id === 'item_0152' || id === 'item_0155' || id === 'item_0317' || id === 'item_0305' || id === 'item_0289' || id === 'item_0225' || id === 'item_0703' || id === 'item_0420' || id === 'item_0784' || id === 'item_0638');
   const activeIds = useMemo(
     () => new Set(activeItems.filter((item) => isActive(item.id)).map((item) => item.id)),
     [activeItems, state.dps.active],
@@ -165,7 +165,9 @@ export function DpsPanel({
                                           ? t.active.legionShield
                                           : item.id === 'item_0707'
                                             ? t.active.legionShieldAncestor
-                                            : item.id === 'item_0827'
+                                            : item.id === 'item_0420' || item.id === 'item_0784' || item.id === 'item_0638'
+                                              ? t.active.bloodMoon
+                                              : item.id === 'item_0827'
                                           ? t.active.featherAncestor
                                           : t.active.feather}
                     </b>
@@ -200,12 +202,18 @@ export function DpsPanel({
                                           num(item.stats.ability_value_shield_amount, lang, 0),
                                           num(item.stats.ability_self_movespeed, lang, 0),
                                         )
-                                      : t.active.meta(
-                                          num(item.cooldown, lang, 0),
-                                          num(item.stats.ability_duration, lang, 0),
-                                          num(item.stats.ability_interval, lang, 0),
-                                          num(item.stats.ability_all_stats_damage_pct, lang, 0),
-                                        )}
+                                      : item.id === 'item_0420' || item.id === 'item_0784' || item.id === 'item_0638'
+                                        ? t.active.bloodMoonMeta(
+                                            num(item.cooldown, lang, 0),
+                                            num(item.stats.ability_bloodmoon_duration, lang, 0),
+                                            num(item.stats.ability_attack_damage_pct, lang, 0),
+                                          )
+                                        : t.active.meta(
+                                            num(item.cooldown, lang, 0),
+                                            num(item.stats.ability_duration, lang, 0),
+                                            num(item.stats.ability_interval, lang, 0),
+                                            num(item.stats.ability_all_stats_damage_pct, lang, 0),
+                                          )}
                     </small>
                   </span>
                 </label>

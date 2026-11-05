@@ -105,6 +105,7 @@ export function buildDpsInput(
       extra('physical_lifesteal_pct') +
       extra('magical_lifesteal_pct') +
       extra('omni_lifesteal_pct'),
+    lifestealAmpPct: extra('lifesteal_amp_pct'),
     // 0241 listens to the game's attack/spell heal events; omni heals both.
     attackHealPct:
       extra('attack_lifesteal_pct') + extra('physical_lifesteal_pct') + extra('omni_lifesteal_pct'),
