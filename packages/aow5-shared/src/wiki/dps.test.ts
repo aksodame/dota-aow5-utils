@@ -53,6 +53,7 @@ const build = (over: Partial<DpsBuild> = {}): DpsBuild => ({
   attackDamagePerAgi: 0,
   attackDamagePerStr: 0,
   energyShield: 0,
+  maxMana: 0,
   anyLifestealPct: 0,
   attackHealPct: 0,
   spellHealPct: 0,
@@ -1010,11 +1011,11 @@ test('0255 active shield feeds 0331', () => {
 });
 
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 70);
-  assert.equal(DPS_ITEM_COUNT, 106);
-  assert.equal(PANEL_FAMILY_COUNT, 11);
-  assert.equal(PANEL_ITEM_COUNT, 18);
-  assert.equal(MODELED_ITEM_COUNT, 124);
+  assert.equal(DPS_FAMILY_COUNT, 87);
+  assert.equal(DPS_ITEM_COUNT, 133);
+  assert.equal(PANEL_FAMILY_COUNT, 16);
+  assert.equal(PANEL_ITEM_COUNT, 28);
+  assert.equal(MODELED_ITEM_COUNT, 161);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
@@ -1243,4 +1244,193 @@ test('0243 bleeds for 100 % of final damage on any physical hit', () => {
   // One attack at 1 s, one tick at 1.5 s; pool is 100 % of 1000 = 1000, tick is 100.
   near(source(r, 'auto'), 1000);
   near(source(r, 'bleed'), 100);
+});
+
+test('0309 starts a bleed from physical damage', () => {
+  const r = simulateDps(
+    build({ items: [item('item_0309', { ability_trigger_chance_pct: 20 })] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  assert.ok(source(r, 'bleed') > 0);
+});
+
+test('0407 burns a target that is not burning yet, on a cooldown', () => {
+  const r = simulateDps(
+    build({ totalAttributes: 1000, items: [item('item_0407', { ability_burn_duration: 4 }, 1.5)] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  assert.ok(source(r, 'burn') > 0);
+});
+
+test('0534 turns burn applications into Ignite stacks', () => {
+  const bag = item('item_0659', {
+    ability_burn_duration: 3,
+    ability_trigger_interval: 0.5,
+    ability_value_damage_pct_per_stack: 1,
+    ability_max_stacks: 10,
+  });
+  const crest = item('item_0534', {
+    ability_value_ignite_trigger_chance_pct: 50,
+    ability_value_ignite_pct_per_stack: 250,
+    ability_ignite_max_stacks: 10,
+    ability_ignite_duration: 5,
+  });
+  const r = simulateDps(build({ totalAttributes: 1000, items: [bag, crest] }), enemy(), {
+    duration: 10,
+    mode: 'dummy',
+  });
+  assert.ok(source(r, 'ignite') > 0);
+});
+
+test('0216 Radiance burns 16 % of max shield per second', () => {
+  const r = simulateDps(
+    build({
+      energyShield: 10000,
+      items: [
+        item('item_0216', {
+          ability_value_shield_damage_pct: 20,
+          ability_damage_interval: 1,
+          ability_burn_duration: 3,
+        }),
+      ],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  near(source(r, 'radiance'), 1600 * 10);
+});
+
+test('0219 Soul Scatter spends mana for magic damage (the code uses the raw ×200)', () => {
+  const r = simulateDps(
+    build({
+      maxMana: 10000,
+      items: [
+        item('item_0219', {
+          ability_mana_cost_threshold_pct: 50,
+          ability_mana_cost_current_pct: 5,
+          ability_value_bonus_damage_multiplier: 200,
+          ability_mana_restore_threshold_pct: 50,
+          ability_value_mana_restore: 5,
+        }),
+      ],
+    }),
+    enemy(),
+    { duration: 2, mode: 'dummy' },
+  );
+  // Two attacks at 1 s and 2 s: 100 000 + 95 000.
+  near(source(r, 'soulScatter'), 195000);
+});
+
+test('0551 Magic Spring deals max mana as pure damage every second', () => {
+  const r = simulateDps(build({ maxMana: 10000, items: [item('item_0551', {})] }), enemy(), {
+    duration: 10,
+    mode: 'dummy',
+  });
+  near(source(r, 'manaSpring'), 100000);
+});
+
+test('0567 Hunter Mark raises the wearer damage', () => {
+  const without = simulateDps(build(), enemy(), { duration: 5, mode: 'dummy' });
+  const withMark = simulateDps(
+    build({
+      items: [
+        item('item_0567', {
+          ability_value_trigger_chance_pct: 75,
+          ability_dmg_pct_per_stack: 1,
+          ability_value_max_stacks: 30,
+          ability_mark_duration: 3,
+        }),
+      ],
+    }),
+    enemy(),
+    { duration: 5, mode: 'dummy' },
+  );
+  assert.ok(source(withMark, 'auto') > source(without, 'auto'));
+});
+
+test('0311 applies vulnerable from attacks', () => {
+  const plain = simulateDps(build({ critChancePct: 100 }), enemy(), { duration: 5, mode: 'dummy' });
+  const withBlade = simulateDps(
+    build({
+      critChancePct: 100,
+      items: [item('item_0311', { ability_trigger_chance_pct: 35, ability_vulnerable_duration: 5 }, 1)],
+    }),
+    enemy(),
+    { duration: 5, mode: 'dummy' },
+  );
+  assert.ok(source(withBlade, 'auto') > source(plain, 'auto'));
+});
+
+test('0528 detonates at the vulnerable cap', () => {
+  const r = simulateDps(
+    build({
+      critChancePct: 100,
+      items: [
+        item('item_0217', {
+          ability_value_trigger_chance_pct: 100,
+          ability_vulnerable_duration: 5,
+          ability_armor_max_stacks: 5,
+          ability_armor_duration: 3,
+        }),
+        item('item_0528', { ability_value_extra_stack_chance_pct: 50, ability_value_detonate_damage_pct: 560 }),
+      ],
+    }),
+    enemy(),
+    { duration: 5, mode: 'dummy' },
+  );
+  assert.ok(source(r, 'vulnDetonate') > 0);
+});
+
+test('0525 turns a non-base physical proc into magic', () => {
+  const creed = {
+    ability_value_trigger_chance_pct: 100,
+    ability_value_agility_damage_pct: 80,
+    ability_damage_pct_per_attack_speed: 1,
+  };
+  const armored = enemy({ armor: 100 });
+  const plain = simulateDps(build({ totalAgility: 100, items: [item('item_0361', creed)] }), armored, {
+    duration: 2,
+    mode: 'dummy',
+  });
+  const forge = simulateDps(build({ totalAgility: 100, items: [item('item_0361', creed), item('item_0525', {})] }), armored, {
+    duration: 2,
+    mode: 'dummy',
+  });
+  assert.ok(source(forge, 'assassinCreed') > source(plain, 'assassinCreed'));
+});
+
+test('0581 duplicates DOT damage as pure damage', () => {
+  const r = simulateDps(
+    build({
+      items: [
+        item('item_0467', { ability_value_min_trigger_chance_pct: 100 }),
+        item('item_0581', { ability_value_dmg_per_debuff: 8 }),
+      ],
+    }),
+    enemy(),
+    { duration: 3, mode: 'dummy' },
+  );
+  assert.ok(source(r, 'verdict') > 0);
+});
+
+test('0515 turns lifesteal healing into attack damage', () => {
+  const plain = simulateDps(build({ attackHealPct: 20 }), enemy(), { duration: 5, mode: 'dummy' });
+  const dominion = simulateDps(
+    build({
+      attackHealPct: 20,
+      items: [
+        item('item_0515', {
+          ability_value_attack_per_lifesteal_pct: 35,
+          ability_value_max_bonus_attack: 300,
+          ability_decay_pct_per_second: 15,
+          ability_decay_min_per_second: 10,
+        }),
+      ],
+    }),
+    enemy(),
+    { duration: 5, mode: 'dummy' },
+  );
+  assert.ok(source(dominion, 'auto') > source(plain, 'auto'));
 });

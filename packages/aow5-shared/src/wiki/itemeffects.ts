@@ -307,6 +307,54 @@ const REG: Record<EffectId, EffectDef> = {
   },
 };
 
+/**
+ * Level-6 set membership, copied from the scripts' whitelists
+ * (`shared/bleed_set.lua`, `shadow_set.lua`, `sage_set.lua`,
+ * `lionheart_set.lua`). The descriptions say "an item whose name contains …",
+ * but the game counts these exact ids; the calculator must too.
+ */
+export const SET_ITEMS = {
+  bleed: ['item_0467', 'item_0502', 'item_0516', 'item_0841', 'item_0847', 'item_0761'],
+  shadow: [
+    'item_0360',
+    'item_0404',
+    'item_0523',
+    'item_0651',
+    'item_0445',
+    'item_0718',
+    'item_0837',
+    'item_0764',
+    'item_0879',
+    'item_0860',
+  ],
+  sage: [
+    'item_0456',
+    'item_0336',
+    'item_0442',
+    'item_0526',
+    'item_0384',
+    'item_0724',
+    'item_0716',
+    'item_0839',
+    'item_0765',
+    'item_0807',
+  ],
+  lionheart: [
+    'item_0329',
+    'item_0460',
+    'item_0396',
+    'item_0527',
+    'item_0385',
+    'item_0536',
+    'item_0714',
+    'item_0726',
+    'item_0808',
+    'item_0766',
+    'item_0858',
+    'item_0787',
+  ],
+} as const;
+
 /** The base item of each modelled effect. */
 export const EFFECT_ITEMS: Readonly<Record<string, EffectId>> = {
   item_0541: 'prism',

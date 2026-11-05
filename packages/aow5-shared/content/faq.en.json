@@ -2755,6 +2755,10 @@
       {
        "type": "note",
        "text": "Checked and not confirmed: the bag gives no stats; a duplicate item is impossible (the base and its Ancestral version are one \"group\"); ascension is strictly 1:1 (no second time, no moving to another item); one soul and one pet; mail, chests and permanent bonuses do not give duplicates; external cooldown resets are blocked for boss and soul abilities."
+      },
+      {
+       "type": "text",
+       "text": "**Found by reading the code (v1.522).** Soul Scatter (0219) promises “mana spent × 200 %”, but the script multiplies by **200 with no /100** — 100 times the text (the calculator follows the code). Radiance (0216) says 20 % of max shield, yet the code multiplies the damage by 0.8 — 16 % in effect. Rainbow Blade (0454) points at the 0361 script, but its AbilityValues carry no proc keys, so the mechanic does nothing: the item is stats only. Void Darkness Scepter (0514) and Omniboots (0522) point at items.lua, but no class with their ids exists there — stats only as well. The 0516/0651/0526/0527 sets count exact id whitelists, not “an item whose name contains …” (see shared/*_set.lua)."
       }
      ]
     }

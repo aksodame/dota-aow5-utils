@@ -98,6 +98,7 @@ export function buildDpsInput(
       extra('base_energy_shield') +
       panel('bonus_strength') *
         (items.find((item) => item.id === 'item_0329' || item.id === 'item_0714')?.stats.ability_shield_per_strength ?? 0),
+    maxMana: panel('bonus_mana'),
     anyLifestealPct:
       extra('attack_lifesteal_pct') +
       extra('spell_lifesteal_pct') +
