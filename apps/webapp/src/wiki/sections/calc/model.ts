@@ -272,6 +272,32 @@ export function rowTotal(
     return { base, items, buffs: sum - noBuff, fromAttrs: 0, sum };
   }
 
+  /*
+   * Attack speed % multiplies the whole row, the way the game reads it: the
+   * total AS points (base, items, the agility curve) scaled by the percent.
+   * The items' share of that gain stays in the "Items" column and the rest in
+   * "Buffs", so the columns still add up to the total. `buildDpsInput` then
+   * passes the already-scaled row and no separate percent.
+   */
+  if (key === 'attack_speed') {
+    const plain = (k: string) => sums[k] ?? 0;
+    const combined = (k: string) => (sums[k] ?? 0) + (buffs[k] ?? 0);
+    const noBuff = evaluate(plain);
+    const withBuff = evaluate(combined);
+    const itemPct = sums['attack_speed_pct'] ?? 0;
+    const buffPct = buffs['attack_speed_pct'] ?? 0;
+    const itemGain = (noBuff.sum * itemPct) / 100;
+    const sum = (withBuff.sum * (1 + (itemPct + buffPct) / 100));
+    return {
+      base: noBuff.base,
+      items: items + itemGain,
+      buffs: sum - noBuff.sum - itemGain,
+      fromAttrs: noBuff.fromAttrs,
+      sum,
+      ...(noBuff.pct !== undefined ? { pct: noBuff.pct } : {}),
+    };
+  }
+
   const plain = (k: string) => sums[k] ?? 0;
   const combined = (k: string) => (sums[k] ?? 0) + (buffs[k] ?? 0);
   const noBuff = evaluate(plain);

@@ -356,6 +356,34 @@
 
 /* --- endless floor affixes ------------------------------------------------- */
 
+.affixTop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 520px);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .affixTop {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.affixTiers {
+  min-width: 0;
+}
+
+.affixTiersTitle {
+  margin: 0 0 var(--space-2);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.affixIntro {
+  max-width: none;
+}
+
 .affixGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

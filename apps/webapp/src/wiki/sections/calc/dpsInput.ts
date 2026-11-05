@@ -57,8 +57,11 @@ export function buildDpsInput(
   return {
     attackDamage: panel('bonus_attack_damage'),
     allAttackDamagePct: panel('all_attack_damage_percent'),
+    // `panel('attack_speed')` is already scaled by `attack_speed_pct` (the
+    // panel row folds the percent in, as the game's total AS does), so the
+    // engine must not apply the percent a second time.
     attackSpeed: panel('attack_speed'),
-    attackSpeedPct: panel('attack_speed_pct'),
+    attackSpeedPct: 0,
     baseAttackTime: baseAttackTime > 0 ? baseAttackTime : 1.7,
     critChancePct: 5 + extra('crit_chance_pct'),
     abilityCritChancePct: extra('ability_crit_chance_pct'),
