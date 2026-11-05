@@ -27,6 +27,13 @@ function solved(difficulty = 8, now = NOW): PowSolution {
   return { ...challenge, nonce: solve(challenge) };
 }
 
+/** The next nonce that provably does *not* clear the challenge's bar. */
+function wrongNonce(challenge: { salt: string; difficulty: number }, answer: number): number {
+  let nonce = answer + 1;
+  while (meetsDifficulty(challenge.salt, nonce, challenge.difficulty)) nonce++;
+  return nonce;
+}
+
 test('a solved challenge verifies', () => {
   const verdict = verifySolution(SECRET, new ConsumedSalts(), solved(), NOW);
   assert.deepEqual(verdict, { ok: true });
@@ -56,7 +63,12 @@ test('the difficulty actually binds', () => {
 
 test('a wrong nonce is refused', () => {
   const solution = solved();
-  const verdict = verifySolution(SECRET, new ConsumedSalts(), { ...solution, nonce: solution.nonce + 1 }, NOW);
+  const verdict = verifySolution(
+    SECRET,
+    new ConsumedSalts(),
+    { ...solution, nonce: wrongNonce(solution, solution.nonce) },
+    NOW,
+  );
   assert.deepEqual(verdict, { ok: false, reason: 'insufficient-work' });
 });
 
@@ -101,7 +113,7 @@ test('a failed attempt does not burn the challenge', () => {
   // Otherwise one fumbled submit would cost a legitimate visitor another solve.
   const consumed = new ConsumedSalts();
   const solution = solved();
-  verifySolution(SECRET, consumed, { ...solution, nonce: solution.nonce + 1 }, NOW);
+  verifySolution(SECRET, consumed, { ...solution, nonce: wrongNonce(solution, solution.nonce) }, NOW);
   assert.deepEqual(verifySolution(SECRET, consumed, solution, NOW), { ok: true });
 });
 
