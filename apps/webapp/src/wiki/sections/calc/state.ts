@@ -44,6 +44,10 @@ export interface DpsState {
   duration: number;
   /** Item id -> use its active on cooldown. */
   active: Record<string, boolean>;
+  /** 0294: defensive mode; the game starts in the aggressive one. */
+  harmonizerDefensive?: boolean;
+  /** 0663: distinct potion-effect kinds on the wearer. */
+  potionKinds?: number;
 }
 
 export const DPS_DURATION_DEFAULT = 60;
@@ -147,6 +151,10 @@ export function hydrate(raw: unknown): CalcState {
       // so an unticked box has to survive a reload.
       if (typeof on === 'boolean') s.dps.active[id] = on;
     }
+  }
+  if (typeof dps?.harmonizerDefensive === 'boolean') s.dps.harmonizerDefensive = dps.harmonizerDefensive;
+  if (typeof dps?.potionKinds === 'number' && Number.isFinite(dps.potionKinds)) {
+    s.dps.potionKinds = Math.min(20, Math.max(0, Math.floor(dps.potionKinds)));
   }
   return s;
 }

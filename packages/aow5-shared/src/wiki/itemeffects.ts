@@ -52,7 +52,14 @@ export type EffectId =
   | 'manaCritRing'
   | 'magicEater'
   | 'evasionOverflow'
-  | 'cdrOverflow';
+  | 'cdrOverflow'
+  // Level 8 (v1.523)
+  | 'paladinArmor'
+  | 'poisonCurse'
+  | 'selfPoison'
+  | 'lifestealDamage'
+  | 'critModes'
+  | 'sniperFocus';
 
 /** What one effect did on the last pass, for the page to put into words. */
 export type EffectFacts =
@@ -83,7 +90,13 @@ export type EffectFacts =
   | { kind: 'manaCritRing'; amp: number; mana: number; per300: number; cap: number }
   | { kind: 'magicEater'; amp: number; mana: number; step: number; per: number; cap: number; reduce: number }
   | { kind: 'evasionOverflow'; amp: number; evasion: number; threshold: number; per: number }
-  | { kind: 'cdrOverflow'; amp: number; cdr: number; threshold: number; rate: number };
+  | { kind: 'cdrOverflow'; amp: number; cdr: number; threshold: number; rate: number }
+  | { kind: 'paladinArmor'; cut: number; shield: number; health: number }
+  | { kind: 'poisonCurse'; reduce: number }
+  | { kind: 'selfPoison'; stacks: number; amp: number }
+  | { kind: 'lifestealDamage'; pct: number; bonus: number; cap: number }
+  | { kind: 'critModes'; magic: number }
+  | { kind: 'sniperFocus'; pct: number };
 
 export interface EffectNote {
   itemId: string;
@@ -436,6 +449,100 @@ const REG: Record<EffectId, EffectDef> = {
       return { kind: 'cdrOverflow', amp, cdr, threshold, rate };
     },
   },
+
+  // 0609 / 0634: cut raw max health and turn the cut into an energy shield.
+  paladinArmor: {
+    apply(P) {
+      const cutPct = Math.min(
+        99,
+        Math.max(
+          0,
+          param(P, 'ability_value_health_cut_pct', param(P, 'ability_health_cut_pct', 40)),
+        ),
+      );
+      const convert = Math.max(
+        0,
+        param(
+          P,
+          'ability_value_shield_convert_pct',
+          param(P, 'ability_shield_convert_pct', 120),
+        ),
+      );
+      const raw = Math.max(0, P.bonus_health ?? 0);
+      const cut = (raw * cutPct) / 100;
+      if (cut <= 0) return null;
+      const shield = (cut * convert) / 100;
+      add(P, 'bonus_health', -cut);
+      add(P, 'base_energy_shield', shield);
+      return { kind: 'paladinArmor', cut, shield, health: raw - cut };
+    },
+  },
+
+  // 0644 / 0645: the wearer's poison damage is reduced (and may crit; the
+  // engine reads the crit part from the item itself).
+  poisonCurse: {
+    apply(P) {
+      const reduce = Math.max(
+        0,
+        param(
+          P,
+          'ability_value_c_poison_damage_reduction_pct',
+          param(P, 'ability_c_poison_damage_reduction_pct', 0),
+        ),
+      );
+      if (reduce <= 0) return null;
+      add(P, 'poison_outgoing_damage_pct', -reduce);
+      return { kind: 'poisonCurse', reduce };
+    },
+  },
+
+  // 0661: ten permanent self-poison stacks, +1 % outgoing per stack.
+  selfPoison: {
+    apply(P) {
+      const stacks = Math.max(0, Math.floor(param(P, 'ability_permanent_poison_stacks', 10)));
+      const perStack = Math.max(0, param(P, 'ability_value_damage_pct_per_poison_stack', 1));
+      const amp = stacks * perStack;
+      if (amp <= 0) return null;
+      add(P, 'outgoing_damage_pct', amp);
+      return { kind: 'selfPoison', stacks, amp };
+    },
+  },
+
+  // 0399 / 0811: physical lifesteal becomes final damage, +1 % per 1 %, cap 50.
+  lifestealDamage: {
+    apply(P) {
+      const step = Math.max(1, param(P, 'ability_lifesteal_step_pct', 1));
+      const per = Math.max(0, param(P, 'ability_value_damage_bonus_per_step_pct', 1));
+      const cap = Math.max(0, param(P, 'ability_value_damage_bonus_max_pct', 50));
+      const pct = Math.max(0, P.physical_lifesteal_pct ?? 0);
+      const bonus = Math.min(cap, Math.floor(pct / step) * per);
+      if (bonus <= 0) return null;
+      add(P, 'outgoing_damage_pct_2', bonus);
+      return { kind: 'lifestealDamage', pct, bonus, cap };
+    },
+  },
+
+  // 0669: above 60 % health the item adds magical damage; the low-health
+  // crit-doubling mode is a DPS-tab toggle, not a panel stat.
+  critModes: {
+    apply(P) {
+      const magic = Math.max(0, param(P, 'ability_value_magic_damage_pct', 30));
+      if (magic <= 0) return null;
+      add(P, 'magical_damage_add_pct', magic);
+      return { kind: 'critModes', magic };
+    },
+  },
+
+  // 0374: standing still for two seconds grants the focus buff. The DPS tab
+  // assumes the reader is standing, so the bonus is always on.
+  sniperFocus: {
+    apply(P) {
+      const pct = Math.max(0, param(P, 'ability_value_damage_amp_pct', 12));
+      if (pct <= 0) return null;
+      add(P, 'outgoing_damage_pct', pct);
+      return { kind: 'sniperFocus', pct };
+    },
+  },
 };
 
 /**
@@ -513,6 +620,14 @@ export const EFFECT_ITEMS: Readonly<Record<string, EffectId>> = {
   item_0599: 'evasionOverflow',
   item_0700: 'evasionOverflow',
   item_0612: 'cdrOverflow',
+  item_0399: 'lifestealDamage',
+  item_0609: 'paladinArmor',
+  item_0634: 'paladinArmor',
+  item_0644: 'poisonCurse',
+  item_0645: 'poisonCurse',
+  item_0661: 'selfPoison',
+  item_0669: 'critModes',
+  item_0374: 'sniperFocus',
 };
 
 /** Ancestral item → its base item: an ancestor carries the base's passive with its own numbers. */
@@ -531,6 +646,11 @@ export const EFFECT_ALIASES: Readonly<Record<string, string>> = {
   item_0790: 'item_0543',
   item_0797: 'item_0599',
   item_0798: 'item_0612',
+  item_0811: 'item_0399',
+  item_0819: 'item_0609',
+  item_0822: 'item_0644',
+  item_0890: 'item_0661',
+  item_0898: 'item_0669',
 };
 
 /**

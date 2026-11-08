@@ -38,6 +38,29 @@ export function DpsPanel({
     () => build.items.filter((item) => ACTIVE_ITEM_IDS.has(item.id)),
     [build.items],
   );
+  const harmonizerItem = build.items.find((item) => item.id === 'item_0294' || item.id === 'item_0803');
+  const potionItem = build.items.find((item) => item.id === 'item_0663' || item.id === 'item_0892');
+  // The four level-8 timed actives share one label each; ancestors and the
+  // epic 0630 use the same name and differ only in their numbers.
+  const extraActiveName: Record<string, string> = {
+    item_0421: t.active.voidScale,
+    item_0814: t.active.voidScale,
+    item_0422: t.active.royalBanner,
+    item_0815: t.active.royalBanner,
+    item_0596: t.active.bloodSacrifice,
+    item_0817: t.active.bloodSacrifice,
+    item_0630: t.active.bloodSacrifice,
+    item_0663: t.active.potionFury,
+    item_0892: t.active.potionFury,
+    item_0664: t.active.earthDragonArmor,
+    item_0893: t.active.earthDragonArmor,
+    item_0668: t.active.beastRing,
+    item_0897: t.active.beastRing,
+  };
+  const extraActiveMeta = (item: { id: string; cooldown?: number; stats: Record<string, number> }): string | undefined =>
+    extraActiveName[item.id] === undefined
+      ? undefined
+      : t.active.timedMeta(num(item.cooldown ?? 0, lang, 0), num(item.stats.ability_duration ?? 0, lang, 0));
   const isActive = (id: string): boolean =>
     state.dps.active[id] ??
     (id === 'item_0152' || id === 'item_0155' || id === 'item_0317' || id === 'item_0305' || id === 'item_0289' || id === 'item_0225' || id === 'item_0703' || id === 'item_0420' || id === 'item_0784' || id === 'item_0638');
@@ -143,7 +166,7 @@ export function DpsPanel({
                   />
                   <span>
                     <b>
-                      {item.id === 'item_0152'
+                      {extraActiveName[item.id] ?? (item.id === 'item_0152'
                         ? t.active.phase
                         : item.id === 'item_0155'
                           ? t.active.madness
@@ -169,10 +192,10 @@ export function DpsPanel({
                                               ? t.active.bloodMoon
                                               : item.id === 'item_0827'
                                           ? t.active.featherAncestor
-                                          : t.active.feather}
+                                          : t.active.feather)}
                     </b>
                     <small>
-                      {item.id === 'item_0152'
+                      {extraActiveMeta(item) ?? (item.id === 'item_0152'
                         ? t.active.phaseMeta(num(item.cooldown, lang, 0), num(item.stats.ability_phase_duration, lang, 0))
                         : item.id === 'item_0155'
                           ? t.active.madnessMeta(num(item.cooldown, lang, 0), num(item.stats.ability_duration, lang, 0))
@@ -213,11 +236,58 @@ export function DpsPanel({
                                             num(item.stats.ability_duration, lang, 0),
                                             num(item.stats.ability_interval, lang, 0),
                                             num(item.stats.ability_all_stats_damage_pct, lang, 0),
-                                          )}
+                                          ))}
                     </small>
                   </span>
                 </label>
               ))}
+            </div>
+          )}
+          {(harmonizerItem || potionItem) && (
+            <div className={styles.activeBox}>
+              {harmonizerItem && (
+                <label className={styles.activeRow}>
+                  <input
+                    type="checkbox"
+                    checked={state.dps.harmonizerDefensive === true}
+                    onChange={(event) =>
+                      update((s) => ({
+                        ...s,
+                        dps: { ...s.dps, harmonizerDefensive: event.target.checked },
+                      }))
+                    }
+                  />
+                  <span>
+                    <b>{t.active.harmonizer}</b>
+                    <small>
+                      {state.dps.harmonizerDefensive === true
+                        ? t.active.harmonizerDefensive
+                        : t.active.harmonizerAggressive}
+                    </small>
+                  </span>
+                </label>
+              )}
+              {potionItem && (
+                <label className={styles.field}>
+                  <span>{t.active.potionKinds}</span>
+                  <input
+                    className={styles.input}
+                    type="number"
+                    min={0}
+                    max={20}
+                    step={1}
+                    value={String(state.dps.potionKinds ?? 0)}
+                    onChange={(event) => {
+                      const parsed = Number(event.target.value);
+                      const potionKinds = Number.isFinite(parsed)
+                        ? Math.min(20, Math.max(0, Math.floor(parsed)))
+                        : 0;
+                      update((s) => ({ ...s, dps: { ...s.dps, potionKinds } }));
+                    }}
+                  />
+                </label>
+              )}
+              {potionItem && <p className={styles.hint}>{t.active.potionKindsHint}</p>}
             </div>
           )}
         </section>
