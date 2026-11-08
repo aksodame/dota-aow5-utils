@@ -92,7 +92,18 @@ export type DpsRole =
   | 'erosion'
   | 'frostbite'
   | 'starShatter'
-  | 'solarForge';
+  | 'solarForge'
+  // Level 8 (v1.523)
+  | 'loveWhip'
+  | 'corrosion'
+  | 'thornShield'
+  | 'golemHand'
+  | 'snakeShadow'
+  | 'hellGaze'
+  | 'stormBracelet'
+  | 'archmageBook'
+  | 'dragonBlade'
+  | 'lavaPlate';
 
 export interface DpsFamily {
   kind: 'dps';
@@ -218,6 +229,19 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'frostbite', base: 'item_0620', ancestor: 'item_0800', sources: ['frostbite'] },
   { kind: 'dps', role: 'starShatter', base: 'item_0622', sources: [] },
   { kind: 'dps', role: 'solarForge', base: 'item_0619', ancestor: 'item_0799', sources: [] },
+  // Level 8 (v1.523): mechanics read from the items' own scripts.
+  { kind: 'dps', role: 'loveWhip', base: 'item_0344', ancestor: 'item_0804', sources: ['loveWhip'] },
+  { kind: 'dps', role: 'corrosion', base: 'item_0371', sources: [] },
+  { kind: 'dps', role: 'corrosion', base: 'item_0679', sources: [] },
+  { kind: 'dps', role: 'thornShield', base: 'item_0380', sources: ['thornShield'] },
+  { kind: 'dps', role: 'golemHand', base: 'item_0396', ancestor: 'item_0808', sources: ['golemHand'] },
+  { kind: 'dps', role: 'snakeShadow', base: 'item_0397', ancestor: 'item_0809', sources: ['snakeBurst'] },
+  { kind: 'dps', role: 'hellGaze', base: 'item_0415', ancestor: 'item_0813', sources: ['hellGaze'] },
+  { kind: 'dps', role: 'stormBracelet', base: 'item_0606', ancestor: 'item_0818', sources: ['stormBracelet'] },
+  { kind: 'dps', role: 'stormBracelet', base: 'item_0632', sources: ['stormBracelet'] },
+  { kind: 'dps', role: 'archmageBook', base: 'item_0650', ancestor: 'item_0878', sources: ['archmageBook'] },
+  { kind: 'dps', role: 'dragonBlade', base: 'item_0667', ancestor: 'item_0896', sources: [] },
+  { kind: 'dps', role: 'lavaPlate', base: 'item_0677', sources: ['lavaPlate'] },
 ];
 
 /**
@@ -253,6 +277,26 @@ export const PANEL_FAMILIES: readonly PanelFamily[] = [
   { kind: 'panel', key: 'evasionOverflow', base: 'item_0599', ancestor: 'item_0797' },
   { kind: 'panel', key: 'evasionOverflow', base: 'item_0700' },
   { kind: 'panel', key: 'cdrOverflow', base: 'item_0612', ancestor: 'item_0798' },
+  // Level 8 (v1.523): panel conversions, stat modes and actives.
+  { kind: 'panel', key: 'harmonizer', base: 'item_0294', ancestor: 'item_0803' },
+  { kind: 'panel', key: 'lifestealDamage', base: 'item_0399', ancestor: 'item_0811' },
+  { kind: 'panel', key: 'voidScale', base: 'item_0421', ancestor: 'item_0814' },
+  { kind: 'panel', key: 'royalBanner', base: 'item_0422', ancestor: 'item_0815' },
+  { kind: 'panel', key: 'bloodSacrifice', base: 'item_0596', ancestor: 'item_0817' },
+  { kind: 'panel', key: 'bloodSacrifice', base: 'item_0630' },
+  { kind: 'panel', key: 'paladinArmor', base: 'item_0609', ancestor: 'item_0819' },
+  { kind: 'panel', key: 'paladinArmor', base: 'item_0634' },
+  { kind: 'panel', key: 'poisonCurse', base: 'item_0644', ancestor: 'item_0822' },
+  { kind: 'panel', key: 'poisonCurse', base: 'item_0645' },
+  { kind: 'panel', key: 'selfPoison', base: 'item_0661', ancestor: 'item_0890' },
+  { kind: 'panel', key: 'potionFury', base: 'item_0663', ancestor: 'item_0892' },
+  { kind: 'panel', key: 'earthDragonArmor', base: 'item_0664', ancestor: 'item_0893' },
+  { kind: 'panel', key: 'critModes', base: 'item_0669', ancestor: 'item_0898' },
+  { kind: 'panel', key: 'blessingCrown', base: 'item_0611', ancestor: 'item_0821' },
+  { kind: 'panel', key: 'burnAmp', base: 'item_0680' },
+  { kind: 'panel', key: 'dragonFang', base: 'item_0670', ancestor: 'item_0899' },
+  { kind: 'panel', key: 'beastRing', base: 'item_0668', ancestor: 'item_0897' },
+  { kind: 'panel', key: 'sniperFocus', base: 'item_0374' },
 ];
 
 const ids = (f: MechanicFamily): string[] => (f.ancestor === undefined ? [f.base] : [f.base, f.ancestor]);
@@ -279,6 +323,20 @@ export const ACTIVE_ITEM_IDS: ReadonlySet<string> = new Set([
   ...dpsItemIds('bloodRite'),
   ...dpsItemIds('legionShield'),
   ...dpsItemIds('bloodMoon'),
+  // Level 8 (v1.523): panel items with a timed active.
+  'item_0421',
+  'item_0814',
+  'item_0422',
+  'item_0815',
+  'item_0596',
+  'item_0817',
+  'item_0630',
+  'item_0663',
+  'item_0892',
+  'item_0664',
+  'item_0893',
+  'item_0668',
+  'item_0897',
 ]);
 export const PANEL_ITEM_IDS: ReadonlySet<string> = new Set(PANEL_FAMILIES.flatMap(ids));
 export const MODELED_ITEM_IDS: ReadonlySet<string> = new Set([...DPS_ITEM_IDS, ...PANEL_ITEM_IDS]);

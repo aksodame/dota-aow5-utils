@@ -1012,11 +1012,11 @@ test('0255 active shield feeds 0331', () => {
 });
 
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 98);
-  assert.equal(DPS_ITEM_COUNT, 151);
-  assert.equal(PANEL_FAMILY_COUNT, 26);
-  assert.equal(PANEL_ITEM_COUNT, 45);
-  assert.equal(MODELED_ITEM_COUNT, 196);
+  assert.equal(DPS_FAMILY_COUNT, 110);
+  assert.equal(DPS_ITEM_COUNT, 170);
+  assert.equal(PANEL_FAMILY_COUNT, 45);
+  assert.equal(PANEL_ITEM_COUNT, 78);
+  assert.equal(MODELED_ITEM_COUNT, 248);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
@@ -1646,4 +1646,255 @@ test('0622 adds vulnerable stacks on physical crits', () => {
     { duration: 10, mode: 'dummy' },
   );
   assert.ok(source(axe, 'auto') > source(plain, 'auto'));
+});
+
+// Level 8 (v1.523)
+test('0344 Love Whip adds 60 % of all attributes as pure damage', () => {
+  const r = simulateDps(
+    build({
+      attackDamage: 0,
+      totalAttributes: 1000,
+      attackSpeed: 0,
+      items: [item('item_0344', {
+        ability_value_trigger_chance_pct: 60,
+        ability_value_damage_all_stats_pct: 100,
+        ability_debuff_duration: 3,
+      })],
+    }),
+    enemy(),
+    { duration: 1.1, mode: 'dummy' },
+  );
+  near(source(r, 'loveWhip'), 600);
+});
+
+test('0371 / 0679 corrosion is a flat armour debuff applied after the hit', () => {
+  const r = simulateDps(
+    build({
+      attackSpeed: 0,
+      items: [item('item_0371', { ability_armor_reduction: 1, ability_max_stacks: 10, ability_duration: 5 })],
+    }),
+    enemy({ armor: 100 }),
+    { duration: 1.1, mode: 'dummy' },
+  );
+  near(r.armorAfterBreak, 99);
+});
+
+test('0380 Thorn Shield pulses 10 % of the total shield every second', () => {
+  const r = simulateDps(
+    build({
+      energyShield: 1000,
+      items: [item('item_0380', { ability_max_shield_damage_pct: 10, ability_interval: 1 })],
+    }),
+    enemy(),
+    { duration: 1.1, mode: 'dummy' },
+  );
+  near(source(r, 'thornShield'), 100);
+});
+
+test('0396 Golem Hand pulses 200 % of the shield every three seconds', () => {
+  const r = simulateDps(
+    build({
+      energyShield: 1000,
+      items: [item('item_0396', { ability_value_max_shield_damage_pct: 200, ability_interval: 3 })],
+    }),
+    enemy(),
+    { duration: 3.1, mode: 'dummy' },
+  );
+  near(source(r, 'golemHand'), 2000);
+});
+
+test('0397 bursts poison applications at 50 stacks without consuming the target stacks', () => {
+  const r = simulateDps(
+    build({
+      totalAttributes: 1000,
+      attackSpeed: 0,
+      items: [
+        item('item_0397', {
+          ability_value_c_burst_stack_threshold: 50,
+          ability_value_burst_damage_all_stats_pct: 500,
+          ability_value_self_poison_bonus_poison_pct: 40,
+          ability_value_self_poison_bonus_damage_pct: 20,
+        }),
+        item('item_0166', { ability_poison_trigger_chance_pct: 100 }),
+        item('item_0661', {}),
+      ],
+    }),
+    enemy(),
+    { duration: 60, mode: 'dummy' },
+  );
+  // One burst: 500 % × 1000 attributes, ×1.2 outgoing and ×1.4 poison.
+  near(source(r, 'snakeBurst'), 8400, 1e-3);
+  assert.ok(r.poisonStacks > 0);
+});
+
+test('0415 Hell Gaze procs from the wearer DOT ticks', () => {
+  const r = simulateDps(
+    build({
+      totalAttributes: 1000,
+      attackSpeed: 0,
+      items: [
+        item('item_0415', { ability_value_trigger_chance_pct: 50, ability_value_all_stats_damage_pct: 80, ability_vulnerable_duration: 5 }),
+        item('item_0166', { ability_poison_trigger_chance_pct: 100 }),
+      ],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  assert.ok(source(r, 'hellGaze') > 0);
+});
+
+test('0606 / 0632 hammer scales from attack damage and attack speed', () => {
+  const r = simulateDps(
+    build({
+      attackDamage: 1000,
+      attackSpeed: 0,
+      items: [item('item_0606', {
+        ability_value_attack_damage_pct: 100,
+        ability_attack_speed_threshold: 350,
+        ability_attack_speed_step: 100,
+      })],
+    }),
+    enemy(),
+    { duration: 3.1, mode: 'dummy' },
+  );
+  near(source(r, 'stormBracelet'), 3000);
+});
+
+test('0650 Archmage Book bursts from max mana every ten seconds', () => {
+  const r = simulateDps(
+    build({
+      maxMana: 1000,
+      items: [item('item_0650', {
+        ability_value_mana_cost_pct: 15,
+        ability_value_int_damage_pct: 1400,
+        ability_value_c_mana_per_bonus_pct: 3,
+      }, 10)],
+    }),
+    enemy(),
+    { duration: 0.3, mode: 'dummy' },
+  );
+  // 150 mana spent: 1400 % + floor(150 / 3) × 2 = 1500 % of max mana.
+  near(source(r, 'archmageBook'), 15000);
+});
+
+test('0667 Dragon Blade stacks attack damage on consecutive hits', () => {
+  const plain = simulateDps(build(), enemy(), { duration: 10, mode: 'dummy' });
+  const stacked = simulateDps(
+    build({ items: [item('item_0667', { ability_value_damage_pct_per_stack: 8, ability_max_stacks: 50 })] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // Ten attacks with 0…9 stacks: 10 000 + 8 % × 45 000.
+  near(source(stacked, 'auto'), 13_600);
+  assert.ok(source(stacked, 'auto') > source(plain, 'auto'));
+});
+
+test('0677 Lava Plate burns 2.5 % of max health every second', () => {
+  const r = simulateDps(
+    build({
+      maxHealth: 10_000,
+      items: [item('item_0677', { ability_max_health_damage_pct: 2.5, ability_interval: 1 })],
+    }),
+    enemy(),
+    { duration: 3.1, mode: 'dummy' },
+  );
+  near(source(r, 'lavaPlate'), 750);
+});
+
+test('0644 lets poison ticks roll a magical crit', () => {
+  const plain = simulateDps(
+    build({
+      totalAttributes: 1000,
+      magicalCritChancePct: 100,
+      items: [item('item_0166', { ability_poison_trigger_chance_pct: 100 })],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  const cursed = simulateDps(
+    build({
+      totalAttributes: 1000,
+      magicalCritChancePct: 100,
+      items: [item('item_0166', { ability_poison_trigger_chance_pct: 100 }), item('item_0644', {})],
+    }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  near(source(cursed, 'poison') / source(plain, 'poison'), 1.8, 1e-6);
+});
+
+test('0596 / 0630 blood rite gives its outgoing bonus on cooldown', () => {
+  const plain = simulateDps(build(), enemy(), { duration: 30, mode: 'dummy' });
+  const active = simulateDps(
+    build({
+      items: [item('item_0596', { ability_value_damage_amp_pct: 50, ability_duration: 6 }, 30)],
+    }),
+    enemy(),
+    { duration: 30, mode: 'dummy', active: new Set(['item_0596']) },
+  );
+  near(source(active, 'auto'), source(plain, 'auto') * 1.1);
+});
+
+test('0668 beast ring gives +60 % attack damage on cooldown', () => {
+  const plain = simulateDps(build(), enemy(), { duration: 50, mode: 'dummy' });
+  const active = simulateDps(
+    build({
+      items: [item('item_0668', { ability_value_attack_damage_pct: 60, ability_duration: 10 }, 50)],
+    }),
+    enemy(),
+    { duration: 50, mode: 'dummy', active: new Set(['item_0668']) },
+  );
+  near(source(active, 'auto'), source(plain, 'auto') * 1.12);
+});
+
+test('0421 Void Scale adds spell amplify on cooldown', () => {
+  const plain = simulateDps(
+    build({ totalAttributes: 1000, items: [item('item_0372', { ability_all_stats_damage_pct: 100 })] }),
+    enemy(),
+    { duration: 45, mode: 'dummy' },
+  );
+  const active = simulateDps(
+    build({
+      totalAttributes: 1000,
+      items: [
+        item('item_0372', { ability_all_stats_damage_pct: 100 }),
+        item('item_0421', { ability_value_spell_amplify_pct: 50, ability_duration: 8 }, 45),
+      ],
+    }),
+    enemy(),
+    { duration: 45, mode: 'dummy', active: new Set(['item_0421']) },
+  );
+  assert.ok(source(active, 'omniStrike') > source(plain, 'omniStrike'));
+});
+
+test('0422 royal banner adds physical damage on cooldown', () => {
+  const plain = simulateDps(build(), enemy(), { duration: 60, mode: 'dummy' });
+  const active = simulateDps(
+    build({
+      items: [item('item_0422', { ability_value_physical_damage_add_pct: 40, ability_duration: 16 }, 60)],
+    }),
+    enemy(),
+    { duration: 60, mode: 'dummy', active: new Set(['item_0422']) },
+  );
+  assert.ok(source(active, 'auto') > source(plain, 'auto'));
+});
+
+test('0663 potion resonance counts potion kinds and doubles during its active', () => {
+  const potion = item('item_0663', {
+    ability_value_final_damage_pct_per_potion: 5,
+    ability_active_multiplier: 2,
+    ability_duration: 10,
+  }, 60);
+  const noPotions = simulateDps(
+    build({ potionKinds: 0, items: [potion] }),
+    enemy(),
+    { duration: 60, mode: 'dummy', active: new Set(['item_0663']) },
+  );
+  const twoKinds = simulateDps(
+    build({ potionKinds: 2, items: [potion] }),
+    enemy(),
+    { duration: 60, mode: 'dummy', active: new Set(['item_0663']) },
+  );
+  // Two kinds × 5 %, doubled on the 10/60 active duty: 11.67 % final damage.
+  near(source(twoKinds, 'auto'), source(noPotions, 'auto') * (1 + (10 * (1 + 1 / 6)) / 100));
 });

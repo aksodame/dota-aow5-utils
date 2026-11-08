@@ -134,6 +134,12 @@ export interface DpsBuild {
   poisonFasterPct: number;
   /** `cooldown_reduction_pct`, capped at 80 in the engine. */
   cooldownReductionPct: number;
+  /** 0663: distinct potion-effect kinds on the wearer, the script's resonance count. */
+  potionKinds?: number;
+  /** 0294: true when the harmonizer is switched to its defensive mode. */
+  harmonizerDefensive?: boolean;
+  /** 0611: visible non-debuff buffs with more than three stacks, potions excluded. */
+  crownBuffs?: number;
   items: DpsItemStats[];
 }
 
@@ -185,7 +191,16 @@ export type DpsSourceId =
   // Level 7 (v1.522)
   | 'critChain'
   | 'bloodMoon'
-  | 'frostbite';
+  | 'frostbite'
+  // Level 8 (v1.523)
+  | 'loveWhip'
+  | 'thornShield'
+  | 'golemHand'
+  | 'snakeBurst'
+  | 'hellGaze'
+  | 'stormBracelet'
+  | 'archmageBook'
+  | 'lavaPlate';
 
 export interface DpsSource {
   id: DpsSourceId;
@@ -333,6 +348,8 @@ const SPELL_SOURCES: ReadonlySet<DpsSourceId> = new Set<DpsSourceId>([
   'ashCodex',
   'bloodMoon',
   'frostbite',
+  'snakeBurst',
+  'archmageBook',
 ]);
 const NO_HEAL_SOURCES: ReadonlySet<DpsSourceId> = new Set<DpsSourceId>([
   'feather',
@@ -541,6 +558,31 @@ interface Constants {
   starShatter: { chance: number; duration: number; cooldown: number } | undefined;
   /** 0619 Solar Furnace: non-base physical damage becomes magic at 120 %. */
   solarForge: { factor: number } | undefined;
+  // Level 8 (v1.523)
+  /** 0344 Love Whip: a chance on every attack for pure damage from all attributes. */
+  loveWhip: { chance: number; cooldown: number; statsPct: number; debuffChance: number; debuffDuration: number } | undefined;
+  /** 0371 / 0679: a stacking flat armour debuff refreshed by attacks. */
+  corrosion: { perHit: number; maxStacks: number; duration: number } | undefined;
+  /** 0380 Thorn Shield: pure damage from a share of the total energy shield. */
+  thornShield: { pct: number; interval: number } | undefined;
+  /** 0396 Golem Hand: a bigger shield pulse on a longer cooldown, plus vulnerable. */
+  golemHand: { pct: number; interval: number; vulnDuration: number } | undefined;
+  /** 0397 Snake Shadow: the self-poison bonus and the 50-stack poison burst. */
+  snakeShadow: { threshold: number; burstPct: number; poisonPct: number; outgoingPct: number; active: boolean } | undefined;
+  /** 0415 Hell Gaze: own DOT ticks can add pure damage and vulnerable. */
+  hellGaze: { chance: number; statsPct: number; vulnDuration: number } | undefined;
+  /** 0606 / 0632 Storm Bracelet: a periodic pure hit scaled by attack damage. */
+  stormBracelet: { pct: number; threshold: number; step: number } | undefined;
+  /** 0650 Archmage Book: a periodic magic burst scaled by max mana. */
+  archmageBook: { costPct: number; statsPct: number; manaPerBonus: number; cooldown: number } | undefined;
+  /** 0667 Dragon Blade: consecutive attacks on one target stack attack damage. */
+  dragonBlade: { perStack: number; maxStacks: number } | undefined;
+  /** 0677 Lava Plate: pure damage from max health every second. */
+  lavaPlate: { pct: number; interval: number } | undefined;
+  /** 0644 / 0645: poison damage may roll a magical crit. */
+  poisonCanCrit: boolean;
+  /** 0680: extra outgoing damage against burning targets. */
+  burnAmpPct: number;
 }
 
 function constants(build: DpsBuild): Constants {
@@ -566,6 +608,8 @@ function constants(build: DpsBuild): Constants {
     .filter((x): x is { chance: number; cooldown: number; duration: number } => x !== null);
   const vulnDuration = Math.max(
     mkb !== undefined ? Math.max(0, value(mkb, 'ability_vulnerable_duration') || 5) : 0,
+    build.items.some((item) => item.id === 'item_0344' || item.id === 'item_0804') ? 3 : 0,
+    build.items.some((item) => item.id === 'item_0396' || item.id === 'item_0808') ? 3 : 0,
     ...vulnSources.map((s) => s.duration),
   );
   // 0453 (mutex priority 200) wins over 0361 (100) when both are equipped.
@@ -939,6 +983,130 @@ function constants(build: DpsBuild): Constants {
   const solarForge = solarForgeItem
     ? { factor: Math.max(0, value(solarForgeItem, 'ability_value_magic_amp_pct') || 120) / 100 }
     : undefined;
+  // Level 8 (v1.523)
+  const loveWhipItem = findItem(build, ['item_0344', 'item_0804']);
+  const loveWhip = loveWhipItem
+    ? {
+        chance: clamp(Math.max(0, value(loveWhipItem, 'ability_value_trigger_chance_pct')), 0, 100) / 100,
+        cooldown: effCd(loveWhipItem, 0.1),
+        statsPct: Math.max(0, value(loveWhipItem, 'ability_value_damage_all_stats_pct')),
+        // `RandomInt(1, 4)`: four equally likely debuffs, no chance key in the data.
+        debuffChance: 0.25,
+        debuffDuration: Math.max(0, value(loveWhipItem, 'ability_debuff_duration')),
+      }
+    : undefined;
+  const corrosionItems = build.items.filter((item) => item.id === 'item_0371' || item.id === 'item_0679');
+  const corrosion = corrosionItems.length > 0
+    ? {
+        perHit: Math.max(
+          corrosionItems.length,
+          corrosionItems.reduce((sum, item) => sum + Math.max(0, value(item, 'ability_armor_reduction')), 0),
+        ),
+        maxStacks: corrosionItems.reduce((sum, item) => sum + Math.max(1, Math.floor(value(item, 'ability_max_stacks'))), 0),
+        duration: Math.max(0, ...corrosionItems.map((item) => value(item, 'ability_duration'))),
+      }
+    : undefined;
+  const thornItem = findItem(build, ['item_0380']);
+  const thornShield = thornItem
+    ? {
+        pct: Math.max(0, value(thornItem, 'ability_max_shield_damage_pct')),
+        interval: Math.max(0.1, value(thornItem, 'ability_interval') || 1),
+      }
+    : undefined;
+  const golemItem = findItem(build, ['item_0396', 'item_0808']);
+  const golemHand = golemItem
+    ? {
+        pct: Math.max(0, value(golemItem, 'ability_value_max_shield_damage_pct')),
+        interval: Math.max(0.1, value(golemItem, 'ability_interval') || 3),
+        vulnDuration: 3,
+      }
+    : undefined;
+  const snakeItem = findItem(build, ['item_0397', 'item_0809']);
+  const selfPoisoned = findItem(build, ['item_0661', 'item_0890', 'item_0644', 'item_0822', 'item_0645']) !== undefined;
+  const snakeShadow = snakeItem
+    ? {
+        threshold: Math.max(
+          1,
+          Math.floor(
+            value(snakeItem, 'ability_value_c_burst_stack_threshold') ||
+              value(snakeItem, 'ability_burst_stack_threshold') ||
+              50,
+          ),
+        ),
+        burstPct: Math.max(
+          0,
+          value(snakeItem, 'ability_value_burst_damage_all_stats_pct') ||
+            value(snakeItem, 'ability_burst_damage_all_stats_pct'),
+        ),
+        poisonPct: Math.max(
+          0,
+          value(snakeItem, 'ability_value_self_poison_bonus_poison_pct') ||
+            value(snakeItem, 'ability_self_poison_bonus_poison_pct'),
+        ),
+        outgoingPct: Math.max(
+          0,
+          value(snakeItem, 'ability_value_self_poison_bonus_damage_pct') ||
+            value(snakeItem, 'ability_self_poison_bonus_damage_pct'),
+        ),
+        active: selfPoisoned,
+      }
+    : undefined;
+  const hellGazeItem = findItem(build, ['item_0415', 'item_0813']);
+  const hellGaze = hellGazeItem
+    ? {
+        chance: clamp(Math.max(0, value(hellGazeItem, 'ability_value_trigger_chance_pct')), 0, 100) / 100,
+        statsPct: Math.max(0, value(hellGazeItem, 'ability_value_all_stats_damage_pct')),
+        vulnDuration: Math.max(0, value(hellGazeItem, 'ability_vulnerable_duration')),
+      }
+    : undefined;
+  const stormItem = findItem(build, ['item_0606', 'item_0818']) ?? findItem(build, ['item_0632']);
+  const stormBracelet = stormItem
+    ? {
+        pct: Math.max(
+          0,
+          value(stormItem, 'ability_value_attack_damage_pct') || value(stormItem, 'ability_attack_damage_pct'),
+        ),
+        threshold: Math.max(0, value(stormItem, 'ability_attack_speed_threshold') || 350),
+        step: Math.max(1, value(stormItem, 'ability_attack_speed_step') || 100),
+      }
+    : undefined;
+  const archmageItem = findItem(build, ['item_0650', 'item_0878']);
+  const archmageBook = archmageItem
+    ? {
+        costPct: Math.max(
+          0,
+          value(archmageItem, 'ability_value_mana_cost_pct') || value(archmageItem, 'ability_mana_cost_pct'),
+        ),
+        statsPct: Math.max(
+          0,
+          value(archmageItem, 'ability_value_int_damage_pct') || value(archmageItem, 'ability_int_damage_pct'),
+        ),
+        manaPerBonus: Math.max(
+          1,
+          value(archmageItem, 'ability_value_c_mana_per_bonus_pct') ||
+            value(archmageItem, 'ability_mana_per_bonus_pct') ||
+            3,
+        ),
+        cooldown: effCd(archmageItem, 10),
+      }
+    : undefined;
+  const dragonBladeItem = findItem(build, ['item_0667', 'item_0896']);
+  const dragonBlade = dragonBladeItem
+    ? {
+        perStack: Math.max(0, value(dragonBladeItem, 'ability_value_damage_pct_per_stack')),
+        maxStacks: Math.max(1, Math.floor(value(dragonBladeItem, 'ability_max_stacks'))),
+      }
+    : undefined;
+  const lavaItem = findItem(build, ['item_0677']);
+  const lavaPlate = lavaItem
+    ? {
+        pct: Math.max(0, value(lavaItem, 'ability_max_health_damage_pct')),
+        interval: Math.max(0.1, value(lavaItem, 'ability_interval') || 1),
+      }
+    : undefined;
+  const poisonCanCrit = findItem(build, ['item_0644', 'item_0822', 'item_0645']) !== undefined;
+  const burnAmpItem = findItem(build, ['item_0680']);
+  const burnAmpPct = Math.max(0, value(burnAmpItem, 'ability_damage_amp_pct'));
 
   return {
     aps: (1 + attackSpeed / 100) / bat,
@@ -1071,6 +1239,18 @@ function constants(build: DpsBuild): Constants {
     frostbite,
     starShatter,
     solarForge,
+    loveWhip,
+    corrosion,
+    thornShield,
+    golemHand,
+    snakeShadow,
+    hellGaze,
+    stormBracelet,
+    archmageBook,
+    dragonBlade,
+    lavaPlate,
+    poisonCanCrit,
+    burnAmpPct,
   };
 }
 
@@ -1093,6 +1273,7 @@ function directDamage(
   const armor = armorMultiplier(armorAfterPenAt(armorAfterBreakAt(enemy.armor - ctx.armorDebuff, ctx.armorStacks), build.armorPenetrationPct));
   const vulnerable = ctx.vulnStacks > 0 ? 1 + Math.min(25, 15 + 2 * ctx.vulnStacks) / 100 : 1;
   const mark = c.bag && ctx.burning ? 1 + Math.min(c.markMax, ctx.markStacks) * c.markPerStack / 100 : 1;
+  const burnAmp = ctx.burning && c.burnAmpPct > 0 ? 1 + c.burnAmpPct / 100 : 1;
   const season = 1 + build.seasonDamagePct / 100;
   return (
     raw *
@@ -1106,6 +1287,7 @@ function directDamage(
     armor *
     vulnerable *
     mark *
+    burnAmp *
     season
   );
 }
@@ -1128,7 +1310,10 @@ function magicalDamage(
   noCrit = false,
 ): number {
   if (!(raw > 0)) return 0;
-  const chance = opts.dot || build.noCrit || noCrit ? 0 : c.magicCrit;
+  // 0644 / 0645 let poison damage roll a magical crit; every other DOT stays
+  // non-crittable. The burst-like poison hits already pass `dot: false`.
+  const poisonCrit = c.poisonCanCrit && opts.poisonSource;
+  const chance = build.noCrit || noCrit ? 0 : opts.dot && !poisonCrit ? 0 : c.magicCrit;
   const crit = 1 + (chance / 100) * (c.critMultiplier - 1);
   const magical = 1 + build.magicalDamageAddPct / 100;
   const spell = 1 + build.spellAmplifyPct / 100;
@@ -1142,8 +1327,10 @@ function magicalDamage(
     : 1;
   const dot = opts.dot ? 1 + build.dotOutgoingPct / 100 : 1;
   const poison = opts.poisonSource ? 1 + build.poisonOutgoingPct / 100 : 1;
+  const snakePoison = c.snakeShadow?.active && opts.poisonSource ? 1 + c.snakeShadow.poisonPct / 100 : 1;
   const vulnerable = opts.vulnStacks > 0 ? 1 + Math.min(25, 15 + 2 * opts.vulnStacks) / 100 : 1;
   const mark = c.bag && opts.burning ? 1 + Math.min(c.markMax, opts.markStacks) * c.markPerStack / 100 : 1;
+  const burnAmp = opts.burning && c.burnAmpPct > 0 ? 1 + c.burnAmpPct / 100 : 1;
   const season = 1 + build.seasonDamagePct / 100;
   const curseRibbon = opts.curseRibbonActive && c.curseRibbonPct > 0 ? 1 + c.curseRibbonPct / 100 : 1;
   return (
@@ -1159,8 +1346,10 @@ function magicalDamage(
     corrosion *
     dot *
     poison *
+    snakePoison *
     vulnerable *
     mark *
+    burnAmp *
     season *
     curseRibbon
   );
@@ -1184,6 +1373,7 @@ function pureDamage(
   const resistance = 1 / (1 + Math.max(0, enemy.damageResistancePct) / 100);
   const vulnerable = opts.vulnStacks > 0 ? 1 + Math.min(25, 15 + 2 * opts.vulnStacks) / 100 : 1;
   const mark = c.bag && opts.burning ? 1 + Math.min(c.markMax, opts.markStacks) * c.markPerStack / 100 : 1;
+  const burnAmp = opts.burning && c.burnAmpPct > 0 ? 1 + c.burnAmpPct / 100 : 1;
   const season = 1 + build.seasonDamagePct / 100;
   // Type 4: no armour, no magic resistance, no corrosion or poison outgoing;
   // only the general multipliers, omni crit and the on-apply debuffs.
@@ -1197,6 +1387,7 @@ function pureDamage(
     resistance *
     vulnerable *
     mark *
+    burnAmp *
     season
   );
 }
@@ -1230,6 +1421,15 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const bloodRite = findItem(build, BLOOD_RITE);
   const legionShield = findItem(build, LEGION_SHIELD);
   const frenzy = findItem(build, ['item_0533']);
+  const shadowBlade = findItem(build, ['item_0370']);
+  const voidScale = findItem(build, ['item_0421', 'item_0814']);
+  const royalBanner = findItem(build, ['item_0422', 'item_0815']);
+  const bloodSacrifice = findItem(build, ['item_0596', 'item_0817']) ?? findItem(build, ['item_0630']);
+  const potionFury = findItem(build, ['item_0663', 'item_0892']);
+  const earthArmor = findItem(build, ['item_0664', 'item_0893']);
+  const beastRing = findItem(build, ['item_0668', 'item_0897']);
+  const snakeShadowItem = findItem(build, ['item_0397', 'item_0809']);
+  const selfPoisoned = findItem(build, ['item_0661', 'item_0890', 'item_0644', 'item_0822', 'item_0645']) !== undefined;
   const cdr = 1 - Math.min(80, Math.max(0, build.cooldownReductionPct)) / 100;
   const duty = (item: DpsItemStats | undefined, durationKey: string): number => {
     if (!item || active?.has(item.id) !== true) return 0;
@@ -1249,6 +1449,12 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const bloodRiteDuty = duty(bloodRite, 'ability_value_duration');
   const legionDuty = duty(legionShield, 'ability_duration');
   const frenzyDuty = duty(frenzy, 'ability_value_duration');
+  const voidDuty = duty(voidScale, 'ability_duration');
+  const bannerDuty = duty(royalBanner, 'ability_duration');
+  const sacrificeDuty = duty(bloodSacrifice, 'ability_duration');
+  const potionDuty = duty(potionFury, 'ability_duration');
+  const earthDuty = duty(earthArmor, 'ability_duration');
+  const beastDuty = duty(beastRing, 'ability_duration');
 
   // Percent movement buffs and penalties first, then the flat grants. The
   // exact order only matters a little, but it keeps 0152 + 0305 sensible.
@@ -1261,6 +1467,18 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   if (beastBoots) averageMovespeed += Math.max(0, value(beastBoots, 'ability_bonus_movespeed'));
   if (bloodRite) averageMovespeed += Math.max(0, value(bloodRite, 'ability_value_bonus_move_speed')) * bloodRiteDuty;
   if (legionShield) averageMovespeed -= Math.max(0, value(legionShield, 'ability_self_movespeed')) * legionDuty;
+  // 0370: a crit grants +10 % movement speed for 2 s. Expected uptime from
+  // the base-attack crit rate and attack speed; the flat crit chance is not
+  // enough because faster attacks refresh the buff more often.
+  if (shadowBlade) {
+    const critPct = critChancePct(build.critChancePct, build.physicalCritChancePct, build.omniCritChancePct);
+    const bat = build.baseAttackTime > 0 ? build.baseAttackTime : 1.7;
+    const aps = (1 + clamp(Math.max(0, build.attackSpeed), 0, MAX_ATTACK_SPEED) / 100) / bat;
+    const duration = Math.max(0, value(shadowBlade, 'ability_duration'));
+    const critsPerSecond = aps * (critPct / 100);
+    const uptime = duration > 0 ? 1 - Math.exp(-critsPerSecond * duration) : 0;
+    averageMovespeed *= 1 + (Math.max(0, value(shadowBlade, 'ability_bonus_movespeed_pct')) * uptime) / 100;
+  }
 
   // The panel already carries the agility these items grant at the build's
   // own movement speed (`buildDpsInput` folds it into the agility row), so the
@@ -1318,6 +1536,48 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const legionShieldAmount = legionShield
     ? activeMaxHealth * Math.max(0, value(legionShield, 'ability_value_shield_amount')) / 100 * legionDuty
     : 0;
+  // 0421: +50 % spell amplify for its 8-second window.
+  const voidSpellAmp = Math.max(0, value(voidScale, 'ability_value_spell_amplify_pct')) * voidDuty;
+  // 0422: the banner grants +40 % physical damage to allies inside its radius.
+  const bannerPhysical = Math.max(0, value(royalBanner, 'ability_value_physical_damage_add_pct')) * bannerDuty;
+  // 0596 / 0630: the blood rite's outgoing multiplier.
+  const sacrificeAmp = Math.max(
+    0,
+    value(bloodSacrifice, 'ability_value_damage_amp_pct') || value(bloodSacrifice, 'ability_damage_amp_pct'),
+  ) * sacrificeDuty;
+  // 0663: +5 % final damage per potion kind, doubled while the active runs.
+  const potionKinds = Math.max(0, Math.floor(build.potionKinds ?? 0));
+  const potionMultiplier = Math.max(1, value(potionFury, 'ability_active_multiplier') || 1);
+  const potionFinal =
+    potionKinds *
+    Math.max(0, value(potionFury, 'ability_value_final_damage_pct_per_potion')) *
+    (1 + (potionMultiplier - 1) * potionDuty);
+  // 0664: the active turns 50 % max health into a shield; shield above the
+  // missing amount becomes flat attack damage. Assume the shield is full, so
+  // the whole gain overflows (the conservative toggle would be a UI input).
+  const earthCostPct = Math.max(0, value(earthArmor, 'ability_health_cost_max_pct') || 50);
+  const earthConvertPct = Math.max(0, value(earthArmor, 'ability_shield_convert_pct') || 75);
+  const earthStep = Math.max(1, value(earthArmor, 'ability_shield_step') || 10000);
+  const earthStepPct = Math.max(0, value(earthArmor, 'ability_value_shield_bonus_pct_per_step'));
+  const earthMaxPct = Math.max(0, value(earthArmor, 'ability_shield_bonus_max_pct'));
+  const earthBonusPct = Math.min(earthMaxPct, Math.floor(Math.max(0, build.energyShield) / earthStep) * earthStepPct);
+  const earthFullShield = earthArmor
+    ? activeMaxHealth * (earthCostPct / 100) * (earthConvertPct / 100) * (1 + earthBonusPct / 100)
+    : 0;
+  const earthShield = earthFullShield * earthDuty;
+  const earthOverflowStep = Math.max(1, value(earthArmor, 'ability_overflow_per_attack') || 10);
+  const earthAd = Math.floor(earthFullShield / earthOverflowStep) * earthDuty;
+  // 0668: +60 % attack damage for its 10-second window.
+  const beastAdPct = Math.max(0, value(beastRing, 'ability_value_attack_damage_pct')) * beastDuty;
+  // 0397: the self-poison bonus is an outgoing-damage multiplier.
+  const snakeOutPct =
+    snakeShadowItem && selfPoisoned
+      ? Math.max(
+          0,
+          value(snakeShadowItem, 'ability_value_self_poison_bonus_damage_pct') ||
+            value(snakeShadowItem, 'ability_self_poison_bonus_damage_pct'),
+        )
+      : 0;
 
   return {
     ...build,
@@ -1326,16 +1586,25 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
       build.attackDamage +
       effectiveDynamicAgility * build.attackDamagePerAgi +
       shatteredAd +
-      hornStrength * build.attackDamagePerStr,
+      hornStrength * build.attackDamagePerStr +
+      earthAd,
     attackSpeed: build.attackSpeed + agilityAsDelta + madnessAs + shadowAs + pendantAs + inertiaAs + bloodRiteAs,
     totalAgility: agility,
     totalAttributes: build.totalAttributes + effectiveDynamicAgility + hornStrength,
+    allAttackDamagePct: build.allAttackDamagePct + beastAdPct,
+    spellAmplifyPct: build.spellAmplifyPct + voidSpellAmp,
+    physicalDamageAddPct: build.physicalDamageAddPct + bannerPhysical,
     energyShield:
       build.energyShield +
       vanguardShield +
       legionShieldAmount +
+      earthShield +
       (lionheart !== undefined ? hornStrength * Math.max(0, value(lionheart, 'ability_shield_per_strength')) : 0),
-    outgoingMultiplier: build.outgoingMultiplier * (1 + (toleranceBonus + fearlessBonus) / 100),
+    outgoingMultiplier:
+      build.outgoingMultiplier *
+      (1 + (toleranceBonus + fearlessBonus) / 100) *
+      (1 + (sacrificeAmp + snakeOutPct) / 100) *
+      (1 + potionFinal / 100),
     cooldownReductionPct:
       build.cooldownReductionPct +
       Math.max(0, value(bloodRite, 'ability_cooldown_reduction_pct')) * bloodRiteDuty,
@@ -1396,6 +1665,14 @@ function sourceRecord(): Record<DpsSourceId, number> {
     critChain: 0,
     bloodMoon: 0,
     frostbite: 0,
+    loveWhip: 0,
+    thornShield: 0,
+    golemHand: 0,
+    snakeBurst: 0,
+    hellGaze: 0,
+    stormBracelet: 0,
+    archmageBook: 0,
+    lavaPlate: 0,
   };
 }
 
@@ -1448,6 +1725,14 @@ function hitRecord(): Record<DpsSourceId, number> {
     critChain: 0,
     bloodMoon: 0,
     frostbite: 0,
+    loveWhip: 0,
+    thornShield: 0,
+    golemHand: 0,
+    snakeBurst: 0,
+    hellGaze: 0,
+    stormBracelet: 0,
+    archmageBook: 0,
+    lavaPlate: 0,
   };
 }
 
@@ -1482,6 +1767,14 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   let armorStacks = 0;
   let armorDebuff = 0;
   let lastArmorDebuff = Number.NEGATIVE_INFINITY;
+  /** 0371 / 0679: stacking flat armour reduction from their corrosion debuff. */
+  let corrosionStacks = 0;
+  let lastCorrosion = Number.NEGATIVE_INFINITY;
+  /** 0667: consecutive attacks on the same target. */
+  let dragonStacks = 0;
+  /** 0397: poison applications accumulated toward the 50-stack burst. */
+  let snakeProgress = 0;
+  let loveReady = 0;
   /** 0206's own −5 armour debuff, expected by its proc chance. */
   let shatterArmor = 0;
   let shatterUntil = 0;
@@ -1538,6 +1831,22 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   const radianceOn = c.radiance !== undefined;
   let radianceAt = radianceOn ? c.radiance!.interval : Number.POSITIVE_INFINITY;
   let manaSpringAt = c.manaSpring !== undefined ? 1 : Number.POSITIVE_INFINITY;
+  let thornAt = c.thornShield?.interval ?? Number.POSITIVE_INFINITY;
+  let golemAt = c.golemHand?.interval ?? Number.POSITIVE_INFINITY;
+  const stormInterval = c.stormBracelet !== undefined
+    ? 1 /
+      (1 +
+        Math.min(
+          100,
+          Math.floor(
+            Math.max(0, b.attackSpeed - c.stormBracelet.threshold) / c.stormBracelet.step,
+          ) * 25,
+        ) /
+          100)
+    : 0;
+  let stormAt = c.stormBracelet !== undefined ? stormInterval : Number.POSITIVE_INFINITY;
+  let archmageAt = c.archmageBook !== undefined ? 0.25 : Number.POSITIVE_INFINITY;
+  let lavaAt = c.lavaPlate?.interval ?? Number.POSITIVE_INFINITY;
   let emberReady = 0;
   let flameReady = 0;
   let ashReady = 0;
@@ -1592,6 +1901,7 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     if (huntMarkStacks > 0) n += 1;
     if (igniteStacks > 0) n += 1;
     if (armorDebuff > 0) n += 1;
+    if (c.corrosion !== undefined && corrosionStacks > 0) n += 1;
     // Level-7 debuffs: 0348's mark, 0420's Blood Moon, 0620's Freeze/Frostbite.
     if (c.buddha !== undefined && buddhaUntil > time) n += 1;
     if (c.bloodMoon !== undefined && bloodMoonMarkUntil > time) n += 1;
@@ -1631,7 +1941,10 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     vulnStacks,
     markStacks,
     burning,
-    armorDebuff: armorDebuff + (time < shatterUntil ? shatterArmor : 0),
+    armorDebuff:
+      armorDebuff +
+      corrosionStacks * (c.corrosion?.perHit ?? 0) +
+      (time < shatterUntil ? shatterArmor : 0),
   });
 
   const add = (id: DpsSourceId, amount: number, count = 0): void => {
@@ -1677,6 +1990,28 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
           dominionStacks + (amount * healPct * healAmp / 100) * (c.bloodDominion.perPct / 100),
         );
       }
+    }
+    // 0415 Hell Gaze: every own DOT tick can add a pure hit scaled by all
+    // attributes and one vulnerable stack. The pure hit is not a DOT, so it
+    // does not feed this this hook.
+    if (
+      c.hellGaze !== undefined &&
+      id !== 'verdict' &&
+      id !== 'hellGaze' &&
+      isDotSource(id) &&
+      count > 0
+    ) {
+      const p = c.hellGaze.chance * count;
+      const raw = (b.totalAttributes * c.hellGaze.statsPct) / 100;
+      if (raw > 0 && p > 0) {
+        const hit = pureDamage(b, enemy, c, raw, {
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks,
+        });
+        add('hellGaze', hit * p, p);
+      }
+      if (c.hellGaze.vulnDuration > 0) addVulnerable(p);
     }
     // 0581: DOT damage additionally hits for its own share of the Judgment
     // bonus as pure damage (the script's NO_PROC follow-up). The share is
@@ -1833,6 +2168,29 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       poisonAt = time + c.poisonTick;
       poisonDecayAt = time + 3;
     }
+    // 0397 Snake Shadow: every 50 poison *applications* burst for magic
+    // damage scaled by all attributes. The script consumes only its own
+    // counter (`progress % threshold`); the target keeps every poison stack.
+    if (c.snakeShadow !== undefined && c.snakeShadow.threshold > 0) {
+      snakeProgress += count;
+      while (snakeProgress + EPS >= c.snakeShadow.threshold) {
+        snakeProgress -= c.snakeShadow.threshold;
+        const raw = (b.totalAttributes * c.snakeShadow.burstPct) / 100;
+        if (raw > 0) {
+          const hit = magicalDamage(b, enemy, c, raw, {
+            dot: false,
+            poisonSource: true,
+            corrosionStacks: poisonStacks,
+            vulnStacks,
+            burning: burnUntil > time,
+            markStacks,
+            doomStacks,
+            curseRibbonActive,
+          });
+          add('snakeBurst', hit, 1);
+        }
+      }
+    }
   };
 
   // 0165: every landed attack (including 0351/0406 sub-attacks) adds a magic
@@ -1859,21 +2217,31 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     if (vulnStacks > 0 && c.vulnDuration > 0 && time - lastVuln > c.vulnDuration) vulnStacks = 0;
     if (c.mkb && time - lastArmor > c.mkbArmorDuration) armorStacks = 0;
     if (time - lastArmorDebuff > 5) armorDebuff = 0;
+    if (c.corrosion !== undefined && time - lastCorrosion > c.corrosion.duration) corrosionStacks = 0;
     const burning = burnUntil > time;
     // 0348: every real attack applies Slaughter; the mark then amplifies the
     // wearer's damage by the target's missing health.
     if (c.buddha !== undefined && c.buddha.duration > 0) buddhaUntil = time + c.buddha.duration;
-    const autoRaw =
+    const baseAutoRaw =
       Math.max(0, b.attackDamage + Math.floor(heartStacks) + Math.floor(dominionStacks)) *
       (1 + b.allAttackDamagePct / 100);
+    // 0667: consecutive attacks on the same target stack attack damage. The
+    // stack from this attack only lands on the next one.
+    const dragonAmp = c.dragonBlade !== undefined
+      ? 1 + (Math.min(c.dragonBlade.maxStacks, dragonStacks) * c.dragonBlade.perStack) / 100
+      : 1;
+    const autoRaw = baseAutoRaw * dragonAmp;
     const auto = directDamage(b, enemy, c, autoRaw, ctx(burning, true));
     add('auto', auto, 1);
+    if (c.dragonBlade !== undefined) {
+      dragonStacks = !dummy && hp <= 0 ? 0 : Math.min(c.dragonBlade.maxStacks, dragonStacks + 1);
+    }
     physicalTriggers(auto, c.autoCrit);
     // 0218 / 0232 / 0648: a critical hit can add a second hit of the same
     // size. The script takes the hit's base damage times the crit multiplier
     // and forbids the extra hit from critting itself.
     if (c.critChain !== undefined && c.critChain.chance > 0 && c.autoCrit > 0) {
-      const raw = autoRaw * c.critMultiplier;
+      const raw = baseAutoRaw * c.critMultiplier;
       const chance = (c.autoCrit / 100) * c.critChain.chance;
       const hit = c.critChain.magic
         ? magicalDamage(
@@ -2208,6 +2576,12 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       armorDebuff = c.armorDebuffPerHit;
       lastArmorDebuff = time;
     }
+    // 0371 / 0679: the corrosion stack is applied after this attack's damage,
+    // so the hit that applies it does not benefit yet.
+    if (c.corrosion !== undefined) {
+      corrosionStacks = Math.min(c.corrosion.maxStacks, corrosionStacks + c.corrosion.perHit);
+      lastCorrosion = time;
+    }
 
     // 0307 / 0731: a chance-based magic hit and a 3 s vortex. The vortex is
     // counted as one target; its 0.5 s ticks are shown separately.
@@ -2308,6 +2682,32 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     // were already there; the new stack only feeds the ticks that follow.
     let poisonApplicationChance = 0;
     let poisonApplications = 0;
+    // 0344 Love Whip: a 60 % chance for pure damage from all three attributes
+    // and one of four debuffs. The 0.1 s item cooldown never binds at attack
+    // speed, so the proc is one roll per attack.
+    if (c.loveWhip !== undefined && time + EPS >= loveReady) {
+      const chance = c.loveWhip.chance;
+      if (chance > 0) {
+        const raw = (b.totalAttributes * c.loveWhip.statsPct) / 100;
+        if (raw > 0) {
+          const hit = pureDamage(b, enemy, c, raw, {
+            vulnStacks,
+            burning: burnUntil > time,
+            markStacks,
+          });
+          add('loveWhip', hit * chance, chance);
+        }
+        loveReady = time + c.loveWhip.cooldown;
+        const p = chance * c.loveWhip.debuffChance;
+        if (p > 0) {
+          addPoisonStacks(p);
+          poisonApplications += p;
+          startBurn(c.loveWhip.debuffDuration, p);
+          addVulnerable(p);
+          chaosEvent(chance);
+        }
+      }
+    }
     if (c.poisonPerAuto > 0) {
       if (c.cobra && c.cobraBurstPct > 0 && c.cobraChance > 0) {
         const burstRaw = b.totalAttributes * (c.cobraBurstPct / 100) * (c.cobraChance / 100);
@@ -2448,6 +2848,11 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       bloodMoonAt,
       erosionDecayAt,
       frostbiteTickAt ?? Number.POSITIVE_INFINITY,
+      thornAt,
+      golemAt,
+      stormAt,
+      archmageAt,
+      lavaAt,
     );
     if (!Number.isFinite(next) || next > duration + EPS) break;
     const step = Math.max(0, next - time);
@@ -2495,6 +2900,84 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       const raw = Math.max(0, b.maxMana) * (c.manaSpring!.pct / 100);
       if (raw > 0) add('manaSpring', raw, 1);
       manaSpringAt += 1;
+    }
+    // 0380 Thorn Shield: 10 % of the total energy shield as pure damage each
+    // second. 0396 Golem Hand: 200 % every 3 s, plus one vulnerable stack.
+    if (c.thornShield !== undefined && Math.abs(time - thornAt) <= EPS) {
+      const raw = Math.max(0, b.energyShield) * (c.thornShield.pct / 100);
+      if (raw > 0) {
+        const hit = pureDamage(b, enemy, c, raw, {
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks,
+        });
+        add('thornShield', hit, 1);
+      }
+      thornAt += c.thornShield.interval;
+    }
+    if (c.golemHand !== undefined && Math.abs(time - golemAt) <= EPS) {
+      const raw = Math.max(0, b.energyShield) * (c.golemHand.pct / 100);
+      if (raw > 0) {
+        const hit = pureDamage(b, enemy, c, raw, {
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks,
+        });
+        add('golemHand', hit, 1);
+        if (c.golemHand.vulnDuration > 0) addVulnerable(1);
+      }
+      golemAt += c.golemHand.interval;
+    }
+    // 0606 / 0632: the hammer hits for attack damage as pure damage; its rate
+    // rises with attack speed above the item's threshold.
+    if (c.stormBracelet !== undefined && Math.abs(time - stormAt) <= EPS) {
+      const raw = totalAttackDamage() * (c.stormBracelet.pct / 100);
+      if (raw > 0) {
+        const hit = pureDamage(b, enemy, c, raw, {
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks,
+        });
+        add('stormBracelet', hit, 1);
+      }
+      stormAt += stormInterval;
+    }
+    // 0650 Archmage Book: every 10 s it spends current mana and bursts for
+    // max mana × (1400 % + 2 % per 3 mana spent).
+    if (c.archmageBook !== undefined && Math.abs(time - archmageAt) <= EPS) {
+      const cost = Math.floor(mana * (c.archmageBook.costPct / 100));
+      if (cost > 0) {
+        mana = Math.max(0, mana - cost);
+        const bonus = Math.floor(cost / c.archmageBook.manaPerBonus) * 2;
+        const raw = Math.max(0, b.maxMana) * ((c.archmageBook.statsPct + bonus) / 100);
+        if (raw > 0) {
+          const hit = magicalDamage(b, enemy, c, raw, {
+            dot: false,
+            poisonSource: false,
+            corrosionStacks: poisonStacks,
+            vulnStacks,
+            burning: burnUntil > time,
+            markStacks,
+            doomStacks,
+            curseRibbonActive,
+          });
+          add('archmageBook', hit, 1);
+        }
+      }
+      archmageAt += c.archmageBook.cooldown;
+    }
+    // 0677 Lava Plate: 2.5 % of max health as pure damage each second.
+    if (c.lavaPlate !== undefined && Math.abs(time - lavaAt) <= EPS) {
+      const raw = Math.max(0, b.maxHealth) * (c.lavaPlate.pct / 100);
+      if (raw > 0) {
+        const hit = pureDamage(b, enemy, c, raw, {
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks,
+        });
+        add('lavaPlate', hit, 1);
+      }
+      lavaAt += c.lavaPlate.interval;
     }
     // 0534 / 0582: Ignite ticks every 0.5 s for attributes × %/stack × stacks.
     if (igniteTickAt !== null && Math.abs(time - igniteTickAt) <= EPS) {
@@ -2624,7 +3107,10 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     });
   }
 
-  const armorAfterBreak = armorAfterBreakAt(enemy.armor - armorDebuff, c.mkb ? armorStacks : 0);
+  const armorAfterBreak = armorAfterBreakAt(
+    enemy.armor - armorDebuff - corrosionStacks * (c.corrosion?.perHit ?? 0),
+    c.mkb ? armorStacks : 0,
+  );
   const armorAfterPen = armorAfterPenAt(armorAfterBreak, b.armorPenetrationPct);
 
   return {

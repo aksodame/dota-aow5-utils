@@ -216,6 +216,18 @@ export interface DpsStrings {
     legionShieldMeta: (cooldown: string, duration: string, shield: string, move: string) => string;
     bloodMoon: string;
     bloodMoonMeta: (cooldown: string, duration: string, pct: string) => string;
+    harmonizer: string;
+    harmonizerAggressive: string;
+    harmonizerDefensive: string;
+    potionKinds: string;
+    potionKindsHint: string;
+    voidScale: string;
+    royalBanner: string;
+    bloodSacrifice: string;
+    potionFury: string;
+    earthDragonArmor: string;
+    beastRing: string;
+    timedMeta: (cooldown: string, duration: string) => string;
   };
   /** Per-second window and the kill's event log. */
   timeline: {
@@ -494,6 +506,14 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         critChain: 'Цепная рулетка — доп. удар от крита',
         bloodMoon: 'Кровавая луна — актив и уязвимость',
         frostbite: 'Обморожение — DOT',
+        loveWhip: 'Бич любовной страсти — удар',
+        thornShield: 'Шипы отражения — импульс',
+        golemHand: 'Рука каменного голема — импульс',
+        snakeBurst: 'Рука змеиной тени — взрыв яда',
+        hellGaze: 'Лик преисподней — прок DOT',
+        stormBracelet: 'Браслет разгона — молот',
+        archmageBook: 'Книга Великого Мага — взрыв',
+        lavaPlate: 'Лавовая пластина — импульс',
       },
     },
     active: {
@@ -523,6 +543,18 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       legionShieldMeta: (cd, duration, shield, move) => `КД ${cd} с · ${duration} с: щит ${shield} % макс. HP, −${move} к скорости бега`,
       bloodMoon: 'Меч кровавого шипа — удар кровавой луны',
       bloodMoonMeta: (cd, duration, pct) => `КД ${cd} с · ${pct} % AD физ. урона, кровотечение, метка на ${duration} с`,
+      harmonizer: 'Аккорд гармонии',
+      harmonizerAggressive: 'Атака: +20 % урона, +15 % входящего',
+      harmonizerDefensive: 'Защита: −15 % урона, +20 % брони, +20 магсопр.',
+      potionKinds: 'Видов зелий на себе',
+      potionKindsHint: 'Фляга кровавой перегонки: +5 % итогового урона за каждый вид зелья; актив удваивает.',
+      voidScale: 'Линейка пустоты',
+      royalBanner: 'Знамя королевского двора',
+      bloodSacrifice: 'Клинок кровавого жертвоприношения',
+      potionFury: 'Фляга кровавой перегонки',
+      earthDragonArmor: 'Латы земляного дракона',
+      beastRing: 'Кольцо звериной пасти',
+      timedMeta: (cd, duration) => `КД ${cd} с · ${duration} с`,
     },
     timeline: {
       title: 'Таймлайн',
@@ -667,6 +699,14 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         critChain: 'Chain roulette — extra crit hit',
         bloodMoon: 'Blood Moon — active and vulnerability',
         frostbite: 'Frostbite — DOT',
+        loveWhip: 'Whip of Passion — hit',
+        thornShield: 'Thorn Shield — pulse',
+        golemHand: 'Stone Golem Hand — pulse',
+        snakeBurst: 'Snake Shadow Hand — poison burst',
+        hellGaze: 'Hellish Visage — DOT proc',
+        stormBracelet: 'Acceleration Bracer — hammer',
+        archmageBook: 'Archmage Tome — burst',
+        lavaPlate: 'Lava Plate — pulse',
       },
     },
     active: {
@@ -696,6 +736,18 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       legionShieldMeta: (cd, duration, shield, move) => `CD ${cd} s · ${duration} s: ${shield} % max HP shield, −${move} movement`,
       bloodMoon: 'Blood Thorn — Blood Moon strike',
       bloodMoonMeta: (cd, duration, pct) => `CD ${cd} s · ${pct} % AD physical, bleed, ${duration} s mark`,
+      harmonizer: 'Harmony Accord',
+      harmonizerAggressive: 'Attack: +20 % damage, +15 % taken',
+      harmonizerDefensive: 'Defence: −15 % damage, +20 % armour, +20 magic resistance',
+      potionKinds: 'Potion kinds active',
+      potionKindsHint: 'Blood Distillation Flask: +5 % final damage per potion kind; its active doubles it.',
+      voidScale: 'Void Scale',
+      royalBanner: 'Royal Court Banner',
+      bloodSacrifice: 'Blood Sacrifice Blade',
+      potionFury: 'Blood Distillation Flask',
+      earthDragonArmor: 'Earth Dragon Plate',
+      beastRing: 'Beast Maw Ring',
+      timedMeta: (cd, duration) => `CD ${cd} s · ${duration} s`,
     },
     timeline: {
       title: 'Timeline',
@@ -832,6 +884,14 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         critChain: '连锁轮盘——暴击追加伤害',
         bloodMoon: '血月——主动与易伤',
         frostbite: '冻伤——持续伤害',
+        loveWhip: '情欲之鞭——攻击',
+        thornShield: '反射尖刺——脉冲',
+        golemHand: '石魔之手——脉冲',
+        snakeBurst: '蛇影之手——毒爆',
+        hellGaze: '地狱之面——持续伤害触发',
+        stormBracelet: '加速护腕——锤击',
+        archmageBook: '大魔导之书——爆发',
+        lavaPlate: '熔岩板甲——脉冲',
       },
     },
     active: {
@@ -861,6 +921,18 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       legionShieldMeta: (cd, duration, shield, move) => `冷却 ${cd} 秒 · ${duration} 秒：最大生命 ${shield}% 护盾，移动速度 −${move}`,
       bloodMoon: '血棘之剑——血月打击',
       bloodMoonMeta: (cd, duration, pct) => `冷却 ${cd} 秒 · ${pct}% 攻击力物理伤害、流血、${duration} 秒标记`,
+      harmonizer: '和谐共鸣',
+      harmonizerAggressive: '进攻：伤害 +20%，受到伤害 +15%',
+      harmonizerDefensive: '防御：伤害 −15%，护甲 +20%，魔抗 +20',
+      potionKinds: '身上药剂种类',
+      potionKindsHint: '血炼之瓶：每种药剂使最终伤害 +5%；主动期间翻倍。',
+      voidScale: '虚空刻度',
+      royalBanner: '王庭战旗',
+      bloodSacrifice: '血祭之刃',
+      potionFury: '血炼之瓶',
+      earthDragonArmor: '土龙之铠',
+      beastRing: '兽口之戒',
+      timedMeta: (cd, duration) => `冷却 ${cd} 秒 · ${duration} 秒`,
     },
     timeline: {
       title: '时间线',
@@ -1042,6 +1114,18 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.amp)}% урона: уклонение ${n(f.evasion)}% сверх ${n(f.threshold)}% × ${n(f.per)}`;
           case 'cdrOverflow':
             return `+${n(f.amp)}% урона способностей: КДР ${n(f.cdr)}% сверх ${n(f.threshold)}% × ${n(f.rate)}`;
+          case 'paladinArmor':
+            return `−${n(f.cut)} макс. HP → +${n(f.shield)} энергощита, остаётся ${n(f.health)} HP`;
+          case 'poisonCurse':
+            return `свой урон ядом −${n(f.reduce)}%`;
+          case 'selfPoison':
+            return `+${n(f.amp)}% урона от ${n(f.stacks)} стаков самояда`;
+          case 'lifestealDamage':
+            return `+${n(f.bonus)}% итогового урона от ${n(f.pct)}% физ. вампиризма (кап ${n(f.cap)}%)`;
+          case 'critModes':
+            return `+${n(f.magic)}% маг. урона при HP выше 60%`;
+          case 'sniperFocus':
+            return `+${n(f.pct)}% урона, пока стоишь`;
         }
       },
     },
@@ -1292,6 +1376,18 @@ export const CALC: Localised<CalcStrings> = {
             return `+${n(f.amp)}% damage: evasion ${n(f.evasion)}% over ${n(f.threshold)}% × ${n(f.per)}`;
           case 'cdrOverflow':
             return `+${n(f.amp)}% spell damage: CDR ${n(f.cdr)}% over ${n(f.threshold)}% × ${n(f.rate)}`;
+          case 'paladinArmor':
+            return `−${n(f.cut)} max health → +${n(f.shield)} energy shield; ${n(f.health)} health left`;
+          case 'poisonCurse':
+            return `own poison damage −${n(f.reduce)}%`;
+          case 'selfPoison':
+            return `+${n(f.amp)}% damage from ${n(f.stacks)} self-poison stacks`;
+          case 'lifestealDamage':
+            return `+${n(f.bonus)}% final damage from ${n(f.pct)}% physical lifesteal (cap ${n(f.cap)}%)`;
+          case 'critModes':
+            return `+${n(f.magic)}% magical damage above 60% health`;
+          case 'sniperFocus':
+            return `+${n(f.pct)}% damage while standing still`;
         }
       },
     },
@@ -1532,6 +1628,18 @@ export const CALC: Localised<CalcStrings> = {
             return `伤害 +${n(f.amp)}%：闪避 ${n(f.evasion)}% 超过 ${n(f.threshold)}% × ${n(f.per)}`;
           case 'cdrOverflow':
             return `技能伤害 +${n(f.amp)}%：冷却缩减 ${n(f.cdr)}% 超过 ${n(f.threshold)}% × ${n(f.rate)}`;
+          case 'paladinArmor':
+            return `−${n(f.cut)} 最大生命 → +${n(f.shield)} 能量护盾，剩余 ${n(f.health)} 生命`;
+          case 'poisonCurse':
+            return `自身毒伤害 −${n(f.reduce)}%`;
+          case 'selfPoison':
+            return `${n(f.stacks)} 层自毒使伤害 +${n(f.amp)}%`;
+          case 'lifestealDamage':
+            return `${n(f.pct)}% 物理吸血转化为 +${n(f.bonus)}% 最终伤害（上限 ${n(f.cap)}%）`;
+          case 'critModes':
+            return `生命高于 60% 时魔法伤害 +${n(f.magic)}%`;
+          case 'sniperFocus':
+            return `站立不动时伤害 +${n(f.pct)}%`;
         }
       },
     },

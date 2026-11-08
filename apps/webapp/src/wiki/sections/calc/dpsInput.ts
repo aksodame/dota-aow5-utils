@@ -12,6 +12,11 @@ export function buildDpsInput(
   buffs: Record<string, number>,
   items: DpsItemStats[],
   baseAttackTime: number,
+  options: {
+    potionKinds?: number;
+    harmonizerDefensive?: boolean;
+    crownBuffs?: number;
+  } = {},
 ): DpsBuild {
   const rows = new Map<string, RowDef>();
   for (const group of GROUPS) for (const row of group.rows) rows.set(row.key, row);
@@ -22,7 +27,27 @@ export function buildDpsInput(
     return baseVal(input, key) + (sums[key] ?? 0) + (buffs[key] ?? 0);
   };
   const extra = (key: string): number => baseVal(input, key) + (sums[key] ?? 0) + (buffs[key] ?? 0);
-
+  const item = (id: string): DpsItemStats | undefined => items.find((x) => x.id === id);
+  const hasItem = (...ids: string[]): boolean => ids.some((id) => item(id) !== undefined);
+  const itemStat = (x: DpsItemStats | undefined, key: string): number => {
+    const v = x?.stats[key];
+    return typeof v === 'number' && Number.isFinite(v) ? v : 0;
+  };
+  // 0294's mode toggle is the one panel conversion that stays here: the
+  // stats tab has no mode input. Everything else level-8 lives in itemeffects.
+  const harmonizerExtra = hasItem('item_0294', 'item_0803')
+    ? options.harmonizerDefensive === true
+      ? -15
+      : 20
+    : 0;
+  // 0611 counts visible non-debuff buffs with more than three stacks. The
+  // permanent-buff column already knows those uses; potions are excluded.
+  // Cast-driven stacks (0670) wait for the cast-rate input.
+  const crownCount = Math.max(0, Math.floor(options.crownBuffs ?? 0));
+  const crown = item('item_0611') ?? item('item_0821');
+  const crownExtra = crown
+    ? crownCount * Math.max(0, itemStat(crown, 'ability_value_dmg_per_buff') || 12)
+    : 0;
   const outgoingKeys = new Set<string>();
   for (const key of Object.keys(sums)) if (/^outgoing_damage_pct(_\d+)?$/.test(key)) outgoingKeys.add(key);
   for (const key of Object.keys(buffs)) if (/^outgoing_damage_pct(_\d+)?$/.test(key)) outgoingKeys.add(key);
@@ -31,9 +56,13 @@ export function buildDpsInput(
   for (const key of Object.keys(input.level?.rest ?? {})) {
     if (/^outgoing_damage_pct(_\d+)?$/.test(key)) outgoingKeys.add(key);
   }
+  if (harmonizerExtra !== 0 || crownExtra !== 0) outgoingKeys.add('outgoing_damage_pct');
+  const outgoingExtra = (key: string): number =>
+    key === 'outgoing_damage_pct' ? harmonizerExtra + crownExtra : 0;
   let outgoingMultiplier = 1;
   for (const key of outgoingKeys) {
-    outgoingMultiplier *= 1 + (baseVal(input, key) + (sums[key] ?? 0) + (buffs[key] ?? 0)) / 100;
+    outgoingMultiplier *=
+      1 + (baseVal(input, key) + (sums[key] ?? 0) + (buffs[key] ?? 0) + outgoingExtra(key)) / 100;
   }
 
   // 0723 (base 0444) grants armor penetration through a passive attribute
@@ -53,6 +82,17 @@ export function buildDpsInput(
       : input.primary === 'uni'
         ? input.file.attrBonus.universal_attr_attack_damage
         : 0;
+
+  // 0609 / 0634 and the other level-8 conversions reach this pool through
+  // `itemeffects`, so the panel already carries the cut health and the shield.
+  const maxHealth = panel('bonus_health');
+  const shieldFlat =
+    extra('base_energy_shield') +
+    extra('bonus_energy_shield') +
+    panel('bonus_strength') *
+      (items.find((x) => x.id === 'item_0329' || x.id === 'item_0714')?.stats
+        .ability_shield_per_strength ?? 0);
+  const energyShield = shieldFlat * (1 + extra('bonus_energy_shield_pct') / 100);
 
   return {
     attackDamage: panel('bonus_attack_damage'),
@@ -84,7 +124,7 @@ export function buildDpsInput(
     },
     seasonDamagePct: (panel('season_contribution') + panel('season_world')) * 2,
     totalAttributes: panel('bonus_strength') + panel('bonus_agility') + panel('bonus_intelligence'),
-    maxHealth: panel('bonus_health'),
+    maxHealth,
     totalAgility: panel('bonus_agility'),
     agilityPct: extra('all_agility_pct') + extra('all_all_stats_pct'),
     totalIntelligence: panel('bonus_intelligence'),
@@ -97,10 +137,11 @@ export function buildDpsInput(
         : input.primary === 'uni'
           ? input.file.attrBonus.universal_attr_attack_damage
           : 0,
-    energyShield:
-      extra('base_energy_shield') +
-      panel('bonus_strength') *
-        (items.find((item) => item.id === 'item_0329' || item.id === 'item_0714')?.stats.ability_shield_per_strength ?? 0),
+    // The game's total shield is every flat source (base + bonus + 0329's
+    // strength scaling) scaled by `bonus_energy_shield_pct`; 0380 / 0396 turn
+    // that total into damage, so the percent cannot be dropped. 0609 / 0634
+    // add the shield made from the health they cut.
+    energyShield,
     maxMana: panel('bonus_mana'),
     anyLifestealPct:
       extra('attack_lifesteal_pct') +
@@ -122,6 +163,9 @@ export function buildDpsInput(
     poisonOutgoingPct: panel('poison_outgoing_damage_pct'),
     poisonFasterPct: extra('poison_damage_faster_pct'),
     cooldownReductionPct: extra('cooldown_reduction_pct'),
+    potionKinds: options.potionKinds,
+    harmonizerDefensive: options.harmonizerDefensive,
+    crownBuffs: options.crownBuffs,
     items,
   };
 }

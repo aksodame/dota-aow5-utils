@@ -118,12 +118,40 @@ export default function CalcPage({ path }: SectionProps) {
     [state, input, full, tables, extra, achFile],
   );
 
+  /*
+   * 0611 counts visible non-debuff buffs with more than three stacks. The
+   * permanent-consumable column is the calculator's own record of those uses;
+   * potion-type items are left out, as asked.
+   */
+  const crownBuffs = useMemo(() => {
+    let count = 0;
+    for (const [id, used] of Object.entries(state.buffs)) {
+      if (used <= 3) continue;
+      if (full?.[id]?.type === 'potion') continue;
+      count += 1;
+    }
+    return count;
+  }, [state.buffs, full]);
+
   const dpsInput = useMemo(
     () =>
       input === null
         ? null
-        : buildDpsInput(input, sums, buffs, list, input.file.heroes[state.hero]?.kv.attackRate ?? 1.7),
-    [input, sums, buffs, list, state.hero],
+        : buildDpsInput(input, sums, buffs, list, input.file.heroes[state.hero]?.kv.attackRate ?? 1.7, {
+            potionKinds: state.dps.potionKinds,
+            harmonizerDefensive: state.dps.harmonizerDefensive,
+            crownBuffs,
+          }),
+    [
+      input,
+      sums,
+      buffs,
+      list,
+      state.hero,
+      state.dps.potionKinds,
+      state.dps.harmonizerDefensive,
+      crownBuffs,
+    ],
   );
 
   if (missing) return <WikiMissing />;
