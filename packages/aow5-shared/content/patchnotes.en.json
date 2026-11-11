@@ -1,6 +1,16 @@
 {
  "notes": [
   {
+   "version": "v1.526",
+   "date": "10.11.2026",
+   "game": [
+    "Endless run: the Shield affix has been reworked — monsters now gain a shield equal to 1% of their max health per floor, capped at 60% (previously 100% of max health)."
+   ],
+   "wiki": [
+    "Updated the Shield affix description under Sky → Affixes in all three languages."
+   ]
+  },
+  {
    "version": "v1.522",
    "date": "05.11.2026",
    "game": [
