@@ -255,7 +255,7 @@ export const SKY: Localised<SkyStrings> = {
         },
         shield: {
           name: 'Shield',
-          desc: 'Gains a shield equal to its max health (pure damage passes through). The shield never regenerates, and the affix disappears when it breaks. The number on the icon is the remaining shield, in %.',
+          desc: 'Gains a shield equal to 1% of its max health per floor, up to 60% (pure damage passes through). The shield never regenerates, and the affix disappears when it breaks. The number on the icon is the remaining shield, in %.',
         },
         revive: {
           name: 'Revive',
@@ -438,7 +438,7 @@ export const SKY: Localised<SkyStrings> = {
         },
         shield: {
           name: 'Щит',
-          desc: 'Получает щит, равный максимальному здоровью (чистый урон проходит сквозь него). Щит не восстанавливается; после разрушения аффикс исчезает. Число на значке — остаток щита в %.',
+          desc: 'Получает щит, равный 1% максимального здоровья за каждый этаж, но не более 60% (чистый урон проходит сквозь него). Щит не восстанавливается; после разрушения аффикс исчезает. Число на значке — остаток щита в %.',
         },
         revive: {
           name: 'Воскрешение',
@@ -616,7 +616,7 @@ export const SKY: Localised<SkyStrings> = {
         lifesteal: { name: '嗜血', desc: '普通攻击命中英雄时，回复自身最大生命的 1.5%。' },
         shield: {
           name: '护盾',
-          desc: '获得等同于最大生命的护盾（纯粹伤害可穿透）。护盾不会恢复，破碎后词缀消失。图标数字为剩余护盾 %。',
+          desc: '获得护盾，每层提供 1% 最大生命的护盾量，最高 60%（纯粹伤害可穿透）。护盾不会恢复，破碎后词缀消失。图标数字为剩余护盾 %。',
         },
         revive: { name: '复活', desc: '首次受到致命伤害时假死 2.6 秒（无敌），随后满血复活，仅一次。' },
         hard: { name: '坚硬', desc: '受到的伤害降低 33%，与层数自带的伤害抗性相乘，不随层数变弱。' },
