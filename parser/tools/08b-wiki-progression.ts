@@ -133,7 +133,9 @@ const vpk = Vpk.open(cfg.vpkPath);
 const readText = (p: string): string => vpk.readPath(p).toString('utf8');
 
 const manifest = readRulesetManifest(vpk.readPath(`${RULESET_DIR}/manifest.vjs_c`), 'rulesets/manifest');
-const seasons = manifest.seasons.map((s) => s.id);
+/** Rulesets the pak ships but the wiki does not describe yet (see the config note). */
+const futureRulesets = cfg.rulesets.futureRulesets ?? {};
+const seasons = manifest.seasons.map((s) => s.id).filter((id) => !(id in futureRulesets));
 check(seasons.includes(PRIMARY_SEASON), `ruleset manifest names ${seasons.join(', ')} (primary ${PRIMARY_SEASON})`);
 
 type Row = Record<string, unknown>;
@@ -248,17 +250,22 @@ for (const t of tabs) {
 }
 
 /*
- * Season gating: `function nu(e,t){return"tree14"===e?"s3"===t:e!==mu||"s2"===t}`
- * with `mu=lu.s2.treeId` and `lu={…,s2:{…,treeId:"tree13"}}` — one tree only
- * in one season, and the season expansion pack's tree only in its season.
+ * Season gating: `function ru(e,t){return"tree14"===e?"s3"===t||"s4"===t:e!==nu||"s2"===t}`
+ * with `nu=su.s2.treeId` and `su={…,s2:{…,treeId:"tree13"}}` — one tree only
+ * in its seasons (s3 and the unpublished s4), and the season expansion pack's
+ * tree only in its season.
  */
 const treeSeasons: Record<string, string[]> = {};
 {
   const gate = hudOne(
-    new RegExp(`function ${ID}\\(${ID},${ID}\\)\\{return"(tree\\d+)"===${ID}\\?"(s\\d+)"===${ID}:${ID}!==(${ID})\\|\\|"(s\\d+)"===${ID}\\}`),
+    new RegExp(
+      `function ${ID}\\(${ID},${ID}\\)\\{return"(tree\\d+)"===${ID}\\?((?:"s\\d+"===${ID})(?:\\|\\|"s\\d+"===${ID})*):${ID}!==(${ID})\\|\\|"(s\\d+)"===${ID}\\}`,
+    ),
     'tree season gate',
   );
-  treeSeasons[gate[1]!] = [gate[2]!];
+  treeSeasons[gate[1]!] = [...gate[2]!.matchAll(/"s(\d+)"===/g)]
+    .map((m) => `s${m[1]}`)
+    .filter((s) => !(s in futureRulesets));
   const varName = gate[3]!.replace(/\$/g, '\\$');
   const def = hudOne(new RegExp(`[,;\\s]${varName}=(${ID})\\.(s\\d+)\\.treeId[;,]`), 'season pack tree reference');
   const packs = [...hud.matchAll(/\b(s\d+):\{[^{}]{0,400}?treeId:"(tree\d+)"\}/g)].filter((m) => m[1] === def[2]);
@@ -353,7 +360,7 @@ for (const [id, row] of Object.entries(T2)) {
   const unknown = Object.keys(row).filter((f) => !KNOWN_TALENT_FIELDS.has(f));
   if (unknown.length) throw new Error(`talent ${id}: unknown field(s) ${unknown.join(', ')}`);
   const treeId = String(row['type']);
-  const allowed = list(row['AllowedRulesets']);
+  const allowed = list(row['AllowedRulesets']).filter((s) => !(s in futureRulesets));
   const strange = allowed.filter((s) => !seasons.includes(s));
   if (strange.length) throw new Error(`talent ${id}: AllowedRulesets names ${strange.join(', ')}, which the manifest does not`);
   if (allowed.length) nodeSeasons.set(id, allowed);
@@ -631,7 +638,7 @@ let genericRunes = 0;
   const G = gemBy[PRIMARY_SEASON]!;
   for (const s of seasons) check(same(Object.keys(gemBy[s]!).sort(), Object.keys(G).sort()), `${s} gem table has the same rows as ${PRIMARY_SEASON}`);
   const rulesetsOf = (row: Row): string[] | undefined => {
-    const r = list(row['AllowedRulesets']);
+    const r = list(row['AllowedRulesets']).filter((s) => !(s in futureRulesets));
     return r.length ? r : undefined;
   };
   /*

@@ -48,9 +48,14 @@ const lifeSoulsByRuleset = fs.existsSync(lifeSoulsPath)
   : {};
 if (!fs.existsSync(lifeSoulsPath)) warn('missing cache/raw/ak_life_souls.rulesets.json; run 02-extract-raw first');
 
+/** Rulesets the pak ships but the site does not model as seasons yet; see the config note. */
+const futureRulesets = cfg.rulesets.futureRulesets ?? {};
+const isFutureRuleset = (ruleset: string): boolean => ruleset in futureRulesets;
+
 /** Item id -> the seasons whose life-soul table lists it. */
 const soulSeasons = new Map<string, number[]>();
 for (const [ruleset, rows] of Object.entries(lifeSoulsByRuleset)) {
+  if (isFutureRuleset(ruleset)) continue;
   const season = cfg.rulesets.seasonKeys[ruleset];
   check(season !== undefined, `ruleset "${ruleset}" has a season number in the config`);
   if (season === undefined) continue;
@@ -67,13 +72,16 @@ for (const [ruleset, rows] of Object.entries(lifeSoulsByRuleset)) {
  * Absent is not a restriction — most of the catalogue says nothing and exists
  * in every season. A ruleset the config does not name is a fail rather than a
  * guess: silently dropping it would turn a season-locked item into one the
- * editor offers everywhere.
+ * editor offers everywhere. The exception is `futureRulesets`, which are known
+ * and deliberately skipped — a row listing only one is unrestricted in the
+ * seasons the site describes.
  */
 function seasonsOf(id: string, value: unknown): number[] | undefined {
   const rulesets = asArray(value).flatMap((v) => v.split(/[\s,]+/)).filter(Boolean);
   if (rulesets.length === 0) return undefined;
   const seasons: number[] = [];
   for (const ruleset of rulesets) {
+    if (isFutureRuleset(ruleset)) continue;
     const season = cfg.rulesets.seasonKeys[ruleset];
     if (season === undefined) {
       check(false, `${id}: AllowedRulesets "${ruleset}" has a season number in the config`);
