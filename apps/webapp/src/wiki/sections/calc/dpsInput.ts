@@ -16,6 +16,9 @@ export function buildDpsInput(
     potionKinds?: number;
     harmonizerDefensive?: boolean;
     crownBuffs?: number;
+    castsPerSecond?: number;
+    selfDebuffs?: number;
+    buffsOver9?: number;
   } = {},
 ): DpsBuild {
   const rows = new Map<string, RowDef>();
@@ -124,6 +127,7 @@ export function buildDpsInput(
     },
     seasonDamagePct: (panel('season_contribution') + panel('season_world')) * 2,
     totalAttributes: panel('bonus_strength') + panel('bonus_agility') + panel('bonus_intelligence'),
+    totalStrength: panel('bonus_strength'),
     maxHealth,
     totalAgility: panel('bonus_agility'),
     agilityPct: extra('all_agility_pct') + extra('all_all_stats_pct'),
@@ -166,6 +170,9 @@ export function buildDpsInput(
     potionKinds: options.potionKinds,
     harmonizerDefensive: options.harmonizerDefensive,
     crownBuffs: options.crownBuffs,
+    castsPerSecond: Math.max(0, options.castsPerSecond ?? 0),
+    selfDebuffs: Math.max(0, Math.floor(options.selfDebuffs ?? 0)),
+    buffsOver9: Math.max(0, Math.floor(options.buffsOver9 ?? 0)),
     items,
   };
 }

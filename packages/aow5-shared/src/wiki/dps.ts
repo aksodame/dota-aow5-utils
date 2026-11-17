@@ -99,12 +99,18 @@ export interface DpsBuild {
   seasonDamagePct: number;
   /** `str + agi + int`, the cap for the bag's burn tick and the poison source value. */
   totalAttributes: number;
+  /** `bonus_strength`; 0468's storm hit is 300 % of it. */
+  totalStrength: number;
   maxHealth: number;
   totalAgility: number;
   /** `all_agility_pct + all_all_stats_pct`; 0360's dynamic grant passes through it. */
   agilityPct: number;
   totalIntelligence: number;
   baseMoveSpeed: number;
+  /** Average movement speed after timed actives; 0523 procs per distance. */
+  averageMoveSpeed?: number;
+  /** 0468's active uptime, 0 when the box is not ticked. */
+  thunderDuty?: number;
   primaryAttr: 'str' | 'agi' | 'int' | 'uni';
   attackDamagePerAgi: number;
   attackDamagePerStr: number;
@@ -140,6 +146,12 @@ export interface DpsBuild {
   harmonizerDefensive?: boolean;
   /** 0611: visible non-debuff buffs with more than three stacks, potions excluded. */
   crownBuffs?: number;
+  /** Real non-item ability casts per second; cast-triggered items read it. */
+  castsPerSecond?: number;
+  /** 0570: negative effects on the wearer. */
+  selfDebuffs?: number;
+  /** 0604 / 0631: positive effects with more than nine stacks. */
+  buffsOver9?: number;
   items: DpsItemStats[];
 }
 
@@ -200,7 +212,17 @@ export type DpsSourceId =
   | 'hellGaze'
   | 'stormBracelet'
   | 'archmageBook'
-  | 'lavaPlate';
+  | 'lavaPlate'
+  // Backlog batch (v1.525): level-5 thunder/afterimage and level-9 multipliers.
+  | 'hawkCrossbow'
+  | 'thunderstorm'
+  | 'thunderBacklash'
+  | 'afterimage'
+  // Cast-driven batch (v1.525)
+  | 'wandLightning'
+  | 'eyeStorm'
+  | 'chargeBlade'
+  | 'archmageBurst';
 
 export interface DpsSource {
   id: DpsSourceId;
@@ -583,6 +605,32 @@ interface Constants {
   poisonCanCrit: boolean;
   /** 0680: extra outgoing damage against burning targets. */
   burnAmpPct: number;
+  /** 0341 Black Hawk Crossbow: a cooldown volley of all-stat magic DOT hits. */
+  hawkCrossbow: { hits: number; statsPct: number; cooldown: number } | undefined;
+  /** 0468 Thunder Wrath: each base attack during the active hits for strength. */
+  thunderstorm: { statsPct: number; duty: number } | undefined;
+  /** 0472 Thunder Knot: a chance-based magic hit on a 1 s cooldown, muted by 0468. */
+  thunderBacklash: { chance: number; pct: number; cooldown: number } | undefined;
+  /** 0523 / 0764 Swift Shadow Gloves: a magic hit every N units moved. */
+  afterimage: { pct: number; distance: number; threshold: number; step: number; ampPerStep: number; movespeed: number } | undefined;
+  /** 0568 Poison Merge: +N % DOT damage per DOT type on the target. */
+  dotAmpPerTypePct: number;
+  /** 0607 Seal of Curse: assumed full stack spell-damage amplification. */
+  sealAmpPct: number;
+  /** Real non-item casts per second from the DPS form. */
+  castsPerSecond: number;
+  /** 0345 Lightning Rod: a chance on cast for three decaying intelligence hits. */
+  wandLightning: { chance: number; count: number; intPct: number; decayPct: number } | undefined;
+  /** 0470 Eye of the Storm: the guaranteed, stronger cast lightning. */
+  eyeStorm: { count: number; intPct: number; decayPct: number } | undefined;
+  /** 0503 Charge Blade: one charge per cast, spent on the next attack. */
+  chargeBlade: { pct: number; maxCharges: number; vulnDuration: number } | undefined;
+  /** 0337 / 0855 Archmage Mask: stacking spell amp and the capped burst. */
+  archmageMask: { perStack: number; maxStacks: number; burstPct: number; duration: number; avgStacks: number; burstRate: number } | undefined;
+  /** 0670 Dragon Fang: final-damage stacks from casts. */
+  dragonFang: { bonusPct: number } | undefined;
+  /** 0602 Ring of Tides: average Surge spell-amp stacks. */
+  tidesRing: { perStack: number; avgStacks: number } | undefined;
 }
 
 function constants(build: DpsBuild): Constants {
@@ -592,6 +640,49 @@ function constants(build: DpsBuild): Constants {
     MAX_ATTACK_SPEED,
   );
   const bat = build.baseAttackTime > 0 ? build.baseAttackTime : 1.7;
+  // Level-9 natives whose effect depends on the wearer's own state. They are
+  // panel multipliers, so they are folded into the build before any damage is
+  // computed. 0548 Diamond Armor is defensive and does not belong here.
+  const selfDebuffs = Math.max(0, Math.floor(build.selfDebuffs ?? 0));
+  const crownOfCurses = findItem(build, ['item_0570', 'item_0735']);
+  if (
+    crownOfCurses !== undefined &&
+    selfDebuffs >= Math.max(0, value(crownOfCurses, 'ability_value_c_debuff_threshold'))
+  ) {
+    build.omniCritChancePct += Math.max(0, value(crownOfCurses, 'ability_value_omni_crit_pct'));
+  }
+  const buffsOver9 = Math.max(0, Math.floor(build.buffsOver9 ?? 0));
+  const overheat = findItem(build, ['item_0604', 'item_0739']) ?? findItem(build, ['item_0631', 'item_0741']);
+  if (overheat !== undefined && buffsOver9 > 0) {
+    build.spellAmplifyPct +=
+      buffsOver9 *
+      Math.max(
+        0,
+        value(overheat, 'ability_value_spell_amp_per_stack') ||
+          value(overheat, 'ability_spell_amp_per_stack'),
+      );
+  }
+  const curseCrown = findItem(build, ['item_0576', 'item_0872']);
+  if (curseCrown !== undefined && selfDebuffs > 0) {
+    build.outgoingMultiplier *=
+      1 +
+      (selfDebuffs * Math.max(0, value(curseCrown, 'ability_value_bonus_pct_per_debuff'))) / 100;
+  }
+  // 0577 Tome of Soul Rot: with 0576's set bonus each curse stack gives spell
+  // amp. Its proc is 10 % per own DOT tick; two ticks a second is a
+  // conservative long-run estimate (poison alone ticks four times a second).
+  const soulRot = findItem(build, ['item_0577', 'item_0738']);
+  const soulRotSet = findItem(build, ['item_0576', 'item_0872']);
+  if (soulRot !== undefined && soulRotSet !== undefined) {
+    const avgStacks = Math.min(
+      Math.max(1, Math.floor(value(soulRot, 'ability_curse_max_stacks') || 1)),
+      (Math.max(0, value(soulRot, 'ability_curse_chance_pct')) / 100) *
+        Math.max(0.1, value(soulRot, 'ability_curse_duration') || 8) *
+        2,
+    );
+    build.spellAmplifyPct +=
+      avgStacks * Math.max(0, value(soulRot, 'ability_spell_amp_per_stack'));
+  }
   const mkb = findItem(build, MKB);
   // 0196 and 0363 hang the same generic vulnerability as 0217 from an attack.
   // 0196's passive has a 1 s item cooldown; 0363 has none.
@@ -1108,6 +1199,134 @@ function constants(build: DpsBuild): Constants {
   const burnAmpItem = findItem(build, ['item_0680']);
   const burnAmpPct = Math.max(0, value(burnAmpItem, 'ability_damage_amp_pct'));
 
+  // Backlog batch: level-5 thunder/afterimage and level-9 multipliers.
+  const hawkItem = findItem(build, ['item_0341', 'item_0850']);
+  const hawkCrossbow = hawkItem
+    ? {
+        hits: Math.max(1, Math.floor(value(hawkItem, 'ability_value_hit_count') || 1)),
+        statsPct: Math.max(0, value(hawkItem, 'ability_value_all_stats_damage_pct')),
+        cooldown: effCd(hawkItem, 0.6),
+      }
+    : undefined;
+  const thunderItem = findItem(build, ['item_0468', 'item_0842']);
+  const thunderstorm = thunderItem
+    ? {
+        statsPct: Math.max(0, value(thunderItem, 'ability_value_strength_damage_pct')),
+        duty: clamp(build.thunderDuty ?? 0, 0, 1),
+      }
+    : undefined;
+  const backlashItem = findItem(build, ['item_0472']);
+  const thunderBacklash = backlashItem
+    ? {
+        chance: clamp(Math.max(0, value(backlashItem, 'ability_trigger_chance_pct')), 0, 100) / 100,
+        pct: Math.max(0, value(backlashItem, 'ability_attack_damage_pct')),
+        cooldown: 1,
+      }
+    : undefined;
+  const afterimageItem = findItem(build, ['item_0523', 'item_0764']);
+  const afterimageMovespeed = Math.max(0, build.averageMoveSpeed ?? build.baseMoveSpeed);
+  const afterimage = afterimageItem &&
+    afterimageMovespeed > 0 &&
+    value(afterimageItem, 'ability_value_agility_damage_pct') > 0
+    ? {
+        pct: Math.max(0, value(afterimageItem, 'ability_value_agility_damage_pct')),
+        distance: Math.max(
+          1,
+          value(afterimageItem, 'ability_value_c_distance_per_stack') ||
+            value(afterimageItem, 'ability_distance_per_stack') ||
+            800,
+        ),
+        threshold: Math.max(0, value(afterimageItem, 'ability_movespeed_threshold') || 300),
+        step: Math.max(1, value(afterimageItem, 'ability_bonus_movespeed_per_damage_pct') || 3),
+        ampPerStep: Math.max(0, value(afterimageItem, 'ability_damage_amp_per_step_pct')),
+        movespeed: afterimageMovespeed,
+      }
+    : undefined;
+  const dotAmpItem = findItem(build, ['item_0568', 'item_0734']);
+  const dotAmpPerTypePct = Math.max(0, value(dotAmpItem, 'ability_value_dot_amp_per_dot_type'));
+  const sealItem = findItem(build, ['item_0607', 'item_0740']);
+  const sealAmpPct = sealItem
+    ? Math.max(
+        0,
+        Math.floor(value(sealItem, 'ability_value_max_stacks')) *
+          Math.max(0, value(sealItem, 'ability_amp_per_stack')),
+      )
+    : 0;
+  // Cast-driven items. `castsPerSecond` is the player's input; a zero switches
+  // all of them off rather than silently assuming a cadence.
+  const castsPerSecond = Math.max(0, build.castsPerSecond ?? 0);
+  const wandItem = findItem(build, ['item_0345']);
+  const wandLightning = wandItem
+    ? {
+        chance: clamp(Math.max(0, value(wandItem, 'ability_trigger_chance_pct')), 0, 100) / 100,
+        count: Math.max(1, Math.floor(value(wandItem, 'ability_lightning_count') || 1)),
+        intPct: Math.max(0, value(wandItem, 'ability_int_damage_pct')),
+        decayPct: clamp(Math.max(0, value(wandItem, 'ability_same_target_decay_pct')), 0, 100),
+      }
+    : undefined;
+  const eyeItem = findItem(build, ['item_0470']);
+  const eyeStorm = eyeItem
+    ? {
+        count: Math.max(1, Math.floor(value(eyeItem, 'ability_lightning_count') || 1)),
+        intPct: Math.max(0, value(eyeItem, 'ability_value_int_damage_pct')),
+        decayPct: clamp(
+          Math.max(0, value(eyeItem, 'ability_value_c_same_target_decay_pct')),
+          0,
+          100,
+        ),
+      }
+    : undefined;
+  const chargeItem = findItem(build, ['item_0503', 'item_0848']);
+  const chargeBlade = chargeItem
+    ? {
+        pct: Math.max(0, value(chargeItem, 'ability_value_empower_pct')),
+        maxCharges: Math.max(1, Math.floor(value(chargeItem, 'ability_value_max_charges') || 1)),
+        vulnDuration: Math.max(0, value(chargeItem, 'ability_vulnerable_duration')),
+      }
+    : undefined;
+  const maskItem = findItem(build, ['item_0337', 'item_0855']);
+  const maskMax = maskItem ? Math.max(1, Math.floor(value(maskItem, 'ability_max_stacks') || 1)) : 1;
+  const maskDuration = maskItem ? Math.max(0.1, value(maskItem, 'ability_duration') || 8) : 0;
+  const maskEnough = maskItem !== undefined && castsPerSecond * maskDuration >= maskMax;
+  const archmageMask = maskItem
+    ? {
+        perStack: Math.max(0, value(maskItem, 'ability_value_spell_amplify_pct_per_stack')),
+        maxStacks: maskMax,
+        burstPct: Math.max(0, value(maskItem, 'ability_value_burst_int_damage_pct')),
+        duration: maskDuration,
+        // Steady state: cycles 1..N−1; a low cast rate never reaches the cap.
+        avgStacks: maskEnough
+          ? (maskMax - 1) / 2
+          : Math.max(0, (castsPerSecond * maskDuration) / 2),
+        burstRate: castsPerSecond / maskMax,
+      }
+    : undefined;
+  const fangItem = findItem(build, ['item_0670', 'item_0899']);
+  const fangMax = Math.max(0, value(fangItem, 'ability_value_final_damage_max_pct'));
+  const fangPerCast =
+    Math.max(0, value(fangItem, 'ability_final_damage_pct_per_cast')) +
+    (Math.max(0, value(fangItem, 'ability_bonus_chance_pct')) / 100) *
+      Math.max(0, value(fangItem, 'ability_bonus_final_damage_pct'));
+  const fangDuration = Math.max(0.1, value(fangItem, 'ability_duration') || 8);
+  const dragonFang = fangItem
+    ? { bonusPct: Math.min(fangMax, castsPerSecond * fangDuration * fangPerCast) }
+    : undefined;
+  const tidesItem = findItem(build, ['item_0602', 'item_0736']);
+  const tidesRing = tidesItem
+    ? {
+        perStack: Math.max(0, value(tidesItem, 'ability_surge_spell_amp')),
+        avgStacks: Math.min(
+          Math.max(1, Math.floor(value(tidesItem, 'ability_value_max_stacks') || 1)),
+          castsPerSecond * Math.max(0.1, value(tidesItem, 'ability_decay_interval') || 2),
+        ),
+      }
+    : undefined;
+  // Stacking spell amp is folded into the build's own panel amplifier so every
+  // magical/pure hit sees it; the burst damage is a separate periodic source.
+  if (archmageMask !== undefined) build.spellAmplifyPct += archmageMask.avgStacks * archmageMask.perStack;
+  if (tidesRing !== undefined) build.spellAmplifyPct += tidesRing.avgStacks * tidesRing.perStack;
+  if (dragonFang !== undefined) build.outgoingMultiplier *= 1 + dragonFang.bonusPct / 100;
+
   return {
     aps: (1 + attackSpeed / 100) / bat,
     attackSpeed,
@@ -1251,6 +1470,19 @@ function constants(build: DpsBuild): Constants {
     lavaPlate,
     poisonCanCrit,
     burnAmpPct,
+    hawkCrossbow,
+    thunderstorm,
+    thunderBacklash,
+    afterimage,
+    dotAmpPerTypePct,
+    sealAmpPct,
+    castsPerSecond,
+    wandLightning,
+    eyeStorm,
+    chargeBlade,
+    archmageMask,
+    dragonFang,
+    tidesRing,
   };
 }
 
@@ -1428,6 +1660,10 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const potionFury = findItem(build, ['item_0663', 'item_0892']);
   const earthArmor = findItem(build, ['item_0664', 'item_0893']);
   const beastRing = findItem(build, ['item_0668', 'item_0897']);
+  const thunder = findItem(build, ['item_0468', 'item_0842']);
+  const critHaste = findItem(build, ['item_0445', 'item_0860']);
+  const thunderMinor = findItem(build, ['item_0469', 'item_0843']);
+  const thunderMajor = findItem(build, ['item_0473', 'item_0844']);
   const snakeShadowItem = findItem(build, ['item_0397', 'item_0809']);
   const selfPoisoned = findItem(build, ['item_0661', 'item_0890', 'item_0644', 'item_0822', 'item_0645']) !== undefined;
   const cdr = 1 - Math.min(80, Math.max(0, build.cooldownReductionPct)) / 100;
@@ -1455,6 +1691,7 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
   const potionDuty = duty(potionFury, 'ability_duration');
   const earthDuty = duty(earthArmor, 'ability_duration');
   const beastDuty = duty(beastRing, 'ability_duration');
+  const thunderDuty = duty(thunder, 'ability_storm_duration');
 
   // Percent movement buffs and penalties first, then the flat grants. The
   // exact order only matters a little, but it keeps 0152 + 0305 sensible.
@@ -1533,6 +1770,47 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
       )
     : 0;
   const bloodRiteAs = Math.max(0, value(bloodRite, 'ability_value_bonus_attack_speed')) * bloodRiteDuty;
+  // 0445 / 0469 / 0473: attack-speed stacks from crits and thunder energy. The
+  // engine solves their average uptime from the base attack rate once; the
+  // result feeds the same `attackSpeed` the rest of the simulation reads.
+  const bat = build.baseAttackTime > 0 ? build.baseAttackTime : 1.7;
+  const baseAps = (1 + clamp(Math.max(0, build.attackSpeed), 0, MAX_ATTACK_SPEED) / 100) / bat;
+  const critStacks = critHaste !== undefined
+    ? Math.min(
+        Math.max(1, Math.floor(value(critHaste, 'ability_value_max_stacks') || 1)),
+        baseAps *
+          (critChancePct(build.critChancePct, build.physicalCritChancePct, build.omniCritChancePct) / 100) *
+          Math.max(0.1, value(critHaste, 'ability_stack_decay_interval') || 3),
+      )
+    : 0;
+  const critHasteAs =
+    critStacks * Math.max(0, value(critHaste, 'ability_value_attack_speed_pct_per_stack'));
+  const minorStacks = thunderMinor !== undefined
+    ? Math.max(1, Math.floor(value(thunderMinor, 'ability_value_c_required_stacks') || 1))
+    : 1;
+  const minorAs = thunderMinor !== undefined
+    ? Math.max(0, value(thunderMinor, 'ability_value_attack_speed')) *
+      Math.min(
+        1,
+        (baseAps * Math.max(0, value(thunderMinor, 'ability_duration'))) /
+          Math.max(1, minorStacks),
+      )
+    : 0;
+  const majorStacks = thunderMajor !== undefined
+    ? Math.max(1, Math.floor(value(thunderMajor, 'ability_required_stacks') || 1))
+    : 1;
+  const majorAs = thunderMajor !== undefined
+    ? Math.max(0, value(thunderMajor, 'ability_bonus_attack_speed')) *
+      Math.min(
+        1,
+        (baseAps *
+          (Math.max(0, value(thunderMajor, 'ability_trigger_chance_pct')) / 100) *
+          Math.max(0, value(thunderMajor, 'ability_duration'))) /
+          Math.max(1, majorStacks),
+        Math.max(0, value(thunderMajor, 'ability_duration')) /
+          Math.max(0.1, value(thunderMajor, 'ability_internal_cd') || 6),
+      )
+    : 0;
   const legionShieldAmount = legionShield
     ? activeMaxHealth * Math.max(0, value(legionShield, 'ability_value_shield_amount')) / 100 * legionDuty
     : 0;
@@ -1588,9 +1866,22 @@ function activeBuild(build: DpsBuild, active: ReadonlySet<string> | undefined, d
       shatteredAd +
       hornStrength * build.attackDamagePerStr +
       earthAd,
-    attackSpeed: build.attackSpeed + agilityAsDelta + madnessAs + shadowAs + pendantAs + inertiaAs + bloodRiteAs,
+    attackSpeed:
+      build.attackSpeed +
+      agilityAsDelta +
+      madnessAs +
+      shadowAs +
+      pendantAs +
+      inertiaAs +
+      bloodRiteAs +
+      critHasteAs +
+      minorAs +
+      majorAs,
     totalAgility: agility,
     totalAttributes: build.totalAttributes + effectiveDynamicAgility + hornStrength,
+    totalStrength: build.totalStrength + hornStrength,
+    averageMoveSpeed: averageMovespeed,
+    thunderDuty,
     allAttackDamagePct: build.allAttackDamagePct + beastAdPct,
     spellAmplifyPct: build.spellAmplifyPct + voidSpellAmp,
     physicalDamageAddPct: build.physicalDamageAddPct + bannerPhysical,
@@ -1673,6 +1964,14 @@ function sourceRecord(): Record<DpsSourceId, number> {
     stormBracelet: 0,
     archmageBook: 0,
     lavaPlate: 0,
+    hawkCrossbow: 0,
+    thunderstorm: 0,
+    thunderBacklash: 0,
+    afterimage: 0,
+    wandLightning: 0,
+    eyeStorm: 0,
+    chargeBlade: 0,
+    archmageBurst: 0,
   };
 }
 
@@ -1733,6 +2032,14 @@ function hitRecord(): Record<DpsSourceId, number> {
     stormBracelet: 0,
     archmageBook: 0,
     lavaPlate: 0,
+    hawkCrossbow: 0,
+    thunderstorm: 0,
+    thunderBacklash: 0,
+    afterimage: 0,
+    wandLightning: 0,
+    eyeStorm: 0,
+    chargeBlade: 0,
+    archmageBurst: 0,
   };
 }
 
@@ -1775,6 +2082,9 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   /** 0397: poison applications accumulated toward the 50-stack burst. */
   let snakeProgress = 0;
   let loveReady = 0;
+  /** 0341 and 0472: their own item cooldowns gate the next proc. */
+  let hawkReady = 0;
+  let backlashReady = 0;
   /** 0206's own −5 armour debuff, expected by its proc chance. */
   let shatterArmor = 0;
   let shatterUntil = 0;
@@ -1847,6 +2157,12 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
   let stormAt = c.stormBracelet !== undefined ? stormInterval : Number.POSITIVE_INFINITY;
   let archmageAt = c.archmageBook !== undefined ? 0.25 : Number.POSITIVE_INFINITY;
   let lavaAt = c.lavaPlate?.interval ?? Number.POSITIVE_INFINITY;
+  // 0523: one afterimage every `distance` units; assume the wearer keeps moving.
+  let afterimageAt = c.afterimage !== undefined
+    ? c.afterimage.distance / c.afterimage.movespeed
+    : Number.POSITIVE_INFINITY;
+  // Cast-driven effects are added as one expected second of casts at a time.
+  let castAt = c.castsPerSecond > 0 ? 1 : Number.POSITIVE_INFINITY;
   let emberReady = 0;
   let flameReady = 0;
   let ashReady = 0;
@@ -1933,7 +2249,18 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     id === 'poison' ||
     id === 'ignite' ||
     id === 'witchBlade' ||
-    id === 'frostbite';
+    id === 'frostbite' ||
+    id === 'hawkCrossbow';
+
+  /** 0568: how many of the four generic DOT debuffs the target currently has. */
+  const dotTypeCount = (): number => {
+    let n = 0;
+    if (bleedPool > 0 || bleedLeft > 0) n += 1;
+    if (burnUntil > time) n += 1;
+    if (poisonStacks > 0) n += 1;
+    if (igniteStacks > 0) n += 1;
+    return n;
+  };
 
   const ctx = (burning: boolean, baseAttack = false): HitContext => ({
     baseAttack,
@@ -1949,6 +2276,17 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
 
   const add = (id: DpsSourceId, amount: number, count = 0): void => {
     if (!(amount > 0)) return;
+    // 0568 Poison Merge: each of the four generic DOTs on the target adds a
+    // share to every periodic hit. The hit that applies a new DOT already sees
+    // it, because applications land before their first tick.
+    if (c.dotAmpPerTypePct > 0 && isDotSource(id)) {
+      amount *= 1 + (dotTypeCount() * c.dotAmpPerTypePct) / 100;
+    }
+    // 0607 Seal of Curse: assume the mark is at its 13-stack cap. It amplifies
+    // ability damage; the base auto-attack is excluded.
+    if (c.sealAmpPct > 0 && id !== 'auto') {
+      amount *= 1 + c.sealAmpPct / 100;
+    }
     // 0567/0586's mark, 0581's Judgment and 0348's mark skip HP_LOSS damage
     // (bleed, burn, ignite). 0581's own verdict hit skips Judgment but still
     // takes the marks.
@@ -2311,6 +2649,76 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       }
     }
     soulBladeHit();
+    // 0341 Black Hawk Crossbow: on attack, if its 0.6 s cooldown is ready,
+    // three magic DOT hits of 60 % of all attributes each.
+    if (c.hawkCrossbow !== undefined && time + EPS >= hawkReady) {
+      const raw = b.totalAttributes * (c.hawkCrossbow.statsPct / 100) * c.hawkCrossbow.hits;
+      if (raw > 0) {
+        const hit = magicalDamage(b, enemy, c, raw, {
+          dot: true,
+          poisonSource: false,
+          corrosionStacks: poisonStacks,
+          vulnStacks,
+          burning: burnUntil > time,
+          markStacks,
+          doomStacks,
+          curseRibbonActive,
+        });
+        add('hawkCrossbow', hit, c.hawkCrossbow.hits);
+      }
+      hawkReady = time + c.hawkCrossbow.cooldown;
+    }
+    // 0468 Thunder Wrath: while its active runs, every base attack adds 300 %
+    // of strength as physical damage. `duty` is the active's window share.
+    if (c.thunderstorm !== undefined && c.thunderstorm.duty > 0) {
+      const raw = b.totalStrength * (c.thunderstorm.statsPct / 100) * c.thunderstorm.duty;
+      if (raw > 0) {
+        const hit = procDamage(raw);
+        add('thunderstorm', hit, c.thunderstorm.duty);
+      }
+    }
+    // 0472 Thunder Knot: a 10 % attack proc for 200 % attack damage as magic,
+    // on a 1 s item cooldown. It cannot trigger while 0468's storm is active.
+    if (c.thunderBacklash !== undefined && time + EPS >= backlashReady) {
+      const chance =
+        c.thunderBacklash.chance * (1 - (c.thunderstorm?.duty ?? 0));
+      const perAttack = c.aps > 0
+        ? Math.min(chance, 1 / (c.thunderBacklash.cooldown * c.aps))
+        : chance;
+      if (perAttack > 0) {
+        const raw = totalAttackDamage() * (c.thunderBacklash.pct / 100);
+        if (raw > 0) {
+          const hit = magicalDamage(b, enemy, c, raw, {
+            dot: false,
+            poisonSource: false,
+            corrosionStacks: poisonStacks,
+            vulnStacks,
+            burning: burnUntil > time,
+            markStacks,
+            doomStacks,
+            curseRibbonActive,
+          });
+          add('thunderBacklash', hit * perAttack, perAttack);
+        }
+        backlashReady = time + c.thunderBacklash.cooldown;
+      }
+    }
+    // 0503 Charge Blade: every real cast adds one charge (max 3), and every
+    // attack spends one. At steady state the attack rate caps the spend.
+    if (c.chargeBlade !== undefined && c.castsPerSecond > 0) {
+      const perAttack = c.aps > 0
+        ? Math.min(1, c.castsPerSecond / c.aps)
+        : 0;
+      if (perAttack > 0) {
+        const raw = totalAttackDamage() * (c.chargeBlade.pct / 100) * perAttack;
+        if (raw > 0) {
+          const hit = procDamage(raw);
+          add('chargeBlade', hit, perAttack);
+          physicalTriggers(hit, c.abilityCrit);
+        }
+        if (c.chargeBlade.vulnDuration > 0) addVulnerable(perAttack);
+      }
+    }
     // On-hit items check the target is still alive; a killing auto-attack does
     // not also get its talons strike or start a bleed.
     if (!dummy && hp <= 0) {
@@ -2830,6 +3238,86 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
     applyPoisonTick(true, 1);
   };
 
+  // 0523 / 0764: every N units moved, a magic hit scaled by agility and by the
+  // movement speed above the item's threshold. The DPS window assumes the
+  // wearer keeps moving; a stationary build would not proc it.
+  const onAfterimage = (): void => {
+    if (c.afterimage === undefined) return;
+    const steps = Math.floor(
+      Math.max(0, c.afterimage.movespeed - c.afterimage.threshold) / c.afterimage.step,
+    );
+    const raw =
+      b.totalAgility *
+      (c.afterimage.pct / 100) *
+      (1 + (steps * c.afterimage.ampPerStep) / 100);
+    if (raw > 0) {
+      const hit = magicalDamage(b, enemy, c, raw, {
+        dot: false,
+        poisonSource: false,
+        corrosionStacks: poisonStacks,
+        vulnStacks,
+        burning: burnUntil > time,
+        markStacks,
+        doomStacks,
+        curseRibbonActive,
+      });
+      add('afterimage', hit, 1);
+    }
+    afterimageAt += c.afterimage.distance / c.afterimage.movespeed;
+  };
+
+  // 0345 / 0470 / 0337: one second of the input cast rate. Each lightning hit
+  // suffers the script's same-target decay; the mask's burst fires every N
+  // casts and is spread over the window at `burstRate`.
+  const onCastTick = (): void => {
+    const intelligence = Math.max(0, b.totalIntelligence);
+    const decaySum = (count: number, decayPct: number): number => {
+      const decay = 1 - decayPct / 100;
+      if (decay >= 1) return count;
+      return (1 - Math.pow(decay, count)) / (1 - decay);
+    };
+    const lightningHit = (
+      raw: number,
+      source: 'wandLightning' | 'eyeStorm' | 'archmageBurst',
+      count: number,
+    ): void => {
+      if (!(raw > 0)) return;
+      const hit = magicalDamage(b, enemy, c, raw, {
+        dot: false,
+        poisonSource: false,
+        corrosionStacks: poisonStacks,
+        vulnStacks,
+        burning: burnUntil > time,
+        markStacks,
+        doomStacks,
+        curseRibbonActive,
+      });
+      add(source, hit, count);
+    };
+    if (c.wandLightning !== undefined && c.wandLightning.chance > 0) {
+      const perCast =
+        intelligence *
+        (c.wandLightning.intPct / 100) *
+        decaySum(c.wandLightning.count, c.wandLightning.decayPct);
+      const perSecond = perCast * c.castsPerSecond * c.wandLightning.chance;
+      lightningHit(perSecond, 'wandLightning', c.castsPerSecond * c.wandLightning.chance);
+    }
+    if (c.eyeStorm !== undefined) {
+      const perCast =
+        intelligence *
+        (c.eyeStorm.intPct / 100) *
+        decaySum(c.eyeStorm.count, c.eyeStorm.decayPct);
+      const perSecond = perCast * c.castsPerSecond;
+      lightningHit(perSecond, 'eyeStorm', c.castsPerSecond);
+    }
+    if (c.archmageMask !== undefined && c.archmageMask.burstRate > 0) {
+      const perSecond =
+        c.archmageMask.burstRate * intelligence * (c.archmageMask.burstPct / 100);
+      lightningHit(perSecond, 'archmageBurst', c.archmageMask.burstRate);
+    }
+    castAt += 1;
+  };
+
   while (time + EPS < duration) {
     const next = Math.min(
       attackAt,
@@ -2853,6 +3341,8 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
       stormAt,
       archmageAt,
       lavaAt,
+      afterimageAt,
+      castAt,
     );
     if (!Number.isFinite(next) || next > duration + EPS) break;
     const step = Math.max(0, next - time);
@@ -2863,6 +3353,8 @@ export function simulateDps(build: DpsBuild, enemy: DpsEnemy, options: DpsOption
 
     // The order matches one tick of the game loop: the hit, then the DOTs.
     if (Math.abs(time - attackAt) <= EPS) onAttack();
+    if (c.afterimage !== undefined && Math.abs(time - afterimageAt) <= EPS) onAfterimage();
+    if (Math.abs(time - castAt) <= EPS) onCastTick();
     if (bleedAt !== null && Math.abs(time - bleedAt) <= EPS) onBleedTick();
     if (burnAt !== null && Math.abs(time - burnAt) <= EPS) onBurnTick();
     if (doomAt !== null && Math.abs(time - doomAt) <= EPS) {

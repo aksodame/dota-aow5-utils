@@ -358,6 +358,17 @@ export function ItemStatsEditor({
 /** The copy-wide controls: the divine forge, the enhancement's size, the reforge level. */
 function Bar({ tables, state, set }: { tables: RollTables; state: RollState; set: (patch: Partial<RollState>) => void }) {
   const t = useWikiStrings(CALC).stats;
+  // The three grades the game colours for an enhancement. 29 is deliberately
+  // shown as the gold choice, even though the raw band function would paint
+  // every value above 25 red.
+  const enhanceChoices = [
+    { pct: 20, tone: 'purple' as RollTone },
+    { pct: 29, tone: 'gold' as RollTone },
+    { pct: 38, tone: 'red' as RollTone },
+  ];
+  const enhanceLabelTone =
+    enhanceChoices.find((choice) => choice.pct === state.enhancePct)?.tone ??
+    enhanceTone(state.enhancePct);
   return (
     <div className={styles.bar}>
       <Toggle
@@ -368,17 +379,23 @@ function Bar({ tables, state, set }: { tables: RollTables; state: RollState; set
       >
         {t.divine}
       </Toggle>
-      <label className={styles.barField} title={t.enhanceTitle}>
-        <span className={cx(styles.barLabel, styles[`tone_${enhanceTone(state.enhancePct)}`])}>{t.enhance(state.enhancePct)}</span>
-        <input
-          type="range"
-          className={styles.slider}
-          min={tables.enhancedBonusPct[0]}
-          max={tables.enhancedBonusPct[1]}
-          value={state.enhancePct}
-          onChange={(event) => set({ enhancePct: Number(event.target.value) })}
-        />
-      </label>
+      <div className={styles.barField} title={t.enhanceTitle}>
+        <span className={cx(styles.barLabel, styles[`tone_${enhanceLabelTone}`])}>{t.enhance(state.enhancePct)}</span>
+        <div className={styles.choiceRow}>
+          {enhanceChoices.map((choice) => (
+            <Toggle
+              key={choice.pct}
+              on={state.enhancePct === choice.pct}
+              tone={choice.tone}
+              alwaysTone
+              title={t.enhance(choice.pct)}
+              onClick={() => set({ enhancePct: choice.pct })}
+            >
+              {choice.pct}%
+            </Toggle>
+          ))}
+        </div>
+      </div>
       <label className={styles.barField} title={t.refineTitle}>
         <span className={styles.barLabel}>{t.refine(state.refine)}</span>
         <input
@@ -401,6 +418,7 @@ function Toggle({
   title,
   tone,
   big = false,
+  alwaysTone = false,
   children,
 }: {
   on: boolean;
@@ -408,12 +426,19 @@ function Toggle({
   title: string;
   tone?: RollTone;
   big?: boolean;
+  /** Paint the grade even when the toggle is off (the enhancement choices). */
+  alwaysTone?: boolean;
   children: ReactNode;
 }) {
   return (
     <button
       type="button"
-      className={cx(styles.toggle, big && styles.toggleBig, on && styles.toggleOn, on && tone !== undefined && styles[`tone_${tone}`])}
+      className={cx(
+        styles.toggle,
+        big && styles.toggleBig,
+        on && styles.toggleOn,
+        tone !== undefined && (alwaysTone || on) && styles[`tone_${tone}`],
+      )}
       aria-pressed={on}
       title={title}
       onClick={onClick}

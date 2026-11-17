@@ -45,6 +45,10 @@
       "s1": 1,
       "s2": 2,
       "s3": 3
+    },
+    "_futureRulesets": "Rulesets the pak ships and the client names, but which are not a season the site models yet: v1.523 added s4 (maps s4/s4-1, the client labels s4-1 'S4 Development') as a copy of S3 with a few Dragon Knight rune values changed. v1.525 shipped maps/s4-1.vpk (a clone of s3-1), but the map is still absent from addoninfo and the launcher's supported_maps, so no season can be started on it. They are skipped for AllowedRulesets/seasons instead of failing step 04, and kept out of the wiki's by-season diffs. Remove an entry here the day the season ships and gets a season number in seasonKeys.",
+    "futureRulesets": {
+      "s4": "Season 4 development ruleset — tables copied from s3, map s4-1 shipped in v1.525 but not registered"
     }
   },
   "abilityLocaleCsv": "resource/localization_overrides/professional.csv",
@@ -174,14 +178,14 @@
     "unresolvedAbilityTokensNote": "The addon's own English and Russian text for drow_008 references %attack_speed_threshold%, a value the ability never defines — its AbilityValues carry only attack_speed_per_bonus, base_interval, frequency_bonus_pct and search_radius. The Chinese baseline does not reference it at all, so this is a translation written against a stat that was removed or renamed. Nothing the pipeline can substitute; listed so verify fails on a NEW unresolved token. void_spirit_006 (Sigil Slash, pak 3011606331) is the same bug in all three languages: its text references %swing_intelligence_damage_pct% for the three opening slashes, and its AbilityValues define only seal_intelligence_damage_pct, knockback_distance, knockback_duration and vulnerable_duration."
   },
   "expected": {
-    "vpkBytes": 1066520062,
-    "treeSize": 911418,
-    "entryCount": 21779,
+    "vpkBytes": 1065472188,
+    "treeSize": 683734,
+    "entryCount": 16247,
     "archiveIndex": 32767,
-    "itemsPayloadOffset": 892198511,
-    "itemsPayloadLength": 1724715,
+    "itemsPayloadOffset": 898471825,
+    "itemsPayloadLength": 1726453,
     "flash3ItemPngCount": 2244,
-    "panoramaItemVtexCount": 898,
+    "panoramaItemVtexCount": 896,
     "itemCount": 2257,
     "inGameCount": 2160,
     "playableCount": 2120,

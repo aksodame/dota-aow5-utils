@@ -147,7 +147,9 @@ const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.str
 // --- the ruleset manifest ---------------------------------------------------
 
 const manifest = readRulesetManifest(vpk.readPath(`${DATA}/rulesets/manifest.vjs_c`), 'rulesets/manifest.vjs_c');
-const manifestIds = manifest.seasons.map((s) => s.id);
+/** Rulesets the pak ships but the wiki does not describe yet (see the config note). */
+const futureRulesets = cfg.rulesets.futureRulesets ?? {};
+const manifestIds = manifest.seasons.map((s) => s.id).filter((id) => !(id in futureRulesets));
 check(
   same([...manifestIds].sort(), RULESETS),
   `ruleset manifest names exactly ${RULESETS.join(', ')} (got ${manifestIds.join(', ')})`,

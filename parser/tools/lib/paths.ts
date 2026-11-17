@@ -71,6 +71,8 @@ export interface Aow5Config {
     tables: string[];
     /** Ruleset id -> the season number `seasons.ts` uses. */
     seasonKeys: Record<string, number>;
+    /** Rulesets the pak ships that are not a season yet; see the config note. */
+    futureRulesets?: Record<string, string>;
     [key: string]: unknown;
   };
   /** Master translation table; the sole source of hero ability text. */

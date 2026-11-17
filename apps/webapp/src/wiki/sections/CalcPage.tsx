@@ -141,6 +141,9 @@ export default function CalcPage({ path }: SectionProps) {
             potionKinds: state.dps.potionKinds,
             harmonizerDefensive: state.dps.harmonizerDefensive,
             crownBuffs,
+            castsPerSecond: state.dps.castsPerSecond,
+            selfDebuffs: state.dps.selfDebuffs,
+            buffsOver9: state.dps.buffsOver9,
           }),
     [
       input,
@@ -151,6 +154,9 @@ export default function CalcPage({ path }: SectionProps) {
       state.dps.potionKinds,
       state.dps.harmonizerDefensive,
       crownBuffs,
+      state.dps.castsPerSecond,
+      state.dps.selfDebuffs,
+      state.dps.buffsOver9,
     ],
   );
 

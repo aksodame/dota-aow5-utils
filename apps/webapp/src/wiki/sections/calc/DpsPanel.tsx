@@ -152,6 +152,62 @@ export function DpsPanel({
             />
           </label>
           <p className={styles.hint}>{t.enemy.durationHint}</p>
+          <label className={styles.field}>
+            <span>{t.enemy.castsPerSecond}</span>
+            <input
+              className={styles.input}
+              type="number"
+              min={0}
+              max={20}
+              step={0.1}
+              value={String(state.dps.castsPerSecond ?? 0)}
+              onChange={(event) => {
+                const parsed = Number(event.target.value);
+                const castsPerSecond = Number.isFinite(parsed)
+                  ? Math.min(20, Math.max(0, parsed))
+                  : 0;
+                update((s) => ({ ...s, dps: { ...s.dps, castsPerSecond } }));
+              }}
+            />
+          </label>
+          <p className={styles.hint}>{t.enemy.castsPerSecondHint}</p>
+          <label className={styles.field}>
+            <span>{t.enemy.selfDebuffs}</span>
+            <input
+              className={styles.input}
+              type="number"
+              min={0}
+              max={20}
+              step={1}
+              value={String(state.dps.selfDebuffs ?? 0)}
+              onChange={(event) => {
+                const parsed = Number(event.target.value);
+                const selfDebuffs = Number.isFinite(parsed)
+                  ? Math.min(20, Math.max(0, Math.floor(parsed)))
+                  : 0;
+                update((s) => ({ ...s, dps: { ...s.dps, selfDebuffs } }));
+              }}
+            />
+          </label>
+          <label className={styles.field}>
+            <span>{t.enemy.buffsOver9}</span>
+            <input
+              className={styles.input}
+              type="number"
+              min={0}
+              max={20}
+              step={1}
+              value={String(state.dps.buffsOver9 ?? 0)}
+              onChange={(event) => {
+                const parsed = Number(event.target.value);
+                const buffsOver9 = Number.isFinite(parsed)
+                  ? Math.min(20, Math.max(0, Math.floor(parsed)))
+                  : 0;
+                update((s) => ({ ...s, dps: { ...s.dps, buffsOver9 } }));
+              }}
+            />
+          </label>
+          <p className={styles.hint}>{t.enemy.selfStatusHint}</p>
 
           {activeItems.length > 0 && (
             <div className={styles.activeBox}>
