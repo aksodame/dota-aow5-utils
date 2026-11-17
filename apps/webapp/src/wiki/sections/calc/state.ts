@@ -48,6 +48,12 @@ export interface DpsState {
   harmonizerDefensive?: boolean;
   /** 0663: distinct potion-effect kinds on the wearer. */
   potionKinds?: number;
+  /** Real non-item ability casts per second; cast-triggered items read it. */
+  castsPerSecond?: number;
+  /** 0570: negative effects on the wearer. */
+  selfDebuffs?: number;
+  /** 0604 / 0631: positive effects with more than nine stacks. */
+  buffsOver9?: number;
 }
 
 export const DPS_DURATION_DEFAULT = 60;
@@ -155,6 +161,15 @@ export function hydrate(raw: unknown): CalcState {
   if (typeof dps?.harmonizerDefensive === 'boolean') s.dps.harmonizerDefensive = dps.harmonizerDefensive;
   if (typeof dps?.potionKinds === 'number' && Number.isFinite(dps.potionKinds)) {
     s.dps.potionKinds = Math.min(20, Math.max(0, Math.floor(dps.potionKinds)));
+  }
+  if (typeof dps?.castsPerSecond === 'number' && Number.isFinite(dps.castsPerSecond)) {
+    s.dps.castsPerSecond = Math.min(20, Math.max(0, dps.castsPerSecond));
+  }
+  if (typeof dps?.selfDebuffs === 'number' && Number.isFinite(dps.selfDebuffs)) {
+    s.dps.selfDebuffs = Math.min(20, Math.max(0, Math.floor(dps.selfDebuffs)));
+  }
+  if (typeof dps?.buffsOver9 === 'number' && Number.isFinite(dps.buffsOver9)) {
+    s.dps.buffsOver9 = Math.min(20, Math.max(0, Math.floor(dps.buffsOver9)));
   }
   return s;
 }

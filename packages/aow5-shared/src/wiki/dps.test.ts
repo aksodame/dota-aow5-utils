@@ -44,6 +44,7 @@ const build = (over: Partial<DpsBuild> = {}): DpsBuild => ({
   extraDamagePct: { normal: 0, elite: 0, miniboss: 0, boss: 0 },
   seasonDamagePct: 0,
   totalAttributes: 0,
+  totalStrength: 0,
   maxHealth: 0,
   totalAgility: 0,
   agilityPct: 0,
@@ -1012,11 +1013,11 @@ test('0255 active shield feeds 0331', () => {
 });
 
 test('the mechanics registry counts and resolves both sides of every pair', () => {
-  assert.equal(DPS_FAMILY_COUNT, 110);
-  assert.equal(DPS_ITEM_COUNT, 170);
+  assert.equal(DPS_FAMILY_COUNT, 125);
+  assert.equal(DPS_ITEM_COUNT, 197);
   assert.equal(PANEL_FAMILY_COUNT, 45);
   assert.equal(PANEL_ITEM_COUNT, 78);
-  assert.equal(MODELED_ITEM_COUNT, 248);
+  assert.equal(MODELED_ITEM_COUNT, 275);
   assert.equal(mechanicFamilyOf('item_0209')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0831')?.base, 'item_0209');
   assert.equal(mechanicFamilyOf('item_0836')?.base, 'item_0402');
@@ -1897,4 +1898,213 @@ test('0663 potion resonance counts potion kinds and doubles during its active', 
   );
   // Two kinds × 5 %, doubled on the 10/60 active duty: 11.67 % final damage.
   near(source(twoKinds, 'auto'), source(noPotions, 'auto') * (1 + (10 * (1 + 1 / 6)) / 100));
+});
+
+test('0341 Black Hawk Crossbow volleys three all-stat hits on its cooldown', () => {
+  const crossbow = item('item_0341', {
+    ability_value_hit_count: 3,
+    ability_value_all_stats_damage_pct: 60,
+  }, 0.6);
+  const r = simulateDps(
+    build({ totalAttributes: 1000, attackSpeed: 100, items: [crossbow] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // 2 attacks/s but the 0.6 s cooldown admits every other attack: 10 volleys × 3 × 600.
+  near(source(r, 'hawkCrossbow'), 18_000);
+});
+
+test('0468 Thunder Wrath adds strength damage per attack while its active runs', () => {
+  const storm = item('item_0468', {
+    ability_value_strength_damage_pct: 300,
+    ability_storm_duration: 8,
+  }, 25);
+  const r = simulateDps(
+    build({ totalStrength: 1000, attackSpeed: 100, items: [storm] }),
+    enemy(),
+    { duration: 10, mode: 'dummy', active: new Set(['item_0468']) },
+  );
+  // 20 attacks at 2 attacks/s; the 8 s active covers the 10 s window (duty 0.8).
+  near(source(r, 'thunderstorm'), 20 * 3000 * 0.8);
+});
+
+test('0472 Thunder Knot procs 10 % of attacks for 200 % attack damage as magic', () => {
+  const amulet = item('item_0472', {
+    ability_trigger_chance_pct: 10,
+    ability_attack_damage_pct: 200,
+  }, 1);
+  const r = simulateDps(
+    build({ attackDamage: 1000, attackSpeed: 100, items: [amulet] }),
+    enemy(),
+    { duration: 60, mode: 'dummy' },
+  );
+  // 2 attacks/s, the 1 s cooldown admits 60 attempts; 10 % × 2000 magic.
+  near(source(r, 'thunderBacklash'), 12_000);
+});
+
+test('0523 Swift Shadow Gloves proc every 800 units at 400 movement speed', () => {
+  const gloves = item('item_0523', {
+    ability_value_agility_damage_pct: 1000,
+    ability_value_c_distance_per_stack: 800,
+    ability_movespeed_threshold: 300,
+    ability_bonus_movespeed_per_damage_pct: 3,
+    ability_damage_amp_per_step_pct: 2,
+  });
+  const r = simulateDps(
+    build({ totalAgility: 100, baseMoveSpeed: 400, items: [gloves] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // 400/800 = 0.5 procs/s; 100 × 1000 % × (1 + floor(100/3) × 2 %).
+  near(source(r, 'afterimage'), 5 * 1000 * (1 + 66 / 100));
+});
+
+test('0568 Poison Merge amplifies every DOT by 25 % per DOT type on the target', () => {
+  const bag = item('item_0659', { ability_burn_duration: 3, ability_trigger_interval: 1 });
+  const merge = item('item_0568', { ability_value_dot_amp_per_dot_type: 25 });
+  const plain = simulateDps(build({ attackSpeed: 100, items: [bag] }), enemy(), { duration: 10, mode: 'dummy' });
+  const withMerge = simulateDps(build({ attackSpeed: 100, items: [bag, merge] }), enemy(), { duration: 10, mode: 'dummy' });
+  near(source(withMerge, 'burn'), source(plain, 'burn') * 1.25);
+});
+
+test('0607 Seal of Curse assumes the 13-stack spell-damage cap', () => {
+  const amulet = item('item_0472', { ability_trigger_chance_pct: 100, ability_attack_damage_pct: 200 }, 1);
+  const seal = item('item_0607', { ability_amp_per_stack: 3, ability_value_max_stacks: 13 });
+  const plain = simulateDps(build({ attackDamage: 1000, attackSpeed: 100, items: [amulet] }), enemy(), { duration: 10, mode: 'dummy' });
+  const withSeal = simulateDps(build({ attackDamage: 1000, attackSpeed: 100, items: [amulet, seal] }), enemy(), { duration: 10, mode: 'dummy' });
+  near(source(withSeal, 'thunderBacklash'), source(plain, 'thunderBacklash') * 1.39);
+});
+
+test('0345 Lightning Rod fires three decaying intelligence hits per successful cast', () => {
+  const rod = item('item_0345', {
+    ability_trigger_chance_pct: 100,
+    ability_lightning_count: 3,
+    ability_int_damage_pct: 120,
+    ability_same_target_decay_pct: 50,
+  });
+  const r = simulateDps(
+    build({ totalIntelligence: 1000, castsPerSecond: 1, items: [rod] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // 1000 × 120 % × (1 + 0.5 + 0.25) per cast × 10 casts.
+  near(source(r, 'wandLightning'), 21_000);
+});
+
+test('0470 Eye of the Storm fires the stronger guaranteed cast lightning', () => {
+  const eye = item('item_0470', {
+    ability_lightning_count: 3,
+    ability_value_int_damage_pct: 150,
+    ability_value_c_same_target_decay_pct: 50,
+  });
+  const r = simulateDps(
+    build({ totalIntelligence: 1000, castsPerSecond: 1, items: [eye] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // 1000 × 150 % × 1.75 per cast × 10 casts.
+  near(source(r, 'eyeStorm'), 26_250);
+});
+
+test('0337 Archmage Mask averages its stacks and bursts every fifth cast', () => {
+  const mask = item('item_0337', {
+    ability_value_spell_amplify_pct_per_stack: 5,
+    ability_max_stacks: 5,
+    ability_value_burst_int_damage_pct: 300,
+    ability_duration: 8,
+  });
+  const r = simulateDps(
+    build({ totalIntelligence: 1000, castsPerSecond: 1, items: [mask] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // Avg 2 stacks = +10 % spell amp; 0.2 bursts/s × 3000 × 1.1 × 10 s.
+  near(source(r, 'archmageBurst'), 6600);
+});
+
+test('0503 Charge Blade spends one charge per attack at a matching cast rate', () => {
+  const blade = item('item_0503', {
+    ability_value_empower_pct: 230,
+    ability_value_max_charges: 3,
+  });
+  const r = simulateDps(
+    build({ attackDamage: 1000, attackSpeed: 100, castsPerSecond: 2, items: [blade] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // 20 attacks × 230 % × 1000 physical.
+  near(source(r, 'chargeBlade'), 46_000);
+});
+
+test('0602 Ring of Tides turns casts into four average Surge spell-amp stacks', () => {
+  const ring = item('item_0602', {
+    ability_surge_spell_amp: 4,
+    ability_value_max_stacks: 10,
+    ability_decay_interval: 2,
+  });
+  const amulet = item('item_0472', { ability_trigger_chance_pct: 100, ability_attack_damage_pct: 200 }, 1);
+  const plain = simulateDps(build({ attackDamage: 1000, attackSpeed: 100, items: [amulet] }), enemy(), { duration: 10, mode: 'dummy' });
+  const withRing = simulateDps(
+    build({ attackDamage: 1000, attackSpeed: 100, castsPerSecond: 2, items: [amulet, ring] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // 2 casts/s × 2 s decay = 4 stacks = +16 % spell amp.
+  near(source(withRing, 'thunderBacklash'), source(plain, 'thunderBacklash') * 1.16);
+});
+
+test('0670 Dragon Fang caps its final-damage stacks from the cast rate', () => {
+  const fang = item('item_0670', {
+    ability_final_damage_pct_per_cast: 10,
+    ability_bonus_chance_pct: 25,
+    ability_bonus_final_damage_pct: 10,
+    ability_duration: 8,
+    ability_value_final_damage_max_pct: 60,
+  });
+  const plain = simulateDps(build({ attackDamage: 1000, attackSpeed: 100 }), enemy(), { duration: 10, mode: 'dummy' });
+  const withFang = simulateDps(
+    build({ attackDamage: 1000, attackSpeed: 100, castsPerSecond: 1, items: [fang] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  near(source(withFang, 'auto'), source(plain, 'auto') * 1.6);
+});
+
+test('0570 Crown of Curses turns five self-debuffs into 25 % omni crit', () => {
+  const crown = item('item_0570', {
+    ability_value_c_debuff_threshold: 5,
+    ability_value_omni_crit_pct: 25,
+  });
+  const plain = simulateDps(build({ attackDamage: 1000, attackSpeed: 100 }), enemy(), { duration: 10, mode: 'dummy' });
+  const cursed = simulateDps(
+    build({ attackDamage: 1000, attackSpeed: 100, selfDebuffs: 5, items: [crown] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // 25 % omni crit at the 180 % crit multiplier: ×(1 + 0.25 × 0.8).
+  near(source(cursed, 'auto'), source(plain, 'auto') * 1.2);
+});
+
+test('0604 Overheated Core turns buffs over nine stacks into spell amp', () => {
+  const core = item('item_0604', { ability_value_spell_amp_per_stack: 6 });
+  const amulet = item('item_0472', { ability_trigger_chance_pct: 100, ability_attack_damage_pct: 200 }, 1);
+  const plain = simulateDps(build({ attackDamage: 1000, attackSpeed: 100, items: [amulet] }), enemy(), { duration: 10, mode: 'dummy' });
+  const hot = simulateDps(
+    build({ attackDamage: 1000, attackSpeed: 100, buffsOver9: 2, items: [amulet, core] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  // Two buffs × 6 % = 12 % spell amp.
+  near(source(hot, 'thunderBacklash'), source(plain, 'thunderBacklash') * 1.12);
+});
+
+test('0576 Crown of Cursed Fire adds outgoing damage per self-debuff', () => {
+  const crown = item('item_0576', { ability_value_bonus_pct_per_debuff: 10 });
+  const plain = simulateDps(build({ attackDamage: 1000, attackSpeed: 100 }), enemy(), { duration: 10, mode: 'dummy' });
+  const cursed = simulateDps(
+    build({ attackDamage: 1000, attackSpeed: 100, selfDebuffs: 3, items: [crown] }),
+    enemy(),
+    { duration: 10, mode: 'dummy' },
+  );
+  near(source(cursed, 'auto'), source(plain, 'auto') * 1.3);
 });

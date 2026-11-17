@@ -103,7 +103,25 @@ export type DpsRole =
   | 'stormBracelet'
   | 'archmageBook'
   | 'dragonBlade'
-  | 'lavaPlate';
+  | 'lavaPlate'
+  // Backlog batch (v1.525)
+  | 'hawkCrossbow'
+  | 'thunderstorm'
+  | 'thunderBacklash'
+  | 'afterimage'
+  | 'dotAmp'
+  | 'sealCurse'
+  // Cast-driven batch (v1.525)
+  | 'lightningWand'
+  | 'eyeStorm'
+  | 'chargeBlade'
+  | 'archmageMask'
+  | 'tidesRing'
+  // Dynamic attack-speed stacks (v1.525)
+  | 'critHaste'
+  | 'thunderMinor'
+  | 'thunderMajor'
+  | 'curseCrown';
 
 export interface DpsFamily {
   kind: 'dps';
@@ -242,6 +260,23 @@ export const DPS_FAMILIES: readonly DpsFamily[] = [
   { kind: 'dps', role: 'archmageBook', base: 'item_0650', ancestor: 'item_0878', sources: ['archmageBook'] },
   { kind: 'dps', role: 'dragonBlade', base: 'item_0667', ancestor: 'item_0896', sources: [] },
   { kind: 'dps', role: 'lavaPlate', base: 'item_0677', sources: ['lavaPlate'] },
+  // Backlog batch (v1.525): level-5 thunder/afterimage, level-9 multipliers.
+  { kind: 'dps', role: 'hawkCrossbow', base: 'item_0341', ancestor: 'item_0850', sources: ['hawkCrossbow'] },
+  { kind: 'dps', role: 'thunderstorm', base: 'item_0468', ancestor: 'item_0842', sources: ['thunderstorm'] },
+  { kind: 'dps', role: 'thunderBacklash', base: 'item_0472', sources: ['thunderBacklash'] },
+  { kind: 'dps', role: 'afterimage', base: 'item_0523', ancestor: 'item_0764', sources: ['afterimage'] },
+  { kind: 'dps', role: 'dotAmp', base: 'item_0568', ancestor: 'item_0734', sources: [] },
+  { kind: 'dps', role: 'sealCurse', base: 'item_0607', ancestor: 'item_0740', sources: [] },
+  // Cast-driven batch (v1.525)
+  { kind: 'dps', role: 'lightningWand', base: 'item_0345', sources: ['wandLightning'] },
+  { kind: 'dps', role: 'eyeStorm', base: 'item_0470', sources: ['eyeStorm'] },
+  { kind: 'dps', role: 'chargeBlade', base: 'item_0503', ancestor: 'item_0848', sources: ['chargeBlade'] },
+  { kind: 'dps', role: 'archmageMask', base: 'item_0337', ancestor: 'item_0855', sources: ['archmageBurst'] },
+  { kind: 'dps', role: 'tidesRing', base: 'item_0602', ancestor: 'item_0736', sources: [] },
+  { kind: 'dps', role: 'critHaste', base: 'item_0445', ancestor: 'item_0860', sources: [] },
+  { kind: 'dps', role: 'thunderMinor', base: 'item_0469', ancestor: 'item_0843', sources: [] },
+  { kind: 'dps', role: 'thunderMajor', base: 'item_0473', ancestor: 'item_0844', sources: [] },
+  { kind: 'dps', role: 'curseCrown', base: 'item_0576', ancestor: 'item_0872', sources: [] },
 ];
 
 /**

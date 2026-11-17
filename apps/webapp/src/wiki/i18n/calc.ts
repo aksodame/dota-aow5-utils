@@ -159,6 +159,11 @@ export interface DpsStrings {
     physicalIncrease: string;
     duration: string;
     durationHint: string;
+    castsPerSecond: string;
+    castsPerSecondHint: string;
+    selfDebuffs: string;
+    buffsOver9: string;
+    selfStatusHint: string;
     reset: string;
   };
   summary: {
@@ -431,6 +436,11 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       physicalIncrease: 'Физ. урон по цели, %',
       duration: 'Окно расчёта, с',
       durationHint: 'DPS считается по манекену за это время; смерть цели учитывается отдельным расчётом.',
+      castsPerSecond: 'Кастов в секунду',
+      castsPerSecondHint: 'Временный ручной ввод: способности и руны пока не моделируются. Укажи реальную частоту кастов; позже это будет считаться автоматически.',
+      selfDebuffs: 'Дебаффы на себе',
+      buffsOver9: 'Баффы с >9 стаками',
+      selfStatusHint: 'Временный ручной ввод состояния героя для 0570 / 0576 / 0604 / 0631: баффы и дебаффы пока считаются только частично.',
       reset: 'Сбросить к боссу 60-й волны',
     },
     summary: {
@@ -514,6 +524,14 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         stormBracelet: 'Браслет разгона — молот',
         archmageBook: 'Книга Великого Мага — взрыв',
         lavaPlate: 'Лавовая пластина — импульс',
+        hawkCrossbow: 'Арбалет чёрного ястреба — залп',
+        thunderstorm: 'Гнев грома — гроза',
+        thunderBacklash: 'Амулет грозовых уз — отдача',
+        afterimage: 'Перчатки быстрой тени — остаточная тень',
+        wandLightning: 'Жезл призыва молний — разряд',
+        eyeStorm: 'Око бури — молнии',
+        chargeBlade: 'Клинок накопленной мощи — заряд',
+        archmageBurst: 'Маска архимага — взрыв',
       },
     },
     active: {
@@ -624,6 +642,11 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       physicalIncrease: 'Physical damage taken, %',
       duration: 'Window, s',
       durationHint: 'DPS is measured on a dummy for this window; the kill is a separate calculation.',
+      castsPerSecond: 'Casts per second',
+      castsPerSecondHint: 'Temporary manual input: abilities and runes are not modelled yet. Enter the real cast rate; it will be derived automatically later.',
+      selfDebuffs: 'Debuffs on self',
+      buffsOver9: 'Buffs over 9 stacks',
+      selfStatusHint: 'Temporary manual wearer state for 0570 / 0576 / 0604 / 0631: buffs and debuffs are only partly counted so far.',
       reset: 'Reset to the wave-60 boss',
     },
     summary: {
@@ -707,6 +730,14 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         stormBracelet: 'Acceleration Bracer — hammer',
         archmageBook: 'Archmage Tome — burst',
         lavaPlate: 'Lava Plate — pulse',
+        hawkCrossbow: 'Black Hawk Crossbow — volley',
+        thunderstorm: 'Thunder Wrath — storm',
+        thunderBacklash: 'Thunder Knot Amulet — backlash',
+        afterimage: 'Swift Shadow Gloves — afterimage',
+        wandLightning: 'Lightning Rod — strike',
+        eyeStorm: 'Eye of the Storm — bolts',
+        chargeBlade: 'Charged Blade — charge',
+        archmageBurst: 'Archmage Mask — burst',
       },
     },
     active: {
@@ -809,6 +840,11 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
       physicalIncrease: '受到物理伤害，%',
       duration: '计算窗口，秒',
       durationHint: 'DPS 按木桩在窗口内的伤害计算；击杀时间单独计算。',
+      castsPerSecond: '每秒施法次数',
+      castsPerSecondHint: '临时手动输入：技能和符文尚未建模。填入真实施法频率，之后会自动计算。',
+      selfDebuffs: '自身负面效果',
+      buffsOver9: '超过9层的增益',
+      selfStatusHint: '临时手动输入自身状态，用于 0570 / 0576 / 0604 / 0631：增益和减益目前只部分计入。',
       reset: '重置为第 60 波 Boss',
     },
     summary: {
@@ -892,6 +928,14 @@ const DPS_TEXT: Record<'ru' | 'en' | 'zh', DpsStrings> = {
         stormBracelet: '加速护腕——锤击',
         archmageBook: '大魔导之书——爆发',
         lavaPlate: '熔岩板甲——脉冲',
+        hawkCrossbow: '黑鹰之弩——齐射',
+        thunderstorm: '雷神之怒——雷暴',
+        thunderBacklash: '缚雷护符——反噬',
+        afterimage: '疾影手套——残影',
+        wandLightning: '引雷法杖——落雷',
+        eyeStorm: '风暴之眼——闪电',
+        chargeBlade: '蓄力之刃——充能',
+        archmageBurst: '大魔导面具——爆发',
       },
     },
     active: {

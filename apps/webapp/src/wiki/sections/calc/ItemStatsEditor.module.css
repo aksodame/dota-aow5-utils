@@ -85,6 +85,13 @@
   color: var(--text-muted);
 }
 
+.choiceRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
 .slider {
   width: 100%;
   min-width: 0;
