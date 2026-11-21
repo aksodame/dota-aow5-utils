@@ -45,7 +45,7 @@ export const WAVE60_BOSS: DpsEnemy = {
 export interface DpsEnemy {
   maxHp: number;
   armor: number;
-  /** Shown in the form; magical sources are not modelled yet, so it does not move the result. */
+  /** Magic resistance in percent. Doom stacks multiply the unresisted share, not the number itself. */
   magicResistancePct: number;
   healthRegen: number;
   kind: EnemyKind;
@@ -1524,6 +1524,22 @@ function directDamage(
   );
 }
 
+/**
+ * Magic resistance is an attribute, and the game folds every source of it
+ * (items, talents, intelligence, Witch Blade's doom) with
+ * `multiplyRemainingPercent`: `R' = R + (100 - R) * (-value / 100)`.
+ * A debuff therefore always multiplies the damage that gets through by
+ * `1 + value / 100`, no matter how much resistance the target already has.
+ * At 92 % the 8 % that passes grows to 8.8 % with one 10 % stack, which the
+ * stat panel shows as 92 → 91.2, not 82.
+ */
+export function magicResistanceMultiplier(mrPct: number, doomStacks: number, doomPerStack: number): number {
+  const mr = mrPct / 100;
+  const doom = (doomStacks * doomPerStack) / 100;
+  const reduced = mr + (1 - mr) * -doom;
+  return Math.max(0.001, 1 - Math.min(reduced, 0.99));
+}
+
 function magicalDamage(
   build: DpsBuild,
   enemy: DpsEnemy,
@@ -1552,8 +1568,7 @@ function magicalDamage(
   const extra = 1 + enemyExtraPct(build, enemy.kind) / 100;
   const reduction = Math.max(0.001, 1 - enemy.damageReductionPct / 100);
   const resistance = 1 / (1 + Math.max(0, enemy.damageResistancePct) / 100);
-  const effectiveMr = enemy.magicResistancePct - opts.doomStacks * c.doomPerStack;
-  const magicResist = Math.max(0.001, 1 - Math.min(effectiveMr / 100, 0.99));
+  const magicResist = magicResistanceMultiplier(enemy.magicResistancePct, opts.doomStacks, c.doomPerStack);
   const corrosion = c.cobra
     ? 1 + Math.min(30, opts.corrosionStacks * c.cobraCorrosionPct) / 100
     : 1;

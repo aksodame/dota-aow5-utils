@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { moveHuntAgility, simulateDps, type DpsBuild, type DpsEnemy, type DpsItemStats } from './dps.ts';
+import {
+  magicResistanceMultiplier,
+  moveHuntAgility,
+  simulateDps,
+  type DpsBuild,
+  type DpsEnemy,
+  type DpsItemStats,
+} from './dps.ts';
 import {
   DPS_FAMILY_COUNT,
   DPS_ITEM_COUNT,
@@ -250,6 +257,41 @@ test('Witch Blade pays a spellblade tick and its doom stacks', () => {
   const r = simulateDps(witch, enemy({ kind: 'boss', magicResistancePct: 50 }), { duration: 1.6, mode: 'dummy' });
   assert.ok(source(r, 'witchBlade') > 0);
   assert.equal(r.doomStacks, 1);
+});
+
+test('doom multiplies the unresisted share instead of subtracting resistance points', () => {
+  // 92 % MR lets 8 % through; one 10 % doom stack raises that to 8.8 %.
+  near(magicResistanceMultiplier(92, 1, 10), 0.088);
+  // Five stacks are a single −50 % modifier: 8 % × 1.5 = 12 %.
+  near(magicResistanceMultiplier(92, 5, 10), 0.12);
+  // At 0 % the same modifier is a plain +10 % damage taken.
+  near(magicResistanceMultiplier(0, 1, 10), 1.1);
+  // At 99 % the remaining 1 % grows to 1.1 %, not to 10 %.
+  near(magicResistanceMultiplier(99, 1, 10), 0.011);
+  // The 99 % clamp still applies after the doom, so the 1 % floor stays.
+  near(magicResistanceMultiplier(150, 1, 10), 0.01);
+  // Negative resistance keeps the same relative multiplication: 135 % × 1.1.
+  near(magicResistanceMultiplier(-35, 1, 10), 1.485);
+});
+
+test('Witch Blade doom at the endless 92 % resistance', () => {
+  const witch = build({
+    attackDamage: 0,
+    totalAttributes: 1000,
+    items: [
+      item('item_0209', {
+        ability_value_dot_trigger_chance_pct: 100,
+        ability_all_stats_damage_pct: 80,
+        ability_value_trigger_chance_pct: 100,
+        ability_value_magic_resistance_reduce_pct: 10,
+        ability_max_stacks: 5,
+        ability_decay_interval: 3,
+      }),
+    ],
+  });
+  const r = simulateDps(witch, enemy({ kind: 'boss', magicResistancePct: 92 }), { duration: 1.6, mode: 'dummy' });
+  // 800 raw × 8 % taken × 1.10 doom = 70.4. Flat MR subtraction would pay 144.
+  near(source(r, 'witchBlade'), 70.4);
 });
 
 test('a decay tick still hits while any poison stacks remain', () => {
